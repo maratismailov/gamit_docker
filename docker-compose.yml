@@ -1,0 +1,7 @@
+version: '3.5'
+services:
+  gamit:
+    image: regfe89/gamit:latest
+    volumes:
+      - ./app:/app
+ 
