@@ -3,5 +3,5 @@ services:
   gamit:
     image: regfe89/gamit:latest
     volumes:
-      - ./app:/app
+      - ./data:/data
  
