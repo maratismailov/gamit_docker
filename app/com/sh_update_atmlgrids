@@ -1,0 +1,139 @@
+#!/bin/csh -x
+#
+#doc Update the ATML grids from Luxemburg U files in ftp/incoming/vandam.
+#doc 
+#
+# Script to copy the most recent 7-day ATMDISP files from ftp/incoming/vandam 
+# to the working directory and update the MIT atmdisp and optionally atmfilt
+# files. Works one day at a time, assuming that the previous file has the 
+# name of the day prior to the day requested; e.g.
+#
+#   sh_update_atmlgrids -yr 2015 -doy 090  ( -filt  -erase  )
+#
+#     will copy over the files   
+#
+#       ATMDISP_cm.084_15_090_15    
+#       ATMDISP_ce.084_15_090_15
+#       ATMDISP_ce.084_15_090_15
+#
+# and update atmdisp_c[mef].2015_089. 
+#
+#   If -erase is specified, both the 7-day files and the previous
+#   year-to-date grid file will be erased.  
+#     
+# Written by R King 3 April 2015
+
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "===================================================================================="
+  echo " Update the MIT ATML grid files from the latest 7-day files from Luxemburg U  "
+  echo "  "
+  echo " Usage: sh_update_atmlgrids -yr <yr> -doy <doy> [-filt -erase]  "
+  echo " "                                                            
+  echo "  where -erase erases the new 7-day files and the previous yr-to-date MIT file"
+  echo "  " 
+  echo "===================================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS #############################   
+set year = ''
+set yr = ''
+set doy = ''
+set log = ''         
+set erase = 'n'   
+set filt = 'n'
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -y*:
+      set year = $input[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+      set yr = `sh_year -year $year`
+    breaksw 
+    case -doy:
+      set doy = $input[2]  
+    breaksw  
+    case -erase:
+      set erase = 'y'   
+    breaksw
+    case -filt:
+      set filt = 'y'
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+              
+touch sh_update_atmlgrids.out                                   
+
+#  @ doylast = $doy - 1   
+@ doylast = `echo "ibase=10; ${doy} - 1" | bc`    
+@ doymin6 = `echo "ibase=10; ${doy} - 6" | bc`    
+set doy = `echo $doy |  awk '{printf "%03d \n", $1}'`
+set doylast = `echo $doylast |  awk '{printf "%03d \n", $1}'`
+set doymin6 = `echo $doymin6 |  awk '{printf "%03d \n", $1}'`
+
+\cp ~/ftp/vandam/ATMDISP_cm.${doymin6}_$yr[2]_${doy}_$yr[2] ./   
+\cp ~/ftp/vandam/ATMDISP_ce.${doymin6}_$yr[2]_${doy}_$yr[2] ./
+\cp ~/ftp/vandam/ATMDISP_cf.${doymin6}_$yr[2]_${doy}_$yr[2] ./
+ 
+# Update the CM file             
+set cmfile =  ATMDISP_cm.${doymin6}_$yr[2]_${doy}_$yr[2]
+# set tsize = `wc ATMDISP_cm.${doymin6}_$yr[2]_${doy}_$yr[2]`
+set tsize = `wc $cmfile`    
+
+if( $tsize[1]  >   1000 ) then       
+# update_atmlg atmdisp_cm.2015_012 ATMDISP_cm.009_15_015_15  atmdisp_cm.2015_015 2015 1 2015 015
+  update_atmlg atmdisp_cm.$yr[1]_$doylast ATMDISP_cm.${doymin6}_$yr[2]_${doy}_$yr[2] atmdisp_cm.$yr[1]_$doy $yr[1] 1 $yr[1] $doy  >! sh_update_atmlgrids.out 
+  echo "Listing last 7 days for 45N 120E " >> sh_update_atmlgrids.out 
+  atmtoasc atmdisp_cm.$yr[1]_$doy  45. 120. $doymin6 $doy >> sh_update_atmlgrids.out
+else
+  echo "In fail-mail" >! DEBUG 
+  echo "LU file ATMDISP_cm.${doymin6}_$yr[2]_$doy_$yr[2] not available, update failed" >! tmp.atmlcronmail
+  mail -s 'Failed cron' rwk < tmp.atmlcronmail
+  exit    
+endif 
+ 
+# Update the CE file
+set tsize = `wc ATMDISP_ce.${doymin6}_$yr[2]_${doy}_$yr[2]` 
+if( $tsize[1]  <  3000 ) then
+  echo "LU file ATMDISP_ce.${doymin6}_$yr[2]_$doy_$yr[2] not available, update failed" >! tmp.atmlcronmail
+  mail -s 'Failed cron' rwk < tmp.atmlcronmail
+  exit    
+else 
+# update_atmlg atmdisp_ce.2015_012 ATMDISP_ce.009_15_015_15  atmdisp_ce.2015_015 2015 1 2015 015
+  update_atmlg atmdisp_ce.$yr[1]_$doylast ATMDISP_ce.${doymin6}_$yr[2]_${doy}_$yr[2] atmdisp_ce.$yr[1]_$doy $yr[1] 1 $yr[1] $doy  >>sh_update_atmlgrids.out 
+  echo "Listing last 7 days for 45N 120E " >> sh_update_atmlgrids.out 
+  atmtoasc atmdisp_ce.$yr[1]_$doy  45. 120. $doymin6 $doy >> sh_update_atmlgrids.out
+endif 
+        
+# Update the CF file
+set tsize = `wc ATMDISP_cf.${doymin6}_$yr[2]_${doy}_$yr[2]` 
+if( $tsize[1]  <  3000 ) then
+  echo "LU file ATMDISP_cf.${doymin6}_$yr[2]_$doy_$yr[2] not available, update failed" >! tmp.atmlcronmail
+  mail -s 'Failed cron' rwk < tmp.atmlcronmail
+  exit    
+else 
+# update_atmlg atmdisp_cf.2015_012 ATMDISP_cf.009_15_015_15  atmdisp_cf.2015_015 2015 1 2015 015
+  update_atmlg atmdisp_cf.$yr[1]_$doylast ATMDISP_cf.${doymin6}_$yr[2]_${doy}_$yr[2] atmdisp_cf.$yr[1]_$doy $yr[1] 1 $yr[1] $doy  >> sh_update_atmlgrids.out 
+  echo "Listing last 7 days for 45N 120E " >> sh_update_atmlgrids.out 
+  atmtoasc atmdisp_cf.$yr[1]_$doy  45. 120. $doymin6 $doy >> sh_update_atmlgrids.out
+endif 
+
+if( $erase == 'y' ) then
+ echo " Erasing LU 7-day files and previous grid file" 
+ \rm ATMDISP_cm.${doymin6}_$yr[2]_${doy}_$yr[2] 
+ \rm atmdisp_cm.$yr[1]_$doylast     
+ \rm ATMDISP_ce.${doymin6}_$yr[2]_${doy}_$yr[2] 
+ \rm atmdisp_ce.$yr[1]_$doylast
+ \rm ATMDISP_cf.${doymin6}_$yr[2]_${doy}_$yr[2] 
+ \rm atmdisp_cf.$yr[1]_$doylast
+endif 
+                                               
+ echo "ATML unfiltered files updated for day $doy " >! tmp.atmlcronmail
+ mail -s 'ATML update' rwk < tmp.atmlcronmail
+ \rm tmp.atmlcronmail 
+exit

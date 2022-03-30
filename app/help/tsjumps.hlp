@@ -1,0 +1,52 @@
+TSJUMPS: Program to detect jumps and outliers in time series files
+
+TSJUMPS: Programs to detect jumps and outliers in time series
+
+Runstring:
+% tsjumps <options>
+
+where <options> are any of the following:
+ 
+   -v[alues] file  -- Name of values file from ensum for analysis
+   -p[rt/org] file -- Name of print or org file.  Needed to get experiment
+                      start and stop times for writing a rename file
+   -o[ut] values file -- Name of file to output new values file to (can
+                      be then used in ensum and/or multibase.
+   -n[ew]          -- sets that only time series that have jumps in them
+                      will be written to the new values file.
+   -r[ename] file  -- Name of rename file to create or append to.
+   -a[ppend rename] -- Append to new renames to the rename file
+   -s[cale criteria] -- Sets the values of the jump detection that depend on the
+                      postfit chi**2 of fit to the series.  The checks here
+                      are of the form value/sigma compared to
+                      scale*sqrt(chi**2/f).
+                      Three arguments are specified:
+                      DRES -- Change between adjacent data points
+                      SIGNIFICANCE -- Scale for significance of final jump
+                              estimates.
+                      Negative values will cause the default to be used.
+                      Example: -s 3.0 2.0 would require jumps be
+                        3-sigma changes between values or 3-sigma difference
+                        between value and average to points before and after
+                        (in this case a pair of jumps is added to allow for
+                        and outlier. Any jump estimate that is 
+                        less than two sigma after all jumps are estimated 
+                        would be removed.
+    -m[ax absolute criteria] -- Sets the values for absolute criteria (ie.
+                      these do not depend on postfit chi**2/f. Three
+                      values are given:
+                      ABSDRES -- Absolute value of (residual change/sigma)
+                      SLOPE   -- Largest slope that will be allowed; if
+                                 exceeded slope set to zero.  (mm/yr)
+                      SIGMA   -- Largest data sigma that will be checked
+                                 when looking for jumps.
+    -f[irst] rename -- Sets the first numeric value for renaming sites ie.,
+                      sites names become _GPS -> _GNN -> _GNM .. where
+                      NN is the value entered and NM=NM+1 and so.  If this
+                      option is not given, sites will not be renamed.
+
+    -d[ebug]       -- Turns on debug given detailed outputs of processing.
+
+
+                      
+ 

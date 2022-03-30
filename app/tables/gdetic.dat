@@ -1,0 +1,18 @@
+* Ellipsoid parameters and translation/rotation of datums wrt ITRF
+*  New format: differs from old by making non-blank first column a comment 
+*    and allowing for rotations, scale, and rate; datum name in cols 2-6, free format thereafter
+*  Units are m for a and translation, mas for rotation, ppb for scale, years for rates
+*  Last updated by rwk 2002.9.27
+Datum      a           1/f            dX        dY      dZ    dXdot    dYdot    dZdot     RX       RY       RZ      RXdot    RYdot    RZdot    Scale    Sdo  t  Epoch
+ WGS84    6378137.    298.257223563    0.       0.      0.      0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0. 
+ IAU95    6378136.49  298.25645        0.       0.      0.      0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.          
+ IER10    6378136.6   298.25642        0.       0.      0.      0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.          
+ NOD83    6378137.    298.257222101    0.       0.      0.      0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.    NAD w/o NGS/GSD corrections
+ NAD83    6378137.    298.257222101    0.9889  -1.9074 -0.503   0.0007  -0.0001   0.0019  25.915    9.426   11.599    0.067   -0.757   -0.031   -0.93    -0.19  1997.0   NGS/GSD wrt ITRF97
+ WGS72    6378135.    298.26           0.       0.      4.5     0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.
+ NAD27    6378206.4   294.9786982    -12.01  -162.97  189.74    0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0. 
+ CLK80    6378249.145 293.465          0        0       0       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       English Clarke
+ CLI80    6378249.2   293.4660208      0        0       0       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       Clarke 1880 IGN
+ INT24    6378388.    297.             0        0       0       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.       0.
+ 
+

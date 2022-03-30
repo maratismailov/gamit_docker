@@ -1,0 +1,130 @@
+#!/bin/csh 
+# Script to make batch files to run from c-files
+if( $#argv != 5 ) then
+   cat << END && exit
+
+SH_CBAT: Script to make batch files to run from c-files
+(aimed at testing model changes with no changes to the clean data).
+
+Runstring:
+sh_cbat <old bat root> <new bat root> <model update> <in-c> <out-c>
+where 
+<old bat root> is old bat file root e.g. bnet11
+<new bat root> is new bat file root e.g. bnetn1 (used for q,o and h files)
+<model update> file with end of new model parameters (these lines are 
+     replaced in the model files for as many lines as present e.g.
+the lines below in a file,  replace from "Datum / Tides .." line to the bottom of the file;
+all end lines must be included to the end of model batch file are neededd).
+-----------------------<NOT THIS LINE>-------------------------------
+0 11 11 IERS03 N N  Datum / Tides applied / SP EOP / E-tide model / Atm load / Hydrol load
+ 0.0  AZEL ELEV     Elevation angle cutoff (now ignored in MODEL) / antenna model / SV antenna model 
+3 yigsrt.320        Clock model / Yaw file
+GPT 50              Met options (source hierarchy + humidity) or P T H 
+SAAS SAAS GMFH GMFW Met models (dryzen wetzen drymap wetmap)
+-----------------------<NOT THIS LINE>-------------------------------
+First possible line that can be replaces in the "N                   Delete input C-file?" line
+
+<in-c> and <out-c> are the input and output cfile letter (normally c for in-c and
+    any letter for <out-c> e.g. d would be logical, the p-files are named with the <out-c>
+    character). 
+
+WARNING: Only model and cfmrg/solve are re-run.  
+** To update T-file, run arc separately and replace model batch file from T-file line down.
+** For loading changes: The u-file must be re-generated with the correct load models.
+
+All arguments are needed
+
+END
+endif
+#
+# Decode runstring
+set ibat = $1
+set obat = $2
+set modf = $3
+set inc  = $4
+set outc = $5
+#
+echo "-------------------------------------------------"
+echo "SH_CBAT:"
+echo "In  batch root $ibat"
+echo "Out batch root $obat"
+echo "Model Update   $modf"
+cat $modf
+echo " "
+echo "in-c letter |$inc| out-c letter |$outc|"
+echo "-------------------------------------------------"
+echo " "
+#
+# Get the bat file name
+if( ! -e ${ibat}.bat ) then
+   echo "Cannot file batch file ${ibat}.bat"
+   exit
+endif
+#
+# Find the lines in the bat file that we must work with
+head -1 ${ibat}.bat >! ${obat}.bat 
+# Start line for tail -n +
+set sline = `nl ${ibat}.bat | grep sh_chksolve | head -1 | awk '{print $1+5}'`
+# number of lines for head
+set nlins = `nl ${ibat}.bat | grep sh_chksolve | tail -n +2 | head -1 | awk -v sline=$sline '{print $1-sline+1}'`
+# creat batch file 
+tail -n +$sline ${ibat}.bat | head -$nlins | egrep -v 'aut|mvcf' | awk -v ibat=$ibat -v obat=$obat '{gsub(ibat,obat)} {print $0}' >> ${obat}.bat
+#
+# Now creat the input files needed
+# Model first:
+# Find out how many lines were are replacing (These lines need to replaced).
+set nrep = `cat $modf | wc -l`
+# Line hear is number of lines from Delete input c-file line to start to replacement lines
+# in the $modf file. 
+set nstr = `echo 17 $nrep | awk '{print $1-$2-6}'`
+foreach mfo ( `grep model  ${obat}.bat | awk '{print $3}'` )
+    set mfi = `echo $mfo | awk -v ibat=$ibat -v obat=$obat '{gsub(obat,ibat)} {print $0}'`
+#   Construct line by line first
+    head -1 $mfi >! $mfo
+#   Print file (change c-file letters) 
+    tail -n +2 $mfi | head -1 | awk -v outc=$outc '{printf("%s%c%s\n",substr($0,1,5),outc,substr($0,7))}' >>  $mfo
+#   Next two lines unchanged
+    tail -n +3 $mfi | head -2 >> $mfo
+#   Change input file to c-file
+    tail -n +5 $mfi | head -1 | awk -v inc=$inc '{printf("c%s%c%s\n",substr($0,2,4),inc,substr($0,7))}' >>  $mfo
+#   Change the output cfile
+    tail -n +6 $mfi | head -1 | awk -v outc=$outc '{printf("c%s%c%s\n",substr($0,2,4),outc,substr($0,7))}' >>  $mfo
+#   See which lines we should now just copy over
+    if( $nstr >  0 ) then
+       tail -n +7 $mfi | head -$nstr >> $mfo
+    endif
+    cat $modf >> $mfo
+end
+#
+# Now create cfmrg file
+set iroot = `echo $ibat | awk '{print substr($1,2,4)}'`
+set oroot = `echo $obat | awk '{print substr($1,2,4)}'`
+#
+set cfo = `grep cfmrg ${obat}.bat | awk '{print $3}'`
+set cfi = `echo $cfo | awk -v ibat=$ibat -v obat=$obat '{gsub(obat,ibat)} {print $0}'`
+awk -v outc=$outc -v iroot=$iroot -v oroot=$oroot '{if ( $2 == "C-file" ) {printf("%s%c%s\n",substr($0,1,5),outc,substr($0,7))} else if ( $2 == "M-file" ) {{gsub(iroot,oroot,$1)} {printf("%s           M-file\n",$1)}} else {print $0}}' $cfi >! $cfo
+
+# Now create solve file 
+set sfo = `grep solve ${obat}.bat | awk '{print $3}'`
+set sfi = `echo $sfo | awk -v ibat=$ibat -v obat=$obat '{gsub(obat,ibat)} {print $0}'`
+# Here we change some of the file names
+#awk -v iroot=$iroot -v oroot=$oroot '{if ( $1== "Q-file" || $1 == "M-file" ) {{gsub(iroot,oroot,$3)} {print " "$0}} else if ( $3 == "name:" ) {{gsub(iroot,oroot,$4)} {print "    "$0}} else {print $0,$3}}' $sfi >! $sfo
+awk -v iroot=$iroot -v oroot=$oroot '{gsub(iroot,oroot,$0)} {print $0}'  $sfi >! $sfo
+#
+# Now we need to copy some input files
+set ilf = `grep "input_l file name" $sfi | head -1 | awk '{print $4}'`
+set olf = `grep "input_l file name" $sfo | head -1 | awk '{print $4}'`
+\cp -p $ilf $olf
+set inf = `grep "noise file name" $sfi | head -1 | awk '{print $4}'`
+set onf = `grep "noise file name" $sfo | head -1 | awk '{print $4}'`
+\cp -p $inf $onf
+set imf = `grep "input_m file name" $sfi | head -1 | awk '{print $4}'`
+set omf = `grep "input_m file name" $sfo | head -1 | awk '{print $4}'`
+\cp -p $imf $omf
+echo "Copied input files $ilf $imf $inf to $olf $omf $onf"
+echo "Created $obat.bat from $ibat.bat" 
+
+
+
+     
+

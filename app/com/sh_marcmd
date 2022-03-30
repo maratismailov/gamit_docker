@@ -1,0 +1,153 @@
+#!/bin/csh -f    
+#
+#doc Generate realistic sigmas from a time series 
+#doc
+#
+# Written by T. Herring 2004
+# Last moddified by R. King 28 Feb 2005
+#
+# Script to generate:
+# (a) mar_neu lines for globk to achieve a realistic sigma based on the averaging characteristics
+# (b) use_site list for sites with RW noise less than a specified maximum
+# (c) stab_site list for sites with RW noise less than a specified maximum
+#
+if( $#argv == 0 ) then
+   echo 'sh_marcmd <options>'   
+   echo ' ' 
+   echo '  Generate Markov, use_site, and stab_site commands for GLOBK based '
+   echo '  on realistic sigmas determined from an enfit analysis of a time series'
+   echo ' ' 
+   echo ' Required: '
+   echo ' ' 
+   echo '  -ir iroot      Root for input files  <iroot>.org  OR va<iroot>.ens ' 
+   echo ' ' 
+   echo ' Optional: '
+   echo ' ' 
+   echo '  -or oroot     Root for output files  use_<iroot>.use   rw_<oroot>.rw  stab_<oroot>.stab; default <iroot> '
+   echo '  -enf enf_cmd  Name of ENFIT command file (if omitted do not run enfit)'   
+   echo '  -minnum n     Minimum number of observations for a site to be included; default 70 '
+   echo '  -minrw val    Minimum random walk (Markov) value to be added for each site; default 0.05 mm^2/yr'
+   echo '  -maxuse val   Maximum horizontal random walk value for a site to be included in the solution; default 2.0 mm^2/yr'
+   echo '  -maxstab val  Maximum horizontal random walk value for a site to be used for stabilization; default 0.5 mm^2/yr '
+   echo ' ' 
+   exit
+endif
+#
+set oroot = 'NONE'
+set minrw = 0.05
+set maxuse = 2.0
+set maxstab = 0.5   
+set minnum = 70 
+set enfcmd = 'null' 
+
+# Now read the arguments
+foreach a ($argv)
+   switch($a)
+       case -or:
+          set oroot = $argv[2]
+          breaksw
+       case -ir:
+          set iroot = $argv[2]
+          if( $oroot == 'NONE' ) then
+             set oroot = $iroot
+          endif
+          breaksw  
+       case -enf:
+         set enfcmd = $argv[2]
+         breaksw
+       case -minnum:
+         set minnum = $argv[2] 
+         breaksw
+       case -minrw:
+         set minrw = $argv[2] 
+         breaksw
+       case -maxuse:
+         set maxuse = $argv[2] 
+         breaksw
+       case -maxstab:
+         set maxstab = $argv[2] 
+         breaksw
+   endsw
+shift
+end
+#
+#goto skip
+echo "Running ensum with va${iroot}.ens and minimum obs $minnum"
+ensum $minnum -RS sut vat va${iroot}.ens >&! /dev/null
+# Extract the rate signa and the duration from the summary file
+grep 'N  1' sut | awk '{print substr($1,1,8),$13, $10}' >! t.n
+grep 'E  1' sut | awk '{print $10}' >! t.e
+grep 'U  1' sut | awk '{print $10}' >! t.u
+# Remove any deleted data (_XPS rename in globk)
+paste '-d ' t.n t.e t.u | grep -v '^...._X.. ' >! t.a
+
+if( -e $enfcmd ) then 
+   echo "Running enfit with  $enfcmd and va$iroot.ens"
+   enfit $minnum -RS -f $enfcmd suf vaf va$iroot.ens >&! /dev/null
+#  Extract the sigma of the rate and get the duration from the t.a file
+   grep 'N  1' suf | awk '{print substr($1,1,8),$8}' >! t.n
+   grep 'E  1' suf | awk '{print $8}' >! t.e
+   grep 'U  1' suf | awk '{print $8}' >! t.u
+#
+# Remove any deleted data (_XPS rename in globk)
+   paste '-d ' t.n t.e t.u | grep -v '^...._X.. '>! t.f
+endif
+#
+skip:
+# Now get the list of sites
+set sites = `awk '{print substr($1,1,4)}' t.a | sort -u`
+set num = `echo $sites | wc -w`
+echo "There are $num sites to be processed"
+#
+# Process each site
+set orw = "rw_${oroot}.rw"
+echo "# Random walk process noise generated from va${iroot}.ens "`date` >! $orw
+echo "# Minimum RW process noise $minrw mm^2/yr" >> $orw
+echo "#" >> $orw
+foreach s (`echo $sites`)
+   set subsite = `grep $s t.a | awk '{print $1}'`
+   echo "Processing $s with subsites $subsite"
+   \rm t.rw ; touch t.rw
+   foreach ss (`echo $subsite`)
+      set dur = `grep $ss t.a | awk '{print $2}'`  
+      set both = `grep $ss t.f | wc -w`
+      if( $both == 0 ) then   
+        grep $ss t.a | awk '{print $1, $3^2*$2,$4^2*$2,$5*$2, $3^2*$2+$4^2*$2, $2}' >> t.rw
+      else
+        grep $ss t.f | awk -v dur=$dur '{print $1,$2^2*dur,$3^2*dur,$4*dur,$2^2*dur+$3^2*dur,dur }' >! t.t
+        grep $ss t.a | awk '{print $1, $3^2*$2,$4^2*$2,$5*$2, $3^2*$2+$4^2*$2, $2}' >> t.t
+        sort -n -k 5 t.t | head -n 1 >> t.rw
+      endif   
+   end
+#
+#  Now take the weighted average of the values (weighting based on duration)
+   awk -v m=$minrw '{w=w+$6} {ns = ns+$2*$6} {es=es+$3*$6} {us=us+$4*$6} {hs=hs+$5*$6} END {printf(" mar_neu %s_@ %6.2fe-7 %6.2fe-7 %6.2fe-7 0.0 0.0 0.0 ! %6.3f HRW %6.2f yrs\n", substr($1,1,4), (ns/w+m)*10,(es/w+m)*10,(us/w+m)*10, hs/w, w)}' t.rw >> $orw
+#
+end
+#
+# OK Now create the use site list
+set ous = "use_${oroot}.use"
+echo "# Use site list generated from va${iroot}.ens "`date` >! $ous
+echo "# Minimum Horizontal RW process noise $maxuse mm^2/yr for site to be used" >> $ous
+echo "  use_site clear" >> $ous
+grep '^ ' $orw | awk -v m=$maxuse '{if( $10 < m ) {printf("  use_site %s \n",$2)}}' >> $ous
+set num = `grep '^ ' $ous | grep -v clear | wc -l`
+echo "There are $num sites used in $ous"
+
+#
+# OK Now generate the stab sites list
+set ost = "stab_${oroot}.stab"
+echo "# Use site list generated from va${iroot}.ens "`date` >! $ost
+echo "# Minimum Horizontal RW process noise $maxstab mm^2/yr for site to be used" >> $ost
+echo "  stab_site clear" >> $ost
+grep '^ ' $orw | awk -v m=$maxstab '{if( $10 < m ) {printf("  stab_site %s \n",$2)}}' >> $ost
+set num = `grep '^ ' $ost | grep -v clear | wc -l`
+echo "There are $num stabalization sites in $ost"
+
+
+
+
+
+
+    
+

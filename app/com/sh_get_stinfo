@@ -1,0 +1,143 @@
+#!/bin/csh
+#
+#doc Get latest station.info from the SOPAC archive
+#doc 
+#
+#Script to get latest station.info from the SOPAC archive.
+# MOD MAF 171119: Added trap to use ncftp when "ftp" client is actually "gftp", which interacts with the
+#                 server differently to legacy "ftp" and is tricky to use for non-interactive sessions.
+
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "===================================================================================="
+  echo " Get latest station.info from the SOPAC archive  " 
+  echo "  "
+  echo " Usage: sh_get_stinfo -format <format> -ftp_prog <ftp/ncftp>"   
+  echo " "
+  echo "      <format> old  or  new  [required]  "   
+  echo " "
+  echo "   Note:  The format extents were changed by SOPAC in March 2004"
+  echo "          Format 'old' gets 'station.info.gamcodes' (formerly '.y2k.db') at SOPAC" 
+  echo "          Format 'new' gets station.info without an extent (formerly 'devel') at SOPAC"
+  echo "  "             
+  echo "      <ftp/ncftp> ftp options [default ftp -inv] " 
+  echo "  "      
+  echo " Examples: sh_get_stinfo  -format new" 
+  echo "           sh_get_stinfo  -format old   -ftp_prog ncftp"
+  echo "  "
+  echo "===================================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS #############################   
+
+set fmt = 'new' 
+set archive = sopac
+set ftp_prog = 'ftp -inv'
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -for*:
+      set fmt  = $input[2]  
+    breaksw 
+    case -ftp*:
+      set ftp_prog  = $input[2]  
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+
+# Added by MAF (2017-11-19, MIT) to check if ftp is aliased or linked to gftp on local machine
+# Appended by MAF (2018-06-07, MIT) to check if ftp is missing, e.g. on macOS High Sierra
+if ( `echo $ftp_prog | awk '{print $1}'` == 'ftp' && `ftp -v << quit` != '' ) then
+  if ( `which ncftp` =~ '*ncftp' ) then
+    set ftp_prog = 'ncftp'
+    echo 'ftp command aliased or linked to gftp; trying ncftp instead'
+  else if ( `which wget` =~ '*wget' ) then
+    set ftp_prog = 'wget'
+    echo 'ftp command aliased or linked to gftp; trying wget instead'
+  endif
+else if ( `echo $ftp_prog | awk '{print $1}'` == 'ftp' && `which ftp` !~ '*ftp' ) then
+  if ( `which ncftp` =~ '*ncftp' ) then
+    set ftp_prog = 'ncftp'
+    echo 'ftp command not found; trying ncftp instead'
+  else if ( `which wget` =~ '*wget' ) then
+    set ftp_prog = 'wget'
+    echo 'ftp command not found; trying wget instead'
+  endif
+endif
+
+##################### READ THE FTP_ADDRESSES TEMPLATE ############################    
+#
+set ftp_info = `sh_get_ftp_info -archive sopac -type gamit`
+
+while ($#ftp_info > 0 )
+  set input = ( $ftp_info )
+  switch($input[1])
+    case -ftpsite:
+      set ftpsite  = $input[2]  
+    breaksw 
+    case -ftplogin:
+      set ftplogin  = (`echo $ftp_info | cut -d- -f2`); shift ftplogin 
+    breaksw 
+    case -ftpdir:
+      set ftpdir  = $input[2]  
+    breaksw 
+    case -ftpcmd:
+      set ftpcmd  = (`echo $ftp_info | cut -d% -f2`); shift ftpcmd  
+    breaksw 
+  endsw
+  if ( $#ftp_info > 0 ) shift ftp_info
+end
+
+echo "Information extracted from ftp_addresses"
+echo "########################################"
+echo "ftpsite $ftpsite"
+echo "ftplogin $ftplogin"
+echo "ftpdir $ftpdir"
+echo "ftpcmd $ftpcmd"
+echo "########################################"
+
+##################### GET THE JOB DONE ############################
+
+# Set timestamp hostname variable
+set ts = "`hostname`:`date +"%H%M%S"`"
+
+# Check if ncftp is requested
+if ( `echo $ftp_prog | awk '{print $1}'` == 'ncftp' ) then
+  if (`echo $ftpcmd | awk '{print $1}'` == 'ftp') then
+    set ftpcmd = `echo $ftp_prog $ftpsite` 
+    echo "-ftp_prog = ncftp requested, ftpcmd now: $ftpcmd" 
+  endif
+endif
+
+# Set up the ftp script
+if (`echo $ftpcmd | awk '{print $1}'` == 'ftp') then 
+  set getcmd = 'get'
+  echo "user $ftplogin" >! tmp.get.$ts  
+  echo "binary" >> tmp.get.$ts
+else
+  set getcmd = 'get -f'
+  echo "binary" >! tmp.get.$ts
+endif
+
+# Setup the directory and files to be retrieved.
+echo "cd $ftpdir" >> tmp.get.$ts
+if ( $fmt == "old" ) then
+  echo "$getcmd station.info.gamcodes" >> tmp.get.$ts 
+else if ( $fmt == "new" ) then
+  echo "$getcmd station.info" >> tmp.get.$ts 
+else
+  echo "Command-line format not recognized "
+  exit
+endif
+
+# Do the ftp
+$ftpcmd < tmp.get.$ts | grep -v '^220' >! tmp.get_stinfo.log.$ts
+
+# Clean up
+\rm tmp.get.$ts tmp.get_stinfo.log.$ts >& /dev/null

@@ -1,0 +1,13 @@
+# Generic Makefile for hi - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King May 9, 2008
+# Last changed by Herring, Sept 20, 2019
+
+#LABELS: make_stnfo:make_stnfo:NONE:make_stnfo   
+#LABELS: test_stnfo:test_stnfo:NONE:test_stnfo
+
+#SHARELIB: ../lib:gamit_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+ 
+# MOD TAH 190920: Program no longer included (apparently) so removed.
+# LABELS: conv_stnfo:conv_stnfo:NONE:conv_stnfo  
+

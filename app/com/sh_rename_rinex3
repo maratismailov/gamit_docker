@@ -1,0 +1,238 @@
+#!/bin/bash
+
+# Redirect standard error to /dev/null
+#exec 2>/dev/null
+
+
+version='2020/03/11'
+
+
+flags='cdflr'  # Command line option flags
+
+
+# Default variables
+tmp='.'      # Temporary directory in which to compare RINEX files
+dir='.'      # Directory in which to place symbolic links (-l option) [default], copies (-c option) or renames (-r option)
+copy='0'     # Copy RINEX 3 to RINEX 2 conventional file name instead of creating symbolic link [default]
+rename='0'   # Rename (move) RINEX 3 to RINEX 2 conventional file name instead of creating symbolic link [default]
+index=( 0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P Q R S T U V W X Y Z )
+
+
+# Null input test
+if [ $# -eq 0 ]; then
+  cat << END && exit 1
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+  Program:     $(basename $0)
+  Written by:  Michael A Floyd (2016/01/18, MIT)
+  Last edited: Michael A Floyd ($version, MIT)
+
+  Usage: $(basename $0) -f <RINEX 3 files> <options>
+
+  Options:
+
+    -d : Directory in which to place symbolic links (see -l option), copies (see
+         -c option) or renamed files (see -r option) with RINEX 2 file naming
+         convention [default: current working directory].
+    -c : Create copies of RINEX 3 with RINEX 2 conventional file name(s).
+    -l : Create symbolic links from RINEX 3 to RINEX 2 conventional file name(s)
+         [default].
+    -r : Rename (move) RINEX 3 to RINEX 2 conventional file name(s).
+
+  Description:
+
+  $(basename $0) creates symbolic links [default], copies or renames (moves)
+  RINEX 3 files using the RINEX 3 long file naming convention to a file using
+  the RINEX 2 file name convention. This script will determine if any files with
+  corresponding RINEX 2 file names already exist in the output directory and
+  compare the existing files or, if they are not identical, increment the
+  session index of the symbolic link or renamed file. The -c and -r options are
+  mutually exclusive: the -c option has higher predendence and therefore files
+  will be copied, not renamed, if both the -c and -r options are given.
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+END
+fi
+
+
+# Parse command line options
+while [ $# -gt 0 ]; do
+
+  case $1 in
+
+    -c )  # Copy files
+
+      copy=1
+      ;;
+
+    -d )  # Directory in which to place symbolic links, copies or renamed files
+
+      d_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-d *//') )
+      if [ ${#d_args[@]} -eq 0 ]; then
+        echo '! Warning ! No arguments given to -d option. Using current working directory...'
+      elif [ ${#d_args[@]} -eq 1 ]; then
+        dir="${d_args[0]}"
+      elif [ ${#d_args[@]} -gt 1 ]; then
+        dir="${d_args[0]}"
+        echo "! Warning ! Too many arguments (${#d_args[@]}) given to -d option."
+        echo "            Using first argument ($dir)..."
+      fi
+      ;;
+
+    -f )  # Input RINEX 3 files
+
+      files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-f *//') )
+      ;;
+
+    -l )  # Create symbolic links
+
+      copy=0
+      rename=0
+      ;;
+
+    -r )  # Rename files
+
+      rename=1
+      ;;
+
+  esac
+
+  shift
+
+done
+
+
+# Loop over sites and ordinal dates
+for siteydoy in $(ls ${files[@]} 2>/dev/null | awk -v FS='/' '{printf "%s%s ",substr($NF,1,4),substr($NF,13,7)}'); do
+
+  # Loop over RINEX 3 files for site on ordinal date
+  for rinex3 in $(ls ${files[@]} 2>/dev/null | grep "${siteydoy:0:4}.*_${siteydoy:4:7}"); do
+
+    case $rinex3 in
+      *.rnx )  # RINEX 3 file
+        ext='o'
+        ;;
+      *.crx )  # Hatanaka-compressed RINEX 3 file
+        ext='d'
+        ;;
+      *.rnx.* )  # Zipped RINEX 3 file
+        ext="o.${rinex3##*.}"
+        ;;
+      *.crx.* )  # Zipped, Hatanaka-compressed RINEX 3 file
+        ext="d.${rinex3##*.}"
+        ;;
+    esac
+
+    i=0
+    while [ $i -lt ${#index[@]} ]; do
+
+      # Define RINEX 2 conventional file name
+      rinex2="$dir/$(tr '[:upper:]' '[:lower:]' <<< ${siteydoy:0:4})${siteydoy:8:3}${index[$i]}.${siteydoy:6:2}$ext"
+
+      if [ $copy -eq 1 ]; then  # Copy RINEX 3 to RINEX 2 conventional file name
+
+        # Test if a regular file with current RINEX 2 test file name already exists
+        if [ ! -f $rinex2 ]; then  # Copy RINEX 3 to RINEX 2 conventional file name
+          \cp -f -p $rinex3 $rinex2 &&
+           echo "Copied $rinex3 to $rinex2."
+          break
+        elif [ -f $rinex2 ]; then  # Test if files are identical
+          case ${rinex3##*.} in
+            Z )
+              cmd='gzip -d -c -f'
+              ;;
+            gz )
+              cmd='gzip -d -c -f'
+              ;;
+            bz2 )
+              cmd='bzip2 -d -c -f'
+              ;;
+            xz )
+              cmd='xz -d -c -f'
+              ;;
+          esac
+          if [ "${ext:0:1}" = 'd' ]; then  # Hatanaka-compress
+            $cmd $rinex3 | crx2rnx | tr -d '\n' | sed 's/ -\./-0./g; s/ \./0./g; s/ *$//g' >| $tmp/rinex3.tmp
+            $cmd $rinex2 | crx2rnx | tr -d '\n' | sed 's/ -\./-0./g; s/ \./0./g; s/ *$//g' >| $tmp/rinex2.tmp
+          else
+            $cmd $rinex3 | tr -d '\r' | sed 's/ *$//g' >| $tmp/rinex3.tmp
+            $cmd $rinex2 | tr -d '\r' | sed 's/ *$//g' >| $tmp/rinex2.tmp
+          fi
+          cmp $tmp/rinex3.tmp $tmp/rinex2.tmp
+          if [ $? -eq 0 ]; then
+            echo "$rinex3 and $rinex2 are identical."
+            rm -f $tmp/rinex3.tmp $tmp/rinex2.tmp
+            break
+          else
+            rm -f $tmp/rinex3.tmp $tmp/rinex2.tmp
+          fi
+        fi
+
+      elif [ $rename -eq 1 ]; then  # Rename (move) RINEX 3 to RINEX 2 conventional file name
+
+        # Test if a regular file with current RINEX 2 test file name already exists
+        if [ ! -f $rinex2 ]; then  # Rename (move) RINEX 3 to RINEX 2 conventional file name
+          \mv -f $rinex3 $rinex2 &&
+           echo "Renamed $rinex3 to $rinex2."
+          break
+        elif [ -f $rinex2 ]; then  # Test if files are identical
+          case ${rinex3##*.} in
+            Z )
+              cmd='gzip -d -c -f'
+              ;;
+            gz )
+              cmd='gzip -d -c -f'
+              ;;
+            bz2 )
+              cmd='bzip2 -d -c -f'
+              ;;
+            xz )
+              cmd='xz -d -c -f'
+              ;;
+          esac
+          if [ "${ext:0:1}" = 'd' ]; then  # Hatanaka-compress
+            $cmd $rinex3 | crx2rnx | tr -d '\n' | sed 's/ -\./-0./g; s/ \./0./g; s/ *$//g' >| $tmp/rinex3.tmp
+            $cmd $rinex2 | crx2rnx | tr -d '\n' | sed 's/ -\./-0./g; s/ \./0./g; s/ *$//g' >| $tmp/rinex2.tmp
+          else
+            $cmd $rinex3 | tr -d '\r' | sed 's/ *$//g' >| $tmp/rinex3.tmp
+            $cmd $rinex2 | tr -d '\r' | sed 's/ *$//g' >| $tmp/rinex2.tmp
+          fi
+          cmp $tmp/rinex3.tmp $tmp/rinex2.tmp
+          if [ $? -eq 0 ]; then
+            echo "$rinex3 and $rinex2 are identical."
+            rm -f $tmp/rinex3.tmp $tmp/rinex2.tmp
+            break
+          else
+            rm -f $tmp/rinex3.tmp $tmp/rinex2.tmp
+          fi
+        fi
+
+      else  # Create symbolic link from RINEX 3 to RINEX 2 file name [default]
+
+        cwd="$(pwd)"
+
+        # Test if a symbolic link with current RINEX 2 test file name already exists
+        if [ ! -e $rinex2 ]; then
+          pushd $dir/ &>/dev/null && {
+           \ln -s -f $cwd/$rinex3 $(basename $rinex2) &&
+            echo "Linked $rinex3 to $rinex2."
+           popd &> /dev/null
+           break
+          }
+        elif [ -h $rinex2 -a "$(ls -l $rinex2 | awk -v FS='/' '{print $NF}')" = "$(basename $rinex3)" ]; then
+          echo "! Warning ! Symbolic link $rinex2 already exists for $rinex3."
+          break
+        else
+          echo "! Warning ! Symbolic link $rinex2 already exists (check $rinex3)."
+        fi
+
+      fi
+
+      let i++  # Increment session index
+
+    done  # END: Loop over session index
+
+  done  # END: Loop over RINEX 3 files for site on ordinal date
+
+done  # END: Loop over sites and ordinal dates
+

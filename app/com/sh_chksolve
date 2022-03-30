@@ -1,0 +1,18 @@
+#!/bin/csh -f
+
+#doc Check presence of the expected normal stops of solve
+#doc   --used in GAMIT batch sequence to stop sh_gamit
+#doc
+    
+set stopline = `tail -n -1 GAMIT.status | grep -i Normal | grep -i stop | grep -i solve | wc -l`
+
+if( $stopline == 1 ) then   
+  exit 0 
+else         
+  if ( -e GAMIT.fatal ) then
+    echo "FATAL GAMIT sh_chksolve: Solve failed to complete normally - check screen or log file" >> GAMIT.fatal
+  else
+    echo "FATAL GAMIT sh_chksolve: Solve failed to complete normally - check screen or log file" >! GAMIT.fatal     
+  endif
+  exit 1  
+endif

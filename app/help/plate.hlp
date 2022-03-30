@@ -1,0 +1,89 @@
+PLATE: Computes plate motion velocities for sites
+
+PROGRAM PLATE: 
+ 
+ This program read an apriori global apr file and a file containing
+ site names and velocity vectors and output a new file with the
+ velocities included.  The velocity field is also output in a 
+ format used by cplot for plotting velocity fields.
+ NOTE: No attempt is made to correct the station positions for the
+       new velocity.  The positions are assumed to be given at 
+       epoch which makes them uncorrelated with velocity.  (The
+       Unc. values in the GLOBK output are of this nature.)
+MOD TAH: 031031: Added feature to read file frames.dat or 
+ $HOME/gg/tables/frames.dat to obtain the values of wx, wy, wz
+ where wx,wy,wz are the Cartessian components of the Euler pole
+ (default is deg/Myr but adding rad to end of line allows rad/myr
+ to be used.  Example format of file is at bottom.  
+
+ Runstring:
+ % plate <plate file> <Input .apr file> <output .apr file> \
+         [velocity file] [Refrence frame]
+
+where <plate file> is a file containing site name and rotation
+       vectors (wx,wy,wz- rads/Myrs) or the names of plate (see 
+       below)
+      <Input .apr file> is a standard globk site apriori file
+      <output .apr file> is the output file with new velocites in
+              the format of standard globk site apriori file.
+      [velocity file] is an optional name of the velocity file.
+              If not name is given, then the velocities are output
+              to "<output .apr file>.vel"
+      [Refrence frame] is the reference frame to use if plate names
+              are given in the plate file (see list below).  If :A
+              is added to the reference frame name then Nuvel-1A 
+              plate velocities will be used (default is Nuvel-1A 
+              if nothing if appended to the name.)
+              If :O is added, NUVEL-1 will be used.
+              Default is NUV-NNR with NUVEL-1A Velocities.
+
+
+* Example of plate file (normally would be one line per station).   
+
+ pie1_gps  nafd
+ mojm_gps  nafd  0.25 pcfc   
+
+where the additional entries for mojm indicate that the velocity
+computed will be NSFD velocity plus 25% of the difference between
+PCFC and NAFD (nafd 1.0 pcfc is the same as pcfc).
+
+The frame names NUV-NNR, ITRF94, and ITRF00 are equivalent, all assumed to
+be no-net-rotation.  There are small corrections for frame names AM-02
+and ITRF93.  Using any of the following plate-specific frame names will
+generate velocities for the site with its assigned plate assumed to move
+with the NUVEL-1A rate with respect to the NNR frame:
+
+ PCFC  COCO  NAZC  CARB  SAFD  ANTA  INDI  AUST  AFRC  ARAB
+ EURA  NAFD  JUAN  PHIL  AM-02 ITRF93 
+
+Adding a :O to the name will scale the rate to the NUVEL-1, rather
+than NUVEL-1A model model. 
+
+NEW 070801:  Added the rotation vectors from ITRF2005 (NNR) to the
+15 plates considered by Altamimi et al. [J. Geopys. Res., 2007].
+To ivoke these rotations, use the plate names
+         
+ AMUR_I05  ANTA_I05  ARAB_I05  AUST_I05  CARB_I05  EURA_I05  INDI_I05    
+ NAZC_I05  NOAM_I05  NUBI_I05  OKHT_I05  PCFC_I05  SOAM_I05  SOMA_I05    
+ YANG_I05 
+
+NEW 011223:  For some (but not all) plates, the rotation to be used can be 
+the one estimated by Altamimi et al. [J. Geophys. Res., 2002] from the 
+ITRF2000 velocity field rather than the NUVEL-1A (or NUVEL-1) model.  To
+invoke these rotations, use the plate names
+
+ ANTA_I00  AUST_I00  EURA_I00  NOAM_I00  PCFC_I00  SOAM_I00 
+
+NEW 030816: Added Arabian plate based on McClusky et a;, GJI, 2003
+ ARAB_MCC
+
+MOD TAH: 031031: Example frames.dat file (values are PCFC_I00 values).
+* Test frames.dat file used in the frame_to_frame routine to find
+* Euler vectors not in its standard list.  Default units here are
+* deg/Myr.  By adding rad/myr to end of line as shown, rates can be
+* given in rad/myr.  The frames.dat file is first looked for in the 
+* current directory.  If not found here ~/gg/tables is checked. 
+* Frame        wx          wy          wz
+  PCFC_TAH -0.10015    0.27228    -0.59949  
+  PCFC_RAD -0.00174795 0.00475218 -0.0104631  rad/myr
+----------------------------------------------------------------------------

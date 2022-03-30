@@ -1,0 +1,121 @@
+# Generic Makefiles for uni_make
+# ------------------------------
+#     
+# Four keywords are used to assign the dependencies specific to 
+# making the modules in the directory:
+#
+#    LABELS specifies the program label in the Makefile, main object module 
+#    (usually the same, or NONE in the case of a library), archive (.a) file,
+#    and executable name used for each program to be made. 
+# 
+#      Format:     #LABELS: prog_label:main_object:archive:executable  
+#
+#      Examples:   #LABELS: gamit_lib:NONE:gamit_lib:NONE      ( GAMIT lib directory ) 
+#
+#                  #LABELS: cview:cview:cview_lib:cview        ( GAMIT clean directory )
+#                                         
+#                  #LABELS: htoglb_lib:NONE:htoglb_lib:NONE    | (kf htoglb directory)
+#                  #LABELS: htoglb:htoglb:NONE:htoglb          |
+#
+#    Any number of LABELS can be specified, but only one per line.   
+#    
+#
+#    SHARELIB specifies libraries to be searched.
+#
+#       Format:    #SHARELIB: lib_path:lib_name   
+#
+#       Examples:  #SHARELIB: ../lib:gamit_lib                 | ( GAMIT 
+#                  #SHARELIB: ../../libraries/comlib:com_lib   |   modules ) 
+# 
+#                  #SHARELIB: .:htoglb_lib                     |
+#                  #SHARELIB: ../Khandlers:KalObs_hndl_lib     | (kf htoglb
+#                  #SHARELIB: ../gen_util:gen_util_lib         |  directory
+#                  #SHARELIB: ../../libraries/matrix:kinv_lib  |
+#                  #SHARELIB: ../../libraries/comlib:com_lib   |
+#
+#    Any number of SHARELIB entries can be specified but only one per line.
+#
+#                          
+#     OBJ_archiv specifies the subroutines to be included in the program module.  
+#
+#        Format:      OBJ_archive  file1 file2 .. filen        
+#
+#        Example:     OBJ_cview_lib  addadj allan bound combo cversn  |   GAMIT
+#                     OBJ_cview_lib  clkdif editor ed_bias ed_data    |   clean
+#                       ...                                           |   directory
+#                     OBJ_scan_lib   addadj bound drdv_scn dr_srch    |
+#                     OBJ_scan_lib   dr_ptch clkdif finish ...        |
+#
+#     The archive name must match that given in the #LABELS statement.  Any number of 
+#     OBJ_archive entries can be specified.  There is an additional and slightly different 
+#     entry required if there are machine-dependent Fortran or C routines in the directory.  
+#     For these you must append _host to the OBJ_prog_label keyword and _HHHH to the name 
+#     of the source file, e.g.
+#
+#                     OBJ_cview_lib_host csubs_HHHH                            
+#     
+#     which will cause unilib to pick up the appropriate version of csubs.c from
+#     among several in the directory:  csubs_hp.c csubs_sun.c csubs_sol.c  csubs_dec.c
+#       
+#
+# The LABELS and SHARELIB keywords must be present but may be followed by
+# blanks if there are no dependencies of this type for the Makefile. Both
+# must have the # and : symbols as part of the command.  The #OBJ_ keywords
+# may be omitted if there are no objects other than the main program to be
+# linked for the executable.  
+#
+# A fifth (optional) keyword is allowed if the module being made has Fortrans
+# compiler flags different from those specified for the entire program suite in 
+# the Makefile.config file at the program (i.e., libraries, gamit, or kf) level:
+#           
+#    FFLAGS = [options] #[hardware]  
+#
+# where options are specified just as in Makefile.config or a standard Unix Makefile,
+# and the operating system is 'hp', 'sun', 'sol', 'dec', or 'ibm' to match the operating
+# system description obtained by unimake from uname and Makefile.config.  Note that 
+# the '#' should preceed the hardware flag but not the FFLAGS keyword. 
+#
+#     Examples:  FFLAGS = -u +O3 -K +U77 +es  #hp     | accept source lines up to 132 characters
+#                FFLAGS = -u +O3 -K +U77 -e   #sun    | in kf convert_kalobs directory
+#
+# ------------------------------------------------------------------------------------------------
+
+# Generic Makefile for comlib
+# Last changed by R. King 000927
+#
+#LABELS: kf_com_lib:NONE:kf_com_lib:NONE
+
+#SHARELIB: 
+
+#OBJ_kf_com_lib casefold trimlead 
+#OBJ_kf_com_lib    yds_to_jd
+#OBJ_kf_com_lib    trim_lead
+#OBJ_kf_com_lib    report_error
+#OBJ_kf_com_lib    invert_vis
+#OBJ_kf_com_lib    jacobi
+#OBJ_kf_com_lib    get_command
+#OBJ_kf_com_lib    trimlead
+#OBJ_kf_com_lib    dwmov
+#OBJ_kf_com_lib    dwvmv
+#OBJ_kf_com_lib    short_lod
+#OBJ_kf_com_lib    gauss_elim
+#OBJ_kf_com_lib    dwsmy dwsmy dwmab dwswp dwpiv
+#OBJ_kf_com_lib    pmu_main_par
+#OBJ_kf_com_lib    scale_matrix
+#OBJ_kf_com_lib    trimlen
+#OBJ_kf_com_lib    ymdhms_to_jd
+#OBJ_kf_com_lib    decode_snxb
+#OBJ_kf_com_lib    decsnx_site
+#OBJ_kf_com_lib    decsnx_soln
+#OBJ_kf_com_lib    preread_snx
+#OBJ_kf_com_lib    snx_finbl
+#OBJ_kf_com_lib    decsnx_file
+#OBJ_kf_com_lib    decsnx_input
+#OBJ_kf_com_lib    GetWord
+#OBJ_kf_com_lib    report_stat
+#OBJ_kf_com_lib    mdian2
+#OBJ_kf_com_lib    check_ascii
+#OBJ_kf_com_lib    caseunfold
+#OBJ_kf_com_lib    systime
+#OBJ_kf_com_lib    jd_to_decyrs
+#OBJ_kf_com_lib    jd_to_ymdhms

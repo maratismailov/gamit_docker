@@ -1,0 +1,43 @@
+#!/bin/csh
+# M Burc Oral
+if ($#argv == 0 ) then
+echo "   "
+echo "   "
+echo "example batchjob for ccx"
+echo "   "
+echo " ccx's a given files by overwriting the originals  "
+echo "   "
+echo "  Requirements:  "
+echo "                svnav.dat "
+echo "                session.info"
+echo "                leap.sec"
+echo "   "
+echo "   usage:    sh_ccx xSITEs.day"
+echo "   "
+echo "   example: sh_ccx x*.022"
+echo "   "
+echo " New cenario file is the available session.info and your " 
+echo " new xfile/s will be Reformatted according to this file  "
+echo "   "
+echo "   "
+echo "  *** warning: original xfile/s will be lost  ****** "
+echo "   "
+exit
+endif
+
+foreach i ( $argv )
+
+  set file = $i
+  set day = `echo $file | cut -c8-`
+  echo $file $day
+
+ccx<<[
+0
+$day
+$file
+tmp
+[
+
+  /bin/mv tmp $file
+
+end

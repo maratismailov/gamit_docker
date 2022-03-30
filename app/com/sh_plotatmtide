@@ -1,0 +1,150 @@
+#!/bin/csh -f
+
+## script to plot the atm tidal loading over two days for S1, S2 separately and also 
+## the combined loading. Plots will be done for N, E and U, separately.
+#
+# Written by Paul Tregoning
+# 21 September 2005
+
+
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "===================================================================================="
+  echo " Plot atmospheric tides S1 and S2 for North, East and Up components for a single site"
+  echo "  "
+  echo " Usage: sh_plotatmtide -s <site> -apr <apr file> "
+  echo "  "
+  echo "        <site>  4-char site name (upper case) "                
+  echo "        <apr file> file containing XYZ coords of the requested site [default ~/gg/tables/itrf08_comb.apr"
+  echo "  "      
+  echo " Example: sh_plotatmtide -site GRAS -apr ~/gg/tables/itrf08_comb.apr "
+  echo "  "
+  echo "===================================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS #############################   
+#
+# Setup necessary paths and filenames
+set aprfile = "~/gg/tables/itrf08_comb.apr"
+set site = ''
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -apr:
+      set aprfile  = $input[2]  
+    breaksw 
+    case -site:
+      set site  = $input[2]  
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+
+
+#### check that a site code has been entered
+if ( $site == " ") then
+  echo "No site code entered. Nothing to do .... "
+  exit
+endif
+
+### link the atm tidal grid to the directory
+if (! -e ~/gg/tables/atmtide.grid && ! -e atmtide.grid ) then
+  echo There is no file ~/gg/tables/atmtide.grid ... where do I find the atm tidal grid?"
+  exit
+else
+  if (! -e atmtide.grid ) then
+    ln -s ~/gg/tables/atmtide.grid .
+  endif
+endif
+
+## get the site coordinates
+set xyz = `grep -i $site $aprfile | tail -n -1 | awk '{print $2, $3, $4 }'`
+echo $site $xyz
+
+## get the atm tidal cosine and sine coefficients for S1 and S2 
+# The outputs are cS1(north) sS1(north) cS1(east) sS1(east) cS1(up) sS1(up) cS2(north) etc
+set S1 = `atmtide $xyz |& grep ATMTIDE | awk '{print  $4,  $5,  $6,  $7,  $8,  $9}'`
+set S2 = `atmtide $xyz |& grep ATMTIDE | awk '{print $10, $11, $12, $13, $14, $15}'`
+
+echo S1 $S1 
+echo S2 $S2
+
+# S1 and S2 frequencies in radians/sec (taken from model/etide.f
+set freq1 =  7.27220521664304e-05
+set freq2 =  0.000145444104332861
+
+# now, need to calculate the values of the tidal displacements.
+set ihr = 0
+\rm ${site}.dat >& /dev/null ; touch ${site}.dat
+while ( $ihr <= 48 )
+  set dS1n = ` echo $S1[1] $S1[2] $freq1 $ihr | awk '{print $1 * cos($3 * $4 * 1800.0) + $2 * sin($3 * $4 * 1800.0) }'`
+  set dS1e = ` echo $S1[3] $S1[4] $freq1 $ihr | awk '{print $1 * cos($3 * $4 * 1800.0) + $2 * sin($3 * $4 * 1800.0) }'`
+  set dS1u = ` echo $S1[5] $S1[6] $freq1 $ihr | awk '{print $1 * cos($3 * $4 * 1800.0) + $2 * sin($3 * $4 * 1800.0) }'`
+
+  set dS2n = ` echo $S2[1] $S2[2] $freq2 $ihr | awk '{print $1 * cos($3 * $4 * 1800.0) + $2 * sin($3 * $4 * 1800.0) }'`
+  set dS2e = ` echo $S2[3] $S2[4] $freq2 $ihr | awk '{print $1 * cos($3 * $4 * 1800.0) + $2 * sin($3 * $4 * 1800.0) }'`
+  set dS2u = ` echo $S2[5] $S2[6] $freq2 $ihr | awk '{print $1 * cos($3 * $4 * 1800.0) + $2 * sin($3 * $4 * 1800.0) }'`
+#  echo $ihr $freq1 | awk '{print $1, $2, $1 * $2, cos( $1 * $2 * 3600.0 ), sin($1 * $2 * 3600.0) } '
+
+  echo $ihr $dS1n $dS1e $dS1u  $dS2n $dS2e $dS2u | awk '{printf "%4.1f %13.8f %13.8f %13.8f %13.8f %13.8f %13.8f \n", $1 / 2.0 , $2, $3, $4, $5, $6, $7 }' >> ${site}.dat
+  echo $ihr $dS1n $dS1e $dS1u  $dS2n $dS2e $dS2u | awk '{printf "%4.1f %13.8f %13.8f %13.8f %13.8f %13.8f %13.8f \n", $1 / 2.0 , $2, $3, $4, $5, $6, $7 }'
+  @ ihr =  $ihr + 1
+end
+
+############ PLOTTING SECTION #################
+gmt gmtdefaults -Ds >! gmt.conf
+gmt gmtset GMT_COMPATIBILITY 5
+
+# now, plot the north, east and up tides. Black for S1, Blue for S2, Red for total
+set outfile = ${site}_atmtide.ps
+
+## NORTH 
+echo Plotting Tides for north ...
+cat ${site}.dat | awk '{print $1, $2}' >! tide.tmp
+gmt psxy tide.tmp -W1p -JX16c/6c -R0/24/-1.5/1.5 -Bxa4 -Bya1f0.5+l'North (mm)' -BnesW+t"$site" -X2.5c -Y21c -K -P >! $outfile
+cat ${site}.dat | awk '{print $1, $5}' >! tide.tmp
+gmt psxy tide.tmp -W5p,0/0/255 -JX -R -O -K >> $outfile
+cat ${site}.dat | awk '{print $1, ( $2 + $5 ) }' >! tide.tmp
+gmt psxy tide.tmp -W1p,255/0/0 -JX -R -O -K >> $outfile
+gmt psxy -JX -R -O -K -W1p,200/200/200,- << end >> $outfile
+0 0
+24 0
+end
+                                
+## EAST
+echo Plotting Tides for  east ...
+cat ${site}.dat | awk '{print $1, $3}' >! tide.tmp
+gmt psxy tide.tmp -W1p -JX -R -Bxa4 -Bya1f0.5+l'East (mm)' -BnesW  -Y-7.5c -O -K >> $outfile
+cat ${site}.dat | awk '{print $1, $6}' >! tide.tmp
+gmt psxy tide.tmp -W5p,0/0/255 -JX -R -O -K >> $outfile
+cat ${site}.dat | awk '{print $1, ( $3 + $6 ) }' >! tide.tmp
+gmt psxy tide.tmp -W1p,255/0/0 -JX -R -O -K >> $outfile
+gmt psxy -JX -R -O -K -W1p,200/200/200,- << end >> $outfile
+0 0
+24 0
+end
+                                
+## UP
+echo Plotting Tides for Up ...
+cat ${site}.dat | awk '{print $1, $4}' >! tide.tmp
+gmt psxy tide.tmp -W1p -JX -R0/24/-3/3 -Bxa4+l'UT (hours)' -Bya1f0.5+l'Up (mm)' -BneSW  -Y-7.5c -O -K >> $outfile
+cat ${site}.dat | awk '{print $1, $7}' >! tide.tmp
+gmt psxy tide.tmp -W1p,0/0/255 -JX -R -O -K >> $outfile
+cat ${site}.dat | awk '{print $1, ( $4 + $7 ) }' >! tide.tmp
+gmt psxy tide.tmp -W5p,255/0/0 -JX -R -O -K >> $outfile
+gmt psxy -JX -R -O -K -W1p,200/200/200,- << end >> $outfile
+0 0
+24 0
+end
+
+gmt pstext -JX -R -F+f15p+jBL -O -Y-4c << end >> $outfile
+0 -2  Black: S1   Blue: S2   Red: S1 + S2
+end
+                                
+#gs $outfile
+

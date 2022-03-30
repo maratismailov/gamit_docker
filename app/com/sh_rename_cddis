@@ -1,0 +1,17 @@
+#!/bin/csh -f
+if ($#argv == 0) then
+   echo ' '                                       
+   echo ' Rename CDDIS compressed RINEX o-files from _z to .Z  '  
+   echo ' '
+   echo ' Usuage: sh_rename_cddis [filenames] '
+   echo ' '
+   echo ' Example: sh_rename_cddis *.96o_z '
+   echo '               '
+else 
+ foreach file ( `echo $argv` )
+   set new = `echo $file | awk '{print substr($1,1,12)}'`
+   set ext = `echo $file | awk '{print substr($1,13,2)}'` 
+   \mv -i $new$ext $new".Z"
+ end #for
+endif
+

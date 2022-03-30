@@ -1,0 +1,18 @@
+OCEAN_LOAD: Computes elastic loading from gridded pressure data
+
+Program ocean_load
+ 
+The input for the program is:
+% ocean_load <num in grid> <ocean load file>
+where <num in grid> is the number of grid cells between
+    0 and 180 degrees co-latitude (twice the number are
+    used in longitude (eg. 72 will give 2.5 degree spacing)
+    <ocean load file> is a loading file with the following
+    format:
+      longLL latLL longUR latUR press (mbar)
+    where longLL is lower left longitude (deg)
+          latLL  is lower left latitude (deg)
+          longUR is upper right longitide (deg)
+          latUR  is upper right latitude (deg)
+    and   press  is pressure perturbation in mbars.
+ 

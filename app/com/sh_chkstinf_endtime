@@ -1,0 +1,17 @@
+#!/bin/csh -f
+# Script to check end times in station.info
+if ( $#argv == 0 ) then
+  echo "sh_chkstinf_emdtime: Checks that open ended end times in station.info is last entry"
+  echo "                     for each site."
+  echo " "
+  echo "Usage: sh_chkstinf_emdtime <station.info file>"
+  echo "Output is list of sites with endtime errors"
+  exit
+endif
+set sinf = $1
+if( -e $sinf ) then
+   echo "Checking end times in $sinf"
+   grep '^ ' $sinf| awk -v nm=NONE '{if( substr($0,45,8) == "9999 999") {nm=$1} else {if( $1 == nm ) {print "Error ",$1,nm}}}' 
+else
+   echo $sinf does not exist
+endif

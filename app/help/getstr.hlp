@@ -1,0 +1,20 @@
+GETSTR: Generates strain rates from velocity file
+
+ program getstr
+
+ Kurt Feigl March, 1991
+
+ This program will calculate strain rates from a set of velocities.
+ Triplets of stations are chosen to form Delaunay triangles.
+ In each triangle, the horizontal strain rates are uniquely
+ determined and printed out in terms of their eigenvelues.
+ This program is based on GETREL.
+
+ Runstring is:
+ % getstr <input file> <output file>
+
+ where <input file>  in the name of the file output from GLOUT or
+                     GLORG.  Output options with bits 3 and 4 on
+                     should be set (i.e., 12 + origin options)
+       <output file> is a file in .str format containing strain
+                     rates.

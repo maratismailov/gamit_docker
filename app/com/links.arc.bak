@@ -1,0 +1,93 @@
+#!/bin/csh -f      
+
+#  Script links.tables to link from an experiment tables directory to global gamit/tables
+
+if ($#argv == 0) then
+   echo ' '
+   echo '    LINKS.ARC creates standard GAMIT links necessary to run arc in the current directory'
+   echo ' ' 
+   echo ' FORMAT' 
+   echo ' '
+   echo '    links.arc frame year [ut1/pole]'
+   echo ' '
+   echo ' REQUIRED'               
+   echo ' '  
+   echo '    frame    = B1950 or J2000  (for soltab, luntab is used)'
+   echo ' '
+   echo '    year     = 1986-2000   (for nutabl, soltab, luntab if used)'  
+   echo ' '
+   echo '    Default with 2 arguments:   ut1.usno   pole.usno'
+   echo ' '
+   echo ' OPTIONAL'
+   echo ' '        
+   echo '    ut1/pole = bull_b_      IERS Bulletin B      (1-day interval)   valid  1 Jan 1992 - current '
+   echo '               bull_b_5day  IERS Bulletin B_5day (5-day interval)   valid  1 Sep 1987 - 25 Nov 1993 '
+   echo '               usno         IERS Bulletin A      (rapid-service)    valid  1 Jan 1992 - current '  
+   echo '               vlbi         IRIS                                    valid  5 Jan 1984 - 28 Jun 95'
+   echo ' '
+   echo ' EXAMPLES'                               
+   echo '    links.arc J2000 1994 '
+   echo '    links.arc J2000 1994 vlbi'
+   echo '  '
+   echo '  '             
+   echo " NOTE: If the link to 'nbody' is empty, indicating the absence of a PEP or JPL ephemeris, "
+   echo "       then arc, model, and ngstot will revert to the old luntab., soltab., and nutabl. "
+   echo "       Otherwise, the nbody ephemeris will be read and the nutation computed by calling "
+   echo "       gamit/lib/MHB_2000 (copy of routine of same name in kf/gen_util/precess.f). "
+   echo " " 
+#   echo ' CURRENT LINKS:'      (now skipped: see below)
+#   echo '  '
+
+else      
+# create standard links in a working directory
+#
+
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+   set yr = `sh_year -year $2`
+
+   /bin/rm -f ut1.
+   /bin/rm -f pole.
+   /bin/rm -f nutabl.
+   /bin/rm -f soltab.
+   /bin/rm -f luntab.    
+   /bin/rm -f nbody
+   /bin/rm -f leap.sec
+   /bin/rm -f leap.sec
+   /bin/rm -f svnav.dat      
+# These needed for sh_sp3fit (but not arc)
+   /bin/rm -f svs_exclude.dat   
+   /bin/rm -f otlomc.dat
+
+  
+# MOD TAH 000801: Changed the year argument to 4-digit version (instead
+#  of original 2-digit version.
+   ln -s  ~/gg/tables/nutabl.${yr[1]}       nutabl. 
+   ln -s  ~/gg/tables/soltab.${yr[1]}.$1    soltab. 
+   ln -s  ~/gg/tables/luntab.${yr[1]}.$1    luntab.     
+   ln -s  ~/gg/tables/nbody                 nbody 
+   ln -s  ~/gg/tables/leap.sec              leap.sec
+   ln -s  ~/gg/tables/svnav.dat             svnav.dat
+   ln -s  ~/gg/tables/svs_exclude.dat       svs_exclude.dat   
+   ln -s  ~/gg/tables/otlcmc.dat            otlcmc.dat
+# MOD RWK 130326: Link the sestbl. only if there is no local file
+   if( -e sestbl. ) then
+      echo "sestbl. exists--do not craeate a link"
+   else
+      ln -s  ../tables/sestbl.                 sestbl.
+   endif 
+     
+   if ($#argv < 3) then
+     ln -s  ~/gg/tables/ut1.usno ut1.    
+     ln -s  ~/gg/tables/pole.usno pole.   
+   else 
+     ln -s  ~/gg/tables/ut1.$3    ut1.    
+     ln -s  ~/gg/tables/pole.$3   pole.   
+   endif
+
+#   
+endif
+#ls -l `find . -type l -print`
+# MOD TAH 971215: Only do ls -l if there are links in the directory
+# MOD TAH/RWK 080423: Skip this because of the large number of obs-file links
+# if ( `find  . -type l -print | wc | awk '{print $1}'` > 0 ) ls -l `find  . -type l -print`
+

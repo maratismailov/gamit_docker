@@ -1,0 +1,106 @@
+# Generic Makefile for kf/plot - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King July 29, 1996 
+# Last changed by T. Herring 960812 
+# Last changed by R. King 990326 
+# Last changed by R. King 991202
+
+#NOTE:  This file setup to use X11 graphics.  To use NCAR instead, insert a blank
+#       between the '#' and 'LABELS' keywords for cplotx and remove the
+#       blank for cplot.  Also replace the library sequence for X11
+#       with the one below for NCAR in a similar manner.  Note that multiplot, 
+#       multipltsl, and multibase work only with X11.  
+    
+# FFLAGS  =  -O3 -Wuninitialized -Wno-globals -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -finit-local-zero -fno-globals  #g77
+# FFLAGS  = -O3 -Vaxlib -zero -u -72 -w95 -w90 -cm -assume byterecl -xT #intel
+     
+#LABELS: plot_lib:NONE:plot_lib:NONE    
+#LABELS: cplotx:cplot:NONE:cplotx  
+# LABELS: cplot:cplot:NONE:cplot
+#LABELS: multiplot:multiplot:NONE:multiplot  
+# LABELS: multipltsl:multipltsl:NONE:multipltsl   
+#LABELS: multibase:multibase:NONE:multibase
+
+#SHARELIB: .:plot_lib  
+#SHARELIB: x1000:x1000
+# SHARELIB: g1000:g1000 
+#SHARELIB: ../gen_util:gen_util_lib
+#SHARELIB: ../../libraries/comlib:com_lib  
+# SHARELIB: /usr/local/lib:libncarg
+# SHARELIB: /usr/local/lib:libncarg_gks
+# SHARELIB: /usr/local/lib:libncarg_loc
+    
+#X11LIB: cplot multiplot multipltsl multibase
+#OBJ_plot_lib  plot_spec
+#OBJ_plot_lib  plts1
+#OBJ_plot_lib  plts2
+#OBJ_plot_lib  plts3
+#OBJ_plot_lib  plts8
+#OBJ_plot_lib  plts9
+#OBJ_plot_lib  pltsa
+#OBJ_plot_lib  pltsp
+#OBJ_plot_lib  setup
+#OBJ_plot_lib  finish_up
+#OBJ_plot_lib  report
+#OBJ_plot_lib  command_erro
+#OBJ_plot_lib  get_cmd
+#OBJ_plot_lib  trim_lead
+#OBJ_plot_lib  get_int
+#OBJ_plot_lib  get_xy_scale
+#OBJ_plot_lib  draw
+#OBJ_plot_lib  draw_errb
+#OBJ_plot_lib  get_file
+#OBJ_plot_lib  read_data
+#OBJ_plot_lib  check_bound
+#OBJ_plot_lib  get_view
+#OBJ_plot_lib  set_view
+#OBJ_plot_lib  get_scale
+#OBJ_plot_lib  set_scale
+#OBJ_plot_lib  dxaxis_mn
+#OBJ_plot_lib  format_label
+#OBJ_plot_lib  label_ax1
+#OBJ_plot_lib  label_ax0
+#OBJ_plot_lib  draw_axis
+#OBJ_plot_lib  axis_cmd
+#OBJ_plot_lib  com_space
+#OBJ_plot_lib  time_space
+#OBJ_plot_lib  first_tic1
+#OBJ_plot_lib  first_tic0
+#OBJ_plot_lib  inc_cax
+#OBJ_plot_lib  draw_tic
+#OBJ_plot_lib  axis_setup
+#OBJ_plot_lib  conv_mmtow
+#OBJ_plot_lib  dxaxis_mx
+#OBJ_plot_lib  dyaxis_mn
+#OBJ_plot_lib  dyaxis_mx
+#OBJ_plot_lib  label_axis
+#OBJ_plot_lib  put_label
+#OBJ_plot_lib  read_label
+#OBJ_plot_lib  set_charsz
+#OBJ_plot_lib  report_error
+#OBJ_plot_lib  status
+#OBJ_plot_lib report_scale
+#OBJ_plot_lib  out_names
+#OBJ_plot_lib  get_charsz
+#OBJ_plot_lib  write_label
+#OBJ_plot_lib  report_windo
+#OBJ_plot_lib  set_texl
+#OBJ_plot_lib  process
+#OBJ_plot_lib  s2mov
+#OBJ_plot_lib  sr2mv
+#OBJ_plot_lib  scj
+#OBJ_plot_lib  save_label
+#OBJ_plot_lib  output_label
+#OBJ_plot_lib  swh
+#OBJ_plot_lib  rotor
+#OBJ_plot_lib  comlf
+#OBJ_plot_lib  draw_map
+#OBJ_plot_lib  get_poly_win
+#OBJ_plot_lib  poly_fit
+#OBJ_plot_lib  pdraw
+#OBJ_plot_lib  mark_window
+#OBJ_plot_lib  identify
+#OBJ_plot_lib  make_line
+#OBJ_plot_lib  err_lib
+#OBJ_plot_lib  advance_rc
+#OBJ_plot_lib  network
+#OBJ_plot_lib  strain_lib

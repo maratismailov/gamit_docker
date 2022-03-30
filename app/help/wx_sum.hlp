@@ -1,0 +1,27 @@
+WX_SUM: VLBI program to summarize weather data in KalObs file
+
+WX_SUM is a program which summarizes the weather data in a KalObs 
+file.  The proper runstring is
+  
+CI> wx_sum <KalObs> <sum_root> [<site>] 
+  
+where <KalObs> is the name of the KalObs file for processing, <sum_root>
+is the "root" for the output (summary) file (see below), and <site> 
+is the site to be processed.  The string 'ALL' can be used for the
+<site>, and if no site name is given, 'ALL' is the default value. 
+  
+For each site, the name of the summary file will be created using the 
+"root" and the first four characters of the site name.  For example,
+if the root is WX_SUM.DAT and the site is HAYSTACK, the summary file
+name will be WX_SUM_HAYS.DAT.  If all the sites are being processed,
+then as many summary files as there are sites will be used. 
+  
+The program first attempts to create the summary file.  If the summary
+file already exists, the the program opens it and loops to the
+end-of-file, and places the summary line at the end.
+  
+Currently, each line of the summary file will contain (in PLOT format)
+the date (Y M D H M), and the average and RMS values for the total
+pressure (mbar), temperature (deg C), absolute humidity (mbar), and 
+WVR zenith delay (psec).
+ 

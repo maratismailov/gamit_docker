@@ -1,0 +1,103 @@
+#!/bin/csh -f     
+# 
+#doc Read a SOLVE o-file and set of MODEL z-files and compute zenith wet delay and precipitable water
+#
+# Written by R. King 28 June 2004 
+# Revised by R. King 28 December 2004 for (much) revised utils/metutil
+# 
+
+if($#argv < 1) then
+more << EOF
+
+ sh_metutil call gamit/utils/metutil to read estimated zenith delays from a GAMIT o-file or 
+ a SINEX zpd file and compute zenith wet delay (ZWD) and precipitable water (PW) using
+ the zenith hydrostatic delay (ZHD) computed using pressure values from a RINEX met file
+ or a GAMIT z-file.
+
+   Usage: sh_metutil -f [ZTD file] -m [RINEX met files] -z [z-file] -i [interval -s [sigma scale factor]
+                                                                               
+    where  [ZTD file] is the name of the SOLVE -file ( o[expt]a.ddd ) or the SINEX file ( [site][GPSW].zpd )    
+           [RINEX met files ] gives the list of RINEX met files to be used (wildcards allowed)  ( [site][DDDn].YYm )
+           [z-file] gives the list of z-files to be read (wildcards allowed)  
+           [interval] is the epoch interval of the output file
+               E  : use the interval of the ZTD file values (default)
+               O  : use the interval of the z-file (GAMIT observations0
+              nn  : value in seconds of the interval
+           [sigma scale factor ] is the scaling factor for the o-file zenith delay uncertainties (default 1.0)
+                                                                   
+
+     Notes: (1) ZTD file is required
+            (2) Either a RINEX met file or a GAMIT z-file is required 
+                (for now, you cannot have both)
+            (3) The start time will always be set by the ZTD file
+           
+    Examples: sh_metutil  -f oeuraa.223  -z zkosg4.223 
+              sh_metutil  -f oeuraa.223  -m *2230.04m  -s 1.6 
+              sh_metutil  -f oeuraa.223  -z z*4.223 -i O
+
+    Output files are named met_ssss.yyddd where ssss is the site name from the 
+    z-files or RINEX met files, yy is the 2-digit year, and ddd is the day-of-year
+
+EOF
+   
+exit
+endif
+#-----   
+
+# set defaults    
+set scalesig = 1.0    
+set zfiles = ''
+set mfiles = '' 
+set ztdfile = ''   
+set interval = E
+
+# get the arguments   
+foreach a ($argv)
+switch($a)  
+  case -f
+    set ztdfile = $argv[2]   
+    breaksw
+  case -z:      
+    set zfiles  = (`echo $argv | cut -d- -f2`); shift zfiles 
+   breaksw      
+  case -m:      
+    set mfiles  = (`echo $argv | cut -d- -f2`); shift mfiles 
+   breaksw
+  case -i:
+    set interval = $argv[2]   
+    breaksw
+  case -s:
+    set scalesig = $argv[2]
+    breaksw
+endsw 
+shift
+end                        
+                       
+# Name the log file
+set logfile = metutil.$ztdfile.log
+\rm -f $logfile 
+
+# Run the program
+echo "Running metutil "  
+echo " " > $logfile
+if ( $zfiles[1] == '' && $mfiles[1] != '' ) then
+  foreach file ( `echo $mfiles` )  
+    echo " .. working on"  $file
+    metutil $ztdfile $interval $scalesig '''' $file >> $logfile 
+  end  
+else if ( $mfiles[1] == '' && $zfiles[1] != '' ) then
+  foreach file ( `echo $zfiles` )  
+    echo " .. working on"  $file         
+    metutil $ztdfile $interval $scalesig $file '''' >> $logfile  
+  end 
+else if ( $mfiles[1] != '' && $zfiles[1] != '' ) then
+  echo "Both z-files and RINEX met files input - invalid option"
+  exit
+else 
+  echo "Neither z-file nor RINEX met file input"
+  exit
+endif
+
+echo "Finished ... record in metutil."$ztdfile".log"                     
+
+exit

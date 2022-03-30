@@ -1,0 +1,8 @@
+#!/bin/csh -f
+#
+#doc Script now obsolete: use sh_org2vel
+#
+  echo " "
+  echo " Script now obsolete:  use sh_org2vel "
+  echo "  "
+exit

@@ -1,0 +1,573 @@
+#!/bin/tcsh -f
+#
+#doc Get rinex files by day number from RINEX ftp archives
+#doc
+#
+# Last modified 99/04/16 by Simon McClusky
+# MOD TAH 000317: Added Unavco as an archive source
+# MOD SCM 000720: Added IFAG/BKG as an archive source    
+# MOD RWK 010912: Check only for Hatanaka compressed files at SOPAC to avoid getting duplicates (.o kept for 60 days)
+# MOD PT  020409: overhaul of the script to get information about logins, passwords, ftp addresses and
+#                 directories as well as the ftp commands from template_ftp and ftp_addresses. 
+#                 This should remove the need for a user to have to understand and edit this script.  
+# MOD SCM 020710: Modified to get ftp information from tables/ftp_info rather than com/ftp_addresses.
+# MOD KF  040415 Handle non-wild cards for ICC    
+# MOD KF/RWK 050124: Fix comments/documenation re ftp info.  
+# MOD OCh 051216: Add wget option
+# MOD OCh 080312: Add http(s) possibilities to wget option
+# MOD OCh 090420: Fix problems with quirks at various archives. 
+# MOD SCM 100828: Add search of multiple data archives for data. 
+
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "===================================================================================="
+  echo " Get RINEX observation files from SOPAC, CDDIS, UNAVCO IGN or BKG archives  " 
+  echo "  "
+  echo " Usage: sh_get_rinex -archive <archive> -yr <yr> -doy <doy> -ndays <num> -sites <sites>"
+  echo "                     -ftp_prog <ftp/ncftp/wget> -list -sd <sites.defaults dir> -expt <expt>"
+  echo "  "
+  echo "        <archive>  Any archive specified with a 'rinex directory' entry in ftp_info [Default sopac] "
+  echo "        <yr> 4 char year of nav data requested  [Required] "
+  echo "        <doy> 3 char day of year of nav data requested [Required] " 
+  echo "        <num> Number of consecutive days of data to retrieve [Default 1] "
+  echo "        <sites> List of sites to be retrieved from the ftp archive [Required] " 
+  echo "        <ftp/ncftp/wget> select the ftp program to be used [default ftp]"
+  echo "        <list> get list of available files from selected archive"
+  echo "        <xcheck>    do not ftp rinex data if xfile exists already [defaul N]"
+  echo "        <sites.defaults dir> directory where sites.defaults located"
+  echo "        <expt> experinent name used to interogate the sites.default file"
+  echo "  "      
+  echo " Examples: sh_get_rinex -archive sopac -yr 1998 -doy 235 -ndays 1 -sites algo drao ankr "
+  echo "           sh_get_rinex -archive cddis -yr 1998 -doy 235 -ndays 7 -ftp_prog ncftp"
+  echo "           sh_get_rinex -archive cddis -yr 1998 -doy 235 -ndays 7 -ftp_prog ncftp -xcheck Y"
+  echo "           sh_get_rinex -archive sopac -yr 1998 -doy 235 -list"
+  echo "           sh_get_rinex -archive sopac -yr 2000 -doy 185 -sd ../tables/sites.defaults -expt medi"
+  echo "  "
+  echo "===================================================================================="
+  exit
+endif 
+
+
+##################### SET UP DEFAULTS #############################   
+#
+# Setup necessary paths and filenames
+
+set year = ''
+set yr = ''
+set doy = ''
+set log = ''
+set numd = 1
+set archives = sopac
+set rxlist = ''
+set save_rxlist = ''
+set ftplist = ''
+set ftp_prog = 'ftp -inv'
+set doftp = "no"
+set xcheck = 'N'
+set list = "no"
+set expt = ''
+set sd = ''
+set pday = 0
+set wlogin = ''
+set wgetsite = ''
+set wgetoptions = ''
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+#   case -a:
+#    case -arc:
+#    case -archive:
+#      set archive  = $input[2]  
+#    breaksw 
+# Mod SCM 100828 allow sh_get_rinex to loop over archives when downloading data.
+    case -a*:
+       set archives = (`echo $argv | cut -d- -f2`); shift archives
+    breaksw 
+    case -n:
+    case -nday:
+    case -ndays:
+      set numd = $input[2] 
+    breaksw 
+    case -y*:
+      set year = $input[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+      set yr = `sh_year -year $year`
+    breaksw 
+    case -d:
+    case -doy:
+      set doy = $input[2]  
+    breaksw 
+    case -si*:
+       set rxlist = (`echo $argv | cut -d- -f2`); shift rxlist
+    breaksw
+    case -ftp_prog:
+      set ftp_prog = $input[2]  
+      if ($ftp_prog == 'ftp') set ftp_prog = 'ftp -inv'
+    breaksw 
+    case -xcheck:    
+      set xcheck  = $input[2]  
+    breaksw 
+    case -l*:
+      set list = "yes"  
+    breaksw 
+    case -sd:    
+      set sd  = $input[2]  
+    breaksw 
+    case -expt:    
+      set expt  = $input[2]  
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+
+##################### READ THE FTP_INFO TEMPLATE ############################    
+#
+# Loop over all the list archives to be checked for matching data
+foreach archive ($archives)
+  set ftp_info = `sh_get_ftp_info -archive $archive -type rinex`
+
+  while ($#ftp_info > 0 )
+    set input = ( $ftp_info )
+    switch($input[1])
+      case -ftpsite:
+        set ftpsite  = $input[2]  
+      breaksw 
+      case -ftplogin:
+        set ftplogin  = (`echo $ftp_info | cut -d- -f2`); shift ftplogin 
+      breaksw 
+      case -ftpdir:
+        set ftpdir  = $input[2]  
+      breaksw 
+      case -ftpcmd:
+        set ftpcmd  = (`echo $ftp_info | cut -d% -f2`); shift ftpcmd  
+       breaksw 
+      case -wgetsite:
+        set wgetsite  = $input[2]
+      breaksw
+      case -wlogin:
+        set wlogin  = (`echo $ftp_info | cut -d- -f2`); shift wlogin
+      breaksw
+    endsw
+    if ( $#ftp_info > 0 ) shift ftp_info
+  end
+
+  echo "Information extracted from ftp_info"
+  echo "########################################"
+  echo "ftpsite $ftpsite"
+  echo "ftplogin $ftplogin"
+  echo "ftpdir $ftpdir"
+  echo "ftpcmd $ftpcmd"
+  if ( $wgetsite != '' ) echo "wgetsite $wgetsite"
+  if ( `echo $wlogin | wc -w` > 0  ) echo "wlogin $wlogin"
+  echo "########################################"
+
+##################### GET THE JOB DONE ############################    
+#
+# Set timestamp hostname variable
+  set ts = "`hostname`:`date +"%H%M%S"`"
+  set log = `date "+get_rinex_${archive}_%y%m%d:%H%M.log"`
+  touch $log 
+
+# Check all required info given.
+  if ( ${year} == '' ||  ${doy} == '' ) then
+    echo "Not all required fields given -- yr: $year doy: $doy --Stop"
+    exit
+  endif
+
+# If sites.defaults given get site list from this file based on expt given
+  if ( $sd != '' ) then
+   set rxlist = `sh_get_defaults -token ftprnx -expt $expt -yr $yr[1] -doy $doy -sd $sd -expt $expt`
+  endif
+
+# Check if ncftp is requested
+  if ( `echo $ftp_prog | awk '{print $1}'` == 'ncftp' ) then
+    if (`echo $ftpcmd | awk '{print $1}'` == 'ftp') then
+      set ftpcmd = `echo $ftp_prog $ftpsite`
+      echo "-ftp_prog = ncftp requested, ftpcmd now: $ftpcmd" 
+    endif
+  endif
+
+# Check if wget is requested
+  if ( `echo $ftp_prog | awk '{print $1}'` == 'wget' ) then
+      if ( `echo $wlogin | wc -w` == 0 ) set wlogin = `echo $ftplogin`
+      if ( $wgetsite == '' ) set wgetsite = `echo ftp://$ftpsite`
+      set ftpcmd = `echo $ftp_prog`
+      echo "-ftp_prog = wget requested, ftpcmd now: $ftpcmd"
+  endif
+
+# Save original rxlist incase it get messed with later and we need to reset it.
+  set save_rxlist = ($rxlist)
+
+#
+# Set up loop on days
+  @ sday = `echo "ibase=10; ${doy} - 1" | bc`
+  @ count = `echo "ibase=10; ${numd}" | bc`
+
+  while ( $count )
+    set sday = `echo $sday |  awk '{printf "%03d \n", $1+1}'`
+    @ count = $count - 1
+ 
+# Set up the ftp script
+    if (`echo $ftpcmd | awk '{print $1}'` == 'ftp') then 
+      echo "user $ftplogin" >! tmp.get.$ts  
+      echo "binary" >> tmp.get.$ts
+      set getcmd = 'get'
+    else if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then
+      cat /dev/null >! tmp.get.$ts  
+      if ((`echo $wgetsite | awk -F: '{print $1}'` == 'https') && ($sday == $doy)) set wgetoptions = "--no-check-certificate $wgetoptions"
+    else
+      echo "binary" >! tmp.get.$ts
+      set getcmd = 'get -f -z'
+    endif             
+
+# Get a list of available files from the archive for this day
+    if ( $list == yes ) then
+      set directory = `echo $ftpdir | sed -e s/"YYYY"/$yr[1]/g | sed -e s/"YY"/$yr[2]/g | sed -e s/"DDD"/${sday}/g`
+      echo "directory = `echo $ftpdir | sed -e s/"YYYY"/$yr[1]/g | sed -e s/"YY"/$yr[2]/g | sed -e s/"DDD"/${sday}/g`"
+      if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then
+        if (`echo $wgetsite | awk -F: '{print $1}'` == 'ftp') then                    ##OCh
+#         if ($sday == $doy) set wgetoptions = ($wgetoptions -nr -i -)  
+          if ($sday == $doy) set wgetoptions = ($wgetoptions --no-remove-listing -i -)
+
+          set directory = ($wgetsite$directory/)
+          echo $directory >! tmp.list.$ts
+          set listfile = .listing
+        else                                                                          ##OCh
+          set listfile = 'curl.lst'                                                   ##OCh
+          curl -k ${wgetsite}${directory}/ | grep "${sday}.\.${yr[2]}[od]" | awk '{print substr($0,index($0,".Z")-12,14)}' > ${listfile}##OCh
+        endif                                                                         ##OCh
+      else
+        if (`echo $ftpcmd | awk '{print $1}'` == 'ftp') then 
+          echo "user $ftplogin" >! tmp.list.$ts  
+          echo "binary" >> tmp.list.$ts
+        else
+          echo "binary" >! tmp.list.$ts
+        endif             
+        echo 'cd '$directory  >> tmp.list.$ts
+        echo 'ls -la' >> tmp.list.$ts
+        echo 'quit' >> tmp.list.$ts
+        set listfile =  tmp.list.log											
+      endif														
+      if ( $listfile != 'curl.lst' ) then
+        $ftpcmd $wgetoptions < tmp.list.$ts >! tmp.list.log ##OCh
+      endif
+      cat $listfile | grep ${sday}..${yr[2]} >! list_${yr[1]}_${sday}.log
+      \rm -r tmp.list.$ts tmp.list.log $listfile index.html*				
+      echo "Created rinex list file: list_${yr[1]}_${sday}.log"
+      goto next
+    endif
+    if ($sday == $doy) set wgetoptions = ($wgetoptions -v -N)								
+
+# See if the files already exist
+#  echo '# Touch' >! tmp.t.$ts
+
+# If rxlist is set to download "all" sites we need to reset it to "all" 
+# since it was prolly messed up by the download reporting part of the process
+    if ( $save_rxlist[1] == 'all' ) then
+      set rxlist = $save_rxlist
+    endif
+  
+# Get sites included in the list (rxlist) to be retrieved    
+    foreach site ( `echo $rxlist` )
+
+# Now should be able to use a generic directory name defined in ftp_info and
+# simply substitute the correct year and day-of-year for YYYY and DDD
+      if ( $sday != ${pday} || $archive == "cors" || $archive == "olgr") then
+        set directory = `echo $ftpdir | sed s/"YYYY"/$yr[1]/g | sed s/"YY"/$yr[2]/g | sed s/"DDD"/${sday}/g | sed s/"SSSS"/${site}/g`
+        echo "directory = `echo $ftpdir | sed s/"YYYY"/$yr[1]/g | sed s/"YY"/$yr[2]/g | sed s/"DDD"/${sday}/g | sed s/"SSSS"/${site}/g`"
+#      set directory = `echo $ftpdir | sed s/"YYYY"/$yr[1]/ | sed s/"YY"/$yr[2]/  | sed s/"YY"/$yr[2]/ | sed s/"DDD"/${sday}/ | sed s/"SSSS"/${site}/ `
+        if (`echo $ftpcmd | awk '{print $1}'` != 'wget') echo 'cd '$directory  >> tmp.get.$ts
+        set pday = ${sday}
+      endif
+      if ( $site != 'all' ) then
+# Modified to allow session # other than 0 to be downloaded. SCM 050428
+#      set lc_site = ${site}${sday}0.${yr[2]} 
+#      set UC_site = `echo ${site}${sday}0.${yr[2]} | awk '{print toupper($1)}'`
+        set lc_site = ${site}
+        set UC_site = `echo ${site} | awk '{print toupper($1)}'`
+        if ( ! -e ${lc_site}${sday}0.${yr[2]}o && ! -e ${lc_site}${sday}0.${yr[2]}o.Z && ! -e ${lc_site}${sday}0.${yr[2]}o.gz \
+          && ! -e ${lc_site}${sday}0.${yr[2]}d && ! -e ${lc_site}${sday}0.${yr[2]}d.Z && ! -e ${lc_site}${sday}0.${yr[2]}d.gz) then
+# PT020730: only get the rinex file if the xfile doesn't exist and/or xcheck = N 
+# Actually this does not work because day directory name can be quite different.  
+          set x_exist = `\ls ../${sday}/x${site}* |& grep -v 'No match' | wc -l ` >& /dev/null	### of no use with year extension ##OCh
+# TAH050416: Added spaces after if( and between )then (loops confused otherwise)
+          if( $xcheck == 'N' ||  $x_exist == "0" ) then
+            if ( $archive == "bkge" ) then 
+              if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then
+                echo "wget $wgetoptions -a $log -O  ${lc_site}${sday}0.${yr[2]}d.Z $wgetsite$directory/"\""${UC_site}${sday}0.${yr[2]}D.Z"\" >> tmp.get.$ts
+                echo "chmod u+w ${lc_site}${sday}0.${yr[2]}d.Z >&! /dev/null" >> tmp.get.$ts
+              else
+                echo $getcmd ${lc_site}${sday}0.${yr[2]}d.Z ${lc_site}${sday}0.${yr[2]}d.Z >> tmp.get.$ts
+              endif
+# TAH050429: Added replaced get with mget for lines below.
+            else if ( $archive == "sopac" || $archive == "kreiz" || $archive == "unavco" || $archive == "cors" ) then
+              if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then 
+                echo "wget $wgetoptions -a $log $wgetsite$directory/"\""${lc_site}${sday}[0-9].${yr[2]}d.Z"\" >> tmp.get.$ts
+                echo "chmod u+w ${lc_site}${sday}[0-9].${yr[2]}d.Z >&! /dev/null" >> tmp.get.$ts
+              else
+                echo mget ${lc_site}${sday}'?'.${yr[2]}'d'.Z >> tmp.get.$ts  
+              endif
+            else if ( $archive == "gahirt" ) then
+              if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then 
+                echo "wget $wgetoptions -a $log $wgetsite$directory/"\""${UC_site}${sday}*.${yr[2]}d.Z"\" >> tmp.get.$ts
+                echo "chmod u+w ${UC_site}${sday}*.${yr[2]}d.Z >&! /dev/null" >> tmp.get.$ts
+                echo "wget $wgetoptions -a $log $wgetsite$directory/"\""${lc_site}${sday}*.${yr[2]}d.Z"\" >> tmp.get.$ts
+                echo "chmod u+w ${lc_site}${sday}*.${yr[2]}d.Z >&! /dev/null" >> tmp.get.$ts
+              else
+                echo mget ${UC_site}${sday}'*'.${yr[2]}'d'.Z >> tmp.get.$ts  ##OCh
+                echo mget ${lc_site}${sday}'*'.${yr[2]}'d'.Z >> tmp.get.$ts  ##OCh
+              endif
+            else if ( $archive == "icc") then
+              if (${yr[1]} >= "2004") then
+                if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then 
+                  echo "wget $wgetoptions -a $log $wgetsite$directory/"\""${UC_site}${sday}[0-9].${yr[2]}E"\" >> tmp.get.$ts
+                  echo "chmod u+w ${UC_site}${sday}[0-9].${yr[2]}E >&! /dev/null" >> tmp.get.$ts
+                else
+                  echo mget ${UC_site}${sday}'?'.${yr[2]}'E'   >> tmp.get.$ts  ##OCh
+                endif
+              else
+                if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then 
+                  echo "wget $wgetoptions -a $log $wgetsite$directory/"\""${UC_site}${sday}[0-9].${yr[2]}d.Z"\" >> tmp.get.$ts
+                  echo "chmod u+w ${UC_site}${sday}[0-9].${yr[2]}d.Z >&! /dev/null" >> tmp.get.$ts
+                else
+                  echo mget ${UC_site}${sday}'?'.${yr[2]}'d'.Z >> tmp.get.$ts  ##OCh
+                endif
+              endif
+            else if ( $archive == "geodaf" ) then  ##OCh
+              if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then 
+                echo "wget $wgetoptions -a $log $wgetsite$directory/"\""${lc_site}${sday}*.${yr[2]}d.Z"\" >> tmp.get.$ts
+                echo "chmod u+w ${lc_site}${sday}*.${yr[2]}d.Z >&! /dev/null" >> tmp.get.$ts
+              else
+                echo mget ${lc_site}${sday}'*'.${yr[2]}'d'.Z >> tmp.get.$ts
+              endif
+            else 
+              if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then 
+                ###########################################################OCh
+                #
+                if (`echo $wgetsite | awk -F: '{print $1}'` == 'ftp') then
+                  echo "wget $wgetoptions -a $log $wgetsite$directory/"\""${lc_site}${sday}[0-9].${yr[2]}[od]*"\" >> tmp.get.$ts
+                else
+                  foreach rfile (`curl -k ${wgetsite}${directory}/ | grep "${lc_site}${sday}.\.${yr[2]}[od]" | awk '{print substr($0,index($0,".Z")-12,14)}'`)
+                    echo "wget --no-check-certificate $wgetoptions -a $log ${wgetsite}${directory}/"\""${rfile}"\" >> tmp.get.$ts
+                  end
+                endif
+                #
+                ###########################################################OCh
+                echo "chmod u+w ${lc_site}${sday}[0-9].${yr[2]}[od]* >&! /dev/null" >> tmp.get.$ts
+              else
+                echo mget ${lc_site}${sday}'?'.${yr[2]}'o*' >> tmp.get.$ts  ##OCh
+                echo mget ${lc_site}${sday}'?'.${yr[2]}'d*' >> tmp.get.$ts  ##OCh
+              endif
+            endif
+#          echo touch ${site}${sday}0.${yr[2]}o.Z >> tmp.t.$ts
+          endif
+        endif
+      else
+        if ( $archive == "bkge" ) then 
+             if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then 
+               echo "wget $wgetoptions -a $log $wgetsite$directory/"\""*D.Z"\" >> tmp.get.$ts
+               echo "chmod u+w *D.Z >&! /dev/null" >> tmp.get.$ts
+             else
+               echo 'mget *D.Z' >> tmp.get.$ts
+             endif
+        else if ( $archive == "sopac" || $archive == "kreiz" ) then
+             if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then 
+               echo "wget $wgetoptions -a $log $wgetsite$directory/"\""*d.Z"\" >> tmp.get.$ts
+               echo "chmod u+w *d.Z >&! /dev/null" >> tmp.get.$ts
+             else
+               echo 'mget *d.Z' >> tmp.get.$ts
+             endif
+        else if ( $archive ==  "unavpbo" || $archive ==  "wcda" ) then
+             if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then 
+               echo "wget $wgetoptions -a $log $wgetsite$directory/"\""*0.??d.Z"\" >> tmp.get.$ts
+               echo "chmod u+w *0.??d.Z >&! /dev/null" >> tmp.get.$ts
+             else
+               echo mget '*0.??d.Z' >> tmp.get.$ts
+             endif
+        else 
+             if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then 
+               ###########################################################OCh
+               #
+               if (`echo $wgetsite | awk -F: '{print $1}'` == 'ftp') then
+                 echo "wget $wgetoptions -a $log $wgetsite$directory/"\""*[od].Z"\" >> tmp.get.$ts
+               else
+                 echo "curl -k ${wgetsite}${directory}/"
+                 foreach rfile (`curl -k ${wgetsite}${directory}/ | grep "....[0-9]\{3\}.\.[0-9]\{2\}[od]\.Z" | awk '{print substr($0,index($0,".Z")-12,14)}'`)
+                   echo "wget --no-check-certificate $wgetoptions -a $log ${wgetsite}${directory}/"\""${rfile}"\" >> tmp.get.$ts
+                 end
+               endif
+               #
+               ###########################################################OCh
+               echo "chmod u+w *[od].Z >&! /dev/null" >> tmp.get.$ts
+             else
+               echo mget '*o.Z' >> tmp.get.$ts  
+               echo mget '*d.Z' >> tmp.get.$ts  
+             endif
+        endif
+      endif
+    end
+
+    if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then
+      set ftplist = ` awk '/wget/{print $NF}' tmp.get.$ts  | awk -F/ '{print substr($NF,2,4)}' | sort -u` ##OCh
+    else
+#   set ftplist = `grep get tmp.get.$ts | awk '{printf "%.4s ",$2}'`
+      set ftplist = `awk '/get/{printf "%.4s\n",$2}' tmp.get.$ts | sort -u`      ##OCh
+    endif
+
+    if ( $#ftplist <= 0 ) then
+       echo "All requested rinex files exist. No sites to download: EXIT"
+# SCM Don't exit here there may be more days to download!
+#     exit
+    endif
+      
+    if ( $#ftplist >= 1 ) then
+
+      if (`echo $ftpcmd | awk '{print $1}'` != 'wget') echo 'quit' >> tmp.get.$ts
+      cat tmp.get.$ts >> $log
+      echo ' ' >> $log    
+      echo '--------------------' >> $log
+    
+# MOD TAH 980520: Touch the files first so that reget will work.
+#    csh tmp.t.$ts >> $log
+    
+      if (`echo $ftpcmd | awk '{print $1}'` != 'wget') then
+# MOD TAH 980520: Repeat the get.
+      set cnt = 5
+      set try = 0
+      while ( $cnt ) 
+        @ cnt = $cnt - 1
+        @ try = $try + 1
+        echo "Try ${try}: Getting rinex data for day ${sday} from ${archive} archive, ${ftpsite}"
+        echo "Attempting to download sites: ${ftplist}" 
+
+###### THE ACTUAL FTP EXECUTION IS HERE #######################
+        echo $ftpcmd
+        $ftpcmd < tmp.get.$ts | grep -v '^220' >! tmp.log.$ts
+
+        cat tmp.log.$ts >> $log
+       
+#  See if we got connected to ftp server OK
+        grep 'Not connected' tmp.log.$ts >! tmp.test.$ts
+        set chk = `cat tmp.test.$ts | wc -l` 
+        if ( $chk != 0 ) echo "Could not connect to ftp server ${ftpsite} - Wait 2 minutes and try again" 
+#  See if we have to many ftp connections open to this server
+        grep 'exceeded your maximum number of FTP connections' tmp.log.$ts >! tmp.test1.$ts
+        set chk1 = `cat tmp.test1.$ts | wc -l`  
+        if ( $chk1 != 0 ) echo "Exceded max ftp connections to this server ${ftpsite} - Wait 2 minutes and try again"          
+        if( $chk == 0 && $chk1 == 0 ) then
+          set cnt = 0
+        else
+          if ( $chk1 != 0 ) then
+ 	       echo "Script will wait indefinitly for ftp server connection."
+ 	       set cnt = 5
+ 	  endif
+          sleep 120
+        endif
+      end
+      else
+        echo "Getting rinex data for day ${sday} from ${archive} archive, ${ftpsite} using WGET"
+        echo "Attempting to download sites: ${ftplist}" 
+        csh tmp.get.$ts	# WGET TAKES PLACE HERE
+        echo "  "
+        echo "Download log saved in file: "$log
+        grep saved $log | grep "....$sday" | grep -v listing
+        echo "  "
+      endif
+
+# MOD TAH 0501416: If sites = all, extract the actual names of sites
+      if( $rxlist[1] == 'all' ) then
+        if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then
+          if (`echo $wgetsite | awk -F: '{print $1}'` == 'ftp') then                                             ##OCh
+	    grep "==> RETR .* done" $log | grep $sday |  tr-d '`'\' | awk '{print substr($7,1,4)}' > rxlist.tmp  ##OCh
+          else                                                                                                   ##OCh
+            grep saved $log | grep $sday | tr -d '`'\' | awk '{print substr($5,1,4)}' > rxlist.tmp               ##OCh
+          endif                                                                                                  ##OCh
+          set rxlist = `cat rxlist.tmp | sort -u`                                                                ##OCh
+          rm -f rxlist.tmp                                                                                       ##OCh
+        else
+          set rxlist = `grep local $log | awk '{print substr($2,1,4)}' | sort -u`
+        endif
+        echo "Selection all: Actual download "$rxlist
+      endif
+
+#
+#   Now uncompress the rinex files and delete files with zero size. 
+      sh_casefold -dir d -files [A-Z]???${sday}?.${yr[2]}*  >& /dev/null
+      echo "rxlist = $rxlist" ##OCh
+# MOD OCH 080317 dealing with rxlist being 'all' or a real list of sites was a problem.
+# multiple sessions were not taken into account
+      foreach rfile (`ls ????${sday}?.${yr[2]}*`)
+        if ( -z ${rfile} ) rm -f ${rfile} # an empty rinex file is always a problem, even if it has not been downloaded by this script
+      end
+      if ($rxlist[1] == 'all') then
+	echo "here"
+        ( \ls -d  ????${sday}?.${yr[2]}o.Z > /dev/null ) > & /dev/null
+	if ( $status == 0 ) sh_uncompress -f ????${sday}?.${yr[2]}o.Z
+        ( \ls -d  ????${sday}?.${yr[2]}o.gz > /dev/null ) > & /dev/null
+        if ( $status == 0 ) gunzip ????${sday}?.${yr[2]}o.gz
+        ( \ls -d  ????${sday}?.${yr[2]}d.gz > /dev/null ) > & /dev/null
+        if ( $status == 0 ) sh_crx2rnx -f ????${sday}?.${yr[2]}d.gz
+        ( \ls -d  ????${sday}?.${yr[2]}d.Z > /dev/null ) > & /dev/null
+        if ( $status == 0 ) sh_crx2rnx -f ????${sday}?.${yr[2]}d.Z
+        ( \ls -d  ????${sday}?.${yr[2]}d> /dev/null ) > & /dev/null
+        if ( $status == 0 ) crx2rnx ????${sday}?.${yr[2]}d
+      else    # $rxlist != 'all'  
+        foreach site ( `echo $rxlist` )
+          ( \ls -d  ${site}${sday}?.${yr[2]}o.Z > /dev/null ) > & /dev/null
+	  if ( $status == 0 ) sh_uncompress -f ${site}${sday}?.${yr[2]}o.Z
+          ( \ls -d  ${site}${sday}?.${yr[2]}o.gz > /dev/null ) > & /dev/null
+          if ( $status == 0 ) gunzip ${site}${sday}?.${yr[2]}o.gz
+          ( \ls -d  ${site}${sday}?.${yr[2]}d.Z > /dev/null ) > & /dev/null
+          if ( $status == 0 ) sh_crx2rnx -f ${site}${sday}?.${yr[2]}d.Z
+          ( \ls -d  ${site}${sday}?.${yr[2]}d.gz > /dev/null ) > & /dev/null
+          if ( $status == 0 ) sh_crx2rnx -f ${site}${sday}?.${yr[2]}d.gz
+          ( \ls -d  ${site}${sday}?.${yr[2]}d > /dev/null ) > & /dev/null
+          if ( $status == 0 ) crx2rnx ${site}${sday}?.${yr[2]}d
+        end
+      endif   # $rxlist = 'all'
+
+      \rm tmp.1.$ts tmp.test.$ts tmp.test1.$ts tmp.t.$ts tmp.log.$ts >& /dev/null
+
+    endif
+
+# Tell the user what RINEX files were downloaded
+    if ( $log != '' ) then
+# MOD TAH 050418: Added test because both sopac and cors list local
+#   line even when file does not exist.
+    if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then
+        if (`echo $wgetsite | awk -F: '{print $1}'` == 'ftp') then                                           ##OCh
+	    grep "==> RETR .* done" $log  | grep $sday | awk '{printf "%s ",$7}' | tr -d '`'\' > ftpdown.tmp ##OCh
+        else                                                                                                 ##OCh
+            grep saved $log  | grep $sday | awk '{printf "%s ",$5}' | tr -d '`'\' > ftpdown.tmp              ##OCh
+        endif                                                                                                ##OCh
+        set ftpdown = `cat ftpdown.tmp`                                                                      ##OCh
+        rm -f ftpdown.tmp                                                                                    ##OCh
+    else
+#     if( $archive != 'cors' && $archive != 'sopac' && $archive != 'unavco' ) then 
+        if( $archive != 'cors' && $archive != 'sopac' ) then                                                 ##OCh
+          set ftpdown = `grep "local:" $log  | grep $sday | awk '{printf "%s ",$4}'`
+        else
+          set ftpdown = `grep "Opening" $log | grep $sday | awk '{printf "%s ",$8}'`
+        endif
+      endif
+      echo "Sucessfully downloaded:" $ftpdown 
+    else
+    echo "All RINEX files exist nothing to download"
+  endif 
+
+# Jump to here
+next:  
+
+# End loop over days
+  end
+\rm tmp.1.$ts  tmp.test.$ts tmp.test1.$ts tmp.t.$ts tmp.log.$ts >& /dev/null
+
+# End loop over archives
+end
+
+# Thats all.
+exit

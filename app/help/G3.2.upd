@@ -1,0 +1,292 @@
+
+GLOBK Version 3.2 New Features:
+-------------------------------
+Two new commands have been added to Globk in version 3.2 and there has 
+been several bug fixes, improvements to the memory management, and 
+enhancements to the output.
+
+New Commands:
+=============
+
+ AMR_TRANS    <sig X> <sig Y> <sig Z> <mar X> <mar Y> <mar Z>
+
+This command allows the user to specifically control the estimation of 
+the translation of the geodetic coordinate system.  <sig X> <sig Y> and 
+<sig Z> are the standard deviations to be assigned to the initial origin 
+of the coordinate system [Units m]; and <mar X> <mar Y> and <mar Z> the 
+random walk process noise values for the estimations [units: m^2/yr].  
+With this command, apparent center of mass shifts can be estimated for 
+GPS data.
+
+BAK_PRTS  <CLEAR ALL List of sites ...>
+
+The command allows the user to specify which sites should always be 
+printed in the back solution file.  The CLEAR is optional and should 
+normally not be used since it will override the internal rules for 
+outputting a site.  ALL will select all sites.  The following rules 
+apply
+for outputting:
+--Site positions--: 
+All and only sites that are Markov (i.e. mar_neu or mar_site command 
+used) or are effected by an earthquake (see EQ_FILE command) will be 
+output unless CLEAR is used in the BAK_PRTS commands in which case only 
+those sites listed in the BAK_PRT command will be printed independent of 
+whether they are Markov or effected by an earthquake.  In all cases, 
+only sites that were observed on the day being output will be printed.
+--Baselines and baseline components--: 
+In general, for a baseline to be printed, both sites in the baseline 
+need to pass the criteria to be output.  For baselines to be printed 
+bak_opt bit 1 (decimal value 2) must be set.  If only bak_opts 2 is set 
+all baselines between sites observed on the day will be printed.  (This 
+can become a long list).  Restrictions can be placed on the baselines 
+printed with the following options:
+bak_opt 2050 (bits 2 and 11 set): Restricts the baselines to only those 
+that are effected by an earthquake (including pre and post-seismic 
+intervals extended by 2 days so that part of "deterministic" period) or 
+are Markov.  Use of BAK_PRTS allows additional sites to be printed that 
+do not pass the earthquake or markov rules.  Also the bak_prts sites are 
+printed even when they do not occurr on a given day.  (All other 
+baselines must appear on the day).
+
+.....................................................................
+EQ_FILE <file name>
+
+The new file contains commands that can be used to tell globk about 
+earthquakes and what to do when one is encountered.  There is also a 
+general command included for renaming sites (useful for un-doing htoh 
+runs used in the past to account for earthquakes.
+NOTE: This command falls in the group of commands that must be issued at 
+the top of the globk command file because it effects the names of the 
+sites that will be used in interpreting subsequent commands.
+
+With in the EQ_FILE the following commands may be used:  (They can not 
+be used in the globk command file).  An example of the EQ_FILE is given 
+below.  In the standard version (parameter max_eq in kalman_param.h), 
+parameters for 128 earthquakes can be specified in a single run.
+
+EQ_DEF <Code> <Lat> <Long> <Radius> <Depth> <epoch>
+
+This command defines the Earthquake.  The arguments are:
+<Code> a two letter code which is used (optionally) in renaming sites 
+and identifying this earthquake in subsequent commands. NOTE: the code 
+can not be the same as the last two letters of any site effected by the 
+earthquake.  Specially PS can never be used as a code. NOTE: This 
+command must be issued before others referring to the Earthquake and the 
+same code may not be used twice.
+<Lat> and <Long> are the geodetic latitude and longitude of the center 
+of rupture plane (approximately) in decimal degrees for the WGS84 
+ellipsoid. 
+<Radius> is the radius over which the Earthquake is assumed to have some 
+effect.  Radii are computed as the chord distance from the lat, long and 
+depth of the Earthquake to sites. NOTE:  For an earthquake to have an 
+effect, the radius must be greater than the depth.  [Units: km]
+<Depth> is the "depth" to the earthquake.  No station will (in general) 
+be closer to the earthquake than its depth.  The depth is the negative 
+of the ellipsoid height of the Earthquake (i.e, the value is positive).
+The Depth is used for scaling the spatially dependent quantities 
+discussed below. [Units: km]
+<epoch>  Time of the earthquake entered as year month day hour min (all 
+separated by blanks.  The experiment epoch of the data is used to test 
+if the data is before or after the earthquake.  (For one-day hfiles, the 
+experiment epoch is the middle of the data; for combined global files it 
+is usually the middle of the last day of data in the combined file.  If 
+srt_dir -1 was used in the globk run generating the combined file, the 
+experiment epoch will be at the start of the data set.)
+
+EQ_RENAM <Code>
+
+This command tells globk to rename the sites effected by the earthquake 
+by replacing the last two letters of the site name by the code for the 
+Earthquake.  This command can be used in conjunction with the stochastic 
+options discussed below.  For generating apriori coordinate files, this 
+is the preferred option. NOTE:  If no apriori coordinate and velocity is 
+in the apr_file for globk for the renamed site, the values for the 
+original site will be used.
+
+EQ_COSEI <Code> <Static Sigmas NEU> <Spatially dependent Sigmas NEU>
+
+The command specifies the stochastic treatment of sites effected by the 
+earthquake.  (If the command is not issued there will be no stochastic 
+variations at the time of the Earthquake.  (If the sites are renamed 
+then this command is not needed, but can still be used to achieve the 
+effect discussed below.  The arguments are:
+<Code> for the earthquake (to get the parameters for earthquake in the 
+eq_def command.
+<Static Sigmas NEU> these are three values separated by spaces that give 
+the standard deviation of the displacements (in meters) expected at the 
+time of the earthquake (i.e., apriori standard deviation of the 
+coseismic displacements.)  These values will be applied to all sites.
+<Spatially dependent Sigmas NEU> these are three values separated by 
+spaces that give the spatially dependent standard deviations.  The 
+standard deviation a site is computed using:
+     Sig = SigSpatial*(depth/dist)^2
+where Sig is the computed sigma, SigSpatial is the sigma given in the 
+command, depth is the depth of the Earthquake and dist is the distance 
+the site is from the Earthquake.  
+Units: on all sigmas is meters.
+NOTE:  When the rename and coseismic features are used together, the 
+covariance matrix elements and solution for the site name before the 
+earthquake (which itself may have renamed from previous earthquakes) are 
+copied to the new site name before the coseismic standard deviations are 
+added.  The coseismic sigmas are not applied to the old site name.  
+WARNING.  When the combination of rename and coseismic are used, the 
+apriori coordinates and velocities of the two site names should be the 
+same unless you are want to constrain the incremental adjustment to a 
+dislocation model for example.  It the renamed site does not appear in 
+the apriori file, then globk will automatically do this.
+NOTE: When the rename and coseismic features are used together, a 
+**NOTE** may be printed during the globk run saying that the original 
+site name of a renamed site could not be found.  This will occur for all 
+sites that are used only after an earthquake.  The Note can be ignored 
+if this is the case.
+
+EQ_PRE <Code> <dur> <Static Markov NEU> <Spatially dependent Markov NEU>
+
+This command allows the specification of random walk parameters to be 
+applied before the earthquake.
+<Code> is the earthquake code.
+<dur> is the number of days before the earthquake to start the process 
+noise.  The estimates will be output for up to 2 days before the start 
+of the process when a back solution is run. (Units: days)
+<Static Markov NEU> three values that give the process noise parameters 
+in North, East and Up to be applied equally to all stations.  The units 
+are mm^2/day and the process is a random walk, i.e., after n days the 
+process noise 
+<Spatially dependent Markov NEU> three values hat give the process noise 
+parameters in North, East and Up to be applied in a spatially dependent 
+fashion.  (Same spatial dependence as the coseismic displacements except 
+squared since the variance is specified in the process noise).
+NOTE: When the rename feature is used, the preseismic process noise is 
+not applied to the new site name (i.e, the site name used after the 
+earthquake).
+
+EQ_POST <Code> <dur> <Static Markov NEU> <Spatially dependent Markov 
+NEU>
+
+This command allows the specification of random walk parameters to be 
+applied after the earthquake.  The command and specifications are 
+exactly the same as EQ_PRE except this process is applied after the 
+earthquake.  If the rename option is used then the process noise will 
+not be applied to the old site name.
+
+
+RENAME <Orig Site name> <New site name> <epoch range> <Position change>
+
+The command, while not directly related to earthquakes, appears in the 
+eq_file because it involves renaming sites and is useful for un-doing 
+previous htoh runs used previously to treat earthquakes.  The command 
+arguments are:
+<Orig Site name> Original site name that appears in the binary h-files,
+<New site name> New name for the site (Should not conflict with other 
+names in the binary h-files).
+
+The following arguments are optional.
+<epoch range> range of time over which the rename will be applied.  
+Specified as a pair of year month day hour min values (all separated by 
+spaces).  Any hfile in which the start date is after the first date and 
+the end date in before the second date given will have the site renamed.
+<Position change> is an optional position change to accompany the name 
+change.  The position change is either XYZ or NEU (three values) 
+followed by a type declaration (XYZ or NEU).  If no type is given, XYZ 
+is assumed.  Units are meters and the change should move the site from 
+the original position to the new position.  North, East and Up (NEU) are 
+defined as North along (the ellipsoidal) meridian direction at the 
+apriori coordinate of the new site name, East along the East longitude 
+direction, and ellipsoidal height.  The rotation matrix is defined by 
+these directions and the NEU are rotated to XYZ using this rotation 
+matrix.
+NOTE: The renames are applied before any earthquake processing, so names 
+generated from earthquakes use the new site name.
+
+EXAMPLE of EQ_FILE:
++++++++++++++++++++
+
+*----------------------------------------------------------------------
+* Example of earthquakes and renames
+* The following renames undo the htoh runs for Landers.
+  rename  mojave1b mojave12
+  rename  ds1b_gps ds10_gps
+  rename  gold_gps ds10_gps
+  rename  jplb_gps jplm_gps
+  rename  sioc_gps sio2_gps
+  rename  vndo_gps vndp_gps
+  rename  pinb_gps pin1_gps
+
+* Example of moving a GPS site to a VLBI site location.  The tie is from
+* ITRF-1990.
+  rename  aron_gps algopark 92 5 1 0 0 92 8 30 0 0  -94.7630  -61.0170  
+-6.6660  XYZ
+* Example to show a height change.  The height change is dual frequency
+* combination.  (This correction would move from the phase center to the 
+* ground mark, i.e, zero height was used in the original processing.)
+  rename  hart_gps hart_gps 90 1 1 0 0 92 8 30 0 0  0.0  0.0  -9.8013 
+NEU 
+
+* The Lander's earthquake.  Here are using the spatially dependent
+* versions.  The coseismic displacement sigma 100 km from the earthquake
+* origin is 72 mm horizontal and 28 mm vertical in this case.  For the 
+* Markov process the values correspond to 1.6 mm^2/day for all three 
+* components.  (The parameters here were computed approximately from 
+* dislocation models of Landers).  Landers/Big Bear has a moment of 
+* 1x10^20 N-m, and Ms 7.5) 
+* 
+  eq_def    LA  34.45 -116.50  500   20  92 6 28 12 0
+  eq_renam  LA
+  eq_cosei  LA     0.000 0.000 0.000     1.8    1.8    0.7  
+  eq_pre    LA  30 0.000 0.000 0.000  1000.0 1000.0 1000.0
+  eq_post   LA  30 0.000 0.000 0.000  1000.0 1000.0 1000.0
+
+* Other earthquakes could be defined here.  If pre-seismic or 
+* post-seismic process noise overlap from different earthquakes
+* then both sets of process noise are added.
+*----------------------------------------------------------------------
+
+.....................................................................
+
+
+ENHANCEMENT OF EXISTING FEATURES IN GLOBK Ver 3.2
+=================================================
+
+(1) Experiment variance specification.  The .gdl file format has been 
+extended to allow the specification of a variance scaling factor on 
+individual h-files.  If not value is given, then a scaling of 1 is used.
+Example:
+/data11/tah/glbg/h92060111a.gld     1.000
+/data11/tah/glbg/h92060211a.gld     3.076
+/data11/tah/glbg/h92060611a.gld     4.328
+/data11/tah/glbg/h92060711a.gld     7.072
+In this case the scales were derived from the pre-fit chi**2 increments 
+for a forward solution. (grep and awk were used to generate the file 
+from the globk log file.
+
+(2) Use of default file names for the com_file, srt_file and sol_file 
+now works correctly for both globk and globc.  Therefore if these files 
+are not specified the defaults will be used.  
+
+(3) Globk now used full dynamical memory allocation so it uses only the 
+memory it needs.  The memory is allocated after the list of global files 
+has been printed (glinit run).  If there is sufficient memory at that 
+time, then the rest of run will have enough memory.  A small message is 
+printed saying the amount of memory allocated.
+
+(4) Warning messages are now printed at the start of the globk run if 
+there is no apriori site coordinate for a site in the apriori file.  
+(This message is printed if globk could construct an apriori coordinate 
+from renamed and earthquake sites.)  The apriori coordinate used when 
+there is none in the apriori file, is the estimated position from the 
+last binary h-file in which the site was used.
+
+(5) Reading of the svs_file has been modified so that the whole file is 
+read.  Consequently, when there are duplicate entries, the last entry 
+found will be used.  (In Ver 3.1 the first entry would have been used).  
+This change was made so that when regional and global h-file that 
+contain different satellites are used and the svs_file has not had 
+unify_svs run on it, all the satellite elements should be found.
+
+(6) Multiple apriori coordinate files can now be specified with each one 
+possibly overwriting the results from previous ones.  This feature has 
+been added so that all earthquake effected sites can be in one file so 
+that if we don't want to use the updated coordinates, the second file 
+need not be specified.  (max_apr_files sets the maximum number, standard 
+value is 10 files.)
+

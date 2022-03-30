@@ -1,0 +1,340 @@
+#!/bin/csh -f
+#
+#doc Selects station networks based on data types in pre-downloaded RINEX files.
+#doc
+#
+# sh_gnss_sel
+#
+# Purpose      Selects station networks based on available data types for GNSS
+#              processing.  An existing or new sites.default will be updated or
+#              created
+#
+# Required     Year and doy plus sites.defaults.yyyy.ddd (rinex assumed to be in
+#              ../rinex directory (script run from control directory).
+#
+# Output       sites.default file with the list of sites to use in each network
+#
+# sh_gnss_select -d <yr> <doy> -sd <sites.defaults.name> -path <RX file path>
+#                -gnss <GREC> -net_name <CCC> -o <L1> <L2> -apr_file <apr file>
+#                -maxsite <num>  -f <control>   -core_list <name> -sec_list <name>
+#
+# All options are:
+#  -d <yr> <doy>   Date to get data
+#  -gnss <GREC>    Choice of GNSS system (default E)
+#  -o <L1> <L2>    Observables (e.g. L1 L5 default for Galileo) 
+#  -delete         Delete any existing inc.yyyy.ddd.G.obs file.  Default
+#                  add new rinex files to existing file.
+#  -percent <%>    Percent of data that must be available (default 50)
+#  -sd <sites.defaults.name><control>  if different from standard name.
+#  -path <RX file path> Path to rinex files (Default ../rinex)
+#  -aprf <apr file>   Apriori coordinate file.
+#  -net_name <ncd> 3-char code for net names (default net)
+
+# OPTIONS below may be needed if number of sites exceeds max allowed (defaults are
+#                 set for MIT repro3 processing.
+#  -maxsite <num> If number of sites exceeds this value, selection will be made
+#                  with this number of sites (-f config file and core_list and sec_list
+#                  will be used.
+#  -net_dim <size> Number of sites to be included in each selected network (default 50).
+#  -net_overlap <size> Number of overlapping sites between networks (default 2).
+#  -f <control>    Name of contol file with preferred sites
+#  -net_overlap <size> Number of overlapping sites between networks (default 2).
+#  -core_list <name> Name of a file contianing sites to be used first in 
+#                  network selection process (default none).
+#  -sec_list <name>  Name of a file containing secondary sites that will fill the 
+#                  networks if they can't be completed with core_list 
+
+ 
+# by Tom Herring 05/14/2020,
+# Updated TAH    06/04/2002.
+# end doc
+
+if ($#argv < 1) then
+        sed -e "1d" -e "/end doc/q" -e "s/#//" $0
+        exit
+endif
+# Set Defaults
+set aprf = "repro3.apr"
+# $conf files looks like with as many REF_NET lines as number of 
+# networks.  May include EXCL names as well formatted for egrep call. 
+## These are selected from priority 1 and 2 sites in repro3.sta
+## file
+# REF_NET NET1 ALGO|BRAZ|YAR2|ZECK
+# REF_NET NET2 STJO|CHPI|TOW2|URUM
+# ...
+# REF_NET NET7 YELL|RIO2|MAC1|BJFS
+##
+## 190606: Added DSEA which has failed but returning data
+# EXCL AB06|AV07|AV04|DSEA
+set conf = "ref_repro3.sites"
+# List sites are 4-char upper case names with leading space on line.
+set core_list = "core_Pr1-04_gre.sites"
+set sec_list = "secd_Pr5-08_gre.sites"
+set stinfo = "station.info"
+set percent = 50
+set rxpath  = "../rinex"
+set net_dim = 50
+set maxsite = 350
+set tie_num = 2
+set tie_method = 2
+set gnss = "E"
+set obs  = `echo "L1 L5"`   # Galileo defaults.
+set delete = "no"
+
+set sdf = "default"
+
+set ncd = "net"   # Default network code (ncd), gps, glo, gal, bds other possible choices.
+#
+foreach a ($argv)
+  switch($a)
+    case -d:
+      set year  = $argv[2]
+      set doy = $argv[3]
+    breaksw
+    case -sd:
+       set sdf = $argv[2]
+    breaksw
+    case -gn*:
+       set gnss = $argv[2]
+    breaksw
+    case -o:
+       set obs = `echo $argv[2] $argv[3]`
+    breaksw
+    case -net_n*:
+       set ncd = $argv[2]
+    breaksw
+    case -net_d*
+       set net_dim = $argv[2]
+    breaksw
+    case -net_o*
+       set tie_num = $argv[2]
+    breaksw
+    case -tie_m*
+       set tie_method = $argv[2]
+    breaksw
+    case -apr*:
+       set aprf = $argv[2]
+    breaksw
+    case -f:
+       set conf = $argv[2]
+    breaksw
+    case -del*:
+       set delete = "yes"
+    breaksw
+    case -core*
+       set core_list = $argv[2]
+    breaksw
+    case -sec*
+       set sec_list = $argv[2]
+    breaksw
+    case -pa*:
+       set rxpath = $argv[2]
+    breaksw
+    case -pe*:
+       set percent = $argv[2]
+    breaksw
+    case -max*:
+       set maxsite = $argv[2]
+    breaksw
+
+   endsw
+shift
+end
+#
+# Make sure all the time arguments are OK
+set yr = `sh_year -year $year`
+set doy = `doy $yr[1] $doy| head -n 1 | awk '{printf("%3.3d",$6)}'`
+set ID = "${yr[1]}.$doy"
+set JD = "${yr[1]}_$doy"
+set ts = "${gnss}.$obs[1]$obs[2]"
+# Include psuedorange in test as well
+set obsall = ( $obs `echo $obs | awk '{gsub("L","C")} {print $0}'` )
+
+# Name of the sites.defaults file
+if ( $sdf == "default" ) set sdf = "sites.defaults.${ID}"
+
+# See if delete existing file
+if( $delete == "yes" && -e inc.$ID.$ts ) \rm inc.$ID.$ts
+
+### OK: Get list of available rinex files
+if( ! -e inc.$ID.$ts ) then
+   echo "No inc.$ID.$ts file (delete = $delete)"
+   echo "Looking for RINEX:  ${rxpath} ${doy} ${yr[2]}o"
+   set files = `ls ${rxpath}/????${doy}?.${yr[2]}o`
+   echo "# GNSS with $obs observables added `date` with $#files rinex files" >!  inc.$ID.$ts
+else
+   echo "inc.$ID.$ts file (delete = $delete) exits; only new rinex checked"
+   set files = `find $rxpath -newer inc.$ID.$ts -name "????${doy}?.${yr[2]}o"`
+   echo "# " >> inc.$ID.$ts
+   echo "# GNSS with $obs observables added `date` with $#files rinex files" >>  inc.$ID.$ts
+endif
+echo "Looking at $#files Rinex files"
+foreach f ( $files )
+   set site = `echo $f:t | awk '{print substr($0,1,4)}'`
+   echo -n "$site "
+   # See how much data
+   # MOD TAH 200530: Changes scanning to check phase and range and to account for
+   #   for files with multiple L1 and C1 files. Scan for all phase and range
+   set lcdat = `scan_rinex $f 6 $gnss | egrep "^ [LC].. " | awk '{print $1,$4}'`
+   set pc = `echo "0 0 0 0"`
+   foreach j ( `seq 1 4` )
+      set pc[$j] = `echo $lcdat | awk '{for(i=1; i< NF ; i=i+2) {printf(" %s %s\n",$i,$(i+1))}}' | grep $obsall[$j] | sort -nr -k 2 | head -1 | awk '{print $2}'`
+   end
+   # See if enough data 
+   set OK = `echo $percent $pc | awk '{if( $2>=$1 && $3>=$1 && $3>=$1 && $4>=$1 ) {print "OK"} else {print "NO"}}'`
+   if( $OK == "OK" ) then
+     echo $site $pc $f | awk '{printf(" %s  %6.1f %6.1f  %6.1f %6.1f %s\n",$1,$2,$3,$4,$5,$6)}' >> inc.$ID.$ts
+   else 
+#    Un-comment line to see why sites no used.
+#    echo $site $f $pc | awk '{printf(" %s  %s %6.1f %6.1f  %6.1f %6.1f \n",$1,$2,$3,$4,$5,$6)}'
+   endif
+end
+echo " "
+echo "Added  inc.$ID.$ts with `grep '^ ' inc.$ID.$ts | wc -l` sites "
+
+if( `grep '^ ' inc.$ID.$ts | wc -l` == 0 ) then
+   echo "No sites found GNSS $gnss with frequencies $obs"
+   exit
+endif
+
+# Create a apriori coordinate file sites wanted for GNSS processing.
+set sites = `grep "^ " inc.$ID.$ts | awk '{print toupper($1) "_ "}'`
+set numsite = `echo $#sites`
+echo "# Apriori coordinates from $aprf for inc.$ID.$ts" >! apr.$ID.$ts 
+foreach s ( $sites )
+  set ns = `grep "^ $s" $aprf | wc -l`
+  if( $ns == 0 ) then
+     echo "No coordinates for $s in apriori file $aprf"
+  else
+     grep "^ $s" $aprf | head -1 >> apr.$ID.$ts
+  endif
+end
+echo "Created apr.$ID.$ts with `grep '^ ' apr.$ID.$ts | wc -l` sites "
+
+
+### See how many sites.  If less than maxsite make as many networks
+#   with ~45 sites; otherwise use the sh_netwotk_sel script to make
+#   maxsite total.
+if( $numsite < $maxsite ) then 
+
+   set num_nets = `echo $numsite | awk '{printf("%d",$1/45)}'`
+   if( $num_nets <= 1 ) then
+      echo "For $numsite only 1 network" 
+      set num_nets = 1
+#     Make a "tie" file with just the sites in it
+      grep '^ ' apr.$ID.$ts  | awk '{printf(" %s %15.3f %15.3f %15.3f %9.3f $9.3f %9.3f %10.4f 1N \n",$1,$2,$3,$4,$5,$6,$7)}' >! tie.${ID}.${ts}
+   else
+      echo For $numsite there will be $num_nets with about `echo $numsite $num_nets | awk '{printf("%d",$1/$2+0.5)}'` sites each
+  
+#     Now form network.
+      echo "Using global select directly"
+      global_sel $sites[1] -$num_nets apr.$ID.$ts >! sel.$ID.$ts
+
+#     Now create the tie sites.  Use same approaach as sh_network_sel
+      echo " "
+      echo "Now creating tie connections Method $tie_method"
+
+#     Now we pick the tie sites for each network
+      \rm -f tie.${ID}.${ts} >&! /dev/null
+      cat sel.$ID.$ts >! tie.${ID}.${ts}
+      ls -l  tie.${ID}.${ts}
+#     Method 0 no ties computed
+      if ($tie_method == 0) then
+        echo "Tie method 0 has no computed ties (user defined)"
+
+#     Method 1 tie each network to the next with the top $num_tie sites from the next network
+      else if ($tie_method == 1) then
+        echo " "
+        echo "Tie method 1 Each network is tied to the next with $tie_num sites"
+        set i = 0
+        set j = 1
+        while ( $i < ${num_nets} )
+          @ i++
+          @ j++
+          if ( $j > ${num_nets} ) set j = 1
+          grep ${i}N sel.$ID.$ts | awk '{print $0}' | head -n ${tie_num} | \
+          awk -v net=$j '{printf " %s %15.4f %15.4f %15.4f %9.4f %8.4f %8.4f %11.4f %4d %6s %7s \n",$1, $2, $3, $4, $5, $6, $7, $8, " 0 ", net"Tie", net"N"}' >> tie.${ID}.${ts}
+        end
+
+#     Method 2 tie all networks to each other using $num_tie sites from all other networks
+      else if ($tie_method == 2) then
+        echo " "
+        echo "Tie method 2 Each netowrk is tied to all other network by $tie_num sites"
+        set i = 0
+        while ( $i < ${num_nets} )
+          set j = 0
+          @ i++
+          while ( $j <= ${num_nets})
+            @ j++
+            @ k = $i * $tie_num
+            if ( $j != $i ) then
+              grep ${j}N sel.$ID.$ts | awk '{print $0}' | head -n $k | tail -n $tie_num | \
+              awk -v net=$i '{printf " %s %15.4f %15.4f %15.4f %9.4f %8.4f %8.4f %11.4f %4d %6s %7s \n",$1, $2, $3, $4, $5, $6, $7, $8, " 0 ", net"Tie", net"N"}'>> tie.${ID}.${ts}
+            endif
+          end
+        end
+      endif
+   endif
+
+#  Now make the sites.defaults file
+   # 
+   echo " "
+   set n = 0 
+   while ( $n < ${num_nets} )
+     @ n++
+     grep ${n}N tie.${ID}.${ts} | awk '{print $0}' >! net${n}.crd.${ID}
+   end
+
+
+#  See if append of start new file
+   if( ! -e $sdf ) then
+#     New file
+      echo "# Sites.defaults generated by sh_network_sel Created `date`" >! ${sdf}
+   else
+#     Create copy and remove any existing $ncd entres (these will be re-created)
+      set tss = `date +"%H%M%S"`
+      \mv ${sdf} ${sdf}.${tss}
+      egrep -v "gps ${ncd}| for ${ncd} " ${sdf}.${tss} >!  ${sdf}
+      echo "#" >> ${sdf}
+      echo "# Sites.defaults updated by sh_network_sel `date`" >> ${sdf}
+      \rm ${sdf}.${tss}
+   endif
+
+   echo "# Generated for $yr[1] $doy for ${ncd} " `date -u +"%Y/%m/%d %H:%M UTC"` >> ${sdf}
+   echo "# Options: num sites $numsite, num net $num_nets,  -apr_file $aprf" >> ${sdf}
+   echo "# -tie_method $tie_method -net_overlap $tie_num" >> ${sdf}
+   echo "# " >> ${sdf}
+
+   foreach n ( `seq 1 ${num_nets}` )
+     echo "Creating $sdf entries for network: $n"
+     set tlist = `grep ${n}Tie tie.${ID}.${ts} | awk '{printf "%s ",$1}'`
+     echo "# Tie sites for $ncd network $n : $tlist " >> ${sdf}
+     foreach s (`grep ${n}N tie.${ID}.${ts} | awk '{print tolower(substr($1,1,4))}'`)
+#      Check site is in station.info
+       set nsi = `grep -i "^ $s" $stinfo | wc`
+       if( $nsi[2] == 0 ) then
+          echo $s $ncd $n | awk '{printf(" %s_gps %s%1d  ftprnx\n",$1,$2,$3)}' >> ${sdf}
+       else
+          echo $s $ncd $n | awk '{printf(" %s_gps %s%1d  ftprnx xstinfo\n",$1,$2,$3)}' >> ${sdf}
+       endif
+       set nsi = `grep -i "^$s" $aprf | wc`
+     end
+   end
+
+else
+   echo "MAXSITES EXCEEDED: $maxsite Number $numsite"
+   set rxf = `grep "^ " inc.$ID.$ts | awk '{print $6}'`
+   set ID = "${yr[1]}.$doy"
+   set ln = "list_${ID}"
+   ls -l $rxf | awk '{printf("%s %10d\n",substr($9,length($9)-11),$5)}' >! $ln
+   echo Calling sh_network_sel -d $yr[1] $doy -f $conf -aprf $aprf -net_name $ncd -core_list $core_list -sec_list $sec_list -net_dim $net_dim -net_overlap $tie_num -tie_method $tie_method -excl_stinf
+   sh_network_sel -d $yr[1] $doy -f $conf -aprf $aprf -net_name $ncd -core_list $core_list -sec_list $sec_list -net_dim $net_dim -net_overlap $tie_num -tie_method $tie_method -excl_stinf
+endif
+#
+# Now remove all the temporary files
+#\rm -f tmp.*.${ID} t.*.${ID} an.core.${ID} an.all.${ID} an.sec.${ID} an.unselected.${ID} sort.list.*  >&! /dev/null
+#\rm net?.crd.${ID} avail_${ID} an.comb.${ID}
+
+
+
+

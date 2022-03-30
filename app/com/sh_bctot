@@ -1,0 +1,10 @@
+#!/bin/csh -f
+#
+#doc sh_bctot replaced by sh_bcfit
+#
+echo "============================================================"
+echo "   sh_bctot now replaced by sh_bcfit"
+echo "  "
+echo "============================================================"
+exit
+

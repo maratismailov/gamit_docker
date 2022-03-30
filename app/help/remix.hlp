@@ -1,0 +1,16 @@
+REMIX: Remixes spectral components in time series file
+
+
+REMIX: Remixes spectral components to new values.
+
+Runstring:
+
+% remix <infile> <outfile> <Df (cpd)> <cos +- sin +-> <cos +- sin +->
+
+where infile is name of input file
+	outfile is the output file name (overwritten)
+	Df is frequency shift (0.070467 cpd will map 13.66 day to 365 day>
+	cos +- sin +- are the fields for the remixing.  These are repeated
+		for as many types of data as needed
+
+

@@ -1,0 +1,111 @@
+#!/bin/csh -f
+#
+if( $#argv == 0 ) then
+    echo " "
+    echo "Script to generate PBO velocity file"
+    echo "Usage:"
+    echo "% sh_pbor_vel <globk velocity .org file> <glist file> <ts>"
+    echo " "
+    echo "The eq_files used in the globk velocity should be used in generation of glist file"
+    echo "   with the same data as used in the globk solution.  When combined GLX files are used, "
+    echo "   a gdl file with the original daily list of glx files will generate more accurate time"
+    echo "   ranges for the velocity estimates"
+    echo "<ts> is optional time tag to use as release date e.g., 20151223142406"
+    echo " "
+    echo "PBO velocity file will be the original .org file root with extent .pbovel"
+    echo "NOTE: PBOP output option must be set (default in globk 5.22 and beyond"
+    echo " "
+    exit
+endif
+
+set if = $1
+set of = $if:r.pbovel
+set gl = $2
+
+echo "Creating $of from $if and $gl"
+#
+# Get all the site lines
+if( $#argv < 3 ) then
+    set ts =  `date +"%Y%m%d%H%M%S"`
+else
+    set ts = $3
+    echo "Using Release date $ts"
+endif
+
+
+# MOD TAH 080724: Get the reference frame information
+set refframe = `grep '^ Reference Frame        :' $if | awk '{print substr($0,26,16)}'`
+echo "PBO Velocity file from $if Reference Frame : $refframe" >! $of
+echo "Format Version: 1.1.0" >> $of
+echo "Release Date  : $ts" >> $of
+echo "Start Field Description" >> $of
+echo "Dot#        4-character identifier for a given station" >> $of
+echo "Name        16-character station name" >> $of
+echo "Ref_epoch   Date and time at which the station position is as given in ref_XYZ and ref_NEU. Format is YYYYMMDDhhmmss." >> $of  
+echo "Ref_jday    Reference epoch, represented as Modified Julian Day number (MJD)" >> $of
+echo "Ref_X       Reference X coordinate at Ref_epoch, meters" >> $of
+echo "Ref_Y       Reference Y coordinate at Ref_epoch, meters" >> $of
+echo "Ref_Z       Reference Z coordinate at Ref_epoch, meters" >> $of
+echo "Ref_Nlat    Reference North latitude WGS-84 ellipsoid, decimal degrees" >> $of
+echo "Ref_Elong   Reference East Longitude WGS-84 ellipsoid, decimal degrees" >> $of
+echo "Ref_Up      Referemce Height  WGS-84 ellipsoid, meters" >> $of
+echo "dX/dt       X component of station velocity, meters/yr" >> $of
+echo "dY/dt       Y component of station velocity, meters/yr" >> $of
+echo "dZ/dt       Z component of station velocity, meters/yr" >> $of
+echo "SXd         Standard deviation of X velocity,  meters/yr" >> $of
+echo "SYd         Standard deviation of Y velocity,  meters/yr" >> $of
+echo "SZd         Standard deviation of Z velocity,  meters/yr" >> $of
+echo "Rxy         Correlation of X and Y velocity" >> $of
+echo "Rxz         Correlation of X and Z velocity" >> $of
+echo "Ryz         Correlation of Y and Z velocity" >> $of
+echo "dN/dt       North component of station velocity, meters/yr" >> $of
+echo "dE/dt       East component of station velocity, meters/yr" >> $of
+echo "dU/dt       Vertical component of station velocity, meters/yr" >> $of
+echo "SNd         Standard deviation of North velocity, meters/yr" >> $of
+echo "SEd         Standard deviation of East velocity, meters/yr" >> $of
+echo "SUd         Standard deviation of vertical velocity, meters/yr" >> $of
+echo "Rne         Correlation of North and East velocity" >> $of
+echo "Rnu         Correlation of North and vertical velocity" >> $of
+echo "Reu         Correlation of East and vertical velocity" >> $of
+echo "first_epoch Epoch of first data used to derive the station velocity, in the same format as ref_epoch." >> $of
+echo "last_epoch  Epoch of last data used to derive the station velocity, in the same format as ref_epoch." >> $of
+echo "End Field Description " >> $of
+echo "*Dot#     Name           Ref_epoch      Ref_jday      Ref_X          Ref_Y           Ref_Z         Ref_Nlat        Ref_Elong     Ref_Up...     dX/dt    dY/dt   dZ/dt    SXd     SYd     SZd    Rxy     Rxz    Rzy      dN/dt     dE/dt    dU/dt   SNd     SEd     SUd     Rne    Rnu    Reu   first_epoch     last_epoch " >> $of
+
+set siteord = `grep '^pbr.' $if | awk '{print substr($2,1,4)}' | sort -u`
+set sites = ''
+foreach s ( $siteord )
+    set newsites = `grep "^pbr. $s" $if | awk '{print $2}'`
+    set sites = `echo $sites $newsites`
+end
+\rm vel.tmp ; touch vel.tmp
+foreach s ( `echo $sites` )
+    set times = `grep P$ $gl | grep $s | awk '{print $5,$6}'`
+#   Convert times
+    if( $#times != 2 ) then
+       echo "For site $s; times size wrong $times"
+#      Now see if we can find in renames
+       set d1 = `grep ' XYZ$' $gl | grep $s | awk '{printf("%4d %2d %2d ",substr($0,43,4), substr($0,48,2),substr($0,51,2))}'`
+       set d2 = `grep ' XYZ$' $gl | grep $s | awk '{printf("%4d %2d %2d ",substr($0,61,4), substr($0,66,2),substr($0,69,2))}'`
+#      now create $times
+       set times = `doy $d1 | tail -1 | awk '{print $3}'`
+       set times = ( $times `doy $d2 | tail -1 | awk '{print $3}'`)
+#      Now see if we have times
+       if( $#times != 2 ) then
+          echo "For site $s; still no times $times"
+          set times = `echo 1996.00 2018.7041`
+       else 
+          echo "For site $s; using times $times"
+       endif
+    endif
+#   95 ARBT    ->ARBT_3PS                 2005/ 9/25  0: 0  2100/ 1/ 1  1: 0      0.0000     0.0000     0.0000 XYZ
+    set sd = `doy ${times[1]}Y | head -1 | awk '{print substr($2,1,4)substr($2,6,2)substr($2,9,2)"000000"}'`
+    set ed = `doy ${times[2]}Y | head -1 | awk '{print substr($2,1,4)substr($2,6,2)substr($2,9,2)"000000"}'`
+    echo $s $times " Converted " $sd $ed
+    grep '^pbr.' $if | grep $s | awk -v sd=$sd -v ed=$ed '{print substr($0,5,5),substr($0,15,279),sd,ed}' >> vel.tmp
+end
+cat vel.tmp >> $of
+
+echo "Created $of"
+
+# ALGO_GPS Algonquin        20050827120000 53609.5000    918129.37559 -4346071.28056  4561977.85384   45.9558002587  281.9286318860  200.91944 0.00155-0.00459 0.00272 0.00014 0.00035 0.00035 -0.496  0.476 -0.840  -0.00155 0.00057 0.00531 0.00014 0.00012 0.00048  0.001 -0.114  0.040  18581117000000 18581117000000

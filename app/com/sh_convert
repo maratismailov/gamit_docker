@@ -1,0 +1,12 @@
+#!/bin/csh -f
+echo 'CONVERT' > tmp.con
+echo $* >> tmp.con
+echo 'Converting from '$3  >> tmp.con
+set opt = `convert | grep Version | awk '{if ($3 > 4.0 ) {print "+antialias"}}'`
+echo 'Antialias option' $opt >> tmp.con
+
+convert -alpha off $opt -crop 0x0 $3  $4   >>&  tmp.con
+
+\rm $3 >>& tmp.con
+echo ' Convert finished ' >> tmp.con
+

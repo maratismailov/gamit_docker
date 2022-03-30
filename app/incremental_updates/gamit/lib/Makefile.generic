@@ -1,0 +1,37 @@
+# Generic Makefile for gamit/lib - see documentation at libraries/comlib/Makefile.generic
+# Changed by T. Herring July 1, 2019.  Added read_svsinex
+# Last changed by M. Floyd, 2019-10-04. Added interp_azel
+# Last changed by TAH 200509: Added hfeop_util hfeop_desai hfeop_gipson 
+
+FFLAGS = -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals #g77
+
+#LABELS: gamit_lib:NONE:gamit_lib:NONE
+
+#SHARELIB: ../../libraries/comlib:com_lib
+#SHARELIB: .:libsofa
+    
+#OBJ_gamit_lib amag3 angvec ant_alias argmnt assign_srpnames          
+#OBJ_gamit_lib blank block_name cdate check check_y2k clkera        
+#OBJ_gamit_lib copens count_arg crd_file_type cross cross_unit crs_trs dayjul daynum dblas1 dblas2 dblas3 dlapack dlinpk
+#OBJ_gamit_lib decyrs degdms dmsdeg dmsrad dot doygwk dvdot dvswp ephdrd errcod even_minute evrtcf fcheck 
+#OBJ_gamit_lib fix_y2k frac funarg
+#OBJ_gamit_lib funcof geninv1 geoxyz geodms_xyz  getdat getcmd gettim get_iut1pol 
+#OBJ_gamit_lib hfeop_util hfeop_desai hfeop_gipson
+#OBJ_gamit_lib getusr  get_gnss gsatel gpsblock gpt gpt2 gpt3 hisub iarray ic4array iclarg idoy ier2df ierrcm imenu indexi indexx interp_azel inver2 itimdif
+#OBJ_gamit_lib jel jelf julday jul2hms lask lbias lgood lift_arg linear
+#OBJ_gamit_lib lloel lmarg lower1 lowerc lowers lread lversn lunred mapamp
+#OBJ_gamit_lib match_name matmpy mchkey MHB_2000 mmply monday mopens nblen newchr normalise nutred nuttab nydays ocearg ocearg2 otlcmc pjdhms pnrot
+#OBJ_gamit_lib pns polred prces printmat proper raddms rand5 rdsest read_antmod read_antex read_antex_head  
+#OBJ_gamit_lib readc1 readc2 readc3 readc4 readc5 readdf reade readj readm1 readm2 readm3
+#OBJ_gamit_lib read_gdatum read_gfile read_rcvant rfica rixhed rjust rnhalf rnqrtr rotate_geod rot_gfile 
+#OBJ_gamit_lib rotmat rotsnp rotsnp_sofa round6h rrinex rrxhed rsesfo rsp3hd rstnfo runtim  satatt secdif
+#OBJ_gamit_lib secsum sel_obtyp  shadow1 sidmat sidtim snp solred sort_string sph2xyz srotat svnav_read suicid thdred strjst
+#OBJ_gamit_lib taiutc timcon timdif time_TT time_TT_sec  timinc topens transp upnam1 upnam2 upnam3 upper1
+#OBJ_gamit_lib upperc uppers utc2gps ut1red ut1tid utlibr wdms wfica writc1 writc2 writc3 writc4
+#OBJ_gamit_lib writc5 writm1 writm2 writm3 wrxhed wrxnav wstnfo wtime wwrite xyz2sph xhdred yaw_attit      
+#OBJ_gamit_lib ephred ephtrp read_svsinex
+
+#Removed gpt3_1 
+
+
+

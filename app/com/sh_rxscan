@@ -1,0 +1,78 @@
+#!/bin/csh -f
+#
+#doc Scan and summarize list of rinex files given
+#doc
+#
+# Modified for most cases S. McClusky 1997/02/21
+# Modified to use -f, -doc, -gnss   R. King 2016/3/3
+if ($#argv == 0) then
+   echo ' '                                       
+   echo ' Scan RINEX files'
+   echo ' '
+   echo ' examples'                               
+   echo ' '                                       
+   echo '   sh_rxscan -doc -f vndn1230.90o'
+   echo '   sh_rxscan -doc -f *.90o'
+   echo '   sh_rxscan -doc -gnss R -f *.16o'
+   echo '   sh_rxscan -f *.90o '
+   echo '   sh_rxscan ankm*.90o mele*.90o kara*.90o '
+   echo ' '                                       
+   echo ' where the doc option will create .doc files'                               
+   echo ' '                                       
+   echo ' '                                       
+exit
+else 
+endif 
+
+set  extend_doc  = no 
+set files = ""
+set gnss = "G"
+
+while ( $#argv > 0 )
+   set input = ($argv)
+   switch($input[1])   
+     case -doc:
+       set extend_doc = yes 
+     breaksw 
+     case -gnss:
+       set gnss = $input[2]
+     breaksw 
+     case -f:          
+       set sfiles =  (`echo $argv | cut -d- -f2`); shift sfiles        
+     breaksw
+   endsw         
+   if ( $#argv > 0 ) shift argv
+end 
+
+# loop over all files
+foreach file ( `echo $sfiles ` )
+   echo 'Working on ' $file    
+# Check for DOS format rinex files convert to UNIX if necessary                        
+  set num = `head -n 1  $file | od -c | grep '\\r' | wc -l `
+        # Modified by M. Floyd (2011/06/10, MIT)
+        # to use tr instead of potentially unavailable dos2unix
+        #if ( $num != 0 ) dos2unix $file $file
+        if ( $num != 0 ) then          
+          echo 'Converting RINEX file from DOS to UNIX end-of-line'
+          tr -d '\r' < $file > $file.tmp && mv -f $file.tmp $file
+        endif
+  
+# output to screen
+if ( $extend_doc == no ) then
+rxscan <<[
+$file
+[
+
+else
+echo "calling rxscan with output to doc "
+# output to .doc file
+rxscan  >! $file.doc <<[
+$file
+[
+endif
+
+end # foreach
+
+
+
+

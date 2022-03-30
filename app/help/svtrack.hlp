@@ -1,0 +1,24 @@
+SVTRACK: Computes rise and set times of satellites in GPS nav file
+
+      program svtrack
+ 
+Program to compute the rise and set times of the GPS
+satelites based on the ephemeris in the rinex navigiation
+files
+ 
+The runstring of the program is
+% svtrack [navfile] site_lat site_long <'start yy mm dd hh \
+                stop yy mm dd hh step (min)'>
+where namvfile is nave file name
+    site_lat and site_long are the lat and long of the site
+            (decimal degrees)
+    'start yy mm dd hh  stop yy mm dd hh step (min)' is the
+            start and stop times (to nearest hour) and the
+            step size in minutes.  These values are all enclosed
+            in single quotes.  The defaults are ar for 1 day
+            from the ephemeris epoch in 10 minute steps.
+
+The results are contained in series of svs_[nav_file].ext files
+where .ext is .i3d for inertial 3D
+              .e3d for earth fixed 3D
+ 

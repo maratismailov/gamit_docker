@@ -1,0 +1,24 @@
+#!/bin/csh -f
+
+# make a summary of bias fix/free statistics of a full solution
+
+# by pfang@pgga.ucsd.edu May, 94
+
+set inp = $1
+if ($#argv < 1) then
+   set inp = (`ls -t q????a.???`)
+   set inp = $inp[1]
+endif
+set day = (`echo $inp | tr '.' ' '`)
+
+#cat $inp | awk '/UT1-TAI RATE/ {on = 1; fx = 0; fr = 0} \
+cat $inp | awk '/GCX/ {on = 1; fx = 0; fr = 0} \
+on == 1 && substr($0,7,4) == "B1L1" {yes++} \
+yes == 1 {old = substr($0,12,9)} \
+yes > 1 && old != substr($0,12,9) {print old,fx,fr; old = substr($0,12,9); fx = 0; fr = 0} \
+yes >= 1 && old == substr($0,12,9) && substr($0,6,1) != " " {fr++; old = substr($0,12,9)} \
+yes >= 1 && old == substr($0,12,9) && substr($0,6,1) == " " {fx++; old = substr($0,12,9)} \
+on == 1 && substr($0,7,4) == "B1L2" {print old,fx,fr;exit}' | sort >! biassum.$inp
+
+cat biassum.$inp
+

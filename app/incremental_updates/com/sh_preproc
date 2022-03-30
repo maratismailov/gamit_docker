@@ -1,0 +1,989 @@
+#!/bin/csh -f
+#
+#doc Pre-process required GAMIT input files. (Used by sh_gamit)
+#doc
+#
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 || ` echo $1 | cut -c2-` == 'help' ) then
+  echo "=================================================================================="
+  echo "  "
+  echo " sh_preproc is a script to automate GAMIT/GLOBK setup " 
+  echo "  "
+  echo " Usage: sh_preproc -ydoy <yr> <doy> -nav <nav> -expt <expt> -orbt <orbt> -sp3file <sp3file>" 
+  echo "                   -sint <sint> -nepc <nepc> -stime <shour> <smin> -gnss <gnss-code> -lfreq <#>"
+  echo "                    -remakex <Y/C/N> -remakek <Y/C> -remakej <Y/N> -xsite <list> -xver <char> -cmdfile <file> "
+  echo "  "                                                                            
+  echo " Where: "
+  echo "  "
+  echo " ydoy   is the 4 digit year and 3 digit day of year [Required]"
+  echo " nav    is the name of the RINEX navfile [Required]"
+  echo " expt   is the 4 char experiment ID. [Required]"
+  echo " orbt   is the 4 char orbit ID. [Required]"                
+  echo " sp3file is the name of SP3 file  "
+  echo " sint   is the sampling interval to process (secs). [Required]"
+  echo " nepc   is the number of epochs to process. [Required]"
+  echo " shour smin are the start time of the processing (hr min). [Required]"
+  echo " gnss-code  G R E C J I [default G] "
+# MOD 200511" Added low frequency selector D wuold used default
+  echo " -lfreq #       Lower frequency selection depending on GNSS e.g., # = 5 for G L5; 6, 7 or 8 for E L6, L7 or L8; 5 or 7 for C L5 or L7"
+  echo "                Options couples to GNSS selection.  (Default, not specified and GAMIT selection used"
+  echo " -remakex options are Y/C/N:"
+  echo "        Y - remove existing x-files and session.info (No checking)"
+  echo "        C - check x-files satellite and session info wrt. g-files and session.info." 
+  echo "            Remove and remake x-files if any mismatch AND RINEX files are available"
+  echo "            to rebuild x-files. [default]"
+  echo "        N - Don't remake x-files under any circumstances."     
+  echo " -remakek options are Y/C/N:"
+  echo "        Y - remove existing k-files and remake "
+  echo "        C - do not remake k-files unless missing or X-files are remade (default)"
+  echo "        N - do not remake k-files -  stop if missing"   
+  echo " -remakej options are Y/N:"  
+  echo "        Y - remove existing j-file and remake from navigation file"  
+  echo "        N - use existing j-file (necessary if j-file is made from C-files for SA with sampling offsets"
+  echo " xsite  is a list of sites to be excluded form the dfile."
+  echo " xver   1-character x-file version (6th character of x-file). [Default is single-digit year]"
+  echo " jclock  source of SV clocks: brdc or sp3 "
+  echo " file   name of the file containing the sh_gamit command line arguments"
+  echo "  "   
+  echo " sh_preproc is run in day directory and environment procdir needs to be set to directory above"
+  echo " "                                                                        
+  echo " Example: sh_preproc -ydoy 98 240 -nav brdc2400.98n -expt tubi -orbt pgga -sint 30 -nepc 2880 -stime 0 0 -remakex C "
+  echo "  "
+  echo "==================================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS #############################   
+# Set options which may not be in command-line or process.defaults:
+set year = ''
+set yr = ''
+set stinf_unique = ' '
+set stinf_nosort = ' '
+set stinf_slthgt = ' '
+set use_rxc = 'N'
+set globalrx = ''
+set rawlst   =  ''
+set not_globalrx = ''
+set not_rawlst   =  ''
+set stinfo_excld = ''
+set do_makexp = 'N'
+set remakex = 'C'  
+set remakek = 'C'
+set remakej = 'Y'
+set xsite = ''
+set xver = ''
+set cmdfile = 'tmp.cmds'
+set sd = '' 
+set gnss = 'G'  
+set lf   = 'D'                                                                  
+set jclock = 'brdc' 
+set sp3file = ' ' 
+unalias ls
+
+######## GET SAVED COMMAND FILE NAME FROM COMMANDLINE IF GIVEN  #########   
+set argv_save = `echo $argv`
+echo "procdir is $procdir"
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -cmdfile: 
+        set cmdfile =  $argv[2] 
+    breaksw  
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+set argv = `echo $argv_save`
+
+# Setup necessary paths and filenames
+source ${procdir}/tables/process.defaults  
+
+# Reset commandline options.
+echo "control path ${cpth}"
+source ${cpth}/${cmdfile}
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -ydoy:
+        set year = $argv[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+        set yr = `sh_year -year $year`
+        set doy = $argv[3]
+        breaksw   
+    case -gnss:
+        set gnss = $argv[2]
+        breaksw
+     case -lf*:
+        set lf = $argv[2]
+        breaksw
+   case -nav:
+        set nav = $argv[2]
+        breaksw
+    case -orbt:
+        set orbt = $argv[2]
+        breaksw    
+    case -sp3file:
+        set sp3file = $argv[2]
+        breaksw 
+    case -expt:
+        set expt = $argv[2]
+        breaksw
+    case -remakex:
+        set remakex = $argv[2]
+        breaksw   
+    case -remakek:
+        set remakek = $argv[2]
+        breaksw
+    case -remakej:
+        set remakej = $argv[2]
+        breaksw
+    case -sint:
+        set sint = $argv[2]
+        breaksw
+    case -nepc:
+        set nepc = $argv[2]
+        breaksw
+    case -stime:
+        set shr =  `echo $argv[2] | awk '{printf "%02d \n",$1}'`
+        set smin = `echo $argv[3] | awk '{printf "%02d \n",$1}'`
+        breaksw
+    case -xsi*:
+        set xsite =  (`echo $argv | cut -d- -f2`); shift xsite 
+    breaksw
+    case -xver
+        set xver = $argv[2]  
+    breaksw    
+    case -jclock
+       set jclock = $argv[2]
+    breaksw 
+    endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+
+##################### GET THE JOB DONE ############################
+
+set x_exptnou = ( `sh_get_defaults -token ftprnx -expt $expt -yr $yr[1] -doy $doy $sd` `sh_get_defaults -token localrx -expt $expt -yr $yr[1] -doy $doy $sd` )
+
+# MOD TAH 020816: Since a site may have both ftprnx and localrx set, the list above can have duplicates
+# so echo the list and sort the unique values.
+set x_expt = `echo $x_exptnou | tr ' ' '\n' | sort -u`
+echo 'Non-unique x-files list: ' $x_exptnou
+# This is only the list of sites that appears in sites.default.
+echo 'Unique sorted x-files list:    ' $x_expt
+
+# Now get the list of sites that is explicitly excluded by use of the expt token
+set excluderx = `sh_get_defaults -expt $expt -not -yr $yr[1] -doy $doy $sd`
+echo 'Excluderx: ' $excluderx  
+set globalrx = `sh_get_defaults -token ftprnx -expt $expt -yr $yr[1] -doy $doy $sd`
+set not_globalrx = `sh_get_defaults -token ftprnx -expt $expt -not -yr $yr[1] -doy $doy $sd`
+# PT040115: also need to add the localrx sites NOT in the experiment given     
+set not_localrx  = `sh_get_defaults -token localrx -expt $expt -not -yr $yr[1] -doy $doy $sd`
+set rawlst = `sh_get_defaults -token ftpraw -expt $expt -yr $yr[1] -doy $doy $sd`
+set not_rawlst = `sh_get_defaults -token ftpraw -expt $expt -not -yr $yr[1] -doy $doy $sd` 
+#set stinfo_excld = `sh_get_defaults -token xstinfo -expt $expt`
+#MOD TAH 020816: If a site is be excluded from station.info then it does not matter
+# if it is in the experiment being processed.  Exclude always if it is listed this way. 
+# MOD PFang/RWK: make this case insensitive (yr and day not necessary for xstinfo)
+# set stinfo_excld = `sh_get_defaults -token xstinfo -yr $yr[1] -doy $doy` 
+# MOD TAH 051115: Added back the -yr and -doy entries so that correct sites.defaults used.
+set stinfo_excld = `sh_get_defaults -token xstinfo  -yr $yr[1] -doy $doy $sd | tr '[A-Z]' '[a-z]'`
+echo "stinfo_excld "$stinfo_excld 
+
+# Set timestamp hostname variable
+# set ts = "`hostname`:`date +"%H%M%S"`"
+# MOD TAH 200929: Added expt and doy to keep files separate in parrallel runs.
+set ts = "`hostname`:${expt}.${doy}:`date +"%H%M%S"`"
+
+#Check required fields
+if ( ${year} == '' || ${doy} == '' || ${nav} == '' || ${expt} == '' || ${orbt} == '' ) then
+  echo "Required fields not complete:- yr: $year doy: $doy nav: $nav expt: $expt orbt: $orbt --Stop "
+  exit 1
+endif 
+      
+# Set default xver if one isn't set by the user
+  if ( $xver == '' ) set xver = $yr[3]
+  echo "X-file version to be used is: $xver"
+
+# Kill all x-files if requested!!!
+if ( $remakex == "Y" ) then
+  set xfiles = `\ls x????${xver}.${doy}` >& /dev/null  
+  echo "remakex = Y, removing all x-files"
+  echo "Removing x-files: $xfiles"; \rm -r x????${xver}.${doy} >& /dev/null
+# this shouldn't be needed and causes problems : \rm session.info >& /dev/null
+endif
+
+# See which x-files already exist.  Remove the link to the
+# rinex file if the xfile exists so that makexp will not
+# create a new file.    
+
+checkx:
+echo " "
+echo "Checking for existing x-files "    
+\ls -1 x????${xver}.${doy} | & grep -v 'No ' | awk ' $1 != "No" {print substr($0,2,4)}' >! tmp.1.$ts   
+set xf_list = `\ls -1 x????${xver}.${doy} | & grep -v 'No ' | awk ' $1 != "No" {print substr($0,2,4)}'`
+set rx_list = `\ls -1 ????????.${yr[2]}o | & grep -v 'No ' | awk ' $1 != "No" {print substr($0,1,4)}' | uniq`
+
+# Check if rinex files available to remake ALL x-files if necessary (-remakex C )
+set not_matched = '' 
+foreach xfn ( $xf_list )
+  set match = N
+  foreach rxn ( $rx_list )
+    if ( $xfn == $rxn ) set match = Y
+  end
+  if ( $match == "N" ) set not_matched = ($not_matched $xfn)
+end  
+  
+echo "xf_list: $#xf_list $xf_list"        
+if ( $#xf_list > 0 ) then   
+# Checking session.info 
+  if ( -e session.info ) then 
+    set slines = `cat session.info | wc -l`
+  else
+    echo "Missing session.info file, creating a new one from x-file: x${xf_list[1]}${xver}.${doy} "
+    set slines = 0 
+    sh_uncompress x${xf_list[1]}${xver}.${doy}
+    sh_xtosess -xfile x${xf_list[1]}${xver}.${doy}    
+    set slines = `cat session.info | wc -l`   
+  endif
+  if ( $slines < 3 ) then
+    echo "Short session.info file, creating a new one from x-file: x${xf_list[1]}${xver}.${doy} "
+    \rm session.info  >& /dev/null
+    sh_uncompress x${xf_list[1]}${xver}.${doy}
+    sh_xtosess -xfile x${xf_list[1]}${xver}.${doy}
+    set slines = `cat session.info | wc -l`
+  endif
+  echo "Session.info contains: ${slines} lines " 
+
+  set ydoy = `tail -n +3 session.info | awk -v yr4=$yr[1] -v yr2=$yr[2] -v doy=$doy '{if (($1==yr4 || $1==yr2) && $2 == doy ) {print $0}}'`
+  echo "ydoy from session.info: ${ydoy} "
+# Now check to see if we found the correct session. If not, then delete session.info since it is probably not valid
+# If we have a return then OK i.e., $ydoy is not blank.  If there are multiple sessions on the same day, this code will use the first.  Could be a problem.
+  if( $#ydoy < 1 ) then   
+    echo "Incorrect session info in session.info, creating a new one from x-file: x${xf_list[1]}${xver}.${doy}"
+    echo " "
+    \rm session.info >& /dev/null
+    sh_uncompress x${xf_list[1]}${xver}.${doy}
+    sh_xtosess -xfile x${xf_list[1]}${xver}.${doy}
+  else
+    set doyy = `echo $ydoy[1] $ydoy[2] | awk '{printf "%d %03d \n", $1,$2}'`
+    set sinfo = `echo $ydoy[4] $ydoy[6] $ydoy[7] $ydoy[5] | awk '{printf "%d %02d %02d %d \n", $1,$2,$3,$4}'`
+# This check should never fail :-) Since we check this info in the set ydoy line!!!!
+    if ( ( $doyy[1] != ${yr[2]} && $doyy[1] != ${yr[1]} ) || $doyy[2] != ${doy} ) then
+      echo "This check should never fail :-) Ie. I don't know how we got here."
+      echo "existing session.info for ${yr[1]} ${doy} is not consistent with session.info: $doyy[1] and $doyy[2] " 
+      exit 2
+    endif    
+    if ( $sinfo[1] != ${sint} || $sinfo[4] != ${nepc} || $sinfo[2] != ${shr} || $sinfo[3] != ${smin} ) then
+      echo "Data in session.info file for ${yr[1]} ${doy} is not consistent with your input: ${sint} ${nepc} ${shr} ${smin}" 
+      if ( $remakex == "C" ) then 
+        if ( $#not_matched > 1 ) then
+          echo "There are missing RINEX files: $not_matched" 
+          echo "I am not be able to recreate all the x-file currently existing. Stopping"
+          echo "If this is not a problem then rerun using the -remakex Y option. "
+          exit 3
+        else
+          echo "All x-files have matching RINEX. Deleting old x-files "
+          set xfiles = `\ls x????${xver}.${doy}` >& /dev/null  
+          if ($#xfiles > 0 ) echo "Removing x-files: $xfiles"; \rm -r x????${xver}.${doy} >& /dev/null; \rm session.info >& /dev/null
+          goto checkx
+        endif
+      else
+        echo "If you want the x-files with you new session info: ${sint} ${nepc} ${shr} ${smin}," 
+        echo " run using -remakex C or -remakex Y"
+        echo "For this run we are proceeding using the old session.info values: $sinfo[1] $sinfo[4] $sinfo[2] $sinfo[3] "
+      endif 
+    endif
+  endif   
+# Check the satellites lists of satellites given in session.info, g-file and x-files 
+# MOD TAH 150804: Updated code for GNSS versions
+#  grep CHANNEL "x${xf_list[1]}${xver}.${doy}" | awk '{printf "%02d \n", $4}' | sort -n >! tmp.xprn 
+#  sed -e "1,/END/ d" g${orbt}${yr[3]}.${doy} | grep PRN | awk '{printf "%02d \n", $2}' | sort -n >! tmp.gprn 
+  grep CHANNEL "x${xf_list[1]}${xver}.${doy}" | awk '{printf "%02d \n", substr($0,19,2)}' | sort -n >! tmp.xprn 
+# sed here removes the header lines until END is found.
+# MOD TAH 200512: Replaced "^G" with "^${gnss}"
+  sed -e "1,/END/ d" g${orbt}${yr[3]}.${doy} | grep "^${gnss}" | awk '{printf "%02d \n", substr($0,2,2)}' | sort -n >! tmp.gprn 
+  cat session.info | awk -v sn=${doy} '$2*1.0 == sn*1.0 {for (i=8;i<=NF;i++) {printf "%02d \n",$i}}' | sort -n >! tmp.sprn
+# Make lists of satellites differences between file types. 
+# sv's In session.info not in g-file
+  set sng_prn = `comm -23 tmp.sprn tmp.gprn`
+# sv's In in g-file not session.info
+  set gns_prn = `comm -13 tmp.sprn tmp.gprn` 
+# sv's In x-files not g-file
+  set xng_prn = `comm -23 tmp.xprn tmp.gprn`
+# sv's Inn g-file not x-files
+  set gnx_prn = `comm -13 tmp.xprn tmp.gprn`
+# sv's In x-files not session.info
+  set xns_prn = `comm -23 tmp.xprn tmp.sprn`
+# sv's In session.info not x-files
+  set snx_prn = `comm -13 tmp.xprn tmp.sprn`
+  if ( $#gnx_prn > 0 ) then 
+    if ( $remakex == "C" ) then 
+      echo "PRN: $gnx_prn in g${orbt}${yr[3]}.${doy}. NOT in x-files. Checking x-files vs rinex."
+      if ( $#not_matched > 1 ) then
+        echo "There are missing RINEX files: $not_matched" 
+        echo "I am not be able to recreate all the x-file currently existing. Stopping"
+        echo "If this is not a problem then rerun using the -remakex Y option. "
+        exit 4
+      else
+        echo "All x-files have matching RINEX. Deleting old x-files"
+        set xfiles = `\ls x????${xver}.${doy}` >& /dev/null  
+        if ($#xfiles > 0 ) echo "Removing x-files: $xfiles"; \rm -r x????${xver}.${doy} >& /dev/null; \rm session.info >& /dev/null
+        goto checkx
+      endif
+    else
+      echo "PRN: $gnx_prn in g${orbt}${yr[3]}.${doy}. NOT in x-files. These satellites remain EXCLUDED from x-files "
+      echo "If you want the x-files remade including these all available satellites, then run using -remakex C or -remakex Y "
+    endif 
+  endif
+  if ( $#xng_prn > 0 ) then
+    if ( $remakex == "C" ) then
+      echo "PRN: $xng_prn in original x-files. NOT in g${orbt}${yr[3]}.${doy}."
+      if ( $#not_matched > 1 ) then
+        echo "There are missing RINEX files: $not_matched" 
+        echo "I am not be able to recreate all the x-file currently existing. Stopping"
+        echo "If this is not a problem then rerun using the -remakex Y option."
+        exit 5
+      else
+        echo "All x-files have matching RINEX. Deleting old x-files "
+        set xfiles = `\ls x????${xver}.${doy}` >& /dev/null  
+        if ($#xfiles > 0 ) echo "Removing x-files: $xfiles"; \rm -r x????${xver}.${doy} >& /dev/null; \rm session.info >& /dev/null
+       goto checkx
+      endif
+    else 
+      echo "PRN: $xng_prn in original x-files. NOT in g${orbt}${yr[3]}.${doy}. -remakex N set so stop run. "
+      exit 6
+    endif
+  endif
+  if ( $#sng_prn > 0 ) then 
+    if ( $remakex == "C" ) then 
+      echo "PRN: $sng_prn in session.info. NOT g${orbt}${yr[3]}.${doy}. Checking x-files vs rinex."
+      if ( $#not_matched > 1 ) then
+        echo "There are missing RINEX files: $not_matched" 
+        echo "I am not be able to recreate all the x-file currently existing. Stopping"
+        echo "If this is not a problem then rerun using the -remakex Y option. "
+        exit 7
+      else
+        echo "All x-files have matching RINEX. Deleting old x-files "
+        set xfiles = `\ls x????${xver}.${doy}` >& /dev/null  
+        if ($#xfiles > 0 ) echo "Removing x-files: $xfiles"; \rm -r x????${xver}.${doy} >& /dev/null; \rm session.info >& /dev/null
+        goto checkx
+      endif
+    else
+      echo "PRN: $sng_prn in original session.info. NOT in g${orbt}${yr[3]}.${doy}. -remakex N set so stop run. "
+      exit 8
+    endif 
+  endif
+  if ( $#gns_prn > 0 ) then
+    if ( $remakex == "C" ) then
+      echo "PRN: $gns_prn in original g${orbt}${yr[3]}.${doy}. NOT in session.info"
+      if ( $#not_matched > 1 ) then
+        echo "There are missing RINEX files: $not_matched" 
+        echo "I am not be able to recreate all the x-file currently existing. Stopping"
+        echo "If this is not a problem then rerun using the -remakex Y option. "
+        exit 9
+      else
+        echo "All x-files have matching RINEX. Deleting old x-files "
+        set xfiles = `\ls x????${xver}.${doy}` >& /dev/null  
+        if ($#xfiles > 0 ) echo "Removing x-files: $xfiles"; \rm -r x????${xver}.${doy} >& /dev/null; \rm session.info >& /dev/null
+        goto checkx
+      endif
+    else 
+      echo "PRN: $gns_prn in g${orbt}${yr[3]}.${doy}. NOT in session.info. These satellites remain EXCLUDED from x-files "
+      echo "If you want the x-files remade including these all available satellites, then run using -remakex C or -remakex Y \n"
+    endif
+  endif
+  if ( $#xns_prn > 0 ) then 
+    if ( $remakex == "C" ) then 
+      echo "PRN: $xns_prn in x-files. NOT in session.info. Checking x-files vs rinex."
+      if ( $#not_matched > 1 ) then
+        echo "There are missing RINEX files: $not_matched" 
+        echo "I am not be able to recreate all the x-file currently existing. Stopping"
+        echo "If this is not a problem then rerun using the -remakex Y option. "
+        exit 10
+      else
+        echo "All x-files have matching RINEX. Deleting old x-files "
+        set xfiles = `\ls x????${xver}.${doy}` >& /dev/null  
+        if ($#xfiles > 0 ) echo "Removing x-files: $xfiles"; \rm -r x????${xver}.${doy} >& /dev/null; \rm session.info >& /dev/null
+        goto checkx
+      endif
+    else
+      echo "PRN: $xns_prn in x-files. NOT in session.info. -remakex N set so stop run."
+      exit 11
+    endif 
+  endif
+  if ( $#snx_prn > 0 ) then
+    if ( $remakex == "C" ) then
+      echo "PRN: $snx_prn in session.info. NOT original x-files."
+      if ( $#not_matched > 1 ) then
+        echo "There are missing RINEX files: $not_matched" 
+        echo "I am not be able to recreate all the x-file currently existing. Stopping"
+        echo "If this is not a problem then rerun using the -remakex Y option. "
+        exit 12
+      else
+        echo "All x-files have matching RINEX. Deleting old x-files "
+        set xfiles = `\ls x????${xver}.${doy}` >& /dev/null  
+        if ($#xfiles > 0 ) echo "Removing x-files: $xfiles"; \rm -r x????${xver}.${doy} >& /dev/null; \rm session.info >& /dev/null
+       goto checkx
+      endif
+    else 
+      echo "PRN: $snx_prn in  session.info. NOT original x-files. -remakex N set so stop run. "
+      exit 13
+    endif
+  endif   
+
+# We still have some xfiles; move the rinex file link so all xfiles are not remade...
+# Check what sort of l-file your want to use (spreric al [old] or cartesian [apr]).
+  set l_type = `check_lfile ${tpth}/lfile.`
+# MOD TAH 191227: Make copy of lfile. to try to avoid conflicts in parralel run.
+# MOD TAH 200523: Added doy and expt to ts to make more unique (parallel runs can have
+#                 same second on same host. 
+# MOD TAH 200928: Removed so that time tag is not reset.
+# set ts = "`hostname`:${expt}.${doy}:`date +"%H%M%S"`"
+  \cp ${tpth}/lfile. ${tpth}/lfile.${ts}
+  foreach site ( `cat tmp.1.$ts` )
+    echo "X-file exists. Moving rinex link for site: $site"
+    set rxfiles = `\ls ${site}????.${yr[2]}o` >& /dev/null
+    foreach rxf ( ${rxfiles} ) 
+      \mv -f ${rxf} ${rxf}.existing_x 
+
+# Make sure that the lfile still has coordinates for this site.
+# MOD TAH: set is_in as number of lines (wc -l at end)
+      if ( $l_type == "old" ) then
+        set is_in = `grep -i "^${site}" ${tpth}/lfile.${ts} | wc -l`
+      else
+        set is_in =  `cat ${tpth}/lfile.${ts} | awk -v site=$site 'substr($0,1,1) == " " && tolower(substr($1,1,4)) == site {print $0}' | wc -l`
+      endif 
+      if ( $is_in == 0 ) then
+
+#         Site is not in lfile anymore.  Get the coordinates from the
+#         xfile (must have been available at some time).  NOTE: There
+#         is an assumption here that the xfile has 3 blank lines that
+#         are not counted by nl
+          set cl = `nl x${site}${xver}.${doy}  | grep 'COORDINATE FILE INFORMATION' | awk '{print $1+6}'`
+          tail -n +$cl x${site}${xver}.${doy} | head -n 1 >! t.xcd
+          if ( $l_type == "old" ) then
+            awk -v site=$site -v xf=x${site}${xver}.${doy} '{printf "%s %s %s Updated from %s\n", site, substr($0,2,10),substr($0,18,46), xf}' t.xcd >> ${tpth}/lfile.${ts}
+          else 
+            awk '{for (i=1; i<=NF; i++) printf "%s ",$i}' t.xcd >! tmp.xcrd
+#           #=#=#=#= CONVERT SPHERICAL COORDS TO GEODETIC #=#=#=#=    
+            tform <<ENDD  >! tmp.tformout
+            2
+            2
+            tmp.xcrd
+            4
+            1
+            tmp.xyz
+            3
+ENDD
+            cat tmp.xyz | awk -v site=$site -v xf=x${site}${xver}.${doy} '{printf " %4s%s %13.3f %13.3f %13.3f %7.3f %7.3f %7.3f %7.2f Updated from %s\n", toupper(site), "_GPS", $2, $3, $4, 0.000, 0.000, 0.000, 1997.0, xf}' >> ${tpth}/lfile.${ts}
+          endif
+          \rm  t.xcd  >& /dev/null
+      endif 
+    end
+  end                               
+# Now move back to lfile. name
+# MOD TAH 200523: Only copy back if files differ. Trying to avoid parallel collisions on files.
+  set diff = `diff -q ${tpth}/lfile.${ts} ${tpth}/lfile. | wc -l`
+  if( $diff > 0 ) then
+    echo ${tpth}/lfile.${ts} updated ${tpth}/lfile. X-file values `date`
+    diff ${tpth}/lfile.${ts} ${tpth}/lfile. 
+    \mv  ${tpth}/lfile.${ts} ${tpth}/lfile.
+  else
+    \rm ${tpth}/lfile.${ts}
+  endif
+# END Updates to avoid conflicts on lfile.
+else  
+# no existing x-files 
+  if ( ! -e session.info ) then   
+#    session.info could exist as an empty link 
+     echo 'session.info missing or empty link:  remove and recreate'
+     \rm session.info >& /dev/null  
+  else
+    set slines = `cat session.info | wc -l`
+    if ( $slines < 3 ) then
+      echo "Short session.info file, creating a new one from input values "
+      \rm session.info  >& /dev/null
+    else
+      set ydoy = `tail -n +3 session.info | awk -v yr4=$yr[1] -v yr2=$yr[2] -v doy=$doy '{if (($1==yr4 || $1==yr2) && $2 == doy ) {print $0}}'`
+      echo "ydoy from session.info: ${ydoy} "
+#     Now check to see if we found the correct session. If not, then delete session.info since it is probably not valid
+#     If we have a return then OK i.e., $ydoy is not blank.  If there are multiple sessions on the same day, this code will use the first.  Could be a problem.
+      if( $#ydoy < 1 ) then   
+        echo "Incorrect session info in session.info, creating a new one from input values"
+        echo " "
+        \rm session.info >& /dev/null  
+      else
+        set doyy = `echo $ydoy[1] $ydoy[2] | awk '{printf "%d %03d \n", $1,$2}'`
+        set sinfo = `echo $ydoy[4] $ydoy[6] $ydoy[7] $ydoy[5] | awk '{printf "%d %02d %02d %d \n", $1,$2,$3,$4}'`
+        if ( $sinfo[1] != ${sint} || $sinfo[4] != ${nepc} || $sinfo[2] != ${shr} || $sinfo[3] != ${smin} ) then
+          echo "Data in session.info file for ${yr[1]} ${doy} is not consistent with your input: ${sint} ${nepc} ${shr} ${smin}" 
+          echo "Remove session.info and recreate it from input values"
+          \rm session.info >& /dev/null  
+        endif
+      endif
+    endif
+  endif                              
+ 
+# End of if on existence of x-files
+endif 
+echo "Finished checking x-files"
+
+# If remakex set to NO move any remaining rinex files to ignored.
+if ( $remakex == 'N' ) then
+  set rxfiles = `\ls -1 ????????.${yr[2]}o |& grep -v 'No '` >& /dev/null
+  foreach rxf ( ${rxfiles} ) 
+    \mv -f ${rxf} ${rxf}.ignored
+    echo "\mv -f ${rxf} ${rxf}.ignored"  
+  end
+endif
+
+# Now see if any rinex files left. 
+\ls -1 ????????.${yr[2]}o |& grep -v 'No ' | awk '{print substr($0,1,4)}' >! tmp.1.$ts
+\ls -1 ????????.${yr[2]}o |& grep -v 'No ' | awk '{print substr($1,8,1)}' >! tmp.2.$ts
+\ls -1 ????????.${yr[2]}o |& grep -v 'No ' | awk '{print substr($1,5,3)}' >! tmp.3.$ts
+set numrx = `cat tmp.1.$ts | wc -l`
+echo "Check $numrx RINEX files"
+
+# Check all necessary files created in sh_preproc exist.
+if ( ! -e d${expt}${yr[3]}.${doy} ) set do_makexp = "Y"
+if ( ! -e l${expt}${yr[3]}.${doy} ) set do_makexp = "Y"
+if ( ! -e t${orbt}${yr[3]}.${doy} ) set do_makexp = "Y"
+if ( ! -e i${expt}${yr[3]}.${doy} ) set do_makexp = "Y"
+if ( ! -e j${orbt}${yr[3]}.${doy} ) set do_makexp = "Y"
+                
+
+# If tmp.1 contains more than the header entry we must create some new x-files 
+# If do_makexp is Y then we must run makexp to create missing files.
+if ( $numrx > 0 || $do_makexp == "Y" ) then
+                                                      
+##### See if we need to update station.info. 
+##### The updates are invoked only if you are remaking x-files (no RINEX files in tmp.1.$ts)
+  echo " "
+  echo "Checking if we need to update station.info from RINEX headers"
+  set indx = 0 
+  set sess = `cat tmp.2.$ts`
+# Get list of day numbers as well
+  set rxds = `cat tmp.3.$ts` 
+  foreach site (`cat tmp.1.$ts`)
+#      @ indx = ${indx} + 1 
+    @ indx = `echo "ibase=10; ${indx} + 1" | bc`
+    set s = $sess[$indx]
+#   Set the doy for this rinex file.
+    set d = $rxds[$indx]
+    set check_stinfo = yes 
+    foreach excld ( ${stinfo_excld} )
+      if ( ${excld} == ${site} || ${excld} == "all_sites" ) then
+        set check_stinfo = no
+      endif
+    end  
+ 
+
+#   Add a check to see if rinex file exists.  If x-file exists it will have been
+#   moved and so no long exists.
+    if ( ${check_stinfo} == yes && -e ${site}${d}${s}.${yr[2]}o ) then
+#     pushd ${tpth} >& /dev/null
+      if ( ! -e guess_rcvant.dat ) ln -s ../tables/guess_rcvant.dat .
+      echo "Checking station.info for site: $site"
+#     sh_upd_stnfo -file ${rpth}/${site}${doy}${s}.${yr[2]}o -expt $expt -orbt $orbt
+      sh_upd_stnfo -file ${site}${d}${s}.${yr[2]}o -expt $expt -orbt $orbt $stinf_unique $stinf_nosort -h $stinf_slthgt
+#     popd >& /dev/null
+    endif
+  end    
+
+
+##### See if we need to update lfile. ***** Works OK, but needs more testing *****
+  set daydir = `pwd`
+  if ( ! -e ${tpth}/lfile. ) `echo "New approximate lfile created by sh_preproc" >! ${tpth}/lfile.`  
+  set indx = 0 
+# Check what sort of l-file your want to use (sprerical [old] or cartesian [apr]).
+  set l_type = `check_lfile ${tpth}/lfile.`
+# MOD TAH 191227: Make copy of lfile. to try to avoid conflicts in parralel run.
+# MOD TAH 200523: Added doy and expt to ts to make more unique (parallel runs can have
+#                 same second on same host.
+# MOD TAH 200829: Removed re-definition of ts time (echo to see if unique)
+# set ts = "`hostname`:${expt}.${doy}:`date +"%H%M%S"`"
+  echo "Using time-tag $ts"
+  \cp ${tpth}/lfile. ${tpth}/lfile.${ts}
+# sess and rxds already set so no need to reset
+# set sess = `cat ${daydir}/tmp.2.$ts` 
+  echo "LIST: ${daydir}/tmp.1.$ts" 
+  foreach site (`cat ${daydir}/tmp.1.$ts`) 
+#      @ indx = ${indx} + 1  
+    @ indx = `echo "ibase=10; ${indx} + 1" | bc`
+    set s = $sess[$indx]
+#   Set the day for this rinex file.
+    set d = $rxds[$indx]
+    if ( $l_type == "old" ) then
+      set is_in = `grep -i "^${site}" ${tpth}/lfile.${ts} | wc -l`
+    else
+      set is_in =  `cat ${tpth}/lfile.${ts} | awk 'substr($0,1,1) == " " && tolower(substr($1,1,4)) == site {print $0}' site=$site | wc -l`
+#     MOD TAH: Added second test to see why zero valu being returned. 
+      if( $is_in == 0 ) then 
+         set is_in = `grep '^ '  ${tpth}/lfile.${ts} | awk '{print $1}' | grep -i $site | wc -l`
+         echo "PREPOC IS_IN 0; alternative $is_in"
+      endif
+    endif  
+
+# MOD TAH 2000828: Set upd_lf = no before of number names in is_in is only for
+#   existing x-files. 
+    set upd_lf = no
+# MOD TAH 201210: Test number of lines (wc -l added above)
+    if( $is_in == 0 ) then
+      pushd ${rpth} >& /dev/null
+      set upd_lf = no
+      echo "Updating lfile. Missing a priori coordinates for station: $site "
+      ls -l ${tpth}/lfile.${ts}
+      grep -i $site ${tpth}/lfile.${ts}
+      if( $use_rxc != "Y" ) then
+         foreach rxref ( ${globalrx} )
+#          Note: TAH: Should be OK to use reference day RXfile since non-day files probably
+#          overlap in time with the globalrx files. 
+           set refok = "NO"
+           set refok = `grep -i ${rxref}_gps ${tpth}/${aprf} | head -n 1 | awk -v rxref=$rxref 'toupper(substr($1,1,4)) == toupper(rxref) {print "YES"}'`
+           if( -e ${rxref}${doy}0.${yr[2]}o && -e ${bpth}/brdc${doy}0.${yr[2]}n && ${upd_lf} == "no" && ${refok} == "YES" ) then 
+             echo "Using sv_diff to update l-file. " 
+#            Use the RXfile for the desired site on the day number that we have.
+#             sh_svdiff -ref ${rxref}${doy}0.${yr[2]}o -apr ${tpth}/${aprf} -site ${site}${d}${s}.${yr[2]}o -nav ${bpth}/brdc${doy}0.${yr[2]}n
+             sh_rx2apr -ref ${rxref}${doy}0.${yr[2]}o -apr ${tpth}/${aprf} -site ${site}${d}${s}.${yr[2]}o -nav ${bpth}/${brdc}${doy}0.${yr[2]}n
+# MOD TAH 200830: Make sure the ${site}.apr exist; if not then RX header coordinates will be
+#            used
+             if( -e ${site}.apr || -e lfile.${site} ) then
+                if ( $l_type == "old" ) then
+                  head -n 2 lfile.${site} | tail -n -1  >> ${tpth}/lfile.${ts}
+                else
+                  head -n 2 ${site}.apr | tail -n -1  >> ${tpth}/lfile.${ts}
+                endif  
+                set upd_lf = yes
+             else
+                echo "SH_RX2APR Differential to failed: Trying PP approach"
+             endif
+           endif
+         end
+         if ( $upd_lf == "no" ) then
+           echo "Couldn't find a reference site. Trying svpos to update l-file. " 
+             sh_rx2apr -site ${site}${d}${s}.${yr[2]}o -nav ${bpth}/${brdc}${doy}0.${yr[2]}n
+# MOD TAH 200830: Make sure the ${site}.apr exist; if not then RX header coordinates will be
+#            used
+             if( -e ${site}.apr || -e lfile.${site} ) then
+                if ( $l_type == "old" ) then
+                  head -n 2 lfile.${site} | tail -n -1  >> ${tpth}/lfile.${ts}
+                else
+                  head -n 2 ${site}.apr | tail -n -1  >> ${tpth}/lfile.${ts}
+                endif  
+                set upd_lf = yes
+             else
+                echo "SH_RX2APR PP failed: Using RINEX header coordinates"
+             endif
+         endif
+      endif     
+
+
+# Sh_svdiff failed update the lfile or user requested using rinex header coordinates. Use the RINEX header information...
+      if ( $upd_lf == "no" ) then
+        echo "Using RINEX file header to update l-file. "
+        set decyr = `doy ${yr[1]} ${doy} | tail -n -1 | awk '{print $3}'`               
+        echo -n " ${site}_gps " >! tmp.apr.$ts
+#       TAH: Use the day number for the RXfile we have
+        grep 'APPROX POSITION XYZ' ${site}${d}${s}.${yr[2]}o | awk '{print $1,$2,$3," 0.0 0.0 0.0 ",dy," From RX_Header preproc"}' dy=$decyr >> tmp.apr.$ts
+        if ( $l_type == "old" ) then
+          gapr_to_l tmp.apr.$ts tmp.lf.$ts '' ${decyr} 
+          tail -n +2 tmp.lf.$ts >> ${tpth}/lfile.${ts}
+        else
+          head -n 2 tmp.apr.$ts | tail -n -1  >> ${tpth}/lfile.${ts}
+        endif  
+      endif
+      popd >& /dev/null
+    endif 
+  end   
+# Now move back to lfile. name
+# MOD TAH 200523: Only copy back if files differ. Trying to avoid parallel collisions on files.
+  set diff = `diff ${tpth}/lfile.${ts} ${tpth}/lfile. | wc -l`
+  echo "Comparing: ${tpth}/lfile.${ts} ${tpth}/lfile. $diff differences"
+  if( $diff > 0 ) then
+    echo ${tpth}/lfile.${ts} updated ${tpth}/lfile. Re-estimates `date`
+    diff ${tpth}/lfile.${ts} ${tpth}/lfile. 
+    \mv  ${tpth}/lfile.${ts} ${tpth}/lfile.
+  else
+    \rm ${tpth}/lfile.${ts}
+  endif
+# END Updates to avoid conflicts on lfile.
+
+
+# Check the size of the rinex files and remove any that are zero length (makex dies on these files)  
+  if( $remakex != "N" ) then
+    echo " "
+    echo "Checking Rinex file sizes.  Zero length files will be deleted "
+    set rxfiles = `\ls -1 ????????.${yr[2]}o |& grep -v 'No '`
+    foreach rxf ( ${rxfiles} )
+#      On some systems, a link with no file will exist and on others it
+#      will not so use double check.
+       if( -e $rxf ) then
+          set numr = `wc $rxf`
+          if( $numr[2] == 0 ) then
+              echo $rxf "is zero size; deleting file"
+             \rm -f $rxf >& /dev/null
+          endif
+       else
+#         File does not exist (must be link so remove)
+          \rm -f $rxf >& /dev/null
+       endif
+    end 
+# MOD TAH 020816: Now see if we have specific exclude list.  Here we list the exclude 
+# list (based on a site not appearing the correct expt code, and we delete the rinex file).
+    set exists = ''
+    foreach rxr ($excluderx)   
+       set exists  = `\ls -1 ${rxr}????.${yr[2]}o |& grep -v 'No '`
+       if (  $#exists >= 1 )  then
+         echo "Removing $rxr rinex files: Listed in sites.defaults, but not used in this experiment "
+         \rm ${rxr}????.${yr[2]}o >&! /dev/null
+       endif
+    end
+  endif
+# Now see if any rinex files left. 
+  \ls -1 ????????.${yr[2]}o |& grep -v 'No ' | awk '{print substr($0,1,4)}' >! tmp.1.$ts
+  set numrx = `cat tmp.1.$ts | wc -l`
+
+  echo "Number of rinex file remaining to be processed into x-files is: $numrx"
+           
+##RWK 180531 : To avoid re-run errors, it's safer to remove session.info and create it afresh
+
+# Now run makexp     
+##  RWK 180531 : To avoid re-run errors, it's safer to remove session.info and create it afresh
+echo "Removing the existing session.info file before running sh_makexp "
+  \rm session.info 
+  echo " "
+  if ( -e session.info ) then 
+# MOD TAH 200511: Added -lfreq option
+     echo "sh_makexp -expt $expt -orbt $orbt -sp3file $sp3file -yr ${yr[1]} -doy ${doy} -sess 99 -srin -nav ${nav} -jclock ${jclock} -xver ${xver} -gnss ${gnss} -lfreq $lf"
+# MOD MAF 210729: Corrected typo "-lfeq" to "-lfreq" in call to sh_makexp
+     sh_makexp -expt $expt -orbt $orbt -sp3file $sp3file -yr ${yr[1]} -doy ${doy} -sess 99 -srin -nav ${nav} -jclock ${jclock} -xver ${xver} -gnss ${gnss} -lfreq $lf
+  else
+# MOD TAH 200511: Added -lfreq option
+    echo "sh_makexp -expt $expt -orbt $orbt -sp3file $sp3file -yr ${yr[1]} -doy ${doy} -sess 99 -srin -nav ${nav} -jclock ${jclock} -sinfo ${sint} ${shr} ${smin} ${nepc} -xver ${xver} -gnss ${gnss} -lfreq $lf" 
+# MOD MAF 210729: Corrected typo "-lfeq" to "-lfreq" in call to sh_makexp
+    sh_makexp -expt $expt -orbt $orbt -sp3file $sp3file -yr ${yr[1]} -doy ${doy} -sess 99 -srin -nav ${nav} -jclock ${jclock} -sinfo ${sint} ${shr} ${smin} ${nepc} -xver ${xver} -gnss ${gnss} -lfreq $lf
+    if ( -e  GAMIT.fatal ) then
+      echo "MAKEXP fatal ocurred. Check GAMIT.fatal file to find the problem"
+      cat GAMIT.fatal
+      exit 14
+    endif 
+  endif                                                                                                    
+
+# Run sh_bcfit if broadcast orbits were requested 
+  if ( $orbt == "brdc" ) then
+    echo " "
+    echo "Running sh_bcfit"  
+#    old sh_bcfit replaced by new sh_bcfit (renamed from sh_bcfix) to use command-line arguments
+#    sh_bcfit bctot.inp >&! /dev/null  
+     sh_bcfit -f ${nav} -d ${yr[1]} ${doy}  >&! /dev/null
+  endif
+
+# Now check the session info against g-file      
+  echo " " 
+  echo "Running sh_check_sess on g-file g${orbt}${yr[3]}.${doy}" 
+  sh_check_sess -sess ${doy} -type gfile -file g${orbt}${yr[3]}.${doy}  
+
+# Run makej 
+# MOD TAH 150925: Moved creating jfile name outside of $remakej option since the name
+# is used below and an error is generated if name variable does not exit.  
+  if( $jclock == "brdc" ) then
+    set jfile =  j${brdc}${yr[3]}.${doy}    
+  else
+    set jfile =  j${orbt}${yr[3]}.${doy} 
+  endif     
+  if( $remakej == 'Y' ) then                               
+    echo " " 
+    echo "Running makej due to remake == Y"                                          
+    if( $jclock == "brdc" ) then                    
+      set blank = "''"
+      echo "makej ${brdc}${doy}0.${yr[2]}n ${jfile} ${blank} ${gnss} "   
+      makej ${brdc}${doy}0.${yr[2]}n ${jfile} ${blank} ${gnss}
+    else          
+      if ( -e ${sp3file} ) then
+        rm -fr ${sp3file}
+      endif
+      ln -s -f ${ipth}/${sp3file} .
+      echo "makej ${brdc}${doy}0.${yr[2]}n ${jfile} ${sp3file} ${gnss}"
+      makej ${brdc}${doy}0.${yr[2]}n ${jfile} ${sp3file} ${gnss} 
+    endif                                      
+  endif
+
+# Now check the session info against j-file 
+  echo "  "
+  echo "Running sh_check_sess on j-file ${jfile}" 
+  sh_check_sess -sess ${doy} -type jfile -file ${jfile} 
+      
+# Now make the xfiles   
+# Need only run makex if there are rinex files to process. Else a MAKEX.fatal will occur. 
+  if ( $numrx > 0 ) then
+    echo "Running makex: makex ${expt}.makex.batch ${rx_doy_minus} ${rx_doy_plus}"
+    makex ${expt}.makex.batch ${rx_doy_minus} ${rx_doy_plus}
+  else
+    echo "  "
+    echo "No need to run makex: No new rinex files were found"
+  endif
+
+# End check on RINEX files to process 
+endif    
+
+# echo "RWK DEBUG cat d-file"
+# cat d${expt}${yr[3]}.${doy}
+
+# Check d-file. Only use xfiles with size at least $minxf blocks (see defaults.)
+# Make sure that the dfile exists
+if( -e d${expt}${yr[3]}.${doy}  ) then
+    echo " "
+    echo "Updating d-file with all available x-files"  
+    echo " " 
+    head -n 6 d${expt}${yr[3]}.${doy} >! tmp.1.$ts
+else
+    echo " " 
+    echo "WARNING d-file missing:" 
+    echo "Creating d-file with all available x-files"
+    echo " 1" >! tmp.1.$ts
+    echo " 1" >> tmp.1.$ts 
+    echo "l${expt}${yr[3]}.${doy}" >> tmp.1.$ts
+    echo "t${orbt}${yr[3]}.${doy}" >> tmp.1.$ts
+    echo "i${expt}${yr[3]}.${doy}" >> tmp.1.$ts
+    echo "j${orbt}${yr[3]}.${doy}" >> tmp.1.$ts
+endif
+     
+# Get list of all available x-files
+# PT020726: only list the ones for experiment $expt
+echo 0 xdummy.site >! tmp.xfsize1
+# MOD TAH 020816: Since we have made only those xfiles that are needed, we can not
+# just do a standard ls -1 -s on the files
+#foreach site ($x_expt)
+#  \ls -1 -s x$site${xver}.${doy} >>& tmp.xfsize1
+#end
+# MOD TAH 040121: Uncommented ls beflow to get all x-files created in directory
+#\ls -s x????${xver}.${doy} >>& tmp.xfsize1
+# MOD TAH 040121: added grep -vi no to remove entries with no x-files and piped
+# into sort -u -k 2 to remove any duplicates that might appear because of the two
+# ls calls.
+#cat tmp.xfsize1 | grep -v xdummy.site | grep -vi " no " | sort -u -k 2 >! tmp.xfsize
+
+# MOD TAH 150804: Updated code above to use ls -l which is must faster to respond
+# that ls -s on Luster file systems.  Assume 1024 byte blocks
+# MOD MAF 170617: Added -n option to provide user and group name with numeric IDs to avoid
+# problem when user or group name includes spaces, which affects fields for proceeding awk
+\ls -l -n x????${xver}.${doy} | awk '{printf(" %5d %s\n",$5/1024, $NF)}' >! tmp.xfsize1
+set nz = `grep ' 0 x' tmp.xfsize1 | wc -l`
+set na = `cat tmp.xfsize1 | wc -l`
+set ss = `sort -n tmp.xfsize1 | head -1 | awk '{print $1}'` 
+set sl = `sort -n tmp.xfsize1 | tail -1 | awk '{print $1}'`
+if( $nz > 0 ) then
+    echo "SH_PREPROC: $nz zero length xfiles `date`"
+    grep ' 0 x' tmp.xfsize
+else
+    echo "SH_PREPROC: No zero length xfiles,  $na finite size files, Range $ss - $sl blocks: `date`"
+endif
+        
+
+# Remove x-files from the list that are not in this network or should be excluded
+echo 'List of Xfiles: not_globalrx '${not_globalrx}
+echo 'List of Xfiles: not_rawlst   '${not_rawlst}
+echo 'List of Xfiles: xsite        '${xsite}
+echo 'List of Xfiles: not localrx  '${not_localrx}
+
+# MOD TAH 150804: Replaced code with less I/O
+#foreach i ( ${not_globalrx} ${not_rawlst} ${xsite} ${not_localrx} )
+#  awk -v s=$i 'substr($2,2,4) != s {print $0}' tmp.xfsize >! tmp.xfsize1
+#  \mv -f tmp.xfsize1 tmp.xfsize
+#end    
+# Modified by MAF (2016-02-18, MIT) based on 2016-02-12 bug report from Seiichi Shimada (shimada@geoenv.k.u-tokyo.ac.jp) which affects results when site names are all numeric and 
+# the doy number can be confused with the site number.
+#set exlst = `echo ${not_globalrx} ${not_rawlst} ${xsite} ${not_localrx} | awk '{gsub(" ","\n")} {print $0}' | sort -u | awk '{if( NR == 1 ) {printf("%s",$1)} else {printf("|%s",$1)}}'`
+# MOD TAH 150805: Updated to test case when there are no sites to be excluded.
+# MOD TAH 160219: Additional mod to fix numeric only case: Only try to exclude if there is a list of sites, otherwise the exclude list ($exlst) will only contain z
+set alllst = `echo ${not_globalrx} ${not_rawlst} ${xsite} ${not_localrx}`
+if( $#alllst > 0 ) then
+    set exlst = `echo ${not_globalrx} ${not_rawlst} ${xsite} ${not_localrx} | awk '{gsub(" ","\n")} {print $0}' | sort -u | awk '{if( NR == 1 ) {printf("x%s",$1)} else {printf("|x%s",$1)}}'`
+    echo "Excluding exlst: $exlst"
+    egrep -v $exlst tmp.xfsize1 >! tmp.xfsize
+else
+    echo "No sites to be excluded"
+    \cp tmp.xfsize1 tmp.xfsize
+endif
+
+# Write number of x-files to the d-file
+set num = `cat tmp.xfsize | awk '{if ( $1*1.0 > mxf*1.0 ) print $2}' mxf=$minxf | wc`
+echo $num[1] >> tmp.1.$ts
+
+# Save the names of x-files below the minimum threshold $minxf 
+if ( -e tmp.small_xfiles) \rm -r tmp.small_xfiles;  touch tmp.small_xfiles
+cat tmp.xfsize | awk '{if ( $1*1.0 < mxf*1.0 ) printf "%5s ",substr($2,2,4)}' mxf=$minxf  >> tmp.small_xfiles
+if ( -z tmp.small_xfiles ) \rm -r tmp.small_xfiles
+
+# Move small x-files to a new name ( using extension .small)
+if ( -e tmp.mv_small.xfiles ) \rm -r tmp.mv_small.xfiles; touch tmp.mv_small.xfiles
+cat tmp.xfsize | awk '{if ( $1*1.0 < mxf*1.0  ) print "\\mv ", $2, $2".small"}' mxf=$minxf  >> tmp.mv_small.xfiles
+csh tmp.mv_small.xfiles
+\rm -r tmp.mv_small.xfiles
+
+# Write list of x-files to the d-file
+cat tmp.xfsize | awk '{if ( $1*1.0 > mxf*1.0  ) print $2}' mxf=$minxf  >> tmp.1.$ts
+\mv -f tmp.1.$ts d${expt}${yr[3]}.${doy}
+
+# Make sure that jfile exists (If we made no xfiles then this step could
+# have been skipped)
+# MOD TAH 150925: Moved jfile name out of test if file exists.
+if( $jclock == "brdc" ) then
+  set jfile =  j${brdc}${yr[3]}.${doy}    
+else
+  set jfile =  j${orbt}${yr[3]}.${doy} 
+endif	  
+            
+if( ! -e ${jfile} ) then               
+  echo " " 
+  echo "Running makej because jfile does no exit"                                          
+  if( $jclock == "brdc" ) then
+    echo "makej ${brdc}${doy}0.${yr[2]}n ${jfile}" 
+    makej ${brdc}${doy}0.${yr[2]}n ${jfile} 
+  else          
+    if ( -e ${sp3file} ) then
+      rm -fr ${sp3file}
+    endif
+    ln -s -f ${ipth}/${sp3file} .
+    echo "makej ${brdc}${doy}0.${yr[2]}n ${jfile} ${sp3file}"
+    makej ${brdc}${doy}0.${yr[2]}n ${jfile} ${sp3file}
+  endif                                      
+endif
+
+
+# Now make sure all kfiles exit.  Again if we start at x-files this may have been
+# skipped or some may be missing for the current xfiles.    
+if( $remakek == 'Y' ) then
+  echo "Remaking k-files"  
+  foreach xfile (`tail -n +8 d${expt}${yr[3]}.${doy}`)
+    set kfile = `echo $xfile | awk '{print "k"substr($0,2)}'`
+    echo "Making "$kfile" for "$xfile  
+    makek  ${brdc}${doy}0.${yr[2]}n $xfile l${expt}${yr[3]}.${doy} ${gnss}  600 
+  end   
+#   
+else
+  echo "Checking that all k-files exist"
+  foreach xfile (`tail -n +8 d${expt}${yr[3]}.${doy}`)
+    set kfile = `echo $xfile | awk '{print "k"substr($0,2)}'`
+    if( ! -e $kfile ) then 
+      if( $remakek == 'C' ) then 
+        echo "Making "$kfile" for "$xfile  
+        makek  ${brdc}${doy}0.${yr[2]}n $xfile l${expt}${yr[3]}.${doy} ${gnss} 600    
+#        the k-file interval reduced from 1 hr to 10 minutes to avoid bad values from TI
+#        it can be increased if k-files are kept and the storage is a problem 
+      else
+        echo "K-file $kfile missing and -remakek" "= N -- stop" 
+        exit 1
+      endif
+    endif
+  end 
+endif
+
+#cleanup 
+\rm tmp.xfsize tmp.1* tmp.2* tmp.3* tmp.sprn tmp.gprn tmp.xprn tmp.xcrd tmp.xyz t.xcd tmp.tformout >& /dev/null 
+
+# All done
+exit 0

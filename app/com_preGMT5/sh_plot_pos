@@ -1,0 +1,1908 @@
+#!/bin/bash
+
+version='2015/12/02'
+#2345678901234567890123456789012345678901234567890123456789012345678901234567890
+# Edit history (only recorded from 2013-10-25 onwards):
+#
+# 2015/12/02: MAF corrected parsing of options using 'echo "$@"' to 'echo "$*"'
+#             to avoid echo erroneously evaluating elements of $@ as options
+#             (e.g. "-e", "-n").
+# 2015/06/01: MAF added second argument to -c option to select error bar colour
+#             as well as point colour, removed up velocity annotation if not
+#             plotted as a residual to velocity (see -u option), and added line
+#             marking zero position.
+# 2015/05/05: MAF thickened error bar lines and fixed initialization of
+#             Postscript when all up-component points are excluded by tests but
+#             are also not to be plotted.
+# 2015/05/04: MAF added "-h" option to call sh_tshist to plot histograms of time
+#             series residuals. Implies "-t MEAN" ("-h [p]") or "-t NONE"
+#             ("-h v") to generate sum-file if -t option not explicitly given.
+# 2015/04/07: MAF edited logic of pos- and res-file names to match that of tsfit
+#             (first 14 characters of pos-file name; see further details in
+#             "N.B." below). Also improved handling of "eq_def"/"eq_rename" and
+#             "rename"/"break" records in eq-files to speed up plotting.
+# 2015/03/11: MAF changed suffix of residuals file(s) calculated relative to
+#             velocities in user-defined vel-file(s) (-v option) from ".vel_res"
+#             to ".vres".
+# 2014/12/08: MAF added "-y" option to plot all time series with identical
+#             y-axes (e.g. for consistency during rapid viewing). Implies "-r",
+#             which in turn implues "-t NONE" if no explicit "-t" option given.
+# 2014/12/04: MAF added "-w" option to provide extra width to time axis, e.g. so
+#             that points do not lie beneath y-axes. Default 0.1 (10%) of time
+#             series length on both ends.
+# 2014/10/24: MAF renamed residuals files and plots to reflect the original
+#             reference frame from residuals, and therefore any quoted
+#             velocities, are calculated.
+# 2014/10/19: MAF added writing of residual files relative to velocities in
+#             user-defined vel-file.
+# 2014/09/18: MAF added minimum number of points in time series for plotting,
+#             implemented at the plotting stage only.
+# 2014/08/14: MAF switched position of north and east component plots
+#             (reluctantly, at RWK and TAH's recommendation!)
+# 2014/08/13: MAF corrected error in test for GMT version.
+# 2014/08/03: MAF added logic test for implicit "-t NONE" if -r option given
+#             without explicit -t option.
+# 2014/02/28: MAF finished significant re-write and debug. Testing ongoing...
+# 2014/02/27: MAF added -u option to optionally exclude up component velocity
+#             from being removed when plotting residual time series.
+# 2013/10/25: MAF changed usage to be displayed using "less"; added "-k" option
+#             to keep pos-files created from prt- and/or org-files; added three-
+#             character suffix labels to vertical lines marking discontinuities
+#             and earthquakes; and altered the assignment of x- and y-axis
+#             annotations.
+#
+# N.B. tssum uses the second argument string ("<prod_id>") for the pos-file(s) 
+#      name(s) according to <SITE>.<prod_id>.pos. If <prod_id> is blank, e.g.
+#      '', then <prod_id> defaults to "mit.unkwn_unkwn". If an arbitrary name is
+#      given, users must beware that tssum truncates the <prod_id> string beyond
+#      the expected length of 15 characters (i.e. ???.?????_?????). If tsfit is
+#      instructed to output residuals files ("resroot" option in tsfit command
+#      file), the root of the res-file name is the first 14 characters of the
+#      pos-file name, i.e. "SITE." will always be the first 5 characters so only
+#      the following 9 (first 9 of <prod_id>) are carried forward to the res-
+#      file name. If using the conventional naming scheme, this therefore
+#      truncates the pos-file name at the frame, i.e.
+#      1234.678.01234_frame.pos -> 1234.678.01234.res.
+#
+#2345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+
+# Redirect standard error to /dev/null
+exec 2>/dev/null
+
+
+# Test for GMT version
+gmt=''  # Default prior to GMT 5
+if [ -n "$(which gmt)" ]; then  # GMT 5's "gmt" command exists
+  if [ $(gmt --version 2>&1 | awk 'NR == 1 {print int($NF)}') -ge 5 ]; then
+    gmt='gmt '
+  fi
+fi
+
+
+#if [ "$(pwd)" != "$HOME" ]; then
+#  rm -f .[Gg][Mm][Tt]commands* .[Gg][Mm][Tt]defaults*
+#fi
+
+
+flags='bcdefghklmnoprstuvwxy'  # Command line option flags
+
+
+# Initialize empty variables and arrays
+pos_files=()   # Input pos-file(s)
+res_files=()   # Input res-file(s)
+org_files=()   # Input org-file(s)
+prt_files=()   # Input prt-file(s)
+tsfit_cmd=''   # tsfit command file (do not run tsfit if zero-length string)
+eq_files=()    # File(s) with "eq_def"/"eq_renam" records
+eqks=()        # Date-time array for earthquakes
+disc_files=()  # File(s) with "rename" and/or "break" commands
+discs=()       # Date-time array for discontinuities (do not plot vertical lines if empty)
+ymdhms=()      # Date-time array for user-defined vertical lines (do not plot if empty)
+vel_files=()   # File(s) with alternative velocity estimates
+t1=''          # Time-axis minimum (estimated from data if zero-length string)
+t2=''          # Time-axis maximum (estimated from data if zero-length string)
+user_bt=''     # Time-axis annotations provided by user (estimated from data if zero-length string)
+
+
+# Program defaults
+wgs84=( 6378137 298.257223563 )      # Major radius and inverse flattening of WGS84 ellipsoid
+min_n=2                              # Minimum number of time series point for plotting
+max_sig=( 1000000 1000000 1000000 )  # Large, all-encompassing maximum sigma / plot unit (default mm)
+tmp='.'                              # Temporary directory
+plot_dir='.'                         # Directory in which to make plots
+factor='1000'                        # Multiplying factor for coordinates (1000 is for plotting in mm)
+dunit=( 10 20 )                      # Nearest unit for minmax (see "factor" and "unit" variables for units)
+raw_up=0                             # Remove velocity when plotting up component residuals
+det_prefix='ts_'                     # Prefix of detrend parameters files
+res_prefix=''                        # Prefix of residuals files
+plot_res=( 0 0 )                     # Do not plot residuals from tsfit when plotting (1) pos-files and (2) res-files
+plot_excl=0                          # Do not plot excluded points in grey
+plot_discs=0                         # Do not mark discontinuities from tsfit with vertical line
+plot_eqks=0                          # Do not mark earthquakes with vertical line
+plot_ydoy=0                          # Do not plot using ordinal dates (YYYY-DoY); default is calendar dates (YYYY-MM-DD)
+pos_only=0                           # Do not create pos-files only then exit
+keep_pos=0                           # Do not keep pos-files created from prt- and/or org-files
+yaxes=( 0 0 0 )                      # y-axes bounds (e,n,u; calculated from data if zero)
+pct=0.1                              # Extra width added to beginning and end of time series (given as fraction of time series length)
+plot_tshist=0                        # Do not plot histograms of time series residuals using sh_tshist
+
+
+# Plot defaults
+j='-JX16.5cT/6c'
+col=( 0/0/204 102 )                      # Blue data points and dark grey error bars
+excl='-Sc3p -W0.5p,127 -Ey2p/0.75p,127'  # Excluded points in mid-grey
+eqk_line='-W2p,255/127/0,-'              # Orange dashed line to mark earthquakes
+disc_line='-W2p,127/0/127,-'             # Purple dashed line to mark other discontinuities
+user_line='-W2p,0/127/0,-'               # Green dashed line to mark user-defined epochs
+unit='mm'                                # Unit for y-axis labels
+dy='8c'                                  # Vertical distance between component sub-plot origins
+
+
+# Null input test
+if [ $# -eq 0 ]; then
+
+  less << END && exit 1
+Usage displayed using "less". Press up and down arrows to scroll or "q" to quit.
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+  Program:     sh_plot_pos
+  Written by:  Michael A Floyd (2012/08/24, MIT)
+  Last edited: Michael A Floyd ($version, MIT)
+
+  Usage: sh_plot_pos -f <org-, pos- and/or res-files> <options>
+
+  Description: sh_plot_pos reads org-files output from glorg, pos-files output
+               from tssum, and residuals files ("res-files") output from tsfit
+               to create time series plots using GMT. The -f option is required.
+
+               All other options serve to tailor the basic plot. By default, if
+               an org-file is specified on the command line, the pos-files
+               created from it using tssum are deleted after plotting (unless
+               the -k or -p options are given). pos-files or res-files
+               explicitly specified as arguments to the -f option are never
+               deleted after plotting.
+
+               Beware that all files generated by this script using tsfit,
+               except those pos-files created from an input org-file using tssum
+               as described above, will be placed in the current working
+               directory. The -d option only applies to the Postscript figures
+               plotted using GMT.
+
+               Also be aware that excessive numbers of earthquakes, renames
+               and/or excludes ("_XCL" and "_XPS") will slow down the execution
+               of this script.
+
+  Examples:
+
+  1. To create pos-files in a directory named "pos_<YYYYMMDDhhmmssTZ>" from a
+     glred output file and exit without plotting time series (or deleting the
+     pos-files created, as implied by the -p option):
+
+     sh_plot_pos -f globk_rep.org -p
+
+  2. To plot residual time series and histogram of distribution of residuals to
+     velocity for all pos-files in the current directory using only a linear
+     trend estimated by tsfit, for the year 2013 only and with a green line at
+     epoch 2013-10-23:
+
+     sh_plot_pos -f *.pos -r -t1 2013-01-01T -t2 2013-12-31T -l 2013-10-23T -h v
+
+  3. To create and keep pos-files in a directory named "pos_<YYYYMMDDhhmmssTZ>"
+     from a glred output file and plot raw time series in the directory "figs/"
+     with discontinuities from the IGS list marked by purple vertical lines and
+     using ordinal dates for the time axis annotations:
+
+     sh_plot_pos -f globk_rep.org -k -d figs -b ~/gg/tables/itrf08_comb.eq -o
+
+  4. To plot residual time series of ISTA.mit.final_eur08.pos using (a) a linear
+     trend (with realistic sigmas estimated), (b) annual plus semi-annual
+     seasonal terms, (c) earthquakes defined at the epochs of the Izmit
+     (1999-08-17T00:02Z) and Duzce (1999-11-12T16:57Z) events, and (d) other
+     discontinuities as defined in the IGS discontinuities list, including
+     orange vertical lines at the epochs of the earthquakes and purple vertical
+     lines at the epochs of the other discontinuities and changing the points
+     to be red and error bars to be blue:
+
+     sh_plot_pos -f ISTA.mit.final_eur08.pos -t tsfit.cmd -r -e -b -c 255/0/0 0/0/255
+
+     where tsfit.cmd contains (at least) the following lines (first character
+     blank):
+
+     eq_file ~/gg/tables/itrf08_comb.eq
+     eq_file earthquakes.eq
+     real_sigma
+     periodic 365.2425
+     periodic 182.62125
+
+     and earthquakes.eq contains (at least) the following lines (first character
+     blank):
+
+     eq_def IZ  40.748   29.864 513.0 17 1999 08 17 00 02
+     eq_rename IZ
+     eq_def DU  40.758   31.161 269.5 10 1999 11 12 16 57
+     eq_rename DU
+
+  5. To plot residual time series generated with the previous example's command
+     or any previous tsfit run, using the same tsfit command to allow the
+     identifying codes of earthquakes and other discontinuities to be plotted
+     (the epochs will be read from the res-files and lines plotted in any case):
+
+     sh_plot_pos -f *.res -r -t tsfit.cmd -e -b
+
+  Options:
+
+    -b [eq-file(s)] : Plot (purple) vertical lines at breaks from eq-files in
+                      tsfit command file (only valid with -t option) or optional
+                      eq-file(s) argument containing "rename" and/or "break"
+                      commands.
+
+    -c <col1> [col2]: Plot points in <col1> and, optionally, error bars in
+                      <col2> (GMT format, e.g. "255/0/0" for R/G/B red,
+                      "darkblue", etc.; see Appendix I of the GMT Technical
+                      Reference and Cookbook, "man gmtcolors",
+                      http://gmt.soest.hawaii.edu/gmt/html/man/gmtcolors.html,
+                      etc.
+
+    -d <directory>  : Make figures in <directory>, relative to current working
+                      directory. Default is current working directory.
+
+    -e [eq-file(s)] : Plot (orange) vertical lines at earthquakes from eq-files
+                      in tsfit command file (only valid with -t option and
+                      "eq_file" containing "eq_def" and "eq_renam" commands set
+                      in tsfit command file) or optional eq-file(s) argument.
+
+    -g <n>          : Annotate time axis with Gregorian calendar date every
+                      <n> days. With no <n> days argument, the annotation
+                      interval is calculated based on length of time series.
+
+    -h [p|v]        : Plot histograms of distribution of time series residuals
+                      using sh_tshist. Optional argument specifies whether
+                      residuals are calculated relative to a mean position
+                      ("-h p" or default with no optional argument) or velocity
+                      ("-h v"). "-h [p]" implies "-t MEAN" and "-h v"
+                      implies "-t NONE" if -t option is not explicitly given.
+
+    -k              : Keep pos-files created from org-file given with the -f
+                      option (created in a directory "pos_<YYYYMMDDhhmmssTZ>"
+                      where <YYYYMMDDhhmmssTZ> is the time of pos-file
+                      creation).
+
+    -l <date>       : Plot (green) vertical lines at given date. Format must be
+                      either <YYYY>-<MM>-<DD>T[<hh>:<mm>:<ss>] or
+                      <YYYY>-<DoY>T[<hh>:<mm>:<ss>] (<hh>:<mm>:<ss> is optional
+                      but "T" appending the date string is necessary). This
+                      option may be given multiple times to plot multiple lines.
+                      May be used in addition to -b option, above.
+    -n <min. N>     : Minimum number of point in time series for plotting.
+                      Default $min_n.
+
+    -o <n>          : Annotate time axis with ordinal day (day-of-year) every
+                      <n> days. With no <n> days argument, the annotation
+                      interval is calculated based on length of time series.
+
+    -p              : Create pos-files and exit (requires org-file output from
+                      glorg to be given with the -f option and implies -k
+                      option).
+
+    -r              : Plot residuals to fit. If pos-files are specified with the
+                      -f option and the -t option is NOT given, this option
+                      implies "-t NONE". If res-files are specified with the -f
+                      option, these will be used to plot residual time series.
+
+    -s <max_sigma>  : Exclude points with sigma > max_sigma from being plotted
+                      (but see also -x option). <max_sigma> is expected to be
+                      up to three numeric arguments: if one argument is given,
+                      use this value for all components; if two arguments are
+                      given, use the first value for horizontal components and
+                      the second for the vertical; if three arguments are given,
+                      use for e,n,u components respectively. Default 5 (e),
+                      5 (n), 20 (u) mm if option is given with no aguments.
+                      Default unit is the same as the plot axis, i.e. m if using
+                      the -m option, cm if using the -cm option, otherwise mm.
+
+                      N.B. This option is implemented separately from any sigma
+                      limits imposed using the "max_sigma" option in the tsfit
+                      command file. With the -t option, estimation of velocities
+                      and statistics is done by tsfit and this -s option only
+                      excludes points from being plotted (but see also -x
+                      option). To impose sigma limits before the estimation of
+                      velocities and statistics in this case, use the
+                      "max_sigma" option in the tsfit command file. Without the
+                      -t option, velocities are not estimated, residual time
+                      series may not be plotted and the WRMS statistics are
+                      calculated after implementation of this maximum sigma
+                      exclusion criterion on the raw time series.
+
+    -t <tsfit cmd>  : Use <tsfit cmd> file to run tsfit and plot (without a
+                      <tsfit cmd> argument, "NONE" is used and tsfit will
+                      estimate linear rates only; see tsfit help)
+
+    -t1 <date>      : Minimum value of time axis. Format must be either
+                      <YYYY>-<MM>-<DD>T[<hh>:<mm>:<ss>] or
+                      <YYYY>-<DoY>T[<hh>:<mm>:<ss>] (<hh>:<mm>:<ss> is optional
+                      but "T" appending the date string is necessary). Default
+                      is the first data record.
+
+    -t2 <date>      : Maximum value of time axis. Format must be either
+                      <YYYY>-<MM>-<DD>T[<hh>:<mm>:<ss>] or
+                      <YYYY>-<DoY>T[<hh>:<mm>:<ss>] (<hh>:<mm>:<ss> is optional
+                      but "T" appending the date string is necessary). Default
+                      is the last data record.
+
+    -u              : Estimate but do not remove velocity when plotting up
+                      component residuals (has no impact without -r option).
+                      Other estimated parameters such as offsets or periodic
+                      terms will still be removed.
+
+    -v <file(s)>    : Plot residual time series relative to velocities given in
+                      <file(s)> in GAMIT-GLOBK ".vel" format. Useful for
+                      plotting residual time series relative to a velocity
+                      estimate other than that determined by fitting the time
+                      series data themselves, for example to see residuals
+                      relative to pre-seismic velocities based on an elastic
+                      dislocation model. Other parameters such as offsets and
+                      periodic terms will still be removed if estimated.
+
+    -w <fraction>   : Add extra width of <fraction>*[time series length] to
+                      beginning and end of time axis to prevent time series
+                      points plotting too close to y-axes (default 0.1 = 10%).
+
+    -x              : Plot excluded points in grey.
+
+    -y <y-bounds>   : Plot fixed-length y-axes for all plots. Implies "-r"
+                      option which, in turn, implies "-t NONE" if "-t" option
+                      not given explicitly. <y-bounds> is expected to be up to
+                      three numeric arguments, in the same units as plot axes
+                      (default mm): if one argument is given, plot all
+                      components between +/- this value; if two arguments are
+                      given, use the first value for horizontal components and
+                      the second for the vertical; if three arguments are given,
+                      use for e,n,u components respectively. If no arguments are
+                      given, default is +/- 10 mm for horizontal components and
+                      +/- 30 mm for the vertical. Without this option, default
+                      is to calculate each axis bounds from the data for that
+                      component.
+
+    -mm             : Plot coordinate axis in mm (default)
+
+    -cm             : Plot coordinate axis in cm (default is mm)
+
+    -m              : Plot coordinate axis in m (default is mm)
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+END
+
+fi
+
+
+# Print version
+echo "sh_plot_pos version $version"
+
+
+# Parse command line arguments
+while [ $# -gt 0 ]; do
+
+  case $1 in
+
+    -b )  # Mark discontinuities with vertical line
+
+      disc_files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-b *//') )
+      if [ ${#disc_files[@]} -eq 0 ]; then
+        disc_files=( "$HOME/gg/tables/itrf08_comb.eq" )
+      fi
+      plot_discs=1
+      ;;
+
+    -c )  # Colour of data points
+
+      c_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-c *//') )
+      if [ ${#c_args[@]} -eq 0 ]; then
+        echo '! Warning ! No arguments given to -c option. Using defaults...'
+      elif [ ${#c_args[@]} -eq 1 ]; then
+        col=( ${c_args[@]} ${col[1]} )
+      elif [ ${#c_args[@]} -eq 2 ]; then
+        col=( ${c_args[@]} )
+      elif [ ${#c_args[@]} -gt 2 ]; then
+        echo "! Warning ! Too many arguments (${#c_args[@]}) given to -c option. Using defaults..."
+      fi
+      ;;
+
+    -d )  # Directory for plots
+
+      d_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-d *//') )
+      if [ ${#d_args[@]} -eq 1 ]; then
+        plot_dir="${d_args[0]}"
+      elif [ ${#d_args[@]} -eq 0 ]; then
+        cat << END
+! Warning ! No directory given with -d option.
+            Proceeding using current working directory...
+END
+      else
+        plot_dir="${d_args[0]}"
+        cat << END
+! Warning ! More than one directory given with -d option.
+            Proceeding using first argument ($dir)...
+END
+      fi
+      ;;
+
+    -e )  # Mark earthquakes with vertical line
+
+      eq_files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-e *//') )
+      plot_eqks=1
+      ;;
+
+    -f )  # Input files
+
+      files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-f *//') )
+      pos_files=( $(echo ${files[@]} | tr ' ' '\n' | grep '\.pos$') )
+      res_files=( $(echo ${files[@]} | tr ' ' '\n' | grep '\.res$') )
+      org_files=( $(echo ${files[@]} | tr ' ' '\n' | grep '\.org$') )
+      prt_files=( $(echo ${files[@]} | tr ' ' '\n' | grep '\.prt$') )
+      ;;
+
+    -g )  # Plot time axis using calendar date (YYYY-MM-DD)
+
+      g_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-g *//') )
+      plot_ydoy=0
+      if [ ${#g_args[@]} -eq 1 ]; then
+        user_bt="-Bsa1Y/ -Bpa${g_args[0]}d"  # Primary N-day and secondary yearly annotations
+      elif [ ${#g_args[@]} -gt 1 ]; then
+        echo "! Error ! Too many arguments (${#g_args[@]}) to -g option (only 1 permitted). Exiting..." && exit 1
+      fi
+      ;;
+
+    -h )  # Plot histograms of distribution of time series residuals
+
+      h_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-h *//') )
+      if [ ${#h_args[@]} -gt 1 ]; then
+        cat << END && exit 1
+! Error ! Too many arguments (${#h_args[@]}) to -h option (only 1 permitted:
+          "p" or "v"). Exiting...
+END
+      elif [ ${#h_args[@]} -eq 0 ]; then
+        echo '! Warning ! No arguments to -h option. Using default ("-h p")...'
+        plot_tshist=1
+      elif [ "${h_args[0]}" = 'p' ]; then
+        plot_tshist=1
+      elif [ "${h_args[0]}" = 'v' ]; then
+        plot_tshist=2
+      else
+        echo '! Error ! Incorrect input argument to -h option ("p" or "v" allowed). Exiting...' && exit 1
+      fi
+      ;;
+
+    -k )  # Keep pos-files created from prt- and/or org-files
+
+      keep_pos=1
+      ;;
+
+    -l )  # Mark user-defined epochs with vertical line
+
+      date=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-l *//; s/-/ /g; s/T.*//') )
+      if [ ${#date[@]} -eq 3 ]; then  # Assume Y-M-D given
+        ymd="$(echo ${date[@]} | awk '{printf "%4d-%02d-%02d\n",$1,$2,$3}')"
+      elif [ ${#date[@]} -eq 2 ]; then  # Assume Y-DoY given
+        ymd="$(echo ${date[@]} |
+                awk '{split("31 28 31 30 31 30 31 31 30 31 30 31",days);
+                      if ($1 % 4 == 0 && ($1 % 100 != 0 || $1 % 400 == 0)) days[2] = 29;
+                      for (i = 1; $2 > days[i]; i++) $2 -= days[i];
+                      printf "%4d-%02d-%02d\n",$1,i,$2}')"
+      else
+        cat << END && exit 1
+Incorrect format of date string. Must be <YYYY>-<MM>-<DD>T[<hh>:<mm>:<ss>] or
+<YYYY>-<DoY>T[<hh>:<mm>:<ss>] (<hh>:<mm>:<ss> is optional). Exiting...
+END
+      fi
+      time=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-l *//; s/.*T//; s/:/ /g') )
+      case ${#time[@]} in
+        3 )  # h:m:s
+          hms="$(echo ${#time[@]} | awk '{printf "%02d:%02d:%02d",$1,$2,$3}')"
+          ;;
+        2 )  # Assume only h:m given
+          hms="$(echo ${#time[@]} | awk '{printf "%02d:%02d:00",$1,$2}')"
+          ;;
+        1 )  # Assume only h given
+          hms="$(echo ${#time[@]} | awk '{printf "%02d:00:00",$1}')"
+          ;;
+        0 )  # Assume 00:00:00
+          hms='00:00:00'
+          ;;
+        * )  # Incorrect format
+          cat << END && exit 1
+Incorrect format of date string. Must be <YYYY>-<MM>-<DD>T[<hh>:<mm>:<ss>] or
+<YYYY>-<DoY>T[<hh>:<mm>:<ss>] (<hh>:<mm>:<ss> is optional). Exiting...
+END
+          ;;
+      esac
+      ymdhms=( ${ymdhms[@]} "${ymd}T$hms" )
+      ;;
+
+    -n )  # Minimum number of point in time series for plotting
+
+      n_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-n *//') )
+      if [ ${#n_args[*]} -eq 1 ]; then
+        echo "! Warning ! No arguments given to -n option. Using default value ($min_n)..."
+      elif [ ${#n_args[*]} -gt 1 ]; then
+        echo "! Warning ! Too many arguments (${#n_args[*]}) given to -n option. Using first argument (${n_args[0]})..."
+        min_n="${n_args[0]}"
+      else
+        min_n="${n_args[0]}"
+      fi
+      ;;
+
+    -o )  # Plot time axis using ordinal date (YYYY-DoY)
+
+      o_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-o *//') )
+      plot_ydoy=1
+      gmtset PLOT_DATE_FORMAT yyyy-jjj
+      if [ ${#o_args[@]} -eq 1 ]; then
+        user_bt="-Bsa1Y/ -Bpa${o_args[0]}d"  # Primary N-day and secondary yearly annotations
+      elif [ ${#o_args[@]} -gt 1 ]; then
+        echo "! Error ! Too many arguments (${#o_args[@]}) to -o option (only 1 permitted). Exiting..." && exit 1
+      fi
+      ;;
+
+    -p )  # Only create pos-files then exit (implies -k option is set)
+
+      pos_only=1
+      keep_pos=1
+      ;;
+
+    -r )  # Plot residuals
+
+      plot_res=( 1 1 )  # ${plot_res[0]} = pos-files; ${plot_res[1]} = res-files
+      ;;
+
+    -s )  # Maximum sigma limit (e,n,u / plot unit (default mm))
+
+      s_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-s *//') )
+      case ${#s_args[@]} in
+        0 )  # No argument(s) given to -s option so default to hard-wired values
+          max_sig=( 20 20 50 )
+          ;;
+        1 )
+          max_sig=( ${s_args[0]} ${s_args[0]} ${s_args[0]} )
+          ;;
+        2 )
+          max_sig=( ${s_args[0]} ${s_args[0]} ${s_args[1]} )
+          ;;
+        3 )
+          max_sig=( ${s_args[0]} ${s_args[1]} ${s_args[2]} )
+          ;;
+        * )
+          cat << END && exit 1
+! Error ! Incorrect number (> 3) of arguments to -s option.
+Exiting...
+END
+          ;;
+      esac
+      ;;
+
+    -t )  # tsfit command file
+
+      t_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-t *//') )
+      if [ ${#t_args[@]} -eq 0 ]; then  # No argument given to -t option so default to "NONE"
+        tsfit_cmd='NONE'
+      elif [ ${#t_args[@]} -eq 1 ]; then  # Command file given as argument to -t option
+        tsfit_cmd="${t_args[0]}"
+      else  # -t option given with more than one command file argument
+        tsfit_cmd="${t_args[0]}"
+        cat << END
+! Warning ! Multiple tsfit command files given with -t option. Using first
+            argument ($tsfit_cmd).
+END
+      fi
+      ;;
+
+    -t1 )  # Time-axis minimum
+
+      date=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-t1 *//; s/-/ /g; s/T.*//') )
+      case ${#date[@]} in
+        3 )  # Assume Y-M-D given
+          ymd="$(echo ${date[@]} | awk '{printf "%4d-%02d-%02d\n",$1,$2,$3}')" 
+          ;;
+        2 )  # Assume Y-DoY given
+          gmtset PLOT_DATE_FORMAT yyyy-jjj
+          ymd="$(echo ${date[@]} |
+                  awk '{split("31 28 31 30 31 30 31 31 30 31 30 31",days);
+                        if ($1 % 4 == 0 && ($1 % 100 != 0 || $1 % 400 == 0)) days[2] = 29;
+                        for (i = 1; $2 > days[i]; i++) $2 -= days[i];
+                        printf "%4d-%02d-%02d\n",$1,i,$2}')"
+          ;;
+        1 )  # Assume year only given
+          ymd="${date[0]}-01-01"
+          ;;
+        * )  # Incorrect format
+          cat << END && exit 1
+Incorrect format of date string. Must be <YYYY>-<MM>-<DD>T[<hh>:<mm>:<ss>] or
+<YYYY>-<DoY>T[<hh>:<mm>:<ss>] (<hh>:<mm>:<ss> is optional). Exiting...
+END
+          ;;
+      esac
+      time=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-t1 *//; s/.*T//; s/:/ /g') )
+      case ${#time[@]} in
+        3 )  # h:m:s
+          hms="$(echo ${#time[@]} | awk '{printf "%02d:%02d:%02d",$1,$2,$3}')"
+          ;;
+        2 )  # Assume only h:m given
+          hms="$(echo ${#time[@]} | awk '{printf "%02d:%02d:00",$1,$2}')"
+          ;;
+        1 )  # Assume only h given
+          hms="$(echo ${#time[@]} | awk '{printf "%02d:00:00",$1}')"
+          ;;
+        0 )  # Assume 00:00:00
+          hms='00:00:00'
+          ;;
+        * )  # Incorrect format
+          cat << END && exit 1
+Incorrect format of date string. Must be <YYYY>-<MM>-<DD>T[<hh>:<mm>:<ss>] or
+<YYYY>-<DoY>T[<hh>:<mm>:<ss>] (<hh>:<mm>:<ss> is optional). Exiting...
+END
+          ;;
+      esac
+      t1="${ymd}T$hms"
+      ;;
+
+    -t2 )  # Time-axis maximum
+
+      date=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-t2 *//; s/-/ /g; s/T.*//') )
+      case ${#date[@]} in
+        3 )  # Assume Y-M-D given
+          ymd="$(echo ${date[@]} | awk '{printf "%4d-%02d-%02d\n",$1,$2,$3}')"
+          ;;
+        2 )  # Assume Y-DoY given
+          gmtset PLOT_DATE_FORMAT yyyy-jjj
+          ymd="$(echo ${date[@]} |
+                  awk '{split("31 28 31 30 31 30 31 31 30 31 30 31",days);
+                        if ($1 % 4 == 0 && ($1 % 100 != 0 || $1 % 400 == 0)) days[2] = 29;
+                        for (i = 1; $2 > days[i]; i++) $2 -= days[i];
+                        printf "%4d-%02d-%02d\n",$1,i,$2}')"
+          ;;
+        1 )  # Assume year only given
+          ymd="${date[0]}-12-31"
+          ;;
+        * )  # Incorrect format
+          cat << END && exit 1
+Incorrect format of date string. Must be <YYYY>-<MM>-<DD>T[<hh>:<mm>:<ss>] or
+<YYYY>-<DoY>T[<hh>:<mm>:<ss>] (<hh>:<mm>:<ss> is optional). Exiting...
+END
+          ;;
+      esac
+      time=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-t2 *//; s/.*T//; s/:/ /g') )
+      case ${#time[@]} in
+        3 )  # h:m:s
+          hms="$(echo ${#time[@]} | awk '{printf "%02d:%02d:%02d",$1,$2,$3}')"
+          ;;
+        2 )  # Assume only h:m given
+          hms="$(echo ${#time[@]} | awk '{printf "%02d:%02d:59",$1,$2}')"
+          ;;
+        1 )  # Assume only h given
+          hms="$(echo ${#time[@]} | awk '{printf "%02d:59:59",$1}')"
+          ;;
+        0 )  # Assume 23:59:59
+          hms='23:59:59'
+          ;;
+        * )  # Incorrect format
+          cat << END && exit 1
+Incorrect format of date string. Must be <YYYY>-<MM>-<DD>T[<hh>:<mm>:<ss>] or
+<YYYY>-<DoY>T[<hh>:<mm>:<ss>] (<hh>:<mm>:<ss> is optional). Exiting...
+END
+          ;;
+      esac
+      t2="${ymd}T$hms"
+      ;;
+
+    -u )  # Do not remove velocity when plotting up component residuals
+
+      raw_up=1
+      ;;
+
+    -v )  # User-defined velocities
+
+      vel_files=( "$(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-v *//')" )
+      if [ ${#vel_files[@]} -eq 0 ]; then
+        cat << END
+! Warning ! No vel-files given with -v option.
+            Proceeding without user-defined velocities...
+END
+      fi
+      ;;
+
+    -w )  # User-defined extra width on time axis
+
+      w_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-w *//') )
+      if [ ${#w_args[@]} -eq 0 ]; then
+        echo '! Warning ! No argument given with -w option.'
+        echo "            Proceeding using default value of $pct..."
+        w_args=( $pct )
+      elif [ ${#w_args[@]} -gt 1 ]; then
+        echo "! Warning ! Multiple arguments (${#w_args[@]}) given with -w option."
+        echo "            Proceeding using first argument (${w_args[0]})..."
+      fi
+      pct="${w_args[0]}"
+      ;;
+
+    -x )  # Plot excluded points in grey
+
+      plot_excl=1
+      ;;
+
+    -y )  # Fixed-length y-axes (e,n,u / plot unit (default mm))
+
+      y_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-y *//') )
+      case ${#y_args[@]} in
+        0 )  # No argument(s) given to -y option so default to hard-wired values
+          yaxes=( 10 10 30 )
+          ;;
+        1 )
+          yaxes=( ${y_args[0]} ${y_args[0]} ${y_args[0]} )
+          ;;
+        2 )
+          yaxes=( ${y_args[0]} ${y_args[0]} ${y_args[1]} )
+          ;;
+        3 )
+          yaxes=( ${y_args[0]} ${y_args[1]} ${y_args[2]} )
+          ;;
+        * )
+          cat << END && exit 1
+! Error ! Incorrect number (> 3) of arguments to -y option.
+Exiting...
+END
+          ;;
+      esac
+      plot_res=( 1 1 )
+      ;;
+
+    -mm )  # Plot y axis scale in mm
+
+      factor='1000'  # Multiplying factor for coordinates (1 is for plotting in m)
+      unit='mm'  # Unit for axis labels
+      dunit=( $(echo "${dunit[0]} * $factor" | bc -l) $(echo "${dunit[1]} * $factor" | bc -l) )  # Nearest unit for minmax
+      ;;
+
+    -cm )  # Plot y axis scale in cm
+
+      factor='100'  # Multiplying factor for coordinates (1 is for plotting in m)
+      unit='cm'  # Unit for axis labels
+      dunit=( $(echo "${dunit[0]} * $factor" | bc -l) $(echo "${dunit[1]} * $factor" | bc -l) )  # Nearest unit for minmax
+      ;;
+
+    -m )  # Plot y axis scale in m
+
+      factor='1'  # Multiplying factor for coordinates (1 is for plotting in m)
+      unit='m'  # Unit for axis labels
+      dunit=( $(echo "${dunit[0]} * $factor" | bc -l) $(echo "${dunit[1]} * $factor" | bc -l) )  # Nearest unit for minmax
+      ;;
+
+  esac
+
+  shift
+
+done
+
+
+# Set variables
+point="-Sc3p -W0.5p,${col[0]}"  # ${col[0]}-coloured circles
+bar="-Ey2p/0.75p,${col[1]}"     # ${col[1]}-coloured error bars
+date="$(date '+%Y%m%d%H%M%S%Z')"
+pos_dir="pos_$date"
+
+${gmt}gmtset TICK_LENGTH -0.2c ANNOT_FONT_SIZE_PRIMARY 14 ANNOT_FONT_SIZE_SECONDARY 14 LABEL_FONT_SIZE 14 HEADER_FONT_SIZE 16 GRID_PEN_PRIMARY 0.25p,,. X_ORIGIN 3.5c Y_ORIGIN 2c PLOT_DATE_FORMAT yyyy-mm-dd
+
+
+# Print messages
+if [ -n "$plot_tshist" -a -z "$tsfit_cmd" ]; then
+  if [ $plot_tshist -eq 2 ]; then
+    tsfit_cmd='NONE'
+  else
+    tsfit_cmd='MEAN'
+  fi
+  cat << END
+! Warning ! Histograms of distribution of time series residuals requested ("-h"
+            option) but tsfit command file ("-t" option) not specified. Using
+            "tsfit $tsfit_cmd tsfit_$date.sum ..." to create summary file.
+END
+fi
+if [ -n "$tsfit_cmd" -a "$tsfit_cmd" != 'MEAN' -a "$tsfit_cmd" != 'NONE' -a ${#eq_files[@]} -gt 0 ]; then
+  cat << END
+! Warning ! Both tsfit command file and eq-files specified. Overriding eq-file(s)
+            given with -e option with those found (if any) in tsfit command file...
+END
+fi
+if [ ${max_sig[0]} -ne 1000000 -a ${max_sig[1]} -ne 1000000 -a ${max_sig[2]} -ne 1000000 ]; then
+  echo "Excluding points with sigma > ${max_sig[0]} $unit (e), ${max_sig[1]} $unit (n), ${max_sig[2]} $unit (u)..."
+fi
+
+
+# Test if tssum or xyzsave/tscon is to be run to create pos-files from prt-files
+if [ ${#prt_files[@]} -gt 0 ]; then
+
+  frame='loose'
+
+  echo 'Checking input prt-files for records required to create pos-files using tssum...'
+
+  if [ $(grep -c -h '^pbo' ${prt_files[@]}) -gt 0 ]; then  # Run tssum (PBOP option set in glorg)
+
+    echo "Running tssum to create pos-files in $pos_dir/ from prt-files..."
+    mkdir -p $pos_dir/ &&
+     tssum $pos_dir $(echo ${INSTITUTE:=unk} | tr '[:upper:]' '[:lower:]').orbit_$frame -R ${prt_files[@]} &> /dev/null
+
+  else  # Run xyzsave/tscon
+
+    echo "Running xyzsave and tscon to create pos-files in $pos_dir/ from prt-files..."
+    mkdir -p $pos_dir/ &&
+     xyzsave 0 $pos_dir ${prt_files[@]} &&
+     tscon $pos_dir $(echo ${INSTITUTE:=unk} | tr '[:upper:]' '[:lower:]').orbit_$frame '' $pos_dir/*.xyz &> /dev/null &&
+     rm -f $pos_dir/*.xyz
+
+  fi  # END: Run tssum (PBOP option set in glorg) or xyzsave/tscon
+
+  # Add newly-created pos-files to $pos_files array
+  pos_files=( ${pos_files[@]} $(ls $pos_dir/*_$frame.pos) )
+
+fi  # END: Test if tssum or xyzsave/tscon is to be run to create pos-files from prt-files
+
+
+# Test if tssum or xyzsave/tscon is to be run to create pos-files from org-files
+if [ ${#org_files[@]} -gt 0 ]; then
+
+  frame='frame'
+
+  echo 'Checking input org-files for records required to create pos-files using tssum...'
+
+  if [ $(grep -c -h '^pbo' ${org_files[@]}) -gt 0 ]; then  # Run tssum (PBOP option set in glorg)
+
+    echo "Running tssum to create pos-files in $pos_dir/ from org-files..."
+    mkdir -p $pos_dir/ &&
+     tssum $pos_dir $(echo ${INSTITUTE:=unk} | tr '[:upper:]' '[:lower:]').orbit_$frame -R ${org_files[@]} &> /dev/null
+
+  else  # Run xyzsave/tscon
+
+    echo "Running xyzsave and tscon to create pos-files in $pos_dir/ from org-files..."
+    mkdir -p $pos_dir/ &&
+     xyzsave 0 $pos_dir ${org_files[@]} &&
+     tscon $pos_dir $(echo ${INSTITUTE:=unk} | tr '[:upper:]' '[:lower:]').orbit_$frame '' $pos_dir/*.xyz &> /dev/null &&
+     rm -f $pos_dir/*.xyz
+
+  fi  # END: Run tssum (PBOP option set in glorg) or xyzsave/tscon
+
+  # Add newly-created pos-files to $pos_files array
+  pos_files=( ${pos_files[@]} $(ls $pos_dir/*_$frame.pos) )
+
+fi  # END: Test if tssum or xyzsave/tscon is to be run to create pos-files from org-files
+
+
+# Test if pos-files are to be created only
+if [ $pos_only -eq 1 ]; then
+  echo "Exiting after creating pos-files in $pos_dir/ (-p option set)..." && exit
+fi
+
+
+# Test if residuals are to be plotted but no tsfit command file or user-defined velfile explicitly given
+if [ ${#pos_files[@]} -gt 0 -a ${plot_res[0]} -eq 1 -a -z "$tsfit_cmd" -a ${#vel_files[@]} -eq 0 ]; then
+  tsfit_cmd='NONE'
+fi
+
+
+# Test if tsfit is to be run
+if [ -n "$tsfit_cmd" -a ${#pos_files[@]} -gt 0 ]; then  # Run tsfit on pos-files with given command file or "NONE"
+
+  tsfit $tsfit_cmd tsfit_$date.sum ${pos_files[@]}
+
+  # Test for output residuals files
+  if [ "$tsfit_cmd" != 'MEAN' -a "$tsfit_cmd" != 'NONE' ]; then  # Test for residual and detrend file name roots in tsfit command file
+
+    # Define $det_prefix from tsfit command file
+    det_prefix="$(grep -i '^ *detroot' $tsfit_cmd | awk '{print $2}')"
+
+    # Define $res_prefix from tsfit command file
+    res_prefix="$(grep -i '^ *resroot ' $tsfit_cmd | awk '{print $2}')"
+    if [ -z "$res_prefix" ]; then  # No "resroot" option in tsfit command file so output residuals files begin with "." (i.e. hidden)
+      res_prefix='NONE'
+      # Rename hidden residuals files to begin with "MEAN." or "NONE."
+      for file in ${pos_files[@]}; do
+        if [ -f .$(basename $file .pos | cut -c 1-14).res ]; then
+          mv -f .$(basename $file .pos | cut -c 1-14).res $res_prefix.$(basename $file .pos | cut -c 1-14).res
+        fi
+      done
+    elif [ "$res_prefix" = 'NONE' ]; then  # No output residual files because "resroot NONE" set in tsfit command file
+      res_prefix=''     # Reset $res_prefix to zero-length string
+      plot_res=( 0 1 )  # Cannot plot residuals files if they don't exist
+    fi
+
+    # Override discontinuity files
+    #disc_files=( $(grep -i '^ *eq_file ' $tsfit_cmd | awk '{print $2}') )
+
+    # Override eq-files
+    eq_files=( $(grep -i '^ *eq_file ' $tsfit_cmd | awk '{print $2}') )
+
+  else
+
+    if [ "$tsfit_cmd" = 'MEAN' ]; then  # tsfit run for linear rate only so tsfit output residuals files begin with "." (i.e. hidden)
+      # Test if $res_prefix is defined by optional argument to -r option
+      if [ -z "$res_prefix" ]; then
+        res_prefix='MEAN'  # Renamed files' new prefix
+      fi
+    elif [ "$tsfit_cmd" = 'NONE' ]; then  # tsfit run for mean position only so tsfit output residuals files begin with "." (i.e. hidden)
+      # Test if $res_prefix is defined by optional argument to -r option
+      if [ -z "$res_prefix" ]; then
+        res_prefix='NONE'  # Renamed files' new prefix
+      fi
+    fi
+    # Rename hidden residuals files to begin with "MEAN." or "NONE."
+    for file in ${pos_files[@]}; do
+      if [ -f .$(basename $file .pos | cut -c 1-14).res ]; then
+        mv -f .$(basename $file .pos | cut -c 1-14).res $res_prefix.$(basename $file .pos | cut -c 1-14).res
+      fi
+    done
+
+  fi  # END: Test for output residuals files
+
+  # Test if histograms of distribution of residuals are to be plotted using sh_tshist
+  if [ $plot_tshist -eq 1 -a -f "tsfit_$date.sum" ]; then
+    ~/gg/com_preGMT5/sh_tshist -f tsfit_$date.sum -prog tsfit -type wrms
+    ~/gg/com_preGMT5/sh_tshist -f tsfit_$date.sum -prog tsfit -type nrms
+  elif [ $plot_tshist -eq 2 -a -f "tsfit_$date.sum" ]; then
+    ~/gg/com_preGMT5/sh_tshist -f tsfit_$date.sum -prog tsfit -type vel_wrms
+    ~/gg/com_preGMT5/sh_tshist -f tsfit_$date.sum -prog tsfit -type vel_nrms
+  fi
+
+else  # No tsfit command file so do not run tsfit
+
+  if [ ${plot_res[0]} -eq 1 -a ${#pos_files[@]} -gt 0 -a ${#vel_files[@]} -eq 0 ]; then  # Cannot plot residuals of pos-files if tsfit is not run
+    cat << END
+Cannot plot residuals without running tsfit (see -t option) or
+Plotting raw time series for input pos-files...
+END
+  fi
+
+fi  # END: Test if tsfit is to be run
+
+
+# Separate "_XCL" and "_XPS" records from ${eq_files[@]} and ${disc_files[@]}
+# before continuing to avoid grep'ing over excessive lines to find "eq_def"/
+# "eq_rename", "rename"/"break" and/or "_XCL"/"_XPS" records
+if [ ${#eq_files[@]} -gt 0 ]; then
+  grep -h -i -v '_XCL' ${eq_files[@]} | grep -i -v '_XPS' >| $tmp/$date.eq
+  grep -h -i '_XCL' ${eq_files[@]} >| $tmp/$date.xcl
+  grep -h -i '_XPS' ${eq_files[@]} >| $tmp/$date.xps
+fi
+if [ ${#disc_files[@]} -gt 0 ]; then
+  grep -h -i -v '_XCL' ${disc_files[@]} | grep -i -v '_XPS' >| $tmp/$date.disc
+  if [ -f $tmp/$date.xcl ]; then
+    grep -h -i '_XCL' ${disc_files[@]} >> $tmp/$date.xcl
+  else
+    grep -h -i '_XCL' ${disc_files[@]} >| $tmp/$date.xcl
+  fi
+  if [ -f $tmp/$date.xps ]; then
+    grep -h -i '_XPS' ${disc_files[@]} >> $tmp/$date.xps
+  else
+    grep -h -i '_XPS' ${disc_files[@]} >| $tmp/$date.xps
+  fi
+fi
+
+
+# Loop over files to plot
+for file in ${pos_files[@]} ${res_files[@]}; do
+time1="$(date +'%s.%N')"
+
+  type="${file##*.}"  # "pos" or "res"
+
+  # Define site ID
+  site="$(grep '^4-character ID' $file | awk '{print $NF}')"
+
+  # Define root file name parts
+  if [ "$type" = 'res' ]; then  # res-file
+    #det_file=''  # Cannot know det-file name if given res-file
+    res_file="$file"
+  else  # pos-file
+    pos_file="$file"
+    root="$(basename $pos_file .pos | cut -c 1-14)"  # First 14 characters, as in tsfit
+    det_file="$det_prefix$root.det"
+    if [ -n "$res_prefix" ]; then
+      res_file="$res_prefix.$root.res"
+    fi
+  fi
+
+  # Define detrend parameters, if estimated
+  if [ "$type" = 'pos' -a -n "$res_prefix" -o "$type" = 'res' ]; then  # Fit parameters from residuals file header
+    y0=( $(grep '^Offsets ' $res_file | awk '{print $3,$5,$6,$8,$9,$11}') )  # n,e,u y-intercepts / mm
+    vel=( $(grep '^Rates ' $res_file | awk '{print $3,$5,$6,$8,$9,$11}') )   # n,e,u velocities / mm/yr
+    stats=( $(grep ' stats: ' $res_file | awk '{print "-",$9,$12}' ) )       # n,e,u RMS / mm, WRMS / mm, NRMS
+  elif [ "$type" = 'pos' -a -f "$det_file" ]; then  # Fit parameters from detrend file
+    y0=( $(grep '^Offset ' $det_file | awk '{print $(NF-3),$(NF-1)}') )  # n,e,u y-intercept / mm
+    vel=( $(grep '^Rate ' $det_file | awk '{print $(NF-3),$(NF-1)}') )   # n,e,u velocities / mm/yr
+    stats=( $(grep '^WRMS: ' $det_file | awk '{print "-",$2,$5}' ) )     # n,e,u RMS / mm, WRMS / mm, NRMS
+  else  # Set default empty variable arrays
+    y0=()
+    vel=()
+    stats=()
+  fi  # END: Define detrend parameters, if estimated
+
+  # Override velocity estimate with user-specified alternative
+  if [ ${#vel_files[@]} -gt 0 ]; then
+    if [ ${#vel[@]} -gt 0 ]; then  # Velocities defined to add back before removing user-defined (-v option) velocities
+      vel0=( ${vel[0]} ${vel[2]} ${vel[4]} )
+    else  # Simply remove estimated velocities
+      vel0=( 0 0 0 )
+    fi
+    vel=( $(grep -h "^ .* ${site}_..." ${vel_files[@]} | awk '{print $4,$8,$3,$7,$10,$12}') )  # n,e,u velocities / mm/yr
+  fi  # END: Override velocity estimate with user-specified alternative
+
+  # Define excluded points
+  grep -h -i "^ *rename *$site" $tmp/$date.xcl |
+   awk '{printf "%4d-%02d-%02dT%02d:%02d",$4,$5,$6,$7,$8}'>| $tmp/$site.xcl
+  grep -h -i "^ *rename *$site" $tmp/$date.xps |
+   awk '{printf "%4d-%02d-%02dT%02d:%02d",$4,$5,$6,$7,$8}' >| $tmp/$site.xps
+
+  # Define discontinuities, if to be plotted
+  if [ $plot_discs -eq 1 ]; then
+
+    if [ "$type" = 'pos' -a -n "$res_prefix" -o "$type" = 'res' ]; then
+
+      # Read discontinuity epochs
+      if [ "$res_prefix" != 'NONE' ]; then  # Read from res-file header
+
+        #discs=( $(grep -h -i "^ *[rb][er][ne]a[mk][^ ]* $site" $tmp/$date.eq $tmp/$date.disc | awk -v year=$(date '+%Y') '$4 > 1980 {printf "%4d-%02d-%02dT%02d:%02d:00\n",$4,$5,$6,$7,$8}; $9 <= year {printf "%4d-%02d-%02dT%02d:%02d:00\n",$9,$10,$11,$12,$13}' | sort -u) )
+        discs=( $(grep '^Break ' $res_file | awk '{printf "%4d-%02d-%02dT%02d:%02d:%02d\n",substr($0,10,4),substr($0,14,2),substr($0,16,2),substr($0,19,2),substr($0,21,2),substr($0,23,2)}' | sort -u) )
+        if [ ${#disc_files[@]} -gt 0 -o ${#eq_files[@]} -gt 0 ]; then  # Search for site suffix codes
+          disc_ids=()
+          for disc in ${discs[@]}; do
+            ymdhm=( $(echo $disc | awk -v FS='[-T:]' '{printf "%4d %2d %2d %2d %2d",$1,$2,$3,$4,$5}') )
+            disc_ids=( ${disc_ids[@]} $(grep -h -i "^ *[rb][er][ne]a[mk][^ ]* *$site" $tmp/$date.disc $tmp/$date.eq | awk -v y=${ymdhm[0]} -v mo=${ymdhm[1]} -v d=${ymdhm[2]} -v h=${ymdhm[3]} -v mi=${ymdhm[4]} 'BEGIN {split("31 28 31 30 31 30 31 31 30 31 30 31",days); disc_id="-"}; {y0=$4; mo0=$5; d0=$6; h0=$7; if (y0 % 4 == 0 && (y0 % 100 != 0 || y0 % 400 == 0)) days[2] = 29; if (h0 == 24) {h0=0; d0=$6+1; if (d0 > days[$5]) {mo0=$5+1; d0=1}; if (mo0 > 12) {y0=$4+1; mo0=1}}; if (y0 == y && mo0 == mo && d0 == d && h0 == h && $8 == mi) disc_id=substr($3,6,3)}; END {print disc_id}') )
+          done
+        fi  # END: Search for site suffix codes
+
+      elif [ ${#disc_files[@]} -gt 0 -o ${#eq_files[@]} -gt 0 ]; then  # Read from eq-files
+
+        discs=( $(grep -h -i "^ *[rb][er][ne]a[mk][^ ]* *$site" $tmp/$date.disc $tmp/$date.eq | awk '{printf "%4d-%02d-%02dT%02d:%02d:00\n",$4,$5,$6,$7,$8}') )
+        disc_ids=( $(grep -h -i "^ *[rb][er][ne]a[mk][^ ]* *$site" $tmp/$date.disc $tmp/$date.eq | awk '{print substr($3,6,3)}') )
+
+      fi
+
+    elif [ "$type" = 'pos' ]; then  # pos-file and "NONE" used for tsfit command file or no res-file
+
+      if [ -f "$det_file" ]; then  # Read from det-file header
+
+        # Read discontinuities
+        #discs=( $(grep -h -i "^ *[rb][er][ne]a[mk][^ ]* $site" $tmp/$date.disc $tmp/$date.eq | awk -v year=$(date '+%Y') '$4 > 1980 {printf "%4d-%02d-%02dT%02d:%02d:00\n",$4,$5,$6,$7,$8}; $9 <= year {printf "%4d-%02d-%02dT%02d:%02d:00\n",$9,$10,$11,$12,$13}' | sort -u) )
+        discs=( $(grep '^Break ' $det_file | awk '{printf "%4d-%02d-%02dT%02d:%02d:00\n",$2,$3,$4,$5,$6}' | sort -u) )
+        if [ ${#disc_files[@]} -gt 0 -o ${#eq_files[@]} -gt 0 ]; then  # Search for site suffix codes
+          disc_ids=()
+          for disc in ${discs[@]}; do
+            ymdhm=( $(echo $disc | awk -v FS='[-T:]' '{printf "%4d %2d %2d %2d %2d",$1,$2,$3,$4,$5}') )
+            disc_ids=( ${disc_ids[@]} $(grep -h -i "^ *[rb][er][ne]a[mk][^ ]* *$site" $tmp/$date.disc $tmp/$date.eq | awk -v y=${ymdhm[0]} -v mo=${ymdhm[1]} -v d=${ymdhm[2]} -v h=${ymdhm[3]} -v mi=${ymdhm[4]} 'BEGIN {split("31 28 31 30 31 30 31 31 30 31 30 31",days); disc_id="-"}; {y0=$4; mo0=$5; d0=$6; h0=$7; if (y0 % 4 == 0 && (y0 % 100 != 0 || y0 % 400 == 0)) days[2] = 29; if (h0 == 24) {h0=0; d0=$6+1; if (d0 > days[$5]) {mo0=$5+1; d0=1}; if (mo0 > 12) {y0=$4+1; mo0=1}}; if (y0 == y && mo0 == mo && d0 == d && h0 == h && $8 == mi) disc_id=substr($3,6,3)}; END {print disc_id}') )
+          done
+        fi  # END: Search for site suffix codes
+
+      elif [ ${#disc_files[@]} -gt 0 -o ${#eq_files[@]} -gt 0 ]; then  # Read from eq-files
+
+        discs=( $(grep -h -i "^ *[rb][er][ne]a[mk][^ ]* *$site" $tmp/$date.disc $tmp/$date.eq | awk '{printf "%4d-%02d-%02dT%02d:%02d:00\n",$4,$5,$6,$7,$8}') )
+        disc_ids=( $(grep -h -i "^ *[rb][er][ne]a[mk][^ ]* *$site" $tmp/$date.disc $tmp/$date.eq | awk '{print substr($3,6,3)}') )
+
+      fi
+
+    fi
+
+  fi  # END: Define discontinuities, if to be plotted
+
+  # Define earthquakes, if to be plotted
+  if [ $plot_eqks -eq 1 ]; then
+
+    if [ "$type" = 'pos' -a -n "$res_prefix" -o "$type" = 'res' ]; then  # Read from res-file header
+
+      # Read earthquake epochs
+      eqks=( $(grep '^OffEq ' $res_file | awk '{printf "%4d-%02d-%02dT%02d:%02d:%02d\n",substr($0,10,4),substr($0,14,2),substr($0,16,2),substr($0,19,2),substr($0,21,2),substr($0,23,2)}' | sort -u) )
+      if [ ${#eq_files[@]} -gt 0 -o ${#disc_files[@]} -gt 0 ]; then  # Search for two-character earthquake codes
+        eqk_ids=()
+        for eqk in ${eqks[@]}; do
+          ymdhm=( $(echo $eqk | awk -v FS='[-T:]' '{printf "%4d %2d %2d %2d %2d",$1,$2,$3,$4,$5}') )
+          eqk_ids=( ${eqk_ids[@]} $(grep -h -i "^ *eq_def" $tmp/$date.eq $tmp/$date.disc | awk -v y=${ymdhm[0]} -v mo=${ymdhm[1]} -v d=${ymdhm[2]} -v h=${ymdhm[3]} -v mi=${ymdhm[4]} 'BEGIN {split("31 28 31 30 31 30 31 31 30 31 30 31",days); eqk_id="-"}; {y0=$7; mo0=$8; d0=$9; h0=$10; if (y0 % 4 == 0 && (y0 % 100 != 0 || y0 % 400 == 0)) days[2] = 29; if (h0 == 24) {d0++; h0=0; if (d0 > days[mo0]) {mo0++; d0=1}; if (mo0 > 12) {y0=$7+1; mo0=1}}; if (y0 == y && mo0 == mo && d0 == d && h0 == h && $11 == mi) eqk_id=$2}; END {print eqk_id}' | sort -u) )
+        done
+      fi  # END: Search for two-character earthquake codes
+
+    elif [ "$type" = 'pos' -a -z "$res_prefix" ]; then  # pos-file and no res-file
+
+      if [ -f "$det_file" ]; then  # Read from det-file header
+
+        # Read earthquake epochs
+        eqks=( $(grep '^OffEq ' $det_file | awk '{printf "%4d-%02d-%02dT%02d:%02d:00\n",$2,$3,$4,$5,$6}' | sort -u) )
+        if [ ${#eq_files[@]} -gt 0 -o ${#disc_files[@]} -gt 0 ]; then  # Search for two-character earthquake codes
+          eqk_ids=()
+          for eqk in ${eqks[@]}; do
+            ymdhm=( $(echo $eqk | awk -v FS='[-T:]' '{printf "%4d %2d %2d %2d %2d",$1,$2,$3,$4,$5}') )
+            eqk_ids=( ${eqk_ids[@]} $(grep -h -i "^ *eq_def" $tmp/$date.eq $tmp/$date.disc | awk -v y=${ymdhm[0]} -v mo=${ymdhm[1]} -v d=${ymdhm[2]} -v h=${ymdhm[3]} -v mi=${ymdhm[4]} 'BEGIN {split("31 28 31 30 31 30 31 31 30 31 30 31",days); eqk_id="-"}; {y0=$7; mo0=$8; d0=$9; h0=$10; if (y0 % 4 == 0 && (y0 % 100 != 0 || y0 % 400 == 0)) days[2] = 29; if (h0 == 24) {h0=0; d0=$9+1; if (d0 > days[$8]) {mo0=$8+1; d0=1}; if (mo0 > 12) {y0=$7+1; mo0=1}}; if (y0 == y && mo0 == mo && d0 == d && h0 == h && $11 == mi) eqk_id=$2}; END {print eqk_id}' | sort -u) )
+          done
+        fi  # END: Search for two-character earthquake codes
+
+      elif [ ${#eq_files[@]} -gt 0 -o ${#disc_files[@]} -gt 0 ]; then  # Read from eq-files
+
+        # Earthquakes with site within radius of influence
+        ref_xyz=( $(grep '^XYZ Reference ' $pos_file | awk '{print $5,$6,$7}') )
+        # Loop over implemented ("eq_rename") earthquakes to find if site is within radius of influence
+        eqks=()
+        eqk_ids=()
+        for eqk_id in $(grep -h -i '^ *eq_r' $tmp/$date.eq $tmp/$date.disc | awk '{print $2}'); do
+          # Read earthquake epoch
+          ymdhm="$(grep -h -i "^ *eq_def *$eqk_id " $tmp/$date.eq $tmp/$date.disc | awk -v a=${wgs84[0]} -v invf=${wgs84[1]} -v x=${ref_xyz[0]} -v y=${ref_xyz[1]} -v z=${ref_xyz[2]} '{pi=4*atan2(1,1); f=1/invf; N=a/sqrt(1-f*(2-f)*sin($3*pi/180)^2); xeqk=(N-$6*1e3)*cos($3*pi/180)*cos($4*pi/180); yeqk=(N-$6*1e3)*cos($3*pi/180)*sin($4*pi/180); zeqk=((1-f)^2*N-$6*1e3)*sin($3*pi/180); if ( sqrt((x-xeqk)^2+(y-yeqk)^2+(z-zeqk)^2) <= $5*1e3 ) printf "%4d-%02d-%02dT%02d:%02d:00\n",$7,$8,$9,$10,$11}')"
+          if [ -n "$ymdhm" ]; then
+            eqks=( ${eqks[@]} $ymdhm )
+            eqk_ids=( ${eqk_ids[@]} $eqk_id )
+          fi
+        done  # END: Loop over defined earthquakes to find if site is within radius of influence
+
+      fi
+
+    fi
+
+  fi  # END: Define earthquakes, if to be plotted
+
+  # First and last epoch for plot boundaries
+  t_minmax=( $(grep '^ ' $file | awk -v pct=$pct 'BEGIN {split("31 59 90 120 151 181 212 243 273 304 334 365",sum)}; NR == 1 {y1=substr($1,1,4)+0; mo1=substr($1,5,2)+0; d1=substr($1,7,2)+0; h1=substr($2,1,2)+0; mi1=substr($2,3,2)+0; s1=substr($2,5,2)+0; doy1=sum[mo1-1]+d1; dpy1=365; if (y1 % 4 == 0 && (y1 % 100 != 0 || y1 % 400 == 0) && mo1 > 2) {doy1++; dpy1++}; decyr1=y1+(doy1+(h1+mi1/60+s1/3600)/24-1)/dpy1}; END {y2=substr($1,1,4)+0; mo2=substr($1,5,2)+0; d2=substr($1,7,2)+0; h2=substr($2,1,2)+0; mi2=substr($2,3,2)+0; s2=substr($2,5,2)+0; doy2=sum[mo2-1]+d2; dpy2=365; if (y2 % 4 == 0 && (y2 % 100 != 0 || y2 % 400 == 0) && mo2 > 2) {doy2++; dpy2++}; decyr2=y2+(doy2+(h2+mi2/60+s2/3600)/24-1)/dpy2; dt=pct*(decyr2-decyr1); decyr1=decyr1-dt; decyr2=decyr2+dt; split("31 28 31 30 31 30 31 31 30 31 30 31",days); y1=int(decyr1); if (y1 % 4 == 0 && (y1 % 100 != 0 || y1 % 400 == 0)) {days[2]=29; dpy1=366} else dpy1=365; doy1=int((decyr1-y1)*dpy1)+1; for (mo1 = 1; doy1 > days[mo1]; mo1++) doy1=doy1-days[mo1]; split("31 28 31 30 31 30 31 31 30 31 30 31",days); y2=int(decyr2); if (y2 % 4 == 0 && (y2 % 100 != 0 || y2 % 400 == 0)) {days[2]=29; dpy2=366} else dpy2=365; doy2=int((decyr2-y2)*dpy2)+1; for (mo2 = 1; doy2 > days[mo2]; mo2++) doy2=doy2-days[mo2]; printf "%4d-%02d-%02dT00:00:00 %4d-%02d-%02dT23:59:59",y1,mo1,doy1,y2,mo2,doy2}') )
+  if [ -z "$t1" ]; then  # Time-axis minimum not defined by user
+    #t_min="$(grep '^First Epoch' $file | awk '{printf "%4d-%02d-%02dT%02d:%02d:%02d\n",substr($(NF-1),1,4),substr($(NF-1),5,2),substr($(NF-1),7,2),substr($NF,1,2),substr($NF,3,2),substr($NF,5,2)}')"
+    #t_min="$(grep '^First Epoch' $file | awk '{printf "%4d-%02d-%02dT00:00:00\n",substr($(NF-1),1,4),substr($(NF-1),5,2),substr($(NF-1),7,2)}')"
+    t_min="${t_minmax[0]}"
+  else  # Use user-defined time-axis minimum
+    t_min="$t1"
+  fi
+  if [ -z "$t2" ]; then  # Time-axis maximum not defined by user
+    #t_max="$(grep '^Last Epoch' $file | awk '{printf "%4d-%02d-%02dT%02d:%02d:%02d\n",substr($(NF-1),1,4),substr($(NF-1),5,2),substr($(NF-1),7,2),substr($NF,1,2),substr($NF,3,2),substr($NF,5,2)}')"
+    #t_max="$(grep '^Last Epoch' $file | awk '{printf "%4d-%02d-%02dT23:59:59\n",substr($(NF-1),1,4),substr($(NF-1),5,2),substr($(NF-1),7,2)}')"
+    t_max="${t_minmax[1]}"
+  else  # Use user-defined time-axis maximum
+    t_max="$t2"
+  fi
+
+  # Read pos-file or res-file and format as: t,e,n,u,sig_e,sig_n,sig_u / m
+  if [ "$type" = 'pos' -a ${plot_res[0]} -eq 1 -o "$type" = 'res' -a ${plot_res[1]} -eq 1 ]; then  # Residual time series
+
+    if [ "$type" = 'pos' -a -n "$res_prefix" -o "$type" = 'res' ]; then  # Use residuals file output from tsfit
+
+      if [ ${#vel_files[@]} -gt 0 ]; then  # Use res-file with user-defined (-v option) velocities removed
+
+        # Write output residuals file
+        grep -v '^ ' $res_file |
+         awk -v vn=${vel[0]} -v sign=${vel[1]} -v ve=${vel[2]} -v sige=${vel[3]} -v vu=${vel[4]} -v sigu=${vel[5]} '{if ($0 ~ /^Rates/) printf "Rates :                     %8.2f +- %7.2f %8.2f +- %7.2f %8.2f +- %7.2f mm/yr\n",vn,sign,ve,sige,vu,sigu; else print $0}' >| ${res_file%.res}.vres
+        t0="$(grep '^ ' $res_file | awk -v nlines="$(grep -c '^ ' $res_file)" 'NR == int(nlines/2 + 0.5) {print $3}')"
+        grep '^ ' $res_file |
+         awk -v t0=$t0 -v vn=${vel[0]} -v vn0=${vel0[0]} -v ve=${vel[2]} -v ve0=${vel0[1]} -v vu=${vel[4]} -v vu0=${vel0[2]} '{dt=$3-t0; dn=$8+(vn0-vn)*dt; de=$11+(ve0-ve)*dt; du=$14+(vu0-vu)*dt; printf "  %8d %6d  %9.4f  %10.4f %9.1f %9.1f %9.1f %9.1f %8.1f %3d %9.1f %8.1f %3d %9.1f %8.1f %3d\n",$1,$2,$3,$4,$5,$6,$7,dn,$9,$10,de,$12,$13,du,$15,$16}' >> ${res_file%.res}.vres
+
+        # East component to plot and exclude based on tsfit tests
+        # (sh_plot_pos exclusion tests implemented during plotting)
+        grep '^ ' $res_file |
+         awk -v v=${vel[2]} -v v0=${vel0[1]} -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" 'NR == 1 {t0 = $3}; $13 == 0 || $13 == 2 {dt = $3-t0; if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),($11+(v0-v)*dt)/1e3,$12/1e3}' >| $tmp/temp.plot.e
+        grep '^ ' $res_file |
+         awk -v v=${vel[2]} -v v0=${vel0[1]} -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" 'NR == 1 {t0 = $3}; $13 != 0 && $13 != 2 {dt = $3-t0; if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),($11+(v0-v)*dt)/1e3,$12/1e3}' >| $tmp/temp.excl.e
+
+        # North component to plot and exclude based on tsfit tests
+        # (sh_plot_pos exclusion tests implemented during plotting)
+        grep '^ ' $res_file |
+         awk -v v=${vel[0]} -v v0=${vel0[0]} -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" 'NR == 1 {t0 = $3}; $10 == 0 || $10 == 2 {dt = $3-t0; if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),($8+(v0-v)*dt)/1e3,$9/1e3}' >| $tmp/temp.plot.n
+        grep '^ ' $res_file |
+         awk -v v=${vel[0]} -v v0=${vel0[0]} -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" 'NR == 1 {t0 = $3}; $10 != 0 && $10 != 2 {dt = $3-t0; if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),($8+(v0-v)*dt)/1e3,$9/1e3}' >| $tmp/temp.excl.n
+
+        # Up component to plot and exclude based on tsfit tests
+        # (sh_plot_pos exclusion tests implemented during plotting)
+        if [ $raw_up -eq 1 ]; then  # Do not remove velocity when plotting up component residuals
+          grep '^ ' $res_file |
+           awk -v y0=${y0[4]} -v v=${vel[4]} -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" 'NR == 1 {t0 = $3}; $16 == 0 || $16 == 2 {dt = $3-t0; if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),($14+v*dt+y0)/1e3,$15/1e3}' >| $tmp/temp.plot.u
+          grep '^ ' $res_file |
+           awk -v y0=${y0[4]} -v v=${vel[4]} -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" 'NR == 1 {t0 = $3}; $16 != 0 && $16 != 2 {dt = $3-t0; if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),($14+v*dt+y0)/1e3,$15/1e3}' >| $tmp/temp.excl.u
+        else
+          grep '^ ' $res_file |
+           awk -v v=${vel[4]} -v v0=${vel0[2]} -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" 'NR == 1 {t0 = $3}; $16 == 0 || $16 == 2 {dt = $3-t0; if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),($14+(v0-v)*dt)/1e3,$15/1e3}' >| $tmp/temp.plot.u
+          grep '^ ' $res_file |
+           awk -v v=${vel[4]} -v v0=${vel0[2]} -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" 'NR == 1 {t0 = $3}; $16 != 0 && $16 != 2 {dt = $3-t0; if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),($14+(v0-v)*dt)/1e3,$15/1e3}' >| $tmp/temp.excl.u
+        fi
+
+      else  # Use res-file with estimated velocities removed
+
+        # East component to plot and exclude based on tsfit tests
+        # (sh_plot_pos exclusion tests implemented during plotting)
+        grep '^ ' $res_file |
+         awk -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" '$13 == 0 || $13 == 2 {if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$11/1e3,$12/1e3}' >| $tmp/temp.plot.e
+        grep '^ ' $res_file |
+         awk -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" '$13 != 0 && $13 != 2 {if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$11/1e3,$12/1e3}' >| $tmp/temp.excl.e
+
+        # North component to plot and exclude based on tsfit tests
+        # (sh_plot_pos exclusion tests implemented during plotting)
+        grep '^ ' $res_file |
+         awk -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" '$10 == 0 || $10 == 2 {if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$8/1e3,$9/1e3}' >| $tmp/temp.plot.n
+        grep '^ ' $res_file |
+         awk -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" '$10 != 0 && $10 != 2 {if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$8/1e3,$9/1e3}' >| $tmp/temp.excl.n
+
+        # Up component to plot and exclude based on tsfit tests
+        # (sh_plot_pos exclusion tests implemented during plotting)
+        if [ $raw_up -eq 1 ]; then  # Do not remove velocity when plotting up component residuals
+          grep '^ ' $res_file |
+           awk -v y0=${y0[4]} -v v=${vel[4]} -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" 'NR == 1 {t0 = $3}; $16 == 0 || $16 == 2 {dt = $3-t0; if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),($14+v*dt+y0)/1e3,$15/1e3}' >| $tmp/temp.plot.u
+          grep '^ ' $res_file |
+           awk -v y0=${y0[4]} -v v=${vel[4]} -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" 'NR == 1 {t0 = $3}; $16 != 0 && $16 != 2 {dt = $3-t0; if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),($14+v*dt+y0)/1e3,$15/1e3}' >| $tmp/temp.excl.u
+        else
+          grep '^ ' $res_file |
+           awk -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" '$16 == 0 || $16 == 2 {if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$14/1e3,$15/1e3}' >| $tmp/temp.plot.u
+          grep '^ ' $res_file |
+           awk -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" '$16 != 0 && $16 != 2 {if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$14/1e3,$15/1e3}' >| $tmp/temp.excl.u
+        fi
+
+      fi
+
+    else  # No res-file so use pos-file with estimated (det-file) or user-defined (-v option) velocities removed
+
+      # Write output residuals file
+      echo "------- $(date '+%Y/%m/%d %H:%M:%S') -------" >| ${pos_file%.pos}.vres
+      grep -v '^[ *]' $pos_file |
+       awk '{if ($0 ~ /^4-character ID/ || $0 ~ /^Station name/ || $0 ~ /^First Epoch/ || $0 ~ /^Last Epoch/ || $0 ~ /^Release Data/ || $0 ~ /^... Reference position/) print $0}' >> ${pos_file%.pos}.vres
+      echo 'Parameter Estimates :            N          Sig      E          Sig      U          Sig' >> ${pos_file%.pos}.vres
+      printf "Rates :                     %8.2f +- %7.2f %8.2f +- %7.2f %8.2f +- %7.2f mm/yr\n" ${vel[@]} >> ${pos_file%.pos}.vres
+      echo '# YYYYMMDD HHMNSC    DecYr     MJD              N         E         U        dN       +-    F       dE       +-    F        dU       +-   F' >> ${pos_file%.pos}.vres
+      tneu0=( $(grep '^ ' $pos_file | awk -v nlines="$(grep -c '^ ' $pos_file)" 'BEGIN {split("31 59 90 120 151 181 212 243 273 304 334 365",sum)}; NR == int(nlines/2 + 0.5) {y=substr($1,1,4)+0; mo=substr($1,5,2)+0; d=substr($1,7,2)+0; h=substr($2,1,2); mi=substr($2,3,2); s=substr($2,5,2); doy=sum[mo-1]+d; if ($1 % 4 == 0 && ($1 % 100 != 0 || $1 % 400 == 0)) {doy++; dpy=366} else dpy=365; printf "%9.4f %s %s %s",y+(doy+(h+mi/60+s/3600)/24)/dpy,$16,$17,$18}') )
+      grep '^ ' $pos_file |
+       awk -v t0=${tneu0[0]} -v n0=${tneu0[1]} -v e0=${tneu0[2]} -v u0=${tneu[3]} -v vn=${vel[0]} -v ve=${vel[2]} -v vu=${vel[4]} 'BEGIN {split("31 59 90 120 151 181 212 243 273 304 334 365",sum)}; {y=substr($1,1,4)+0; mo=substr($1,5,2)+0; d=substr($1,7,2)+0; h=substr($2,1,2); mi=substr($2,3,2); s=substr($2,5,2); doy=sum[mo-1]+d; if ($1 % 4 == 0 && ($1 % 100 != 0 || $1 % 400 == 0)) {doy++; dpy=366} else dpy=365; decyr=y+(doy+(h+mi/60+s/3600)/24)/dpy; dt=decyr-t0; dn=$16-(vn/1e3)*dt; de=$17-(ve/1e3)*dt; du=$18-(vu/1e3)*dt; printf "  %8d %6d  %9.4f  %10.4f %9.1f %9.1f %9.1f %9.1f %8.1f %3d %9.1f %8.1f %3d %9.1f %8.1f %3d\n",$1,$2,decyr,$3,$16*1e3,$17*1e3,$18*1e3,dn*1e3,$19*1e3,0,de*1e3,$20*1e3,0,du*1e3,$21*1e3,0}' >> ${pos_file%.pos}.vres
+
+      # East component to plot and exclude based on tsfit tests
+      # (sh_plot_pos exclusion tests implemented during plotting)
+      #grep '^ ' $pos_file |
+      # awk '{printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$17,$20}' |
+      # gmtmath -f0T,1-2f -C1 STDIN ${vel[2]} 1000 DIV T TMIN SUB MUL ${y0[2]} 1000 DIV ADD SUB --TIME_UNIT=y = $tmp/temp.plot.e
+      grep '^ ' $pos_file |
+       awk -v y0=${y0[2]} -v v=${vel[2]} -v v0=${vel0[1]} -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" 'NR == 1 {t0 = $3}; {dt = ($3-t0)/365.2425; if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$17+((v0-v)*dt+y0)/1e3,$20}' >| $tmp/temp.e
+      if [ -f "$det_file" ]; then  # Search det-file for excluded points
+        #rm -f $tmp/temp.excl.e
+        #for ymdhm in $(grep '^R ' $det_file | awk 'NR > 2 && $NF != 2 {printf "%4d-%02d-%02dT%02d:%02d:00 ",$2,$3,$4,$5,$6}'); do
+        #  grep "^$ymdhm" $tmp/temp.plot.e >> $tmp/temp.excl.e &&
+        #   grep -v "^$ymdhm" $tmp/temp.plot.e >> $tmp/temp.plot.e~ && mv -f $tmp/temp.plot.e~ $tmp/temp.plot.e
+        #done
+        grep '^R ' $det_file | awk 'NR > 2 && $NF != 2 {printf "%4d-%02d-%02dT%02d:%02d:00 ",$2,$3,$4,$5,$6}' >| $tmp/temp.t_xcl
+        join -a 1 -v 1 $tmp/temp.e $tmp/temp.t_xcl >| $tmp/temp.plot.e
+        join $tmp/temp.e $tmp/temp.t_xcl >| $tmp/temp.excl.e
+        rm -f $tmp/temp.e $tmp/temp.t_xcl
+      #elif [ ${#disc_files[@]} -gt 0 -o ${eq_files[@]} -gt 0 ]; then  # Search ${disc_files[@]} and ${eq_files[@]} for excluded points
+      #  awk -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" '{}' $tmp/$date.disc $tmp/$date.eq >| $tmp/temp.t_xcl
+      #  join -a 1 -v 1 $tmp/temp.e $tmp/temp.t_xcl >| $tmp/temp.plot.e
+      #  join $tmp/temp.e $tmp/temp.t_xcl >| $tmp/temp.excl.e
+      #  rm -f $tmp/temp.e $tmp/temp.t_xcl
+      else
+        mv -f $tmp/temp.e $tmp/temp.plot.e
+      fi
+
+      # North component to plot and exclude based on tsfit tests
+      # (sh_plot_pos exclusion tests implemented during plotting)
+      #grep '^ ' $pos_file |
+      # awk '{printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$16,$19}' |
+      # gmtmath -f0T,1-2f -C1 STDIN ${vel[0]} 1000 DIV T TMIN SUB MUL ${y0[0]} 1000 DIV ADD SUB --TIME_UNIT=y = $tmp/temp.plot.n
+      grep '^ ' $pos_file |
+       awk -v y0=${y0[0]} -v v=${vel[0]} -v v0=${vel0[0]} -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" 'NR == 1 {t0 = $3}; {dt = ($3-t0)/365.2425; if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$16+((v0-v)*dt+y0)/1e3,$19}' >| $tmp/temp.n
+      if [ -f "$det_file" ]; then  # Search det-file for excluded points
+        #rm -f $tmp/temp.excl.n
+        #for ymdhm in $(grep '^R ' $det_file | awk 'NR > 2 && $NF != 2 {printf "%4d-%02d-%02dT%02d:%02d:00 ",$2,$3,$4,$5,$6}'); do
+        #  grep "^$ymdhm" $tmp/temp.plot.n >> $tmp/temp.excl.n &&
+        #   grep -v "^$ymdhm" $tmp/temp.plot.n >> $tmp/temp.plot.n~ && mv -f $tmp/temp.plot.n~ $tmp/temp.plot.n
+        #done
+        grep '^R ' $det_file | awk 'NR > 2 && $NF != 2 {printf "%4d-%02d-%02dT%02d:%02d:00 ",$2,$3,$4,$5,$6}' >| $tmp/temp.t_xcl
+        join -a 1 -v 1 $tmp/temp.n $tmp/temp.t_xcl >| $tmp/temp.plot.n
+        join $tmp/temp.n $tmp/temp.t_xcl >| $tmp/temp.excl.n
+        rm -f $tmp/temp.n $tmp/temp.t_xcl
+      else
+        mv -f $tmp/temp.n $tmp/temp.plot.n
+      fi
+
+      # Up component to plot and exclude based on tsfit tests
+      # (sh_plot_pos exclusion tests implemented during plotting)
+      #grep '^ ' $pos_file |
+      # awk '{printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$18,$21}' |
+      # gmtmath -f0T,1-2f -C1 STDIN ${vel[4]} 1000 DIV T TMIN SUB MUL ${y0[4]} 1000 DIV ADD SUB --TIME_UNIT=y = $tmp/temp.plot.u
+      if [ $raw_up -eq 1 ]; then  # Do not remove velocity when plotting up component residuals
+        grep '^ ' $pos_file |
+         awk -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" '{if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$18,$21}' >| $tmp/temp.u
+      else
+        grep '^ ' $pos_file |
+         awk -v y0=${y0[4]} -v v=${vel[4]} -v v0=${vel0[2]} -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" 'NR == 1 {t0 = $3}; {dt = ($3-t0)/365.2425; if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$18+((v0-v)*dt+y0)/1e3,$21}' >| $tmp/temp.u
+      fi
+      if [ -f "$det_file" ]; then  # Search det-file for excluded points
+        #rm -f $tmp/temp.excl.u
+        #for ymdhm in $(grep '^R ' $det_file | awk 'NR > 2 && $NF != 2 {printf "%4d-%02d-%02dT%02d:%02d:00 ",$2,$3,$4,$5,$6}'); do
+        #  grep "^$ymdhm" $tmp/temp.plot.u >> $tmp/temp.excl.u &&
+        #   grep -v "^$ymdhm" $tmp/temp.plot.u >> $tmp/temp.plot.u~ && mv -f $tmp/temp.plot.u~ $tmp/temp.plot.u
+        #done
+        grep '^R ' $det_file | awk 'NR > 2 && $NF != 2 {printf "%4d-%02d-%02dT%02d:%02d:00 ",$2,$3,$4,$5,$6}' >| $tmp/temp.t_xcl
+        join -a 1 -v 1 $tmp/temp.u $tmp/temp.t_xcl >| $tmp/temp.plot.u
+        join $tmp/temp.u $tmp/temp.t_xcl >| $tmp/temp.excl.u
+        rm -f $tmp/temp.u $tmp/temp.t_xcl
+      else
+        mv -f $tmp/temp.u $tmp/temp.plot.u
+      fi
+
+    fi  # END: Residual time series
+
+  else  # Raw time series
+
+    if [ "$type" = 'pos' -a -n "$res_prefix" -o "$type" = 'res' ]; then  # Use residuals files output from tsfit
+
+      # East component to plot and exclude based on tsfit tests
+      # (sh_plot_pos exclusion tests implemented during plotting)
+      grep '^ ' $res_file |
+       awk -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" '$13 == 0 || $13 == 2 {if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$6/1e3,$12/1e3}' >| $tmp/temp.plot.e
+      grep '^ ' $res_file |
+       awk -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" '$13 != 0 && $13 != 2 {if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$6/1e3,$12/1e3}' >| $tmp/temp.excl.e
+
+      # North component to plot and exclude based on tsfit tests
+      # (sh_plot_pos exclusion tests implemented during plotting)
+      grep '^ ' $res_file |
+       awk -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" '$10 == 0 || $10 == 2 {if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$5/1e3,$9/1e3}' >| $tmp/temp.plot.n
+      grep '^ ' $res_file |
+       awk -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" '$10 != 0 && $10 != 2 {if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$5/1e3,$9/1e3}' >| $tmp/temp.excl.n
+
+      # Up component to plot and exclude based on tsfit tests
+      # (sh_plot_pos exclusion tests implemented during plotting)
+      grep '^ ' $res_file |
+       awk -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" '$16 == 0 || $16 == 2 {if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$7/1e3,$15/1e3}' >| $tmp/temp.plot.u
+      grep '^ ' $res_file |
+       awk -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" '$16 != 0 && $16 != 2 {if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$7/1e3,$15/1e3}' >| $tmp/temp.excl.u
+
+    else  # pos-file
+
+      # East component to plot
+      # (sh_plot_pos exclusion tests implemented during plotting)
+      grep '^ ' $pos_file |
+       awk -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" '{if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$17,$20}' >| $tmp/temp.e
+      if [ -f "$det_file" ]; then  # Search det-file for excluded points
+        #rm -f $tmp/temp.excl.e
+        #for ymdhm in $(grep '^R ' $det_file | awk 'NR > 2 && $NF != 2 {printf "%4d-%02d-%02dT%02d:%02d:00 ",$2,$3,$4,$5,$6}'); do
+        #  grep "^$ymdhm" $tmp/temp.plot.e >> $tmp/temp.excl.e &&
+        #   grep -v "^$ymdhm" $tmp/temp.plot.e >> $tmp/temp.plot.e~ && mv -f $tmp/temp.plot.e~ $tmp/temp.plot.e
+        #done
+        grep '^R ' $det_file | awk 'NR > 2 && $NF != 2 {printf "%4d-%02d-%02dT%02d:%02d:00 ",$2,$3,$4,$5,$6}' >| $tmp/temp.t_xcl
+        join -a 1 -v 1 $tmp/temp.e $tmp/temp.t_xcl >| $tmp/temp.plot.e
+        join $tmp/temp.e $tmp/temp.t_xcl >| $tmp/temp.excl.e
+        rm -f $tmp/temp.e $tmp/temp.t_xcl
+      else
+        mv -f $tmp/temp.e $tmp/temp.plot.e
+      fi
+
+      # North component to plot
+      # (sh_plot_pos exclusion tests implemented during plotting)
+      grep '^ ' $pos_file |
+       awk -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" '{if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$16,$19}' >| $tmp/temp.n
+      if [ -f "$det_file" ]; then  # Search det-file for excluded points
+        #rm -f $tmp/temp.excl.n
+        #for ymdhm in $(grep '^R ' $det_file | awk 'NR > 2 && $NF != 2 {printf "%4d-%02d-%02dT%02d:%02d:00 ",$2,$3,$4,$5,$6}'); do
+        #  grep "^$ymdhm" $tmp/temp.plot.n >> $tmp/temp.excl.n &&
+        #   grep -v "^$ymdhm" $tmp/temp.plot.n >> $tmp/temp.plot.n~ && mv -f $tmp/temp.plot.n~ $tmp/temp.plot.n
+        #done
+        grep '^R ' $det_file | awk 'NR > 2 && $NF != 2 {printf "%4d-%02d-%02dT%02d:%02d:00 ",$2,$3,$4,$5,$6}' >| $tmp/temp.t_xcl
+        join -a 1 -v 1 $tmp/temp.n $tmp/temp.t_xcl >| $tmp/temp.plot.n
+        join $tmp/temp.n $tmp/temp.t_xcl >| $tmp/temp.excl.n
+        rm -f $tmp/temp.n $tmp/temp.t_xcl
+      else
+        mv -f $tmp/temp.n $tmp/temp.plot.n
+      fi
+
+      # Up component to plot
+      # (sh_plot_pos exclusion tests implemented during plotting)
+      grep '^ ' $pos_file |
+       awk -v ymd1="${t_min:0:4}${t_min:5:2}${t_min:8:2}" -v ymd2="${t_max:0:4}${t_max:5:2}${t_max:8:2}" '{if ($1 >= ymd1 && $1 <= ymd2) printf "%4d-%02d-%02dT%02d:%02d:%02d %8.4f %8.4f\n",substr($1,1,4),substr($1,5,2),substr($1,7,2),substr($2,1,2),substr($2,3,2),substr($2,5,2),$18,$21}' >| $tmp/temp.u
+      if [ -f "$det_file" ]; then  # Search det-file for excluded points
+        #rm -f $tmp/temp.excl.u
+        #for ymdhm in $(grep '^R ' $det_file | awk 'NR > 2 && $NF != 2 {printf "%4d-%02d-%02dT%02d:%02d:00 ",$2,$3,$4,$5,$6}'); do
+        #  grep "^$ymdhm" $tmp/temp.plot.u >> $tmp/temp.excl.u &&
+        #  grep -v "^$ymdhm" $tmp/temp.plot.u >> $tmp/temp.plot.u~ && mv -f $tmp/temp.plot.u~ $tmp/temp.plot.u
+        #done
+        grep '^R ' $det_file | awk 'NR > 2 && $NF != 2 {printf "%4d-%02d-%02dT%02d:%02d:00 ",$2,$3,$4,$5,$6}' >| $tmp/temp.t_xcl
+        join -a 1 -v 1 $tmp/temp.u $tmp/temp.t_xcl >| $tmp/temp.plot.u
+        join $tmp/temp.u $tmp/temp.t_xcl >| $tmp/temp.excl.u
+        rm -f $tmp/temp.u $tmp/temp.t_xcl
+      else
+        mv -f $tmp/temp.u $tmp/temp.plot.u
+      fi
+
+    fi  # END: Raw time series
+
+  fi  # END: Read file and format as: t,e,n,u,sig_e,sig_n,sig_u / m
+
+  if [ $(wc -l temp.plot.e temp.excl.e | awk 'END {print $1}') -ge $min_n -o $(wc -l temp.plot.n temp.excl.n | awk 'END {print $1}') -ge $min_n -o $(wc -l temp.plot.u temp.excl.u | awk 'END {print $1}') -ge $min_n ]; then
+
+    # Plot time series
+    mkdir -p $plot_dir/
+    if [ "$type" = 'pos' -a -n "$res_prefix" -a ${plot_res[0]} -eq 1 -o "$type" = 'res' ]; then  # res-file
+      file="$res_file"
+    else  # pos-file
+      file="$pos_file"
+    fi
+    ps="$plot_dir/$(basename $file .pos).ps"
+    case "$(${gmt}gmtget CHAR_ENCODING)" in
+      Standard+ )
+        plusminus='\234'
+        degree='\217'
+        ;;
+      ISOLatin* )
+        plusminus='\261'
+        degree='\260'
+        ;;
+      * )
+        plusminus='+-'
+        degree='deg.'
+        ;;
+    esac
+
+    # Time span for time-axis annotations
+    decyr1="$(echo $t_min |
+               sed 's/-/ /g; s/T/ /; s/:/ /g' |
+               awk 'BEGIN {dpy = 365};
+                    NF == 5 {if ($1 % 4 == 0 && ($1 % 100 != 0 || $1 % 400 == 0)) dpy = 366;
+                             printf "%.5f",$1+($2-1+($3+$4/60+$5/3600)/24)/dpy};
+                    NF == 6 {split("31 59 90 120 151 181 212 243 273 304 334 365",sum);
+                             doy = sum[$2-1] + $3;
+                             if ($1 % 4 == 0 && ($1 % 100 != 0 || $1 % 400 == 0) && $2 > 2) {doy++; dpy = 366};
+                             printf "%.5f",$1+(doy-1+($4+$5/60+$6/3600)/24)/dpy}')"
+    decyr2="$(echo $t_max |
+               sed 's/-/ /g; s/T/ /; s/:/ /g' |
+               awk 'BEGIN {dpy = 365};
+                    NF == 5 {if ($1 % 4 == 0 && ($1 % 100 != 0 || $1 % 400 == 0)) dpy = 366;
+                             printf "%.5f",$1+($2-1+($3+$4/60+$5/3600)/24)/dpy};
+                    NF == 6 {split("31 59 90 120 151 181 212 243 273 304 334 365",sum);
+                             doy = sum[$2-1] + $3;
+                             if ($1 % 4 == 0 && ($1 % 100 != 0 || $1 % 400 == 0) && $2 > 2) {doy++; dpy = 366};
+                             printf "%.5f",$1+(doy-1+($4+$5/60+$6/3600)/24)/dpy}')"
+    if [ -z "$user_bt" ]; then  # No time axis annotation set by user using -g or -o option on command line
+      if [ $plot_ydoy -eq 1 ]; then  # Annotate time axis using ordinal dates (YYYY-DoY)
+        # Calculate axis information
+        # (annotations every 1, 2, 4 or 5 units; greatest-number-less-than-ten annotations
+        # per axis; include secondary year annotation for time series lengths > 1 year)
+        bt="$(echo $decyr1 $decyr2 | awk 'BEGIN {n=split("1 2 4 5 10 20 30 40 50 100 120 150 180",a," ");
+                                                 split("0 1 1 1 2 5 5 5 10 10 20 30 30",b," ")};
+                                          {dt=$2-$1;
+                                           if (dt > 10) print "-Bpa2Yf1Y";
+                                           else if (dt > 2) print "-Bpa1Y";
+                                           else for (i=1; i<=n; i++) if (int(365.2425*dt/a[i]) < 10) {printf "-Bsa1Y/ -Bpa%sdf%sd",a[i],b[i]; i=n}}')"
+      else  # Annotate using Gregorian calendar dates (YYYY-MM-DD)
+        # Primary daily and secondary monthly annotations for time spans <= 0.1 years,
+        # Primary montly and secondary yearly annontations for time spans <= 1 year,
+        # Primary yearly annotations for time spans > 2 years
+        # Primary bi-yearly annotations for time spans > 10 year
+        bt="$(echo $decyr1 $decyr2 | awk '{dt=$2-$1;
+                                           if (dt <= 0.1) print "-Bsa1o/ -Bpa1d";
+                                           else if (dt <= 2) print "-Bsa1Y/ -Bpa1o";
+                                           else if (dt <= 10) print "-Bpa1Yf1o";
+                                           else print "-Bpa2Yf1Y"}')"
+      fi
+    else
+      bt="$user_bt"
+    fi
+
+    # Reference position
+    llh=( $(grep '^NEU Reference ' $file | awk '{print $6,$5,$7; if ($6 < 0) print "W"; else print "E"; if ($5 < 0) print "S"; else print "N"}') )
+
+    # Calculate UTM Zone
+    #hemisphere="$(grep '^NEU Reference position' $file | awk '{if ($5 < 0) print "-"; else print "+"}')"
+    #if [ "$hemisphere" = '+' ]; then
+    #  hemisphere='North'
+    #elif [ "$hemisphere" = '-' ]; then
+    #  hemisphere='South'
+    #fi
+    #zone="$(echo ${llh[@]} | awk '{if ($1 >= 3 && $1 < 12 && $2 >= 56 && $2 < 64) print 32; else print (int(($1+180)/6) + 1) % 60}')"
+    # Convert geodetic coordinates to UTM for plotting
+    #grep '^ ' $file |
+    # awk '{print $14,$13,$15,$19,$20,$21,$1,$2}' >| $tmp/temp.geod
+    #r="$(head -1 $tmp/temp.geod | awk '{printf "-R%.5f/%.5f/%.5f/%.5f",$1-1e-5,$1+1e-5,$2-1e-5,$2+1e-5}')"
+    #mapproject $tmp/temp.geod -JU$hemisphere$zone/1 $r -C -F --D_FORMAT='%.5f' |
+    #mapproject $tmp/temp.geod -JU$hemisphere$zone/1 -C -F --D_FORMAT='%.5f' |
+    # awk '{printf "%4d-%02d-%02dT%02d:%02d:%02d %12.5f %13.5f %10.5f %8.5f %8.5f %8.5f\n",substr($(NF-1),1,4),substr($(NF-1),5,2),substr($(NF-1),7,2),substr($NF,1,2),substr($NF,3,2),substr($NF,5,2),$1,$2,$3,$4,$5,$6}' >| $tmp/${file%.*}.utm && rm -f $tmp/temp.geod
+
+    # Up component
+    awk -v max_sig=${max_sig[2]} -v c=$factor 'c*$3 <= max_sig {print $1,c*$2,c*$3}' $tmp/temp.plot.u >| $tmp/plot.u
+    #awk -v max_sig=${max_sig[2]} -v min=${minmax[2]} -v max=${minmax[3]} 'BEGIN {u=int((min+max)/2+0.5)}; $7 < max_sig/1e3 {print $1,$4-u,$7}' $tmp/${pos_file%pos}utm >| $tmp/plot.u
+    #awk -v max_sig1=${max_sig[0]} -v max_sig2=${max_sig[1]} -v max_sig3=${max_sig[2]} -v min=${minmax[2]} -v max=${minmax[3]} 'BEGIN {u=int((min+max)/2+0.5)}; $5 < max_sig1/1e3 && $6 < max_sig2/1e3 && $7 < max_sig3/1e3 {print $1,$4-u,$7}' $tmp/${pos_file%pos}utm >| $tmp/plot.u
+    if [ -s $tmp/temp.excl.u ]; then
+      awk -v c=$factor '{print $1,c*$2,c*$3}' $tmp/temp.excl.u >| $tmp/excl.u
+    fi
+    rm -f $tmp/temp.excl.u
+    awk -v max_sig=${max_sig[2]} -v c=$factor 'c*$3 > max_sig {print $1,c*$2,c*$3}' $tmp/temp.plot.u >> $tmp/excl.u &&
+     rm -f $tmp/temp.plot.u
+    #awk -v max_sig=${max_sig[2]} -v min=${minmax[2]} -v max=${minmax[3]} 'BEGIN {u=int((min+max)/2+0.5)}; $7 >= max_sig/1e3 {print $1,$4-u,$7}' $tmp/${pos_file%pos}utm >| $tmp/excl.u
+    #awk -v max_sig1=${max_sig[0]} -v max_sig2=${max_sig[1]} -v max_sig3=${max_sig[2]} -v min=${minmax[2]} -v max=${minmax[3]} 'BEGIN {u=int((min+max)/2+0.5)}; $5 >= max_sig1/1e3 || $6 >= max_sig2/1e3 || $7 >= max_sig3/1e3 {print $1,$4-u,$7}' $tmp/${pos_file%pos}utm >| $tmp/excl.u
+    # Calculate y-axis bounds
+    #minmax=( $(minmax $tmp/plot.u -f0T,1-2f -I2/${dunit[1]} -C --TIME_UNIT=d) )
+    #minmax=( $(minmax $tmp/plot.u -f0T,1-2f -I2/${dunit[1]} -Sy -C --TIME_UNIT=d) )
+    if [ -s $tmp/plot.u ]; then
+      if [ ${yaxes[2]} -ne 0 ]; then
+        minmax=( - - $(echo ${yaxes[2]} | awk '{printf "%.5f %.5f",-sqrt($1^2),sqrt($1^2)}') )
+      else
+        minmax=( - - $(awk -v dunit=${dunit[1]} 'BEGIN {min=1e9; max=-1e9}; {if ($2-$3 < min) min=dunit*int(($2-$3)/dunit - 0.5); if ($2+$3 > max) max=dunit*int(($2+$3)/dunit + 0.5)}; END {printf "%.5f %.5f",min,max}' $tmp/plot.u) )
+      fi
+    else  # All points have been excluded through tests
+      echo "! Warning ! All points are excluded from up component of $site"
+      if [ ${yaxes[2]} -ne 0 ]; then
+        minmax=( - - $(echo ${yaxes[2]} | awk '{printf "%.5f %.5f",-sqrt($1^2),sqrt($1^2)}') )
+      else
+        minmax=( - - $(awk -v dunit=${dunit[1]} 'BEGIN {min=1e9; max=-1e9}; {if ($2-$3 < min) min=dunit*int(($2-$3)/dunit - 0.5); if ($2+$3 > max) max=dunit*int(($2+$3)/dunit + 0.5)}; END {printf "%.5f %.5f",min,max}' $tmp/excl.u) )
+      fi
+    fi
+
+    # Define up sub-plot bounds
+    #r=( $(echo "${minmax[@]}" | awk '{u=int(($3+$4)/2+0.5); printf "-R%s/%s/%.5f/%.5f %d",$1,$2,$3-u,$4-u,u}') )
+    #r="$(echo "$t_min $t_max ${minmax[@]}" | awk '{printf "-R%s/%s/%.5f/%.5f",$1,$2,$5,$6}')"
+    r="-$(printf 'R%s/%s/%.5f/%.5f' $t_min $t_max ${minmax[2]} ${minmax[3]})"
+    # Calculate axis information
+    # (annotations every 1, 2, 4 or 5 units;
+    # greatest-number-less-than-ten annotations per axis)
+    by=( $(echo ${minmax[2]} ${minmax[3]} |
+            awk 'BEGIN {n=split("1e-4 2e-4 4e-4 5e-4 1e-3 2e-3 4e-3 5e-3 1e-2 2e-2 4e-2 5e-2 0.1 0.2 0.4 0.5 1 2 4 5 10 20 40 50 100 200 400 500 1e3 2e3 4e3 5e3",a," ");
+                        split("2e-5 5e-5 1e-4 1e-4 2e-4 5e-4 1e-3 1e-3 2e-3 5e-3 1e-2 1e-2 2e-2 5e-2 0.1 0.1 0.2 0.5 1 1 2 5 10 10 20 50 100 100 200 500 1e3 1e3",b," ")};
+                 {for (i=1; i<=n; i++) if (int(($2-$1)/a[i]) < 10) {printf "a%sf%sg1e6",a[i],b[i]; i=n}}') )
+
+    # Plot up error bars then overlay points
+    if [ $plot_excl -eq 1 -a -s $tmp/excl.u ]; then  # Plot excluded points in grey
+      ${gmt}psxy $tmp/excl.u $j ${r[0]} $excl -P -K >| $ps  # Excluded points and error bars
+      if [ -s $tmp/plot.u ]; then
+        ${gmt}psxy $tmp/plot.u $j ${r[0]} $bar -O -K >> $ps  # Underlay error bars
+      fi
+    elif [ -s $tmp/plot.u ]; then
+      ${gmt}psxy $tmp/plot.u $j ${r[0]} $bar -P -K >| $ps  # Underlay error bars
+    else  # No points to plot (all points excluded and not plotting excluded points), so initialize by plotting axes only
+      ${gmt}psbasemap $j ${r[0]} $bt/${by[0]}:"Up / $unit":WeSn -P -K >| $ps
+    fi  # END:  Plot error bars then overlay points
+    if [ -s $tmp/plot.u ]; then
+      ${gmt}psxy $tmp/plot.u $j ${r[0]} $point $bt/${by[0]}:"Up / $unit":WeSn -O -K >> $ps  # Overlay points
+    fi
+
+    # Up vertical lines
+    if [ ${#discs[@]} -gt 0 ]; then  # Plot defined discontinuities
+      yaxis=( $(echo ${r[0]} | awk -v FS='/' '{printf "%.6f %.6f",$3+1e-6,$4-1e-6}') )
+      i=0
+      while [ $i -lt ${#discs[@]} ]; do
+        ${gmt}psxy << END $j ${r[0]} $disc_line -O -K >> $ps
+${discs[$i]} ${yaxis[0]}
+${discs[$i]} ${yaxis[1]}
+END
+        if [ $i -lt ${#disc_ids[@]} -a "${disc_ids[$i]}" != '-' ]; then
+          echo "${discs[$i]} ${yaxis[1]} 12 0 1 TL ${disc_ids[$i]}@~\256@~" |
+           ${gmt}pstext $j ${r[0]} -G$(echo $disc_line | cut -d ',' -f 2) -Dj0.1c/0.1c -O -K >> $ps
+        fi
+        let i++
+      done
+    fi  # END: Plot defined discontinuities
+    if [ ${#eqks[@]} -gt 0 ]; then  # Plot defined earthquakes
+      yaxis=( $(echo ${r[0]} | awk -v FS='/' '{printf "%.6f %.6f",$3+1e-6,$4-1e-6}') )
+      i=0
+      while [ $i -lt ${#eqks[@]} ]; do
+        ${gmt}psxy << END $j ${r[0]} $eqk_line -O -K >> $ps
+${eqks[$i]} ${yaxis[0]}
+${eqks[$i]} ${yaxis[1]}
+END
+        if [ $i -lt ${#eqk_ids[@]} -a "${eqk_ids[$i]}" != '-' ]; then
+          echo "${eqks[$i]} ${yaxis[0]} 12 0 1 BC ${eqk_ids[$i]}" |
+           ${gmt}pstext $j ${r[0]} -G$(echo $eqk_line | cut -d ',' -f 2) -Dj0.1c/0.1c -W255 -O -K >> $ps
+        fi
+        let i++
+      done
+    fi  # END: Plot defined earthquakes
+    if [ ${#ymdhms[@]} -gt 0 ]; then  # Plot user-defined epochs
+      yaxis=( $(echo ${r[0]} | awk -v FS='/' '{printf "%.6f %.6f",$3+1e-6,$4-1e-6}') )
+      for epoch in ${ymdhms[@]}; do
+        ${gmt}psxy << END $j ${r[0]} $user_line -O -K >> $ps
+$epoch ${yaxis[0]}
+$epoch ${yaxis[1]}
+END
+      done
+    fi  # END: Plot user-defined epochs
+
+    # Up velocity annotations
+    if [ ${#vel[@]} -gt 0 -a $raw_up -eq 0 ]; then
+      echo "1 1 12 0 0 BR @%2%v@%%@-u@- = ${vel[4]} $plusminus ${vel[5]} $unit/yr" |
+       ${gmt}pstext $(echo $j | tr -d 'T') -R0/1/0/1 -Dj0.2c/0.7c -N -O -K >> $ps
+    fi  # END: Up velocity annotations
+
+    # Up statistics annotations
+    if [ ${#stats[@]} -gt 0 ]; then
+      echo "1 1 12 0 0 BR WRMS = ${stats[7]} mm; NRMS = ${stats[8]}" |
+       ${gmt}pstext $(echo $j | tr -d 'T') -R0/1/0/1 -Dj0.2c/0.2c -N -O -K >> $ps
+    else
+      if [ -s $tmp/plot.u ]; then
+        awk -v c=$factor 'BEGIN {wsos=0; w=0; n=0}; {wsos=wsos+($2/$3)^2; w=w+1/$3^2; n++}; END {printf "1 1 12 0 0 BR WRMS = %.2f mm; NRMS = %.2f\n",sqrt(wsos/w)*1e3/c,sqrt(wsos/(n-1))}' $tmp/plot.u |
+         ${gmt}pstext $(echo $j | tr -d 'T') -R0/1/0/1 -Dj0.2c/0.2c -N -O -K >> $ps
+      #else  # All points have been excluded through tests
+      #  awk -v c=$factor 'BEGIN {wsos=0; w=0; n=0}; {wsos=wsos+($2/$3)^2; w=w+1/$3^2; n++}; END {printf "1 1 12 0 0 BR (WRMS = %.2f mm; NRMS = %.2f)\n",sqrt(wsos/w)*1e3/c,sqrt(wsos/(n-1))}' $tmp/excl.u |
+      #   ${gmt}pstext $(echo $j | tr -d 'T') -R0/1/0/1 -Dj0.2c/0.2c -N -O -K >> $ps
+      fi
+    fi  # END: Up statistics annotations
+
+    # Up reference annotations
+    ${gmt}pstext << END $(echo $j | tr -d 'T') -R0/1/0/1 -Dj0.2c/0.2c -N -O -K >> $ps
+0 1 12 0 0 BL Reference ellipsoid height: $(printf '%.4f' ${llh[2]}) m
+#0 1 12 0 0 BL Reference ellipsoid height: ${r[1]} m
+END
+
+    rm -f $tmp/plot.u $tmp/excl.u  # Remove up temporary files
+    
+    # East component
+    awk -v max_sig=${max_sig[0]} -v c=$factor 'c*$3 <= max_sig {print $1,c*$2,c*$3}' $tmp/temp.plot.e >| $tmp/plot.e
+    #awk -v max_sig=${max_sig[0]} -v min=${minmax[2]} -v max=${minmax[3]} 'BEGIN {e=int((min+max)/2+0.5)}; $5 < max_sig/1e3 {print $1,$2-e,$5}' $tmp/${pos_file%pos}utm >| $tmp/plot.e
+    #awk -v max_sig1=${max_sig[0]} -v max_sig2=${max_sig[1]} -v max_sig3=${max_sig[2]} -v min=${minmax[2]} -v max=${minmax[3]} 'BEGIN {e=int((min+max)/2+0.5)}; $5 < max_sig1/1e3 && $6 < max_sig2/1e3 && $7 < max_sig3/1e3 {print $1,$2-e,$5}' $tmp/${pos_file%pos}utm >| $tmp/plot.e
+    if [ -f $tmp/temp.excl.e ]; then
+      awk -v c=$factor '{print $1,c*$2,c*$3}' $tmp/temp.excl.e >| $tmp/excl.e
+    fi
+    rm -f $tmp/temp.excl.e
+    awk -v max_sig=${max_sig[0]} -v c=$factor 'c*$3 > max_sig {print $1,c*$2,c*$3}' $tmp/temp.plot.e >> $tmp/excl.e &&
+     rm -f $tmp/temp.plot.e
+    #awk -v max_sig=${max_sig[0]} -v min=${minmax[2]} -v max=${minmax[3]} 'BEGIN {e=int((min+max)/2+0.5)}; $5 >= max_sig/1e3 {print $1,$2-e,$5}' $tmp/${pos_file%pos}utm >| $tmp/excl.e
+    #awk -v max_sig1=${max_sig[0]} -v max_sig2=${max_sig[1]} -v max_sig3=${max_sig[2]} -v min=${minmax[2]} -v max=${minmax[3]} 'BEGIN {e=int((min+max)/2+0.5)}; $5 >= max_sig1/1e3 || $6 >= max_sig2/1e3 || $7 >= max_sig3/1e3 {print $1,$2-e,$5}' $tmp/${pos_file%pos}utm >| $tmp/excl.e
+    # Calculate y-axis bounds
+    #minmax=( $(minmax $tmp/plot.e -f0T,1-2f -I2/${dunit[0]} -C --TIME_UNIT=d) )
+    #minmax=( $(minmax $tmp/plot.e -f0T,1-2f -I2/${dunit[0]} -Sy -C --TIME_UNIT=d) )
+    if [ -s $tmp/plot.e ]; then
+      if [ ${yaxes[0]} -ne 0 ]; then
+        minmax=( - - $(echo ${yaxes[0]} | awk '{printf "%.5f %.5f",-sqrt($1^2),sqrt($1^2)}') )
+      else
+        minmax=( - - $(awk -v dunit=${dunit[0]} 'BEGIN {min=1e9; max=-1e9}; {if ($2-$3 < min) min=dunit*int(($2-$3)/dunit - 0.5); if ($2+$3 > max) max=dunit*int(($2+$3)/dunit + 0.5)}; END {printf "%.5f %.5f",min,max}' $tmp/plot.e) )
+      fi
+    else  # All points have been excluded through tests
+      echo "! Warning ! All points are excluded from east component of $site"
+      if [ ${yaxes[0]} -ne 0 ]; then
+        minmax=( - - $(echo ${yaxes[0]} | awk '{printf "%.5f %.5f",-sqrt($1^2),sqrt($1^2)}') )
+      else
+        minmax=( - - $(awk -v dunit=${dunit[0]} 'BEGIN {min=1e9; max=-1e9}; {if ($2-$3 < min) min=dunit*int(($2-$3)/dunit - 0.5); if ($2+$3 > max) max=dunit*int(($2+$3)/dunit + 0.5)}; END {printf "%.5f %.5f",min,max}' $tmp/excl.e) )
+      fi
+    fi
+
+    # Define east sub-plot bounds
+    #r=( $(echo "${minmax[@]}" | awk '{e=int(($3+$4)/2+0.5); printf "-R%s/%s/%.5f/%.5f %d",$1,$2,$3-e,$4-e,e}') )
+    #r="$(echo "$t_min $t_max ${minmax[@]}" | awk '{printf "-R%s/%s/%.5f/%.5f",$1,$2,$5,$6}')"
+    r="-$(printf 'R%s/%s/%.5f/%.5f' $t_min $t_max ${minmax[2]} ${minmax[3]})"
+    # Calculate axis information
+    # (annotations every 1, 2, 4 or 5 units;
+    # greatest-number-less-than-ten annotations per axis)
+    by=( $(echo ${minmax[2]} ${minmax[3]} |
+            awk 'BEGIN {n=split("1e-4 2e-4 4e-4 5e-4 1e-3 2e-3 4e-3 5e-3 1e-2 2e-2 4e-2 5e-2 0.1 0.2 0.4 0.5 1 2 4 5 10 20 40 50 100 200 400 500 1e3 2e3 4e3 5e3",a," ");
+                        split("2e-5 5e-5 1e-4 1e-4 2e-4 5e-4 1e-3 1e-3 2e-3 5e-3 1e-2 1e-2 2e-2 5e-2 0.1 0.1 0.2 0.5 1 1 2 5 10 10 20 50 100 100 200 500 1e3 1e3",b," ")};
+                 {for (i=1; i<=n; i++) if (int(($2-$1)/a[i]) < 10) {printf "a%sf%sg1e6",a[i],b[i]; i=n}}') )
+
+    # Plot east error bars then overlay points
+    if [ $plot_excl -eq 1 -a -s $tmp/excl.e ]; then  # Plot excluded points in grey
+      ${gmt}psxy $tmp/excl.e $j ${r[0]} $excl -Y$dy $bt/${by[0]}:"East / $unit":WeSn -O -K >> $ps  # Excluded points
+      if [ -s $tmp/plot.e ]; then
+        ${gmt}psxy $tmp/plot.e $j ${r[0]} $bar -O -K >> $ps  # Underlay all error bars
+      fi
+    elif [ -s $tmp/plot.e ]; then
+      ${gmt}psxy $tmp/plot.e $j ${r[0]} $bar -Y$dy $bt/${by[0]}:"East / $unit":WeSn -O -K >> $ps  # Underlay all error bars
+    fi
+    if [ -s $tmp/plot.e ]; then
+      ${gmt}psxy $tmp/plot.e $j ${r[0]} $point -O -K >> $ps  # Overlay all points
+    fi
+
+    # East vertical lines
+    if [ ${#discs[@]} -gt 0 ]; then  # Plot defined discontinuities
+      yaxis=( $(echo ${r[0]} | awk -v FS='/' '{printf "%.6f %.6f",$3+1e-6,$4-1e-6}') )
+      i=0
+      while [ $i -lt ${#discs[@]} ]; do
+        ${gmt}psxy << END $j ${r[0]} $disc_line -O -K >> $ps
+${discs[$i]} ${yaxis[0]}
+${discs[$i]} ${yaxis[1]}
+END
+        if [ $i -lt ${#disc_ids[@]} -a "${disc_ids[$i]}" != '-' ]; then
+          echo "${discs[$i]} ${yaxis[1]} 12 0 1 TL ${disc_ids[$i]}@~\256@~" |
+           ${gmt}pstext $j ${r[0]} -G$(echo $disc_line | cut -d ',' -f 2) -Dj0.1c/0.1c -O -K >> $ps
+        fi
+        let i++
+      done
+    fi  # END: Plot defined discontinuities
+    if [ ${#eqks[@]} -gt 0 ]; then  # Plot defined earthquakes
+      yaxis=( $(echo ${r[0]} | awk -v FS='/' '{printf "%.6f %.6f",$3+1e-6,$4-1e-6}') )
+      i=0
+      while [ $i -lt ${#eqks[@]} ]; do
+        ${gmt}psxy << END $j ${r[0]} $eqk_line -O -K >> $ps
+${eqks[$i]} ${yaxis[0]}
+${eqks[$i]} ${yaxis[1]}
+END
+        if [ $i -lt ${#eqk_ids[@]} -a "${eqk_ids[$i]}" != '-' ]; then
+          echo "${eqks[$i]} ${yaxis[0]} 12 0 1 BC ${eqk_ids[$i]}" |
+           ${gmt}pstext $j ${r[0]} -G$(echo $eqk_line | cut -d ',' -f 2) -Dj0.1c/0.1c -W255 -O -K >> $ps
+        fi
+        let i++
+      done
+    fi  # END: Plot defined earthquakes
+    if [ ${#ymdhms[@]} -gt 0 ]; then  # Plot user-defined epochs
+      yaxis=( $(echo ${r[0]} | awk -v FS='/' '{printf "%.6f %.6f",$3+1e-6,$4-1e-6}') )
+      for epoch in ${ymdhms[@]}; do
+        ${gmt}psxy << END $j ${r[0]} $user_line -O -K >> $ps
+$epoch ${yaxis[0]}
+$epoch ${yaxis[1]}
+END
+      done
+    fi  # END: Plot user-defined epochs
+
+    # East velocity annotations
+    if [ ${#vel[@]} -gt 0 ]; then
+      echo "1 1 12 0 0 BR @%2%v@%%@-e@- = ${vel[2]} $plusminus ${vel[3]} $unit/yr" |
+       ${gmt}pstext $(echo $j | tr -d 'T') -R0/1/0/1 -Dj0.2c/0.7c -N -O -K >> $ps
+    fi  # END: East velocity annotations
+
+    # East statistics annotations
+    if [ ${#stats[@]} -gt 0 ]; then
+      echo "1 1 12 0 0 BR WRMS = ${stats[4]} mm; NRMS = ${stats[5]}" |
+       ${gmt}pstext $(echo $j | tr -d 'T') -R0/1/0/1 -Dj0.2c/0.2c -N -O -K >> $ps
+    else
+      if [ -s $tmp/plot.e ]; then
+        awk -v c=$factor 'BEGIN {wsos=0; w=0; n=0}; {wsos=wsos+($2/$3)^2; w=w+1/$3^2; n++}; END {printf "1 1 12 0 0 BR WRMS = %.2f mm; NRMS = %.2f\n",sqrt(wsos/w)*1e3/c,sqrt(wsos/(n-1))}' $tmp/plot.e |
+         ${gmt}pstext $(echo $j | tr -d 'T') -R0/1/0/1 -Dj0.2c/0.2c -N -O -K >> $ps
+      #else  # All points have been excluded through tests
+      #  awk -v c=$factor 'BEGIN {wsos=0; w=0; n=0}; {wsos=wsos+($2/$3)^2; w=w+1/$3^2; n++}; END {printf "1 1 12 0 0 BR (WRMS = %.2f mm; NRMS = %.2f)\n",sqrt(wsos/w)*1e3/c,sqrt(wsos/(n-1))}' $tmp/excl.e |
+      #   ${gmt}pstext $(echo $j | tr -d 'T') -R0/1/0/1 -Dj0.2c/0.2c -N -O -K >> $ps
+      fi
+    fi  # END: East statistics annotations
+
+    # East reference annotations
+    ${gmt}pstext << END $(echo $j | tr -d 'T') -R0/1/0/1 -Dj0.2c/0.2c -N -O -K >> $ps
+0 1 12 0 0 BL Reference longitude: $(printf '%.9f' ${llh[0]})$degree${llh[3]}
+#0 1 12 0 0 BL Reference easting: ${r[1]} m
+END
+
+    rm -f $tmp/plot.e $tmp/excl.e  # Remove east temporary files
+
+    #rm -f $tmp/${file%.*}.utm
+    
+    # North component
+    awk -v max_sig=${max_sig[1]} -v c=$factor 'c*$3 <= max_sig {print $1,c*$2,c*$3}' $tmp/temp.plot.n >| $tmp/plot.n
+    #awk -v max_sig=${max_sig[1]} -v min=${minmax[2]} -v max=${minmax[3]} 'BEGIN {n=int((min+max)/2+0.5)}; $6 < max_sig/1e3 {print $1,$3-n,$6}' $tmp/${pos_file%pos}utm >| $tmp/plot.n
+    #awk -v max_sig1=${max_sig[0]} -v max_sig2=${max_sig[1]} -v max_sig3=${max_sig[2]} -v min=${minmax[2]} -v max=${minmax[3]} 'BEGIN {n=int((min+max)/2+0.5)}; $5 < max_sig1/1e3 && $6 < max_sig2/1e3 && $7 < max_sig3/1e3 {print $1,$3-n,$6}' $tmp/${pos_file%pos}utm >| $tmp/plot.n
+    if [ -f $tmp/temp.excl.n ]; then
+      awk -v c=$factor '{print $1,c*$2,c*$3}' $tmp/temp.excl.n >| $tmp/excl.n
+    fi
+    rm -f $tmp/temp.excl.n
+    awk -v max_sig=${max_sig[1]} -v c=$factor 'c*$3 > max_sig {print $1,c*$2,c*$3}' $tmp/temp.plot.n >> $tmp/excl.n &&
+     rm -f $tmp/temp.plot.n
+    #awk -v max_sig=${max_sig[1]} -v min=${minmax[2]} -v max=${minmax[3]} 'BEGIN {n=int((min+max)/2+0.5)}; $6 >= max_sig/1e3 {print $1,$3-n,$6}' $tmp/${pos_file%pos}utm >| $tmp/excl.n
+    #awk -v max_sig1=${max_sig[0]} -v max_sig2=${max_sig[1]} -v max_sig3=${max_sig[2]} -v min=${minmax[2]} -v max=${minmax[3]} 'BEGIN {n=int((min+max)/2+0.5)}; $5 >= max_sig1/1e3 || $6 >= max_sig2/1e3 || $7 >= max_sig3/1e3 {print $1,$3-n,$6}' $tmp/${pos_file%pos}utm >| $tmp/excl.n
+    # Calculate y-axis bounds
+    #minmax=( $(minmax $tmp/plot.n -f0T,1-2f -I2/${dunit[0]} -C --TIME_UNIT=d) )
+    #minmax=( $(minmax $tmp/plot.n -f0T,1-2f -I2/${dunit[0]} -Sy -C --TIME_UNIT=d) )
+    if [ -s $tmp/plot.n ]; then
+      if [ ${yaxes[1]} -ne 0 ]; then
+        minmax=( - - $(echo ${yaxes[1]} | awk '{printf "%.5f %.5f",-sqrt($1^2),sqrt($1^2)}') )
+      else
+        minmax=( - - $(awk -v dunit=${dunit[0]} 'BEGIN {min=1e9; max=-1e9}; {if ($2-$3 < min) min=dunit*int(($2-$3)/dunit - 0.5); if ($2+$3 > max) max=dunit*int(($2+$3)/dunit + 0.5)}; END {printf "%.5f %.5f",min,max}' $tmp/plot.n) )
+      fi
+    else  # All points have been excluded through tests
+      echo "! Warning ! All points are excluded from north component of $site"
+      if [ ${yaxes[1]} -ne 0 ]; then
+        minmax=( - - $(echo ${yaxes[1]} | awk '{printf "%.5f %.5f",-sqrt($1^2),sqrt($1^2)}') )
+      else
+        minmax=( - - $(awk -v dunit=${dunit[0]} 'BEGIN {min=1e9; max=-1e9}; {if ($2-$3 < min) min=dunit*int(($2-$3)/dunit - 0.5); if ($2+$3 > max) max=dunit*int(($2+$3)/dunit + 0.5)}; END {printf "%.5f %.5f",min,max}' $tmp/excl.n) )
+      fi
+    fi
+
+    # Define north sub-plot bounds
+    #r=( $(echo "${minmax[@]}" | awk '{n=int(($3+$4)/2+0.5); printf "-R%s/%s/%.5f/%.5f %d",$1,$2,$3-n,$4-n,n}') )
+    #r="$(echo "$t_min $t_max ${minmax[@]}" | awk '{printf "-R%s/%s/%.5f/%.5f",$1,$2,$5,$6}')"
+    r="-$(printf 'R%s/%s/%.5f/%.5f' $t_min $t_max ${minmax[2]} ${minmax[3]})"
+    # Calculate axis information
+    # (annotations every 1, 2, 4 or 5 units;
+    # greatest-number-less-than-ten annotations per axis)
+    by=( $(echo ${minmax[2]} ${minmax[3]} |
+            awk 'BEGIN {n=split("1e-4 2e-4 4e-4 5e-4 1e-3 2e-3 4e-3 5e-3 1e-2 2e-2 4e-2 5e-2 0.1 0.2 0.4 0.5 1 2 4 5 10 20 40 50 100 200 400 500 1e3 2e3 4e3 5e3",a," ");
+                        split("2e-5 5e-5 1e-4 1e-4 2e-4 5e-4 1e-3 1e-3 2e-3 5e-3 1e-2 1e-2 2e-2 5e-2 0.1 0.1 0.2 0.5 1 1 2 5 10 10 20 50 100 100 200 500 1e3 1e3",b," ")};
+                 {for (i=1; i<=n; i++) if (int(($2-$1)/a[i]) < 10) {printf "a%sf%sg1e6",a[i],b[i]; i=n}}') )
+
+    # Plot north error bars then overlay points
+    if [ $plot_excl -eq 1 -a -s $tmp/excl.n ]; then  # Plot excluded points in grey
+      ${gmt}psxy $tmp/excl.n $j ${r[0]} $excl -Y$dy $bt/${by[0]}:"North / $unit":WeSn:."$site": -O -K >> $ps  # Underlay all error bars
+      #${gmt}psxy $tmp/excl.n $j ${r[0]} $excl -Y$dy $bt/${by[0]}:"North / $unit":WeSn:."$site (UTM Zone $zone $hemisphere)": -O -K >> $ps  # Underlay all error bars
+      if [ -s $tmp/plot.n ]; then
+        ${gmt}psxy $tmp/plot.n $j ${r[0]} $bar -O -K >> $ps  # Underlay all error bars
+      fi
+    elif [ -s $tmp/plot.n ]; then
+      ${gmt}psxy $tmp/plot.n $j ${r[0]} $bar -Y$dy $bt/${by[0]}:"North / $unit":WeSn:."$site": -O -K >> $ps  # Underlay all error bars
+      #${gmt}psxy $tmp/plot.n $j ${r[0]} $bar -Y$dy $bt/${by[0]}:"North / $unit":WeSn:."$site (UTM Zone $zone $hemisphere)": -O -K >> $ps  # Underlay all error bars
+    fi  # END: Plot north error bars then overlay points
+    if [ -s $tmp/plot.n ]; then
+      ${gmt}psxy $tmp/plot.n $j ${r[0]} $point -O -K >> $ps  # Overlay all points
+    fi
+
+    # North vertical lines
+    if [ ${#discs[@]} -gt 0 ]; then  # Plot defined discontinuities
+      yaxis=( $(echo ${r[0]} | awk -v FS='/' '{printf "%.6f %.6f",$3+1e-6,$4-1e-6}') )
+      i=0
+      while [ $i -lt ${#discs[@]} ]; do
+        ${gmt}psxy << END $j ${r[0]} $disc_line -O -K >> $ps
+${discs[$i]} ${yaxis[0]}
+${discs[$i]} ${yaxis[1]}
+END
+        if [ $i -lt ${#disc_ids[@]} -a "${disc_ids[$i]}" != '-' ]; then
+          echo "${discs[$i]} ${yaxis[1]} 12 0 1 TL ${disc_ids[$i]}@~\256@~" |
+           ${gmt}pstext $j ${r[0]} -G$(echo $disc_line | cut -d ',' -f 2) -Dj0.1c/0.1c -O -K >> $ps
+        fi
+        let i++
+      done
+    fi
+    if [ ${#eqks[@]} -gt 0 ]; then  # Plot defined earthquakes
+      yaxis=( $(echo ${r[0]} | awk -v FS='/' '{printf "%.6f %.6f",$3+1e-6,$4-1e-6}') )
+      i=0
+      while [ $i -lt ${#eqks[@]} ]; do
+        ${gmt}psxy << END $j ${r[0]} $eqk_line -O -K >> $ps
+${eqks[$i]} ${yaxis[0]}
+${eqks[$i]} ${yaxis[1]}
+END
+        if [ $i -lt ${#eqk_ids[@]} -a "${eqk_ids[$i]}" != '-' ]; then
+          echo "${eqks[$i]} ${yaxis[0]} 12 0 1 BC ${eqk_ids[$i]}" |
+           ${gmt}pstext $j ${r[0]} -G$(echo $eqk_line | cut -d ',' -f 2) -Dj0.1c/0.1c -W255 -O -K >> $ps
+        fi
+        let i++
+      done
+    fi  # END: Plot defined earthquakes
+    if [ ${#ymdhms[@]} -gt 0 ]; then  # Plot user-defined epochs
+      yaxis=( $(echo ${r[0]} | awk -v FS='/' '{printf "%.6f %.6f",$3+1e-6,$4-1e-6}') )
+      for epoch in ${ymdhms[@]}; do
+        ${gmt}psxy << END $j ${r[0]} $user_line -O -K >> $ps
+$epoch ${yaxis[0]}
+$epoch ${yaxis[1]}
+END
+      done
+    fi  # END: Plot user-defined epochs
+
+    # North velocity annotations
+    if [ ${#vel[@]} -gt 0 ]; then
+      echo "1 1 12 0 0 BR @%2%v@%%@-n@- = ${vel[0]} $plusminus ${vel[1]} $unit/yr" |
+       ${gmt}pstext $(echo $j | tr -d 'T') -R0/1/0/1 -Dj0.2c/0.7c -N -O -K >> $ps
+    fi  # END: North velocity annotations
+
+    # North statistics annotations
+    if [ ${#stats[@]} -gt 0 ]; then
+      echo "1 1 12 0 0 BR WRMS = ${stats[1]} mm; NRMS = ${stats[2]}" |
+       ${gmt}pstext $(echo $j | tr -d 'T') -R0/1/0/1 -Dj0.2c/0.2c -N -O -K >> $ps
+    else
+      if [ -s $tmp/plot.n ]; then
+        awk -v c=$factor 'BEGIN {wsos=0; w=0; n=0}; {wsos=wsos+($2/$3)^2; w=w+1/$3^2; n++}; END {printf "1 1 12 0 0 BR WRMS = %.2f mm; NRMS = %.2f\n",sqrt(wsos/w)*1e3/c,sqrt(wsos/(n-1))}' $tmp/plot.n |
+         ${gmt}pstext $(echo $j | tr -d 'T') -R0/1/0/1 -Dj0.2c/0.2c -N -O -K >> $ps
+      #else  # All points have been excluded through tests
+      #  awk -v c=$factor 'BEGIN {wsos=0; w=0; n=0}; {wsos=wsos+($2/$3)^2; w=w+1/$3^2; n++}; END {printf "1 1 12 0 0 BR (WRMS = %.2f mm; NRMS = %.2f)\n",sqrt(wsos/w)*1e3/c,sqrt(wsos/(n-1))}' $tmp/excl.n |
+      #   ${gmt}pstext $(echo $j | tr -d 'T') -R0/1/0/1 -Dj0.2c/0.2c -N -O -K >> $ps
+      fi
+    fi  # END: North statistics annotations
+
+    # North reference annotations
+    ${gmt}pstext << END $(echo $j | tr -d 'T') -R0/1/0/1 -Dj0.2c/0.2c -N -O >> $ps
+0 1 12 0 0 BL Reference latitude: $(printf '%.9f' ${llh[1]})$degree${llh[4]}
+#0 1 12 0 0 BL Reference northing: ${r[1]} m
+END
+
+    rm -f $tmp/plot.n $tmp/excl.n  # Remove north temporary files
+    
+    #if [ -z "$(which ps2raster)" ]; then
+      echo "Created $(echo $ps | sed 's/^\.\///')"
+      #gv $ps &
+    #else
+    #  ${gmt}ps2raster $ps -Te -A -P && rm -f $ps && echo "Created ${ps%ps}eps"
+    #  #gv ${ps%ps}eps &
+    #fi
+
+  else
+
+      echo "! Warning ! $file contains fewer than $min_n plottable points. Not plotting..."
+      rm -f temp.plot.e temp.excl.e temp.plot.n temp.excl.n temp.plot.u temp.excl.u
+
+  fi
+
+  # Remove temporary exclude list
+  rm -f $tmp/$site.xcl $tmp/$site.xps
+
+echo "$time1 $(date +'%s.%N')" | awk -v site=$site '{printf "%s %.1f\n",site,$2-$1}' >> temp.t
+done  # END: Loop over files to plot
+
+
+# Remove temporary "eq_def"/"eq_rename" and/or "rename"/"break" file(s)
+rm -f $tmp/$date.xcl $tmp/$date.xps $tmp/$date.disc $tmp/$date.eq
+
+
+# Test if pos-files created from prt- and/or org-file(s) are to be deleted
+if [ $keep_pos -eq 0 ]; then
+  rm -fr $pos_dir
+fi
+
+
+#if [ "$(pwd)" != "$HOME" ]; then
+#  rm -f .[Gg][Mm][Tt]commands* .[Gg][Mm][Tt]defaults*
+#fi
+

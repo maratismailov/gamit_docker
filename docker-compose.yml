@@ -4,4 +4,4 @@ services:
     image: regfe89/gamit:latest
     volumes:
       - ./data:/data
- 
+      - ./app:/app

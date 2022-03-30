@@ -1,0 +1,53 @@
+#!/bin/csh -f
+#
+#doc Make .html pages from sh_* script files.
+#doc
+#
+# Last modified 07/07/04 by Simon McClusky
+#
+# location of raw help files
+set script_dir = "/data30/rwk/active/com"
+set script_html = "/data30/rwk/active/com/html"
+# location of help.htm links file. 
+set html_root = "/chandler/home/simon/public_html/gtgk"
+# location of hlp.htm files. 
+set html_dir = "/chandler/home/simon/public_html/gtgk/help"
+#
+#Add new incrementals text area.
+#
+# Setup header info for help.htm links file.
+\rm -r ${script_html}/script_help.htm
+touch ${script_html}/script_help.htm
+echo "<html>" >! ${script_html}/script_help.htm
+echo "<head>" >> ${script_html}/script_help.htm
+echo "<title>Gamit Globk script help files</title>" >> ${script_html}/script_help.htm
+echo "</head>" >> ${script_html}/script_help.htm
+echo "<body>" >> ${script_html}/script_help.htm
+echo '<table border="0" align="left" bgcolor="#FFFFFF">' >> ${script_html}/script_help.htm
+# Loop over sh_ files making sh_.htm files and adding entries to script_help.htm as we go.
+set file_list = `ls -1 ${script_dir}/sh_*`
+foreach i ( ${file_list} )
+  set file_name = `echo ${i} | awk -F"/" '{print $NF}'`
+  set name = `echo ${file_name} | awk -F"." '{print $1}'`
+  grep "#doc" ${i} | sed -e s/"#doc"/" "/ | head -n 1 | awk -v fn=$file_name -v name=$name '{print "<tr\><td\><a href=\"http\://geoweb.mit.edu/~simon/gtgk/help/"fn".htm\"\>"name"</a\></td\><td\>"$0"</td\></tr\>"}' >> ${script_html}/script_help.htm
+  echo "<html>" >! ${script_html}/${file_name}.htm
+  echo "<head> </head>" >> ${script_html}/${file_name}.htm
+  echo "<body>" >> ${script_html}/${file_name}.htm
+  echo "<pre>" >> ${script_html}/${file_name}.htm
+  $i >! tmp.out
+  awk '{gsub("<","\\&LT;")} {gsub(">","\\&GT;")} {print $0}' tmp.out >> ${script_html}/${file_name}.htm
+  \rm -r tmp.out
+  echo "</pre>" >> ${script_html}/${file_name}.htm
+  echo "</body>" >> ${script_html}/${file_name}.htm
+  echo "</html>" >> ${script_html}/${file_name}.htm
+# Link the .hlp.htm file to a directory accessable by the web server.   
+  ln -s ${script_html}/${file_name}.htm ${html_dir}/${file_name}.htm
+end
+# Setup footer info for help.htm links file
+echo "</table>" >> ${script_html}/script_help.htm
+echo "</body>" >> ${script_html}/script_help.htm
+echo "</html>" >> ${script_html}/script_help.htm
+# Link the help.htm file to a directory accessable by the web server.   
+ln -s ${script_html}/script_help.htm ${html_root}/script_help.htm
+#All done
+exit

@@ -1,0 +1,10 @@
+# Generic Makefile for kf/Ghandlers - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King July 22, 1996
+
+#LABELS: cf_hndl_lib:NONE:cf_hndl_lib:NONE
+
+#SHARELIB: 
+
+#OBJ_cf_hndl_lib check_cflag check_csize open_cf rd_cf_actv wr_cf_actv
+#OBJ_cf_hndl_lib create_cf rw_gobs_util mfile_util
+

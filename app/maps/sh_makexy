@@ -1,0 +1,7 @@
+# Shell script to make .xy files use in velview
+# Gobal coasts 
+gmtset OUTPUT_DEGREE_FORMAT +D
+pscoast -R0/360/-90/90    -Di -W1 -M | awk '{if( $1 == ">" ) {print "NaN NaN"} else {print $0}'} >! WorldVelVi.xy
+pscoast -R0/360/-90/90    -Di -Na -M | awk '{if( $1 == ">" ) {print "NaN NaN"} else {print $0}'} >! BoundVelVi.xy
+#
+pscoast -R140/360/-30/89  -Di -W1 -M | awk '{if( $1 == ">" ) {print "NaN NaN"} else {print $0}'} >! PBOVelVi.xy

@@ -1,0 +1,275 @@
+#!/bin/csh
+#
+#doc Shell script to plot elevation angle dependent mean phase residuals in 
+#doc autcln.post.sum files.
+#
+######################## INSTRUCTIONS #############################
+if ( $#argv == 0 ) then
+   echo "---------------------------------------------------"
+   echo "Script to plot averged phase residuals in the autcln summary files"
+   echo " "
+   echo "sh_plot_elmean <options>"
+   echo " -files [list of aucln summary files] Required "
+   echo " -s [list of 4-char site names or satellites of form G01 G02 etc] Required"
+   echo "    -s ALL will plot all sites/satellites available"
+   echo " -ps <Root for postscript file names>"
+   echo " -R<min/max/min/max> standard form at GMR -R scale command"
+   echo " -t <ELMEAN/AZMEAN/NAMEAN> type of average residual to plot."
+   echo "     Future versions of this script will change the AZMEAN specification"
+   echo "     Default is ELMEAN.  Elevation angle dependent values"
+   echo " -k Keeps the TMP.<timetag> files.  Default is to delete intermediate files"
+   echo " -height [dH mm] Plots line showing effect of height error of dH mm"
+   echo " "
+   echo "---------------------------------------------------"
+
+endif
+#
+### Set defaults ###
+set psroot = ELMEAN
+set Ru = "N"
+set rmtmp = "Y"
+set files = " "
+set sites = " "
+set type = "ELMEAN"
+set dh = 0
+set pdh = N
+
+### Set GMT
+gmt gmtdefaults -Du >! gmt.conf
+gmt gmtset GMT_COMPATIBILITY 5
+gmt gmtset PROJ_LENGTH_UNIT i \
+       MAP_DEFAULT_PEN 1p,black \
+       MAP_TICK_LENGTH_PRIMARY=-0.075i \
+       MAP_ANNOT_OFFSET_PRIMARY 0.125i \
+       PS_MEDIA letter \
+       FONT_LABEL 12p \
+       FONT_TITLE 12p \
+       FONT_ANNOT_PRIMARY 10p
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+#       breaksw 
+#      Get names of sites
+       case -s*:
+            set sites    =   ( $sites $input[2] )
+            shift input; shift input
+            while ( $#input > 0 &&   `echo  $input[1]  | cut -c1` != "-" )
+                set inarg =  $input[1]
+                if ( `echo  $inarg | cut -c1` != "-" ) then
+                   set sites   =   ( $sites $inarg )
+               if ( $#input == 1 ) goto alldone
+                   shift input
+                endif
+            end
+       if ( $#input == 0 ) goto alldone
+       breaksw 
+#      Get autcln file names
+       case -f*:
+            set files    =   ( $files $input[2] )
+            shift input; shift input
+            while ( $#input > 0 &&   `echo  $input[1]  | cut -c1` != "-" )
+                set inarg =  $input[1]
+                if ( `echo  $inarg | cut -c1` != "-" ) then
+                   set files   =   ( $files $inarg )
+               if ( $#input == 1 ) goto alldone
+                   shift input
+                endif
+            end
+       if ( $#input == 0 ) goto alldone
+       breaksw 
+#      Postscript root
+       case -p*:
+           set psroot = $input[2]  
+           breaksw 
+
+#      R option
+       case -R*:
+           set R = $input[1]
+           set Ru = "Y"
+           breaksw
+
+#      type option: Default ELMEAN
+       case -t*:
+           set type = $input[2]
+           breaksw
+
+#      Don't remove TMP, files
+       case -k*
+          set rmtmp = "N"
+          breaksw
+
+#      dH error on plot
+       case -h*:
+          set pdh = Y
+          set dh = $input[2]
+          breaksw
+       endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+
+# See if ALL option passed with -s
+if( $sites[1] == 'ALL' ) then
+#   See if sites or satellites
+    echo "Getting list from $#files autcln.post.sum files"
+    if( $type == "NAMEAN" ) then
+       set sites = `grep -h '^NAMEAN' $files | grep -v SVS  | awk '{print $2}' | sort -u`
+    else
+       set sites = `grep -h '^ELMEAN' $files | grep -v Site | awk '{print $2}' | sort -u`
+    endif
+    echo "ALL option selected.  Generating results for $#sites sites"
+    echo $sites
+endif
+
+#       See if dH to be plotted 
+if( $pdh == Y ) then  # Generate file
+  if ( -e dh.err ) \rm dh.err 
+  touch dh.err
+  set e = 4
+  while ( $e<90 )
+      @ e++
+      echo $e $dh | awk '{printf(" %8.2f %6.2f\n",$1,(sin($1/57.3)-0.67)*$2)}' >> dh.err
+  end
+endif
+
+## Now process the data
+foreach site ( $sites )
+#    Get ps file name
+     set ps = $psroot.${site}.ps
+
+#    Extract the values the input files.
+     set osfs = " "
+     set N = 0;
+     foreach file ( $files )
+        set os = TMP.${N}.`date +"%s"`
+        if( $type == "NAMEAN" ) then
+            grep '^NAMEAN' $file | grep $site | awk -v N=$N '{for( i=3 ; i< 73 ; i++ ) {if ( $i != 99.9 ) {printf(" %-6.1f %6.1f\n",(i-3)*0.2+0.1,$i)}}}' >! $os
+        else if( $type == "AZMEAN" ) then 
+            grep '^AZMEAN' $file | grep $site | awk -v N=$N '{for( i=3 ; i< 75 ; i++ ) {if ( $i != 99.9 ) {printf(" %-6.1f %6.1f\n",(i-3)*5+2.5,$i)}}}' >! $os
+        else
+            grep '^ELMEAN' $file | grep $site | awk -v N=$N '{for( i=3 ; i< 94 ; i++ ) {if ( $i != 99.9 ) {printf(" %-6.1f %6.1f\n",i-2.5,$i)}}}' >! $os
+        endif
+        if( -z $os ) then
+           \rm $os
+        else
+           @ N++
+           set osfs = ($osfs $os)
+        endif
+
+     end
+     if( $N == 0 ) then
+        echo "No data found for site $site"
+     else
+#
+        set NA = $N
+        if ( $Ru == "N" ) then
+            if ( $type == "NAMEAN" ) then
+               set R = `gmt gmtinfo -I2/2 $osfs`
+            else
+               set R = `gmt gmtinfo -I10/2 $osfs`
+            endif
+        endif
+
+#       Generate the color palette
+        echo For Site $site found $N files
+        @ N++
+        gmt makecpt -Cpanoply -T1/${N}/1 > ! cpt.cpt
+# Color pallette goes from blue (earilest)  to red (latest)_
+#
+        if( $type == "NAMEAN" ) then
+            gmt psbasemap $R -JX9i/6.5i  -Bxa1f0.5+l'Nadir Angle (degrees)' -Bya5f1+l'Mean Phase Residual (mm)' -BSWen+t"Site $site" -K >! $ps
+        else if( $type == "AZMEAN" ) then 
+            gmt psbasemap $R -JX9i/6.5i  -Bxa30f10+l'Azimuth (degrees)' -Bya5f1+l'Mean Phase Residual (mm)' -BSWen+t"Site $site" -K >! $ps
+        else
+            gmt psbasemap $R -JX9i/6.5i  -Bxa10f5+l'Elevation Angle (degrees)' -Bya5f1+l'Mean Phase Residual (mm)' -BSWen+t"Site $site" -K >! $ps
+        endif 
+        set N = 3 ;
+        foreach os ( $osfs )
+           @ N++
+#           set W = `head -$N cpt.cpt | tail -1 | awk '{printf("-W1p,%3.3d/%3.3d/%3.3d",$2,$3,$4)}'`
+           set W = `head -$N cpt.cpt | tail -1 | awk '{printf("-W1p,%s",$2)}'`
+           # awk -v N=$N -v O=$O '{print $1,$2+N*O}' $os >! $os.off
+           gmt psxy -R -JX $W $os -K -O >> $ps
+           # \rm $os.off
+        end
+        # Now generate average values
+        if( $type == "AZMEAN" ) then
+           set NE = 0
+           \rm azmean.$site >&! /dev/null ; touch azmean.$site 
+           while ( $NE < 72 )
+               set azi = `echo $NE | awk '{printf("%-6.1f",$1*5+2.5)}'`
+               grep -h "^ $azi " $osfs | awk -v azi=$azi '{s=s+$2} {v=v+$2^2} END {if( NR>0 ) {printf(" %6.1f  %6.1f %6.2f %3d\n",azi,s/NR,sqrt((v-NR*(s/NR)^2)/NR^2),NR)}}' >> azmean.$site
+               @ NE++
+           end
+           \cp azmean.$site pltf
+        else if ($type == "NAMEAN" ) then
+           set NE = 0
+           \rm namean.$site >&! /dev/null ; touch namean.$site 
+           while ( $NE < 69 )
+               set nad = `echo $NE | awk '{printf("%-6.1f",$1*0.2+0.1)}'`
+               grep -h "^ $nad " $osfs | awk -v nad=$nad '{s=s+$2} {v=v+$2^2} END {if( NR>0 ) {printf(" %6.1f  %6.1f %6.2f %3d\n",nad,s/NR,sqrt((v-NR*(s/NR)^2)/NR^2),NR)}}' >> namean.$site
+               @ NE++
+           end
+           \cp namean.$site pltf
+
+        else
+           set NE = 0
+           \rm elmean.$site >&! /dev/null ; touch elmean.$site 
+           while ( $NE < 89 )
+               set elv = `echo $NE | awk '{printf("%-6.1f",$1+0.5)}'`
+               grep -h "^ $elv " $osfs | awk -v elv=$elv '{s=s+$2} {v=v+$2^2} END {if( NR>0 ) {printf(" %6.1f  %6.1f %6.2f %3d\n",elv,s/NR,sqrt((v-NR*(s/NR)^2)/NR^2),NR)}}' >> elmean.$site
+               @ NE++
+           end
+           \cp elmean.$site pltf
+
+        endif
+        
+#       Plot average values
+        set Rnge = `echo $R | awk -F/ '{printf(" %f %f %f %f",substr($1,3),$2,$3,$4)}'`
+        echo $Rnge | awk '{printf(" %f  0.0 \n%f 0.00 \n",$1,$2)}' |  gmt psxy -R -JX -K -O -W2p,0/0/0  >> $ps
+
+        gmt psxy -R -JX -K -O -W1p,0/0/0 pltf >> $ps
+        gmt psxy -R -JX -K -O -Sc0.05i -G0/255/0 -W2p,0/255/0 -Ey/2p,0/0/0 pltf >> $ps
+
+#       See if dH to be plotted 
+        if( $pdh == Y ) then  # Generate file
+           gmt psxy -R -JX -K -O  -W1p,0/0/0 dh.err >> $ps  
+        endif
+
+        set RMS = `cat $osfs | awk -v site=$site -v N=$NA '{v=v+$2^2} END {printf("RMS %s %10.2f mm # %d data from %3d files\n",site, sqrt(v/NR),NR,N)}'`
+        set XY = `echo $Rnge | awk '{printf(" %6.1f %6.1f",$1+($2-$1)/100,$4-($4-$3)/40)}'`
+        set XYM = `echo $Rnge | awk '{printf(" %6.1f %6.1f",$1+($2-$1)/100,$4-2*($4-$3)/40)}'`
+
+#       Get RMS of MEAN values
+        set MWRMS = `cat pltf | poly01r yes 0 | awk -v site=$site '{printf("WRMSMEAN %s %10.2f mm, NRMS %6.2f\n", site, $15,$13)}'`
+        if( $type == "AZMEAN" ) then
+            echo $RMS >> azmean.$site
+            echo $MWRMS >> azmean.$site
+
+        else if ($type == "NAMEAN" ) then
+            echo $RMS >> namean.$site
+            echo $MWRMS >> namean.$site
+        else
+            echo $RMS >> elmean.$site
+            echo $MWRMS >> elmean.$site
+        endif
+
+        \rm pltf
+
+
+#        gmt pslegend -R -JX -O -K -G255 >> $ps
+       
+        gmt pstext -R -JX -F+f10p+jTL -O <<! >> $ps
+$XY  $RMS
+$XYM $MWRMS
+!
+
+        echo Created $ps
+        if( $rmtmp == 'Y' ) then 
+           \rm $osfs
+        endif
+     endif
+end
+ 

@@ -1,0 +1,28 @@
+GLIST2CMD: Extract sites from a glist output using selection criteria for length of
+           span, number, of observations, and geographical bounding box; out can
+           be one or more of  use_site, unify_apr, and equate lists for globk and glorg
+  
+Usage:
+
+ glist2cmd [glist-file] [min-span] [min-num] [edit-file] colloc [use-file] [uni-file] [vel-file] [eqdef-file]
+              
+   Required:
+      glist-file   Name of input file from program glist
+
+       Optional:
+          min-span     Minumum number of span in years for site to be used (default 0)
+          min-num      Minumum number of observations (h-files) for site to be used (default 1)
+          edit_file    Input controls on editing of list (format below)
+          colloc       Include sites collocated with sites included by min-span and min-num   
+          use-file     Name of output use_site file for globk (default is 'glist.use_site')
+          uni-file     Name of output file input to unify_apr (default is to omit this output)
+          vel-file     Name of output vel file for plotting (default is to omit)
+          eqdef-file   Name of output file of site list for input to sh_make_eqdef
+
+      Format of edit_file (column 1 blank if not comment)
+       USE site1 site2 site3 ..
+       XCL site1 site2 site3 ..
+       BOX minlat minlon maxlat maxlon
+      (case insensitive, multiple USE/XCL commands allowed, 8 sites per line)
+     
+

@@ -1,0 +1,59 @@
+# Generic Makefile for orbits - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King Septebmer 30, 2019 
+
+#LABELS: bctot:bctot:bctot_lib:bctot 
+#LABELS: gtog:gtog:gtog_lib:gtog
+#LABELS: orbfit:orbfit:orbfit_lib:orbfit
+#LABELS: orbdif:orbdif:orbdif_lib:orbdif
+#LABELS: ngstot:ngstot:ngstot_lib:ngstot
+#LABELS: tmerge:tmerge:tmerge_lib:tmerge
+#LABELS: ttoasc:ttoasc:ttoasc_lib:ttoasc
+#LABELS: ttog:ttog:ttog_lib:ttog
+#LABELS: ttoics:ttoics:ttoics_lib:ttoics   
+#LABELS: ttot:ttot:ttot_lib:ttot
+#LABELS: ttongs:ttongs:ttongs_lib:ttongs 
+#LABELS: yawtab:yawtab:yawtab_lib:yawtab
+#LABELS: ytoasc:ytoasc:ytoasc_lib:ytoasc    
+#LABELS: y2orbex:y2orbex:y2orbex_lib:y2orbex    
+
+
+#SHARELIB: ../lib:gamit_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+#SHARELIB: ../lib:libsofa
+                            
+#OBJ_bctot_lib     arcinp	brdxyz   chksvs   closeb    closest_epoch 
+#OBJ_bctot_lib	    filnmb	gmake    openb	  oversn	rotcrd
+#OBJ_bctot_lib 	sortbc	spanup   thdrit	  trot
+   
+#OBJ_gtog_lib   open_eop oversn
+
+#OBJ_orbdif_lib  orbrms oversn
+#OBJ_orbdif_lib  ttemp
+
+#OBJ_orbfit_lib   elem	eopart gpgt kepler norminc norm_solve oversn	 
+#OBJ_orbfit_lib   partl plt_postfit read_input tran_part write_g write_summary
+#OBJ_orbfit_lib   xyz2rac
+
+#OBJ_ngstot_lib closeb gmake   getics  ngsopn  
+#OBJ_ngstot_lib oversn openb   rsp1hd  rotcrd  thdrit   tdtrit   trot
+
+#OBJ_tmerge_lib thdrit oversn
+
+#OBJ_ttoasc_lib oversn
+
+#OBJ_ttog_lib gmake  oversn
+
+#OBJ_ttoics_lib  oversn
+
+#OBJ_ttot_lib closeb openb oversn rotcrd thdrit trot
+
+#OBJ_ttongs_lib  closeb   openb  oversn   rdsvclk  rotcrd 
+#OBJ_ttongs_lib  sdtrit   trot   thdrit   wsp1hd   wsp3hd
+
+#OBJ_yawtab_lib  irnss_yaw kouba_yaw kouba_gps kouba_glonass kouba_beidou wang_beidou kouba_galileo
+#OBJ_yawtab_lib  mu_angle oversn svsun_angles                                                      
+
+#OBJ_ytoasc_lib oversn                      
+
+#OBJ_y2orbex_lib oversn get_svcoords quaternion rotcrd write_orbex
+

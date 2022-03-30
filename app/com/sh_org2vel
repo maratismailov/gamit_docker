@@ -1,0 +1,237 @@
+#!/bin/csh -f
+#
+#doc Extract velocity / EQ / plate info from a glorg output file
+#doc
+#
+# Last modified 2005/06/03 by Simon McClusky
+
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "====================================================================================="
+  echo " Extract velocity / EQ / plate info from a glorg output file " 
+  echo "  "
+  echo " Usage: sh_org2vel -file <file> -eq <list> -plate <names> -ffile <ffile> -maxsigma <mm> -D <delete> -region <region>" 
+  echo "  "
+  echo " Where: <file>  Name of glorg output file (.org)"
+  echo "        <list>  List of EQ's in .org file; stations extracted and displacements calculated  "  
+  echo "        <names> Names of plates estimated in glorg run "
+  echo "        <ffile> Name of frames.dat file to be used in frame definition " 
+  echo "        <mm>    Sigma cutoff for site output"
+  echo "        <delete> File containing site names to delete"
+  echo "        <region> min_lat min_lon max_lat max_lon: lower left and upper right corners for region of interest."
+  echo "  "      
+  echo " Examples: sh_org2vel -file emed_88_99.org   (will created vel file with all sites) "
+  echo "           sh_org2vel -file emed_88_99.org -eq PS  (will omit renamed sites"
+  echo "           sh_org2vel -file emed_88_99.org -eq LA HT CO GE "
+  echo "           sh_org2vel -file emed_88_99.org -plate anotolia aegean arabia"
+  echo "  "
+  echo "====================================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS #############################   
+set file = ''
+set ffile = ''
+set eq = ''
+set plate = ''
+set pi = 3.141592653
+# maxsigma 100 m (100000 mm)
+set maxsigma = 100000.0
+set delete_file = ''
+set region = ''
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -fi*:
+      set file  = $input[2]  
+    breaksw 
+    case -eq:
+      set eq = (`echo $argv | cut -d- -f2`); shift eq
+    breaksw
+    case -p*:
+       set plate = (`echo $argv | cut -d- -f2`); shift plate
+    breaksw
+    case -ff*:
+      set ffile  = $input[2]  
+    breaksw 
+    case -maxsig*:
+      set maxsigma  = $input[2]  
+    breaksw 
+    case -D*:
+      set delete_file  = $input[2]  
+    breaksw 
+    case -reg*:
+       set region = (`echo $argv | cut -d- -f2`); shift region     
+    breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ############################
+# Extract a root file name
+set file_root = ` echo $file | awk -F. '{print $1}' `  
+
+# Make an globk .apr file using all sites in input org file
+grep Unc. $file | cut -c5- >! ${file_root}.apr 
+
+# Extract the velocity summary from the .org file
+echo "Extracting velocity summary: ${file_root}.vel"
+echo "-------------------------------------------------------------------------------" >! ${file_root}.vel
+echo " " >> ${file_root}.vel
+echo "#SUMMARY VELOCITY ESTIMATES FROM GLOBK "  >> ${file_root}.vel     
+echo "# Long.     Lat.        E & N Rate      E & N Adj.      E & N +-   RHO        H Rate   H adj.    +-  SITE " >> ${file_root}.vel
+echo "# (deg)    (deg)          (mm/yr)       (mm/yr)       (mm/yr)                 (mm/yr) " >> ${file_root}.vel
+if ( $region[1] != '' ) then
+  echo "Plotting time series for sites contained within the region (minlat minlon maxlat maxlon) : $region"
+  cat $file | awk -v ms=$maxsigma -v lat1=$region[1] -v lat2=$region[3] -v lon1=$region[2] -v lon2=$region[4] \
+             '{ if ( substr($0,1,2) == "  " && NF == 13 && ($9 <= 1.0 && $9 >= -1.0) && $7 <= ms && $8 <= ms && $2 >= lat1 && $1 >= lon1 && $2 <= lat2 && $1 <= lon2 ) {print $0}}' >> ${file_root}.vel
+  \rm -r tmp.apr >&! /dev/null; touch tmp.apr
+  foreach i (` cat ${file_root}.vel | awk  '{if ( substr($0,1,2) == "  ") {print $13}}'`)
+    grep $i ${file_root}.apr >> tmp.apr 
+  end
+  \mv tmp.apr ${file_root}.apr
+else
+# cat $file | awk -v ms=$maxsigma '{ if (substr($0,1,2) == "  " && NF == 13 && ($9 <= 1.0 && $9 >= -1.0) && $7 <= ms && $8 <= ms ) {print $0}}' >> ${file_root}.vel
+# Changed by Prakash Barman / rwk 150307
+#  cat $file | awk -v ms=$maxsigma '{ if (substr($0,1,2) == "  " && (substr($2,1,1) ~ "^[0-9]*$") && NF == 13 && ($9 <= 1.0 && $9 >= -1.0) && $7 <= ms && $8 <= ms ) {print $0}}' >> ${file_root}.vel
+# Changed by MAF (20150609, MIT)
+  awk -v ms=$maxsigma '/^ *SUMMARY VELOCITY ESTIMATES/,/^ *$/ {if ($0 ~ /^ / && $7 <= ms && $8 <= ms && $9 >= -1 && $9 <= 1) print $0}' $file >> ${file_root}.vel
+
+endif
+
+if ( $delete_file != '' ) then
+  sh_delete -f  ${file_root}.vel -sf  $delete_file -d  -copy -silent 
+endif
+
+# Check if any EQ info requested
+if ( $eq[1] != '' ) then 
+
+# Extract the part of the file needed.
+   cat $file | awk '/RENAME REPORT/,/Summary of Markov/ {print} /Summary of Markov/ {exit}' >! tmp.rename
+
+# Loop over all earthquakes
+  foreach i ( $eq )
+    echo "Working on eq: G${i}"
+
+# Extract velocities between EQ's in separate files
+    echo "-------------------------------------------------------------------------------" >! ${file_root}_G${i}.vel
+    echo " " >> ${file_root}_G${i}.vel
+    echo " SUMMARY VELOCITY ESTIMATES FROM GLOBK "  >> ${file_root}_G${i}.vel    
+    echo "  Long.     Lat.        E & N Rate      E & N Adj.      E & N +-   RHO        H Rate   H adj.    +-  SITE " >> ${file_root}_G${i}.vel
+    echo "  (deg)    (deg)          (mm/yr)       (mm/yr)       (mm/yr)                 (mm/yr) " >> ${file_root}_G${i}.vel
+
+    grep _G${i} ${file_root}.vel >> ${file_root}_G${i}.vel
+    grep -v _G${i} ${file_root}.vel > ! ${file_root}_EX_G${i}.vel
+ 
+# Extract offsets and rate changes for each earthquake.
+    grep "Eq $i" tmp.rename | grep "mm "    | awk '{printf" %8.2f%8.2f%8.2f%8.2f%8.2f%8.2f%7.3f  %8.2f%8.2f%8.2f %-8s\n",-1.0*$5,-1.0*$2,0.00,0.00,$7,$4,0.001,-1.0*$8,0.00,$10,$1}' >! tmp.offsets.${i}
+    grep "Eq $i" tmp.rename | grep "mm/yr " | awk '{printf" %8.2f%8.2f%8.2f%8.2f%8.2f%8.2f%7.3f  %8.2f%8.2f%8.2f %-8s\n",$5,$2,0.00,0.00,$7,$4,0.001,$8,0.00,$10,$1}' >! tmp.deltav.${i} 
+    \rm tmp.coords.${i} >&! /dev/null
+    touch tmp.coords.${i} 
+  
+# Extract coords for each site with an offset and rate change.
+    foreach j (`awk '{print substr($11,1,8)}' tmp.offsets.${i}`)
+       cat ${file_root}.vel | awk '{ if (substr($0,1,2) == "  " && NF == 13 && ($9 <= 1.0 && $9 >= -1.0) && $13 == site) {printf" %10.5f %10.5f\n",$1,$2}}' site=$j >> tmp.coords.${i}
+    end
+
+# Write headers for offset and rate change files
+    echo "-------------------------------------------------------------------------------" >! ${file_root}.G${i}.offsets
+    echo " " >> ${file_root}.G${i}.offsets
+    echo " SUMMARY VELOCITY ESTIMATES FROM GLOBK "  >> ${file_root}.G${i}.offsets     
+    echo "  Long.     Lat.        E & N Offset    E & N Adj.      E & N +-   RHO        H Offset H adj.    +-  SITE " >> ${file_root}.G${i}.offsets
+    echo "  (deg)    (deg)           (mm)          (mm)          (mm)                    (mm)   " >> ${file_root}.G${i}.offsets
+
+    echo "-------------------------------------------------------------------------------" >! ${file_root}.G${i}.deltav
+    echo " " >> ${file_root}.${i}.deltav
+    echo " SUMMARY VELOCITY ESTIMATES FROM GLOBK "  >> ${file_root}.G${i}.deltav     
+    echo "  Long.     Lat.        E & N Rate      E & N Adj.      E & N +-   RHO        H Rate   H adj.    +-  SITE " >> ${file_root}.G${i}.deltav
+    echo "  (deg)    (deg)          (mm/yr)       (mm/yr)       (mm/yr)                 (mm/yr) " >> ${file_root}.G${i}.deltav
+ 
+    paste -d" " tmp.coords.$i tmp.offsets.$i >> ${file_root}.G${i}.offsets
+    paste -d" " tmp.coords.$i tmp.deltav.$i >> ${file_root}.G${i}.deltav
+  end  
+
+endif
+
+if ( $plate[1] != '' ) then
+# Loop over all pates requested creating plate input and output files
+
+   if ( $ffile == '' ) then
+     echo "# Euler vectors extracted from: $file" >! frames.dat
+     echo "#  plate       Wx       Wy        Wz       deg/Myr" >> frames.dat
+     sed '/PLATE       Lat. (deg)/q' $file | grep XYZ$ | awk 'NF == 11{print " ", substr($1,1,4) "_ORG", $2,$4,$6}' >> frames.dat
+   else
+     cat $ffile >! frames.dat
+   endif 
+
+  foreach p ( $plate )     
+    set pid = ` echo $p | awk '{print substr($1,1,4) "_ORG"}'`
+    echo " "
+    echo "Working on plate: ${p} - assigned plate id: $pid" 
+    echo " "
+#    set evec = ` grep -i $p $file | grep XYZ | head -n 1 | awk '{print $2*pi/180,$4*pi/180,$6*pi/180,$1}' pi=$pi `
+#   cat ${file_root}.apr | awk '{print " ", $1, e1, e2, e3, e4}' e1=$evec[1] e2=$evec[2] e3=$evec[3] e4=$evec[4] >! ${file_root}.${p}
+    cat ${file_root}.apr | awk -v pid=$pid '{print " ", $1, pid}' >! ${file_root}.${p}
+    plate ${file_root}.${p} ${file_root}.apr ${file_root}_${p}_plate.apr ${file_root}_${p}_plate.vel ''
+    echo "corcom ${file_root}.apr NUV-NNR '' '' ${file_root}_${p}.apr ${pid}_1998.0 '' '' '' '' "
+    corcom ${file_root}.apr NUV-NNR '' '' ${file_root}_${p}.apr ${pid}_1998.0 '' '' '' ''
+    apr_to_vel ${file_root}_${p}.apr ${file_root}_${p}.vel.corcom >&!  /dev/null
+    
+    echo " "
+    echo "Calculating velocities in reference frame: ${p}"  
+    echo " "
+      
+    if ( -e  ${file_root}_${p}.vel ) \rm -r ${file_root}_${p}.vel
+    echo "-------------------------------------------------------------------------------" >! ${file_root}_${p}.vel
+    echo " " >> ${file_root}_${p}.vel
+    echo " SUMMARY VELOCITY ESTIMATES FROM GLOBK "  >> ${file_root}_${p}.vel     
+    echo "  Long.     Lat.        E & N Rate      E & N Adj.      E & N +-   RHO        H Rate   H adj.    +-  SITE " >> ${file_root}_${p}.vel
+    echo "  (deg)    (deg)          (mm/yr)       (mm/yr)       (mm/yr)                 (mm/yr) " >> ${file_root}_${p}.vel
+
+#  cat ${file_root}.vel | awk '{ if (substr($0,1,2) == "  " && NF == 13 ) {print substr($13,1,8)}}' >! tmp.ref  
+
+    foreach i ( `cat ${file_root}.vel | awk '{ if (substr($0,1,2) == "  " && NF == 13 ) {print substr($13,1,8)}}'` )
+#    echo "Checking for site: $i in ${file_root}_${p}_plate.vel file:  "
+      set tempk = "" 
+      set tempr = "" 
+      set nargs = 0
+      grep $i ${file_root}.vel | awk ' substr($0,1,1) == " " {printf" %s",$0}' >! tmp.r
+      grep $i ${file_root}_${p}_plate.vel | awk ' substr($0,1,1) == " " {printf" %s",$0}' >! tmp.k
+      set nargs = `cat tmp.k | awk '{print NF}'` 
+      if ( $nargs == 0 || $nargs == "" ) then
+        echo "Did NOT find site: $i in file: ${file_root}_${p}_plate.vel"
+      else
+#     echo "Found site: $i in file: ${file_root}_${p}_plate.vel"
+        cat tmp.r tmp.k | awk '{printf" %10.5f %10.5f %8.2f%8.2f%8.2f%8.2f%8.2f%8.2f%7.3f  %8.2f%8.2f%8.2f %-8s\n",$1,$2,$3-$16,$4-$17,$5,$6,$7,$8,$9,$10-$23,$11,$12,$13}' >> ${file_root}_${p}.vel 
+      endif
+    end
+  end
+
+endif
+
+# Clean up
+\rm -r tmp.rename* tmp.coords* tmp.offsets* tmp.deltav* tmp.r* tmp.k* >&! /dev/null
+                                          
+# Tell the user what was created
+echo " "
+echo "Created globk .apr file: ${file_root}.apr"
+echo "Created velocity summary file: ${file_root}.vel  "
+echo " "
+foreach i ( $eq )
+  echo "Created offsets file: ${file_root}.G${i}.offsets"
+  echo "Created rete change file: ${file_root}.G${i}.deltav"
+end
+foreach p ( $plate )
+  echo "Created plate input file: ${file_root}.${p}"
+  echo "Created plate output globk .apr file: ${file_root}_${p}_plate.apr"
+  echo "Created plate output velocity file: ${file_root}_${p}_plate.vel"
+  echo "Created output velocity file: ${file_root}_${p}.vel"
+  echo "Created output globk .apr file: ${file_root}_${p}.apr"
+  echo "Created frames.dat file: frames.dat"
+  echo "  "
+end
+
+# Thats all.
+exit

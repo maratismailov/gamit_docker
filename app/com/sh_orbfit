@@ -1,0 +1,204 @@
+#!/bin/csh -f
+#
+#doc Difference and plot two t-file, optionally estimating a translation and/or rotation between them
+#doc
+#
+# sh_orbfit
+#
+#
+# Purpose      Difference and plot two t-files, optionally estimating a translation and/or rotation between them
+#   
+# To estimate ICs solar radiation parameters, the first t-file must have partials.  Assumes one of the
+# 9-parameter models (3 direct, sin/cos of 3 once-per-rev)
+#
+# Output       G-file and (optionally) t-file fit to input SP3 file
+#              Summary of adjustments (sp3fit.fit) and rms values (sp3fit.rms)
+#        
+# Run string 
+
+# sh_orbfit  -f [tfile1] [tfile2]  -irot -trot -scale -ics -srps [srpprm] -comp [comps] -ext [extent] -psfiles   
+#               
+#  Required:                  
+#    [tfile1] [tfile2]  t-files to be differenced (1 minus 2)
+#  Optional:  
+#    -trans        estimate a translation (default 'n')                                      
+#    -irot         estimate an inertial rotation (default 'n')
+#    -trot         estimate a terrestrial rotation (x and y only; default 'n')
+#    -scale        estimate a scale (default 'n')        
+#    -ics          estimate initial conditions (default 'n')
+#    [srpprm]      none  : fix all solar radiation paramaters (default) 
+#                  all   : estimate constant and  once-per-rev parameters 
+#                  noopr : fix all once-per-rev parameters  (estimate only the constants)  
+#                  ondopr: estimate only the direct once-per-rev parameters
+#                  onyopr: estimate only the Y-axis once-per-rev parameters
+#                  onbopr: estimate only the B-axis once-per-rev parameters
+#                  dyopr : estimate the direct and Y-axis once-per-rev parameters                                            
+#                  dbopr : estimate the direct and B-avix once-per-rev parameters
+#                  ybopr : estmate the Y-axis and B-axis once-per-rev parameters
+#    [comps]       component differences to be generated:  none (default) xyz  arc (along, radius, cross)
+#    [extent]      extent to be used for fit, rms, and plt files (default 'orbfit')
+#    -psfiles      create Postscript files for each satellite 
+#
+# Output files are [extent].fit, [extent].rms, plt_[extent].[prn] prn[prn#]_[extent].ps
+#                       
+
+
+# Display the comments if no arguments    
+if ($#argv < 1) then
+        sed -e "1d" -e "/by Peng/q" -e "s/#//" $0
+        exit
+endif
+
+# Initialize variables
+set tfile1 = ""
+set tfile2 = ""                                      
+set trans = 'n' 
+set irot = "n"
+set trot = "n"
+set scale = "n"   
+set ics = 'n' 
+set srpprm = 'none'
+set plotcmd = "none"
+set extent = "orbfit"
+set plot = "n"
+set comps = "none"
+ 
+# Read the command line options
+foreach a ($argv)
+switch($a)
+  case -f:
+##    set files = $argv[2]  
+      set files = (`echo $argv | cut -d- -f2`); shift files
+     breaksw
+  case -trans: 
+     set trans = 'y'
+     breaksw
+  case -irot:
+     set irot = 'y'
+     breaksw
+  case -trot: 
+     set trot = 'y'
+     breaksw
+  case -scale:
+     set scale = 'y'
+     breaksw
+  case -ics:
+     set ics = 'y'
+     breaksw
+  case -sprs
+     set srpprm = $argv[2]
+     breaksw 
+  case -comp
+     set comps = $argv[2]
+     breaksw 
+  case -ext
+     set extent = $argv[2]
+     breaksw
+  case -psfiles
+     set plot = "y"
+     breaksw 
+endsw 
+shift
+end               
+
+                 
+# Create the ORBFIT control file 
+echo "Parameters estimated: "
+if( $trans == 'y'  ) then
+  echo " trans:  1 1 1" >! orbfit.cmd
+  echo "Inertial translation" 
+else
+  echo " trans:  0 0 0" >! orbfit.cmd
+endif       
+if( $irot == 'y' ) then
+  echo " i_rot:  1 1 1" >> orbfit.cmd
+  echo "Inertial rotation" 
+else
+  echo " i_rot:  0 0 0" >> orbfit.cmd
+endif   
+if( $trot == 'y' ) then
+  echo " t_rot:  1 1 0" >> orbfit.cmd
+  echo "Terrestrial X and Y rotation"
+else
+  echo " t_rot:  0 0 0" >> orbfit.cmd
+endif
+if( $scale == 'y' ) then
+  echo " scale:  1 " >> orbfit.cmd                
+  echo "Scale"
+else
+  echo " scale:  0 " >> orbfit.cmd
+endif     
+if( $ics == 'y' ) then
+  echo " pos:    1 1 1" >> orbfit.cmd
+  echo " vel:    1 1 1" >> orbfit.cmd
+  echo "Initial condidtions"
+else
+  echo " pos:    0 0 0" >> orbfit.cmd
+  echo " vel:    0 0 0" >> orbfit.cmd
+endif
+if( $srpprm == 'none' ) then 
+  echo " srad:   0 0 0 0 0 0 0 0 0 " >> orbfit.cmd
+else if ( $srpprm == "allopr" ) then
+  echo " srad:   1 1 1 1 1 1 1 1 1 " >> orbfit.cmd
+  echo "  All radiation parameters:
+else if ( $srpprm == "noopr" ) then
+  echo " srad:   1 1 1 0 0 0 0 0 0 " >> orbfit.cmd     
+  echo "  Constant radiation parameters (no once-per-rev)"
+else if ( $srpprm == "ondopr" ) then
+  echo " srad:   1 1 1 1 1 0 0 0 0 " >> orbfit.cmd   
+  echo "  Constant plus direct once-per-rev radiation parameters"
+else if ( $srpprm == "onyopr" ) then
+  echo " srad:   1 1 1 0 0 1 1 0 0 " >> orbfit.cmd    
+  echo "  Constant plus y-axis once-per-rev radiation parameters"
+else if ( $srpprm == "onbopr" ) then
+  echo " srad:   1 1 1 0 0 0 0 1 1 " >> orbfit.cmd             
+  echo "  Constant plus b-axis once-per-rev radiation parameters"
+else if ( $srpprm == "dyopr" ) then
+  echo " srad:   1 1 1 1 1 1 1 0 0 " >> orbfit.cmd     
+  echo "  Constant plus direct and y-axis once-per-rev radiation parameters"
+else if ( $srpprm == "dbopr" ) then
+  echo " srad:   1 1 1 1 1 0 0 1 1 " >> orbfit.cmd                        
+  echo "  Constant plus direct and b-axis once-per-rev radiation parameters
+else if ( $srpprm == "ybopr" ) then
+  echo " srad:   1 1 1 0 0 1 1 1 1 " >> orbfit.cmd      
+  echo "  Constant plus y- and b-axis once-per-rev radiation parameters"
+else
+ # something wrong
+ echo "Error in solar radiation parameters setting"
+ exit
+endif
+echo " exclude:                   " >> orbfit.cmd
+echo " max_fit_tol:                  " >> orbfit.cmd
+                          
+# Set the plotting options
+                 
+if( $comps == 'none' ) then
+  set iop = 0 
+else
+  if( $comps == 'xyz' ) then
+    set iop = 1    
+    echo "Plot differences in X Y Z" 
+  else if( $comps.eq.'arc' ) then
+    set iop = 2      
+    echo "Plot differences in along-track, radial, and cross-track"
+  else
+    echo "Unsupported component-difference option" $comps
+    exit 
+  endif  
+endif 
+  
+# Now form the differences and optionally do the fit                                             
+                                                
+echo "Calling orbfit"             
+orbfit orbfit.cmd $extent $iop $files 
+                                                                                                 
+# Plot the differences or residuals after fit
+      
+if( $iop != 0 ) then                         
+  echo "Calling sh_plotorb to create ps files" 
+  sh_plotorb  $extent 'all' 
+endif 
+
+exit
+
+

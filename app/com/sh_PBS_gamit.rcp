@@ -1,0 +1,388 @@
+#!/bin/csh -f
+#
+#doc Setup and run sh_gamit under PBS batch queue control.
+#doc
+#
+# Last modified 2005/01/18 by S. McClusky
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "==========================================================================================="
+  echo " Setup and run PBS batch files for gamit on remote host" 
+  echo " "
+  echo "   Usage: sh_batch_gamit -f <command file> -q <queue name> -nodes <node_att> -scratch <scratch>"
+  echo "                         -sleep <time> -rerun -predl"
+  echo " "           
+  echo "   Executed from the working directory"
+  echo " "
+  echo "   Optional commands:" 
+  echo " "     
+  echo "     <command file> Command file containing sh_gamit command line run strings "
+  echo "                    First column is comment, sh_gamit command lines start in col 2)"
+  echo "     <queue name>   PBS queue to submit jobs to [Default: one]"
+  echo "     <node_att>     Node attributes [Default 1:gigabit]"
+  echo "     <scratch>      Name of scratch directory [Default: /scratch]"
+  echo "     <time>         Seconds to sleep between launching jobs to the cluster queue [Default 3]" 
+  echo "      -rerun        Rerun (exactly) existing session using .bat file (don't execute sh_gamit)"
+  echo "      -no_qsub      Setup batch files but do not submit them to the PBS queue."
+  echo "      -predl        Download required files from archives before spawing jobs on compute nodes"
+  echo "      -rinex_ftpsites Rinex data ftp archives to check for data"
+  echo " "      
+  echo "   Example: sh_PBS_gamit -f sh_gamit.cmd -q one"      
+  echo "   Example: sh_PBS_gamit -f sh_gamit.cmd -q one -node 1:p4"      
+  echo "            sh_PBS_gamit -f sh_gamit.cmd -q one -rerun"      
+  echo " "      
+  echo "==========================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS ############################# 
+setenv procdir `pwd`    
+set file = ''
+set queue = 'one'
+set nodes = '1:gigabit:ppn=2'
+set mailto = `whoami`
+set machine = `hostname`
+set scratch = '/scratch'
+set sleep = 3
+set qsub =  'Y'
+set rerun = ''
+set predl = 'N'
+set user_ftpsites = ''
+set predl_ftpsites = ''
+##################### DECIPHER COMMAND LINE #######################
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -f*:
+      set file  = $input[2]  
+    breaksw 
+    case -q*:
+      set queue  = $input[2]  
+    breaksw 
+    case -nod*:
+      set nodes  = $input[2]  
+    breaksw 
+    case -sc*:
+      set scratch = $input[2]  
+    breaksw 
+    case -sl*:
+      set sleep = $input[2]  
+    breaksw 
+    case -rerun:
+      set rerun  = Y  
+    breaksw 
+    case -no_qsub:
+      set qsub  = N  
+    breaksw 
+    case -predl*:
+      set predl = 'Y'
+    breaksw 
+    case -rinex_ftpsites 
+      set user_ftpsites = (`echo $argv | cut -d- -f2`) ; shift user_ftpsites
+      set predl_ftpsites = `echo $user_ftpsites | awk '{for (i=1;i<=NF;i++) {print $i}}' | sort | uniq`
+    breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ############################         
+
+echo "EXECUTING sh_batch_gamit"
+
+# Check all required info given.
+if ( ${file} == '' ) then
+  echo "Not all required fields given -- file: $file --Stop"
+  exit
+endif
+
+# Setup and launch PBS batch files to the specified PBS queue. 
+#
+@ i = 0
+
+# Extract command lines from the command file
+cat $file | awk 'substr($0,1,1) == " " {print $0}' >! ${file}.input
+
+# Get the number of commands to be processed
+set j = `cat ${file}.input | wc -l` 
+
+# Loop over lines given in the .cmd file
+while ( $j > 0 )
+  @ i = $i + 1
+  @ j = $j - 1
+  
+  set days = ''
+  
+# Set timestamp hostname variable
+  set ts = "`date +"%y_%m_%d_%H:%M:%S"`"
+
+# Setup PBS header information
+  echo 1 | awk '{print "#\!/bin/csh"}' >! gamit_batch.${i}.${ts}
+  echo "# " >> gamit_batch.${i}.${ts}
+  echo "#PBS -N gamit_batch.${i}.${ts} " >> gamit_batch.${i}.${ts}
+  echo '# ' >> gamit_batch.${i}.${ts}
+  echo "#PBS -l nodes=${nodes} " >> gamit_batch.${i}.${ts}
+  echo "# " >> gamit_batch.${i}.${ts}
+  echo "#PBS -q $queue " >> gamit_batch.${i}.${ts}
+  echo "# " >> gamit_batch.${i}.${ts}
+  echo "#PBS -mea " >> gamit_batch.${i}.${ts}
+  echo "# " >> gamit_batch.${i}.${ts}
+  echo "#PBS -r n " >> gamit_batch.${i}.${ts}
+  echo "# " >> gamit_batch.${i}.${ts}
+  echo "#PBS -V  " >> gamit_batch.${i}.${ts}
+  echo "# " >> gamit_batch.${i}.${ts}
+  echo "# ------------------------------------------------------------ " >> gamit_batch.${i}.${ts}
+  echo "# Log interesting information " >> gamit_batch.${i}.${ts}
+  echo "# " >> gamit_batch.${i}.${ts}
+  echo 'echo " " ' >> gamit_batch.${i}.${ts}
+  echo 'echo "-------------------" ' >> gamit_batch.${i}.${ts}
+  echo 'echo "This is a $PBS_ENVIRONMENT job" ' >> gamit_batch.${i}.${ts}
+  echo 'echo "This job was submitted to the queue: $PBS_QUEUE" ' >> gamit_batch.${i}.${ts}
+  echo 'echo "The job id is: $PBS_JOBID" ' >> gamit_batch.${i}.${ts}
+  echo 'echo "-------------------" ' >> gamit_batch.${i}.${ts}
+  echo 'echo "The master node of this job is: $PBS_O_HOST" ' >> gamit_batch.${i}.${ts}
+  echo ' ' >> gamit_batch.${i}.${ts}
+  echo 'set NPROCS = `wc -l < $PBS_NODEFILE` ' >> gamit_batch.${i}.${ts}
+  echo ' ' >> gamit_batch.${i}.${ts}
+  echo 'set NNODES = `uniq $PBS_NODEFILE | wc -l` ' >> gamit_batch.${i}.${ts}
+  echo ' ' >> gamit_batch.${i}.${ts}
+  echo 'echo "This job is using $NPROCS CPU(s) on the following $NNODES node(s):" ' >> gamit_batch.${i}.${ts}
+  echo 'echo "-----------------------" ' >> gamit_batch.${i}.${ts}
+  echo 'uniq $PBS_NODEFILE | sort ' >> gamit_batch.${i}.${ts} 
+  echo 'echo "-----------------------" ' >> gamit_batch.${i}.${ts}
+  echo ' ' >> gamit_batch.${i}.${ts}
+  echo '# ------------------------------------------------------------ ' >> gamit_batch.${i}.${ts}
+  echo '# Setup execution variables ' >> gamit_batch.${i}.${ts}
+  echo ' ' >> gamit_batch.${i}.${ts}
+  echo "#PBS -o sh_gamit.out.${i} " >> gamit_batch.${i}.${ts}
+  echo "#PBS -e sh_gamit.err.${i} " >> gamit_batch.${i}.${ts}
+  echo ' ' >> gamit_batch.${i}.${ts}
+  echo 'echo The PBS working directory is $PBS_O_WORKDIR  ' >> gamit_batch.${i}.${ts}
+  echo ' ' >> gamit_batch.${i}.${ts}
+  set cmd = `head -n ${i} ${file}.input | tail -n -1`
+  set cmd_save = `echo $cmd`
+
+# Set variable defaults 
+  set days = ''
+  set yr = ''
+  set year = ''
+  set doy = ''
+  set expts = ''
+  set yrext = ''
+  set netext = ''
+  set archive = ''
+  set orbit = '' 
+  set sint = '30'
+  set nepc = '2880'
+  set stime = '0 0'
+
+  source ${procdir}/tables/process.defaults
+
+# Decipher sh_gamit command line to get required session info 
+  while ($#cmd > 0 )
+    set input = ( $cmd )
+    switch($input[1])
+      case -ex*:
+        set expts = (`echo $input | cut -d- -f2`); shift expts 
+        set expts  = $input[2]  
+      breaksw 
+      case -d*:
+        set year = $input[2]
+        set days  = (`echo $input[2-] | cut -d- -f1`); shift days
+      breaksw
+      case -s:
+        set year = $input[2]
+        @ count = $input[3]
+        while ( $count <= $input[4] )
+          set days = ($days `echo $count | awk '{printf "%03d \n", $1}'`)	 
+          @ count = $count + 1
+        end   
+      breaksw     
+      case -q*:
+        set queue  = $input[2]  
+      breaksw 
+      case -netext:
+        set netext = $input[2]
+      breaksw
+      case -yrext:
+        set yrext = "Y"
+      breaksw
+      case -orbit:
+        set orbit  = $input[2]
+      breaksw
+    endsw
+    if ( $#cmd > 0 ) shift cmd
+  end
+  
+# Check if user wants to use customized rinex_ftpsites or default set?
+  if ( $predl_ftpsites[1] != '' ) then
+      set rinex_ftpsites = $predl_ftpsites
+  endif
+  
+# Reload ah_PBS_gamit command line 
+  set cmd = `echo $cmd_save`    
+  set yr = `sh_year -year $year`
+  
+# Create root scratch directory name
+  echo 'set r_comp_dir = ' `echo $USER $ts | awk -v scratch=$scratch '{print scratch"/"$1"_"$2}'` >> gamit_batch.${i}.${ts}
+  echo ' ' >> gamit_batch.${i}.${ts} 
+
+# Get in the correct directory and create root scratch directory name
+  echo 'cd $PBS_O_WORKDIR ' >> gamit_batch.${i}.${ts}
+  echo ' ' >> gamit_batch.${i}.${ts}
+  echo 'echo mkdir -p ${r_comp_dir}'  >> gamit_batch.${i}.${ts}
+  echo 'if ( ! -e ${r_comp_dir} ) \mkdir -p ${r_comp_dir}'  >> gamit_batch.${i}.${ts}
+  echo ' ' >> gamit_batch.${i}.${ts}   
+
+# Get l_comp_dir host name
+  set l_comp_host = `pwd | awk -F"/" '{print $3}'`
+  echo 'set l_comp_host = '$l_comp_host >> gamit_batch.${i}.${ts}
+  echo ' ' >> gamit_batch.${i}.${ts}
+  
+# Copy tables directory to scratch space
+  echo 'echo Copying processing tables to remote machine:' >> gamit_batch.${i}.${ts}
+#  echo 'echo cp -fpr tables ${r_comp_dir}' >> gamit_batch.${i}.${ts}
+#  echo '\cp -fpr tables/ ${r_comp_dir}' >> gamit_batch.${i}.${ts}
+  echo 'echo rcp -pr ${l_comp_host}:${PBS_O_WORKDIR}/tables ${r_comp_dir}' >> gamit_batch.${i}.${ts}
+  echo 'rcp -pr ${l_comp_host}:${PBS_O_WORKDIR}/tables ${r_comp_dir}' >> gamit_batch.${i}.${ts}
+  echo ' ' >> gamit_batch.${i}.${ts}   
+  
+# Begin loop over days
+  foreach doy ( $days ) 
+    set doy  = `echo $doy | awk '{printf "%03d \n", $1}'`
+    echo "Processing " $year $doy  
+
+# Begin loop over experiments ($expts)
+    foreach expt ( $expts )
+  
+# Get the processing directory name
+      if ( ${yrext} == "Y" ) then 
+        set daydir = ${yr[1]}_${doy}${netext} 
+        set dprefix = ${yr[1]}_
+        set dsuffix = ${netext}
+      else
+        set daydir = ${doy}${netext}  
+        set dprefix = ''
+        set dsuffix = ${netext}
+      endif
+  
+# Setup and save session related info in PBS batch file.
+#      echo 'set yr =  ( ' ${yr} ')' >> gamit_batch.${i}.${ts}
+#      echo 'set doy = ' ${doy} >> gamit_batch.${i}.${ts}
+      echo 'set l_comp_dir = ' `echo $daydir  | awk '{print $1}'` >> gamit_batch.${i}.${ts}
+      echo '\rm -r ${r_comp_dir}/${l_comp_dir}' >> gamit_batch.${i}.${ts}
+      echo ' ' >> gamit_batch.${i}.${ts}
+      echo 'echo Processing data from: ${PBS_O_WORKDIR}/${l_comp_dir}, on cluster node: `uniq ${PBS_NODEFILE} | sort `, in directory ${r_comp_dir}' >> gamit_batch.${i}.${ts}
+      echo ' ' >> gamit_batch.${i}.${ts}
+
+#If predl requested lest run sh_gamit in noprocess mode
+      if ( $predl !=  'N' ) then
+	 echo "sh_gamit -d $yr[1] $doy  -orbit $orbit -expt $expt -rinex_ftpsites $rinex_ftpsites -noprocess ftp"
+         sh_gamit -d $yr[1] $doy  -orbit $orbit -expt $expt -rinex_ftpsites $rinex_ftpsites -noprocess ftp
+      endif 
+
+# Copy session directory to be processed
+      echo 'echo Copying processing directory to remote machine:' >> gamit_batch.${i}.${ts}
+      echo 'echo rcp -pr ${l_comp_host}:${PBS_O_WORKDIR}/${l_comp_dir} ${r_comp_dir}' >> gamit_batch.${i}.${ts}
+      echo 'rcp -pr ${l_comp_host}:${PBS_O_WORKDIR}/${l_comp_dir} ${r_comp_dir}' >> gamit_batch.${i}.${ts}
+#      echo 'echo cp -fpr ${l_comp_dir} ${r_comp_dir}' >> gamit_batch.${i}.${ts}
+#      echo '\cp -fpr ${l_comp_dir} ${r_comp_dir}' >> gamit_batch.${i}.${ts}
+      echo ' ' >> gamit_batch.${i}.${ts} 
+   
+# Copy broadcast ephem, and orbits.
+      echo 'echo Copying precise and broadcast orbits to remote machine:' >> gamit_batch.${i}.${ts}
+      echo 'echo mkdir -p ${r_comp_dir}/gfiles'  >> gamit_batch.${i}.${ts}
+      echo 'if ( ! -e ${r_comp_dir}/gfiles ) \mkdir -p ${r_comp_dir}/gfiles'  >> gamit_batch.${i}.${ts}
+      echo 'echo mkdir -p ${r_comp_dir}/brdc'  >> gamit_batch.${i}.${ts}
+      echo 'if ( ! -e ${r_comp_dir}/brdc ) \mkdir -p ${r_comp_dir}/brdc'  >> gamit_batch.${i}.${ts}
+#      echo 'echo cp -fp gfiles/g\*.'${doy} '${r_comp_dir}/gfiles' >> gamit_batch.${i}.${ts}
+#      echo '\cp -fp gfiles/g*.'${doy} '${r_comp_dir}/gfiles' >> gamit_batch.${i}.${ts}
+#      echo 'echo cp -fp brdc/brdc'${doy}'\*.'${yr[2]}'n ${r_comp_dir}/brdc' >> gamit_batch.${i}.${ts}
+#      echo '\cp -fp brdc/brdc'${doy}'*.'${yr[2]}'n ${r_comp_dir}/brdc' >> gamit_batch.${i}.${ts}
+      echo 'echo rcp -pr ${l_comp_host}:${PBS_O_WORKDIR}/gfiles/g\*.'${doy} '${r_comp_dir}/gfiles' >> gamit_batch.${i}.${ts}
+      echo 'rcp -pr ${l_comp_host}:${PBS_O_WORKDIR}/gfiles/g*.'${doy} '${r_comp_dir}/gfiles' >> gamit_batch.${i}.${ts}
+      echo 'echo rcp -pr ${l_comp_host}:${PBS_O_WORKDIR}/brdc/brdc'${doy}'\*.'${yr[2]}'n ${r_comp_dir}/brdc' >> gamit_batch.${i}.${ts}
+      echo 'rcp -pr ${l_comp_host}:${PBS_O_WORKDIR}/brdc/brdc'${doy}'*.'${yr[2]}'n ${r_comp_dir}/brdc' >> gamit_batch.${i}.${ts}      
+      echo ' ' >> gamit_batch.${i}.${ts}   
+  
+# Copy rinex and raw files if necessary
+      if ( $rerun != "Y" ) then
+        echo 'echo Copying rinex and data to remote machine:' >> gamit_batch.${i}.${ts}
+        echo 'echo mkdir -p ${r_comp_dir}/rinex'  >> gamit_batch.${i}.${ts}
+        echo 'if ( ! -e ${r_comp_dir}/rinex ) \mkdir -p ${r_comp_dir}/rinex'  >> gamit_batch.${i}.${ts}
+        echo 'echo mkdir -p ${r_comp_dir}/raw'  >> gamit_batch.${i}.${ts}
+        echo 'if ( ! -e ${r_comp_dir}/raw ) \mkdir -p ${r_comp_dir}/raw'  >> gamit_batch.${i}.${ts}
+	echo 'pushd ${r_comp_dir}/rinex'   >> gamit_batch.${i}.${ts}
+        set ses_dur = (`echo $nepc $sint | awk '{print $1*$2/3600.0, int($1*$2/3600.0) }' | awk '{print $2, int(($1-$2)*60.0)}'`)
+	echo 'sh_link_rinex -year '$yr[1]' -days '$doy' -ndays '$rx_doy_minus $rx_doy_plus' -sesfo '${stime} ${ses_dur}' -dir '${procdir}'/rinex -copy'   >> gamit_batch.${i}.${ts}
+	echo 'popd'  >> gamit_batch.${i}.${ts}
+#	echo 'echo cp -fp rinex/\?\?\?\?'${doy}'\?.'${yr[2]}'\* ${r_comp_dir}/rinex' >> gamit_batch.${i}.${ts}
+#       echo '\cp -fp rinex/????'${doy}'?.'${yr[2]}'* ${r_comp_dir}/rinex' >> gamit_batch.${i}.${ts}
+#        echo 'echo cp -fp raw/\*'${doy}'\* ${r_comp_dir}/raw' >> gamit_batch.${i}.${ts}
+#        echo '\cp -fp raw/*'${doy}'* ${r_comp_dir}/raw' >> gamit_batch.${i}.${ts} 
+        echo 'echo rcp -pr ${l_comp_host}:${PBS_O_WORKDIR}/raw/\*'${doy}'\* ${r_comp_dir}/raw' >> gamit_batch.${i}.${ts}
+        echo 'rcp -pr ${l_comp_host}:${PBS_O_WORKDIR}/raw/*'${doy}'* ${r_comp_dir}/raw' >> gamit_batch.${i}.${ts} 	
+        echo ' ' >> gamit_batch.${i}.${ts}    
+      endif 
+
+# End loop on experiments
+    end
+
+# End Loop on days    
+  end
+  
+# Get to the remote processing scratch area and execute the job
+  echo 'pushd ${r_comp_dir} ' >> gamit_batch.${i}.${ts}
+  echo 'echo -n 'Started processing at : ' ; date ' >> gamit_batch.${i}.${ts}
+  echo ' ' >> gamit_batch.${i}.${ts}
+  if ( $rerun != "Y" ) then
+    echo "time $cmd" >> gamit_batch.${i}.${ts}
+  else
+    echo "pushd ${daydir}" >> gamit_batch.${i}.${ts}
+    echo "uncompress -f x*.${doy}.Z " >> gamit_batch.${i}.${ts} 
+    echo "time csh b${expt}${yr[3]}.bat " >> gamit_batch.${i}.${ts}  
+# Clean up c-files and compress x-files.
+    echo "\rm -r c*.${doy} " >> gamit_batch.${i}.${ts} 
+    echo "compress -f x*.${doy} " >> gamit_batch.${i}.${ts}
+    echo 'popd ' >> gamit_batch.${i}.${ts}
+  endif
+  echo ' ' >> gamit_batch.${i}.${ts}
+  echo 'echo -n 'Ended processing at  : ' ; date ' >> gamit_batch.${i}.${ts}
+ 
+# Return processed directory to main storage area  
+  echo ' ' >> gamit_batch.${i}.${ts}
+  echo 'popd ' >> gamit_batch.${i}.${ts}
+  echo 'echo Copying processing directories back to local storage:' >> gamit_batch.${i}.${ts}
+# Begin loop over days    
+  foreach doy ( $days ) 
+    set doy  = `echo $doy | awk '{printf "%03d \n", $1}'`
+  # Get the processing directory name
+    if ( ${yrext} == "Y" ) then 
+      set daydir = ${yr[1]}_${doy}${netext} 
+      set dprefix = ${yr[1]}_
+      set dsuffix = ${netext}
+    else
+      set daydir = ${doy}${netext}  
+      set dprefix = ''
+      set dsuffix = ${netext}
+    endif    
+    echo 'set l_comp_dir = ' `echo $daydir  | awk '{print $1}'` >> gamit_batch.${i}.${ts}
+    echo 'echo \cp -fpru ${r_comp_dir}/${l_comp_dir} ./ ' >> gamit_batch.${i}.${ts}
+    echo '\cp -fpru ${r_comp_dir}/${l_comp_dir} ./ ' >> gamit_batch.${i}.${ts}
+    echo ' ' >> gamit_batch.${i}.${ts} 
+  end
+
+# Clean up scratch space (Scortched earth policy).
+  echo 'echo Cleaning up remote storage area:' >> gamit_batch.${i}.${ts}
+  echo '\rm -r ${r_comp_dir}' >> gamit_batch.${i}.${ts}
+  echo ' ' >> gamit_batch.${i}.${ts}  
+  echo 'exit 0 ' >> gamit_batch.${i}.${ts}
+  
+# Lanuch the batch files jobs into the PBS queue 
+  if ( $qsub ==  'Y' ) then 
+    echo "Launching: gamit_batch.${i}.${ts} : Batch job ID given below"
+    qsub gamit_batch.${i}.${ts}
+    sleep ${sleep}
+  endif
+  
+# End loop on commands 
+end

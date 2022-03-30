@@ -1,0 +1,14 @@
+
+#LABELS: displace_lib:NONE:displace_lib:NONE
+#LABELS: displace:displace:NONE:displace
+#LABELS: simplexfd:simplexfd:NONE:simplexfd
+
+#SHARELIB: .:displace_lib
+#SHARELIB: ../gen_util:gen_util_lib
+#SHARELIB: ../../libraries/matrix:kinv_lib
+#SHARELIB: ../../libraries/comlib:com_lib 
+
+#OBJ_displace_lib conic linalg longlatxy nreq 
+#OBJ_displace_lib lambert2xy
+#OBJ_displace_lib ran lower_cholesky_factor inverse_check 
+#OBJ_displace_lib invert_upper_triangle_matrix square_upper_triangle_matrix

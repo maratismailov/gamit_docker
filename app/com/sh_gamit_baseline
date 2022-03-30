@@ -1,0 +1,439 @@
+#!/bin/csh -f
+#
+#doc Plot baseline component time series from GAMIT o-files
+#doc
+# 
+# Script to plot time series and baseline scatter from GAMIT o-files
+# Written originally by M. Burc Oral Mar 1994; last modified by R. King  17 May 96.
+# Modified for epoch extraction from ofile, added option capability (noextract)
+# cleaned up help and closing, and changed plotting method to deal with high 
+# temporal density.  Jeff Behr, Sept. 30, 1998 
+# Modified by Simon McClusky and Fatima Karbou To allow reading o-files with GRAD parameters. 02/11/99  
+# Modified by R King to make documentation agree with code with -delete_file.  2003/3/17
+
+if ( $#argv == 0 ) then
+echo " "
+echo " Use GMT to make a multiple panel GAMIT baseline plots  with uncertainty scaling"
+echo "  "
+echo "     It  also creates inputs for repeatability(wrms/nrms scatter plots) [use sh_globk_scatter] "
+echo "  REQUIRES      : GMT(netcdf/gmt/ghostscript)"
+echo "                : gamit/utils/poly01"
+echo "  "
+echo "  USAGE :    sh_gamit_baseline   <options>. "
+echo " "
+echo "=+=+=+=+=+=+=+=+=+=+=+=+=+ OPTIONS +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+" 
+echo " "
+echo " -o[files]     list    : ofile names. MUST have this." 
+echo " -b[aseline]   list    : Command line argument for baselines.    " 
+echo " -f[ile]       file    : Baseline names file. "
+echo " 	If -f and -b are both omitted, all baselines are plotted." 
+#echo " -time[_series]       : Skip time-series plots and create base_stats file for repeatability." 
+echo " -free                 :" Biases free solution.  Default. 
+echo " -fixed                :" Biases fixed solution.
+echo " -d[elete] <sites/blines> : Names of unwanted sites."
+echo " -delete_file file     : File contains the names of unwanted sites. "
+echo " -u[nc_scale]  ###     : Scale all uncertainties with this number. Default is 1." 
+echo " -y[scale]   min max   : Vertical scale.  If not issued it will be calculated."
+echo " -x[scale]   min max   : Horizontal scale.  If not issued it will be calculated."
+echo " -frame      value     : GMT border day-axis frame  ticks. Default is  1. " 
+echo " -anot       value     : GMT border day-axis label intervals. Default is  1. " 
+echo " -a          ext       : Add more descriptors to postscript file name. Default is psgamit.#" 
+echo " -opt      <option>    : Functional options: noextract - skip extraction, redo plot."
+echo " "
+echo "=+=+=+=+=+=+=+=+=+=+=+=+=+ EXAMPLES +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+" 
+echo " "
+echo "  For time-series plots: " 
+echo "      sh_gamit_baseline  -o o* -b PIN2_VNDP PIN2_YAM2" 
+echo "      sh_gamit_baseline -u 1 -o o* -b PIN2_VNDP PIN2_YAM2" 
+echo "  For  GAMIT repeatability: " 
+echo "      sh_gamit_baseline  -o o* -time"
+echo "  " 
+exit
+endif
+##################### SET UP DEFAULTS ############################################################
+set xmin     =  0
+set xmax     =  0
+set ymin     =  0
+set ymax     =  0
+set order    =  0
+set frame    =  2 
+set anot     =  1 
+set unc_scale = 1
+set ofiles   = ""
+set baselines   = ""
+set file   = ""
+set ADD = ""
+set time_series = yes 
+set delete = ""   
+set delete_file = ""
+set  free      =  yes
+set  fixed     =  no
+set  extract   =  yes
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+# decipher command line
+while ($#argv > 0 )
+set input = ( $argv )
+switch($input[1])
+        case -f:
+        case -file:
+		set file     =   $input[2] 
+		breaksw
+        case -anot:
+                set anot     =   $input[2]  
+		breaksw
+        case -free:
+                set  free      =  yes
+                set  fixed     =  no
+		breaksw
+        case -fixed:
+                set fixed     =   yes
+                set free      =   no
+		breaksw
+        case -frame:
+                set frame     =   $input[2]  
+		breaksw
+        case -time:
+        case -time_series:
+                set time_series     =   no
+		breaksw
+        case -opt:
+        case -option:
+                if ($input[2] == "noextract" ) then
+		    set extract = no
+		    echo "Skipping Extraction"
+		endif 
+		breaksw
+	case -x:
+	case -xscale:
+		set xmin = $input[2] 
+		set xmax = $input[3] 
+		shift input
+                breaksw
+	case -y:
+	case -yscale:
+		set ymin =  $input[2]
+		set ymax =  $input[3]
+		shift input
+                breaksw
+        case -u:
+        case -unc:
+        case -unc_scale:
+                set unc_scale     =  $input[2]
+	echo ">>>>>> scaling uncertainties by : "  $unc_scale 
+                breaksw
+        case -a:
+        case -add:
+                set ADD     =  "."$input[2]
+                breaksw
+	case -d:
+	case -delete:
+                set delete   =   ( $delete $input[2] )
+                shift input; shift input
+                while ( $#input > 0 &&   `echo  $input[1]  | cut -c1 ` != "-" )
+                        set inarg =  $input[1]
+                        if ( `echo  $inarg | cut -c1 ` != "-" ) then
+                                set delete    =   ( $delete $inarg )
+				if ( $#input == 1 ) goto alldone
+                                shift input
+                        endif
+                end
+		if ( $#input == 0 ) goto alldone
+		breaksw
+	case -delete_file:
+		set delete_file =  $input[2]
+		breaksw
+	case -b:
+	case -base*:
+	case -baselines:
+		set baselines   =   ( $baselines $input[2] ) 
+		if ( $#input == 2 ) goto alldone
+		shift input
+		shift input 
+		while ( $#input > 0 &&  `echo  $input[1]  | cut -c1 ` != "-" ) 
+			set inarg =  $input[1]
+			if ( `echo  $inarg | cut -c1 ` != "-" ) then
+				set baselines    =   ( $baselines $inarg ) 
+				shift input
+			endif
+		end
+		if ( $#input == 0 ) goto alldone
+		breaksw
+	case -o:
+	case -ofiles:
+		echo "Listing O-files ..."
+		set ofiles   =   ( $ofiles $input[2] ) 
+		shift input; shift input 
+		while ( $#input > 0 &&   `echo  $input[1]  | cut -c1 ` != "-" ) 
+			set inarg =  $input[1]
+			if ( `echo  $inarg | cut -c1 ` != "-" ) then
+				set ofiles    =   ( $ofiles $inarg ) 
+				if ( $#input == 0 ) goto alldone
+				shift input
+			endif
+		end
+		if ( $#input == 0 ) goto alldone
+		breaksw
+endsw
+if ( $#argv > 0 ) shift argv
+end
+alldone:
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+set username = `whoami`
+
+echo "PROCESSING gamit o-files"
+set skip = no 
+
+if ($extract == "no") goto skipExtract
+
+#goto skip 
+
+if (-e tmp.ofile) \rm tmp.ofile
+
+foreach ofile ($ofiles)
+  # Extract and translate the mid-point epoch for the analysis session
+  set offset = `grep "Epoch numbers" $ofile | awk '{print ($5-($3-1))/2*($7/60)}'`
+  set start = `grep "Start time:" $ofile | awk '{print $3,$4,$5,$6,$7}' `
+  set date = `doy $start[1-5] | grep Date | awk '{print $6,$3}'`
+  set hours = `echo $date[2] | awk -F: '{hours=$1+($2/60); print hours}'`
+  set dec = `echo $hours $offset[1] | awk '{dec=($1+($2/60))/24; print dec}'`
+  set epoch = `echo $date[1] $dec | awk '{printf"%8.4f\n",$1+$2}'`
+
+  if ( $free == yes ) then 
+    cat $ofile | grep "R N " | cut -c1-10,21- | sort >! sub.ofile
+  endif
+  if ( $fixed == yes ) then 
+    cat $ofile | grep "X N " | cut -c1-10,21- | sort >! sub.ofile
+  endif 
+
+  (echo $epoch; cat sub.ofile) | awk '(NR==1) {epoch=$1}; (NR>1) {print $1,epoch,substr($0,11)}' >>! tmp.ofile
+
+end 
+
+\rm sub.ofile
+
+skipExtract:
+
+if ( $file != "" ) then
+#	cat $file >! tmp.baselines 
+	echo " " >! tmp.baselines 
+	cat tmp.ofile | cut -c1-9 | sort -u >! tmp.allbaselines 
+	foreach ib ( `cat $file` ) 
+		grep -i $ib tmp.allbaselines >> tmp.baselines 
+	end 
+	echo "BASELINES: " `cat tmp.baselines `
+else if ( $baselines[1] == "" ) then
+	cat tmp.ofile | cut -c1-9 | sort -u >! tmp.baselines 
+	echo  BASELINES are written to FILE: tmp.baselines
+else 
+	echo $baselines >! tmp.baselines
+endif 
+
+
+echo " baseline statistics " >! base_stats
+
+set PAGE = 0
+set psfile = psgamit$ADD
+
+\rm -r $psfile.* >&! /dev/null
+
+
+# scaling/title  information
+        gmt gmtdefaults -Du >! gmt.conf
+        gmt gmtset GMT_COMPATIBILITY 5
+        gmt gmtset FONT_LABEL 12p \
+                   FONT_ANNOT_PRIMARY 12p \
+                   PROJ_LENGTH_UNIT i
+
+#AKTO_ANKM 244 N   -97152.6249 +-   0.0047 E  -592520.2136 +-   0.0116 U   -27421.8821 +-   0.0129 L   601058.0634 +-   0.0115  Correlations 
+#AKTO_ANKM 244 N   -97152.6249 +-   0.0047 E  -592520.2136 +-   0.0116 U   -27421.8821 +-   0.0129 L   601058.0634 +-   0.0115
+#  1        2  3          4     5      6   7         8      9      10  11      12      13       14 15     16        17    18   
+
+if ( $delete_file != "")  set delete = ( $delete `cat $delete_file` )
+if ( $delete != ""  ) then 
+	foreach i( $delete )
+		grep -v  $i tmp.baselines  >!  tmp.baselines1
+		/bin/mv  tmp.baselines1 tmp.baselines 
+	end 
+	echo  deleted :  $delete 
+endif
+
+echo "0. 0." >!  tmp.0 
+
+set N = 1 
+set COL = 1
+set baselines = `cat tmp.baselines`
+foreach i ( $baselines ) 
+  #echo "********************  " $skip
+  if ( $skip == no ) @ N++ 
+  if ( $N % 2 == 0 ) then 
+    set COL = 1 
+@ PAGE = $PAGE + 1 
+  else 
+    set COL = 2 
+  endif
+echo Number is $N
+echo Page $PAGE, Column $COL, Baseline $i
+
+  #echo .......N:  $N    ........  PAGE: $PAGE   ........ COL: $COL 
+
+  grep $i tmp.ofile >! tmp.ofile.baseline
+
+  cat tmp.ofile.baseline | awk '{printf" %8.4f %20.4f %10.2f \n",$2, $4*1000., $6*1000.}' >! tmp.datN
+  cat tmp.ofile.baseline | awk '{printf" %8.4f %20.4f %10.2f \n",$2, $8*1000.,$10*1000.}' >! tmp.datE
+  cat tmp.ofile.baseline | awk '{printf" %8.4f %20.4f %10.2f \n",$2,$12*1000.,$14*1000.}' >! tmp.datU
+  cat tmp.ofile.baseline | awk '{printf" %8.4f %20.4f %10.2f \n",$2,$16*1000.,$18*1000.}' >! tmp.datL
+
+  set skip = no
+  if ( `cat tmp.datN | wc | awk '{print $1}' ` < 2 ) set skip = yes
+  if ( `cat tmp.datE | wc | awk '{print $1}' ` < 2 ) set skip = yes
+  if ( `cat tmp.datU | wc | awk '{print $1}' ` < 2 ) set skip = yes
+  if ( `cat tmp.datL | wc | awk '{print $1}' ` < 2 ) set skip = yes
+  if ( $skip == yes) goto skip
+
+  if ( $COL == 1 ) then 
+    gmt pstext <<ENDD  -h0  -R0/1/0/1  -JX3i/1.8i  -F+f14p+jTL   -P  -K  -Y10i    >! $psfile.$PAGE
+0.3    .2   $i
+ENDD
+  else 
+    gmt pstext <<ENDD  -h0  -R0/1/0/1  -JX3i/1.8i -F+f14p+jTL -O   -P  -K  -Y8.8i -X3.5i  >> $psfile.$PAGE
+0.3    .2   $i  
+ENDD
+  endif
+
+  foreach j ( N E U L ) 
+    poly01 yes 0 yes < tmp.dat$j >! tmp.tail -n
+    set com_len = ` \tail -n -1  tmp.tail -n | awk '{print $2}'`
+    set bas_len = ` \tail -n -1  tmp.datL | awk '{print $2}'`
+#   set com_len = `poly01 yes 0 yes < tmp.dat$j | tail -n -1 | awk '{print $2}'`
+    awk '{print $1,$2}' tmp.dat$j >! tmp.xy
+    sed s/'$'/"    "$unc_scale/g tmp.dat$j  >! tmp.scale
+    awk '{print $3*$4}' tmp.scale  >! tmp.sig
+
+    # remove 1st order poly from x,y
+    set r = ( `gmt gmtinfo -I1/5  tmp.xy  | cut -c3- | awk -F/ ' {print $1,$2,$3,$4}' ` )
+    if ( $r[1] == $r[2]) then 
+      cat -n tmp.xy | awk '{print $2+$1/100,$3}' >! tmp.xy0 
+      \mv tmp.xy0 tmp.xy
+    endif
+    gmt trend1d tmp.xy -Np1 -Fxr  >! tmp.xr  
+#   insert sigmas in third column, checking for empty lines
+    pr -m -t -s' ' tmp.xr tmp.sig | awk '{ if (NF == 3) print $0}' >! tmp.xrs
+
+    set RANGE = `gmt gmtinfo -I1/5  tmp.xrs`
+    # set some space for error  bars
+    set r = ( `echo $RANGE | cut -c3- | awk -F/ ' {print $1  - ($2-$1)*.10 ,$2 + ($2-$1)*.10,  $3 - ($4-$3)*.10,  $4 + ($4-$3)*.10 }' ` )
+
+    if ( $xmin != 0 ) set r[1] = $xmin 
+    if ( $xmax != 0 ) set r[2] = $xmax
+    if ( $ymin != 0 ) set r[3] = $ymin 
+    if ( $ymax != 0 ) set r[4] = $ymax
+
+    #make sure that horizontal min-max has an aperture
+    if( $r[1] ==  $r[2]  ) then
+	set r[1] = `echo $r[1] | awk '{print $1 - 1 }'`
+	set r[2] = `echo $r[2] | awk '{print $1 + 1 }'`
+    endif
+
+    #make sure that vertical min-max has an aperture
+    if( $r[3] ==  $r[4]  ) then
+	set r[3] = `echo $r[3] | awk '{print $1 - 5 }'`
+	set r[4] = `echo $r[4] | awk '{print $1 + 5 }'`
+    endif
+
+    set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4]
+    # echo $RANGE
+
+    set yanot  = 5 
+    set yframe = 2.5 
+    set yanot   = 2
+    set yspread = `echo  $r[4]  $r[3] | awk '{ printf "%6d",  $1 - $2}'`
+    if ( $yspread > 20 )  set yanot  = 5
+    if ( $yspread > 40 )  set yanot  = 10
+    if ( $yspread > 80 )  set yanot  = 20
+    set  yframe = ` echo $yanot | awk '{print $1 / 2 }'`
+
+    set yl = `echo  $r[4]  $r[3] | awk '{ printf "%6d", ( ( $1 - $2 ) / 100 ) + 1   }'`
+    set yanot   = ` echo $yanot   $yl |  awk '{ print  $1 * $2 }' `
+    set yframe  = ` echo $yframe  $yl |  awk '{ print  $1 * $2 }' ` 
+    set SCALE = "-Bxa${anot}f$frame -Bya${yanot}f$yframe"
+
+    #  label Y axis with annotation and frame 
+    poly01 yes 0  no   <   tmp.xrs >!  tmp.stat
+    echo $com_len    |   awk '{printf".2 0.97 %20.3f(m)\n",$1 / 1000 }'  >! tmp.txt
+                                                                                            
+    head -n 1   tmp.stat |   awk '{printf"-.1 1.12 wmean(mm)= %9.1f +- %6.1f  nrms= %5.2f  wrms= %5.1f\n",$2,$3,$13,$15}' >> tmp.txt
+    #GMT2 pstext tmp.txt -R0/1/0/1 -JX3i/1.8i  -F+f9p+jTL -K -P -O  -Y-2.2i  >>   $psfile.$PAGE	
+    gmt pstext tmp.txt -R0/1/0/1 -JX3i/1.8i  -F+f9p+jTL -K -P -O  -Y-2.2i -N >>   $psfile.$PAGE	
+
+    ############## save stat info  ##########################
+    set info = `head -n 1   tmp.stat |   awk '{print $2,$3,$11,$13,$15}' `
+	if ( $j == N ) set jj = 2
+	if ( $j == E ) set jj = 3
+	if ( $j == U ) set jj = 4
+	if ( $j == L ) set jj = 1
+    #echo $i $jj $j  $info[3] $com_len  $info[1] $info[2] $info[5] $info[4] | awk '{print $1,$2" "$3,$4,$5/1000000,$6,$7,$8,$9,0,0,0,0,0}' >>  base_stats
+    echo $i $jj $j  $info[3] $bas_len  $info[1] $info[2] $info[5] $info[4] | awk '{print $1,$2" "$3,$4,$5/1000000,$6,$7,$8,$9,0,0,0,0,0}' >>  base_stats
+
+    if ( $COL == 1 ) then 
+	if ( $j == N ) gmt psxy tmp.xrs -Ey0.1i  $RANGE -Sc0.05i  -JX3i/1.8i   -G255 -L -K -O   $SCALE+l'N-S(mm)' -BWesn -P   >>   $psfile.$PAGE
+	if ( $j == E ) gmt psxy tmp.xrs -Ey0.1i  $RANGE -Sc0.05i  -JX3i/1.8i   -G255 -L -K -O   $SCALE+l'E-W(mm)' -BWesn -P   >>   $psfile.$PAGE
+	if ( $j == U ) gmt psxy tmp.xrs -Ey0.1i  $RANGE -Sc0.05i  -JX3i/1.8i   -G255 -L -K -O   $SCALE+l'U-D(mm)' -BWesn -P   >>   $psfile.$PAGE
+	if ( $j == L ) gmt psxy tmp.xrs -Ey0.1i  $RANGE -Sc0.05i  -JX3i/1.8i   -G255 -L -K -O   $SCALE+l'BL(mm)' -BWeSn  -P   >>   $psfile.$PAGE
+	if ( $j == N ) gmt psxy tmp.xrs $RANGE -Sc0.05i  -JX3i/1.8i   -G255 -L -K -O   $SCALE+l'N-S(mm)' -BWesn -P   >>   $psfile.$PAGE
+	if ( $j == E ) gmt psxy tmp.xrs $RANGE -Sc0.05i  -JX3i/1.8i   -G255 -L -K -O   $SCALE+l'E-W(mm)' -BWesn -P   >>   $psfile.$PAGE
+	if ( $j == U ) gmt psxy tmp.xrs $RANGE -Sc0.05i  -JX3i/1.8i   -G255 -L -K -O   $SCALE+l'U-D(mm)' -BWesn -P   >>   $psfile.$PAGE
+	if ( $j == L ) then
+	    if ($N > $#baselines) then
+		gmt psxy tmp.xrs $RANGE -Sc0.05i  -JX3i/1.8i   -G255 -L -O   $SCALE+l'BL(mm)' -BWeSn  -P   >>   $psfile.$PAGE
+	    else 
+		gmt psxy tmp.xrs $RANGE -Sc0.05i  -JX3i/1.8i   -G255 -L -K -O   $SCALE+l'BL(mm)' -BWeSn  -P   >>   $psfile.$PAGE
+	    endif
+	endif
+    endif
+
+    if ( $COL == 2 ) then 
+	if ( $j == N ) gmt psxy tmp.xrs -Ey0.1i  $RANGE -Sc0.05i  -JX3i/1.8i   -G255 -L -K -O   $SCALE+l'N-S(mm)' -BwEsn -P   >>   $psfile.$PAGE
+	if ( $j == E ) gmt psxy tmp.xrs -Ey0.1i  $RANGE -Sc0.05i  -JX3i/1.8i   -G255 -L -K -O   $SCALE+l'E-W(mm)' -BwEsn -P   >>   $psfile.$PAGE
+	if ( $j == U ) gmt psxy tmp.xrs -Ey0.1i  $RANGE -Sc0.05i  -JX3i/1.8i   -G255 -L -K -O   $SCALE+l'U-D(mm)' -BwEsn -P   >>   $psfile.$PAGE
+	if ( $j == L ) gmt psxy tmp.xrs -Ey0.1i  $RANGE -Sc0.05i  -JX3i/1.8i   -G255 -L -K -O   $SCALE+l'BL(mm)' -BwESn  -P   >>   $psfile.$PAGE
+	if ( $j == N ) gmt psxy tmp.xrs $RANGE -Sc0.05i  -JX3i/1.8i   -G255 -L -K -O   $SCALE+l'N-S(mm)' -BwEsn -P   >>   $psfile.$PAGE
+	if ( $j == E ) gmt psxy tmp.xrs $RANGE -Sc0.05i  -JX3i/1.8i   -G255 -L -K -O   $SCALE+l'E-W(mm)' -BwEsn -P   >>   $psfile.$PAGE
+	if ( $j == U ) gmt psxy tmp.xrs $RANGE -Sc0.05i  -JX3i/1.8i   -G255 -L -K -O   $SCALE+l'U-D(mm)' -BwEsn -P   >>   $psfile.$PAGE
+	if ( $j == L ) gmt psxy tmp.xrs $RANGE -Sc0.05i  -JX3i/1.8i   -G255 -L -O   $SCALE+l'BL(mm)' -BwESn  -P   >>   $psfile.$PAGE
+    endif
+
+#########################################################
+
+  #loop  for NEUL
+  end
+  #echo "Created"  $psfile.$PAGE
+skip:
+end
+
+cleanup: 
+
+#@ PAGE = $PAGE - 1
+echo "  "
+if ( $PAGE > 1 ) then
+  echo "Created  postscript files   : "$psfile".1-"$PAGE 
+else 
+  echo "Created  postscript files   : "$psfile".1" 
+endif
+
+echo "  "
+echo "To view postscript files    : gs "$psfile".*"
+echo "Hardcopy  postscript files  : lpr -s "$psfile".*"
+echo "  "
+echo "Created  baseline statistics : "base_stats
+echo " To obtain repeatability(wrms/nrms scatter) use  "
+echo "   sh_globk_scatter -gmt -f base_stats <other options> "
+echo "  "
+echo " To plot histograms of repeatability(wrms/nrms scatter) use  "
+echo "   sh_histogram -t wrms  -f  base_stats   -sk 999.99  -ps .1"
+echo "   sh_histogram -t nrms  -f  base_stats   -sk 999.99  -ps .2"
+echo "  "
+
+#\rm -rf tmp.dat[NEUL] tmp.xy tmp.sig tmp.xr tmp.scale tmp.xrs tmp.0 tmp.baselines tmp.ofile tmp.tail -n 
+exit
+

@@ -1,0 +1,1121 @@
+#!/bin/bash
+
+version='2021/07/16'
+#2345678901234567890123456789012345678901234567890123456789012345678901234567890
+# Edit history (only recorded from 2015/12/02 onwards):
+#
+# 2021/07/16: MAF corrected definition of Modified Julian Date for post-seismic
+#             deformation.
+# 2021/07/15: MAF updated default version of Hector to 1.9 from 1.7.2.
+# 2021/02/23: MAF added explicit "periodicsignals" option when periods other
+#             than annual and semi-annual are specified in a tsfit command file.
+# 2021/01/21: MAF added option to sort earthquakes using date/time columns from
+#             "eq_def" commands.
+# 2019/03/21: MAF added minor edits to some awk commands.
+# 2019/03/04: MAF added unique sort when writing post-seismic terms to Hector
+#             .enu-file to avoid duplicate records.
+# 2019/02/20: MAF added comments to output rename file (.xps).
+# 2019/02/19: MAF added output rename file (.xps) to exclude points that fail
+#             any maximum sigma criteria and automatic update of "Flicker" model
+#             to "FlickerGGM" if using a Hector version greater than 1.4.
+# 2018/01/29: MAF updated default version of Hector to 1.7.2 and "GGM_1mphi"
+#             value to 6.9e-6, as in Section 7.6 of manual for Hector 1.7.2.
+# 2017/05/26: MAF added -e option to specify degree of polynomial to estimate.
+# 2017/04/19: MAF corrected removal of offset information only from header of
+#             output .mom file if running removeoutliers.
+# 2017/04/14: MAF added ability to read "eq_log" entries from eq-files and add
+#             appropriate headers in Hector's .mom-format files to estimate
+#             postseismic (logarithmic) decays (requires Hector 1.6 or later) 
+# 2016/11/30: MAF changed logic to use a scale factor and mm as the unit so as
+#             to ensure more significant digits are available when writing
+#             output .apr, .vel and .mar_neu files, and added "-u" option to
+#             control this behaviour.
+# 2016/11/29: MAF added "-v" option to define version of Hector being used and
+#             added if-statements to test whether or not to include
+#             "firstdifference" keyword in Hector control files, which is not
+#             valid after Hector version 1.4.
+# 2016/11/29: MAF corrected allowance of tsfit command file with no "max_sigma"
+#             terms to be read.
+# 2016/08/19: MAF added "-X" option to "less" to allow help contents to remain
+#             on screen when exiting.
+# 2015/12/02: MAF corrected parsing of options using 'echo "$@"' to 'echo "$*"'
+#             to avoid echo erroneously evaluating elements of $@ as options
+#             (e.g. "-e", "-n").
+#
+#2345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+
+# Redirect standard error to /dev/null
+#exec 2>/dev/null
+
+
+flags='defilmnopstuvx'  # Command line option flags
+
+
+# Program defaults
+#v=( 1 7 2 )                      # Hector version 1.7.2 (latest as of 2019-01-21)
+v=( 1 9 )                         # Hector version 1.9 (latest as of 2021-04-25)
+dir='.'                           # Write output files to current working directory
+models=( White )                  # Noise models to run (default white noise only)
+tsfit_cmd=()                      # tsfit command file (do not use tsfit command file if empty array)
+eq_files=()                       # eq-files to be used to create post-seismic deformation terms
+rename_files=()                   # rename-/eq-files to be used to create input to "OffsetFile" (none if empty array)
+years0=( 2 )                      # Default minimum time series length (years) for which to estimate annual plus semi-annual periodic terms
+annual=0                          # Do not estimate annual cycles for time series longer than <arg> years
+semiann=0                         # Do not estimate semi-annual cycles for time series longer than <arg> years
+estps=0                           # Do not estimate post-seismic deformation
+max_sigma0=( 20 20 50 )           # Default maximum sigma limits (applied if -s option given with no arguments)
+max_sigma=()                      # Maximum sigma limits (no limits applied if empty array)
+nsigma0=( 3 3 3 )                 # Default n-sigma limits (applied if -n option given with no arguments)
+nsigma=()                         # n-sigma limits (no limits applied if empty array)
+iq_factor0=( 4.047 4.047 4.047 )  # Default inter-quartile range factor (applied if -i option given with no arguments)
+iq_factor=()                      # Inter-quartile range factor (do not identify and remove outliers if empty array)
+remove=0                          # Do not remove Hector control files
+wgs84=( 6378137 298.257223563 )   # WGS84 major radius (m) and inverse flattening
+minnum=70                         # Minimum number of observations for non-white noise to be included
+unit='mm'                         # "PhysicalUnit" in Hector control file
+degpoly=()                        # Do not include "DegreePolynomial" in removeoutliers.ctl or estimatetrend.ctl (default estimates initial position and rate)
+
+
+# Null input test
+if [ $# -eq 0 ]; then
+
+  less -X << END && exit 1
+Usage displayed using "less". Press up and down arrows to scroll or "q" to quit.
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+  Program:     $(basename $0)
+  Written by:  Michael A Floyd (2013/10/11, MIT)
+  Last edited: Michael A Floyd ($version, MIT)
+
+  N.B. Requires "Hector". See Bos et al. (2013) and http://segal.ubi.pt/hector/.
+       Hector is not capable of accounting for functions such as changes in
+       velocity and logarithmic or exponential decays. So exercise caution using
+       and interpreting results when working with time series that exhibit such
+       behaviour. Beware also the potential effects of implementing outlier
+       detection limits using the -i or -n options for such time series.
+
+       Bos, M. S., R. M. S. Fernandes, S. D. P. Williams and L. Bastos (2013),
+       Fast error analysis of continuous GNSS observations with missing data, J.
+       Geod., 87, 351-360, doi:10.1007/s00190-012-0605-0.
+
+       This is a sister script to sh_cats, which does the same using "CATS".
+
+  Usage: $(basename $0) -f <file(s)> -m <model(s)> -t <tsfit command file(s)>
+                                                                [global options]
+           or
+
+         $(basename $0) -f <file(s)> -m <model(s)> [options] [global options]
+
+    -f <file(s)>   : Input pos-format files, e.g. from tssum.
+
+    -m <model(s)>  : Run Hector using one or more noise models. Available noise
+                     models are: White; FlickerGGM (or Flicker for Hector
+                     versions up to and including 1.4); RandomWalk; Powerlaw;
+                     PowerlawApprox; ARFIMA; ARMA; GGM. Noise models may be
+                     combined using a plus character ("+"), e.g.
+                     "-m Powerlaw White+FlickerGGM" would run Hector twice, once
+                     using only a power-law noise model and once using a
+                     combined white-plus-flicker noise model. If this option is
+                     not given, or given without arguments, the default is to
+                     run a white noise only model.
+
+    -t <tsfit cmd> : Use a tsfit command file(s) to set options for $(basename $0),
+                     e.g. read "eq_file" commands for the -o option here,
+                     "periodic" commands for the -p option, "nsigma" commands
+                     for the -n option and "max_sigma" commands for the -s
+                     option.
+
+  Options (will be overridden by options found in tsfit command file if given):
+
+    -e <max. exponent>  : Degree of polynomial to estimate by including
+                          "DegreePolynomial" command in removeoutliers control
+                          file and/or estimatetrend control file, e.g
+                          <max. exponent> = 0 estimates initial position only;
+                          <max. exponent> = 1 estimates initial position and
+                          rate, etc. [default: no "DegreePolynomial" command,
+                          which estimates initial position and rate]
+
+    -l <eq-file(s)>     : Estimate post-seismic deformation, as specified with
+                          GAMIT/GLOBK-style eq-file(s) containing "eq_log"
+                          definitions. If no <eq-file(s)> are given, those given
+                          with the -o option will be used.
+
+    -n <n-sigma>        : Apply n-sigma residual limit to identify and remove
+                          outliers before estimating noise characteristics
+                          [default: ${nsigma0[0]}-sigma (E), ${nsigma0[1]}-sigma (N), ${nsigma0[2]}-sigma (U)].
+                          <n-sigma> may be 1, 2 or 3 arguments: if 1 argument is
+                          given, apply limit to all three components; if 2
+                          arguments are given, apply first limit to horizontal
+                          components and second to vertical component; if 3
+                          arguments are given, apply limits to east, north and
+                          up components respectively.
+
+                          N.B. These sigma factors are converted to inter-
+                          quartile range factors for use with Hector's
+                          "removeoutliers". Given that this estimates an initial
+                          fit to the time series before determining and removing
+                          outliers, the assumption that the points in the
+                          residual time series are normally distributed, and
+                          conversion between sigma and inter-quartile range
+                          factors, is reasonable. See -i option for more
+                          information. The default is ${nsigma0[0]} for all components,
+                          which is an effective inter-quartile range factor of
+                          4.047.
+
+    -o <offset file(s)> : GAMIT/GLOBK-style eq-file(s) containing renames and
+                          earthquake definitions, used to create a file for
+                          inclusion with Hector's "OffsetFile" control file
+                          flag.
+
+    -p <n>              : Estimate periodic (annual plus semi-annual) terms
+                          for time series longer than <n> years [default: ${years0[0]} if
+                          given with no arguments or reading options from a
+                          tsfit command file including "periodic" commands (see
+                          -t option and tsfit help)].
+
+    -s <max. sigma>     : Apply maximum sigma limit (mm) to identify and remove
+                          outliers before estimating time-correlated noise 
+                          characteristics [default: ${max_sigma0[0]} mm (E), ${max_sigma0[1]} mm (N),
+                          ${max_sigma0[2]} mm (U)]. <max. sigma> may be 1, 2 or 3 arguments:
+                          if 1 argument is given, apply limit to all three
+                          components; if 2 arguments are given, apply first
+                          limit to horizontal components and second to vertical
+                          component; if 3 arguments are given, apply limits to
+                          east, north and up components respectively.
+
+  Global options:
+
+    -d          : Directory in which to write output files [default: current
+                  working directory].
+
+    -i <factor> : Multiple of inter-quartile range to consider limit for
+                  determining and removing outliers (see Hector manual)
+                  [default: ${iq_factor0[0]} (E), ${iq_factor0[1]} (N), ${iq_factor0[2]} (U)]. <factor> may be 1,
+                  2 or 3 arguments: if 1 argument is given, apply limit to all
+                  three components; if 2 arguments are given, apply first limit
+                  to horizontal components and second to vertical component; if
+                  3 arguments are given, apply limits to east, north and up
+                  components respectively.
+
+                  N.B. Given that the points in the residual time series after
+                  an initial fit to a linear trend are normally distributed,
+                  this is related to an n-sigma limit criterion where
+                  IQR = 1.349*sigma, i.e. to implement an effective limit of:
+                    1-sigma, <factor> = 1.349;
+                    2-sigma, <factor> = 2.698;
+                    3-sigma, <factor> = 4.047;
+                    4-sigma, <factor> = 5.396.
+                  The default is 4.047, which is an effective 3-sigma limit.
+
+    -u          : Unit (m, cm or mm) in which to run Hector (assumes .pos files
+                  are in m and .res files are in mm) [default: $unit]
+
+    -v          : Version of Hector being used [default: $(tr ' ' '.' <<< ${v[*]})]
+
+    -x          : Delete Hector control and standard output files, leaving only
+                  the vel-file(s), extended apr-file(s) and "mar_neu" command
+                  file(s).
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+END
+#       working with time series that exhibit such behaviour or, alternatively,
+#       use tsfit to fit the time series and use the output residuals (".res")
+#       files with the -f option here to do the noise analysis.
+
+fi  # END: Null input test
+
+
+# Test for Hector executables required by this script
+available=1  # Assume executables are available
+for prog in removeoutliers estimatetrend; do
+  which $prog &> /dev/null
+  if [ $? -ne 0 ]; then  # executable not available
+    cat << END && available=0
+! Error ! Hector executable "$prog" required
+          but cannot be found on this system.
+END
+  else  # Remove file of execution times
+    rm -f $prog.t
+  fi
+done
+if [ $available -eq 0 ]; then
+  echo 'Exiting...' && exit 1
+fi
+
+
+# Parse command line arguments
+while [ $# -gt 0 ]; do
+
+  case $1 in
+
+    -d )  # Directory in which to write output files
+      dir=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-d *//') )
+      if [ ${#dir[@]} -gt 1 ]; then
+        cat << END
+! Warning ! Too many arguments (${#dir[@]}) given to -d option.
+            Using first argument only (${dir[0]}).
+END
+      fi
+      ;;
+
+    -e )  # Degree of polynomial to estimate
+      degpoly=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-e *//') )
+      if [ ${#degpoly[*]} -gt 1 ]; then
+        cat << END
+! Warning ! Too many arguments (${#degpoly[*]}) given to -e option.
+            Using first argument only (${degpoly[0]}).
+END
+      fi
+      ;;
+
+    -f )  # Input pos-files
+      files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-f *//') )
+      pos_files=( $(echo ${files[@]} | tr ' ' '\n' | grep '\.pos$' ) )
+      res_files=( $(echo ${files[@]} | tr ' ' '\n' | grep '\.res$' ) )
+      ;;
+
+    -i )  # Inter-quartile range factor beyond which to consider outliers
+      i_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-i *//') )
+      if [ ${#i_args[*]} -eq 0 ]; then  # No argument given so use default values (${iq_factor0[*]})
+        iq_factor=( ${iq_factor0[*]} )
+        echo '! Warning ! No argument(s) given to -i option. Using default values.'
+      elif [ ${#i_args[*]} -eq 1 ]; then  # Apply limit to all three components
+        iq_factor=( ${i_args[0]} ${i_args[0]} ${i_args[0]} )
+      elif [ ${#i_args[*]} -eq 2 ]; then  # Apply first limit to horizontal components and second to vertical
+        iq_factor=( ${i_args[0]} ${i_args[0]} ${i_args[1]} )
+      elif [ ${#i_args[*]} -eq 3 ]; then  # Apply limits to east, north and up components respectivelyertical
+        iq_factor=( ${i_args[0]} ${i_args[1]} ${i_args[2]} )
+      else
+        iq_factor=( ${iq_factor0[*]} )
+        cat << END
+! Warning ! Too many arguments (${#i_args[*]}) given to -i option.
+            Must supply 1, 2 or 3 arguments. Proceeding using defaults values.
+END
+      fi
+      ;;
+
+    -l )  # Input eq-files for post-seismic deformation
+      eq_files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-l *//') )
+      if [ ${#eq_files[@]} -eq 0 ]; then  # No arguments given to -l option
+        echo '! Warning ! No arguments given to -l option. GAMIT/GLOBK eq-file(s)'
+        echo '            given with -o option (if any) will be used.'
+      fi
+      estps=1
+      ;;
+
+    -m )  # Noise models
+      models=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-m *//') )
+      if [ ${#models[@]} -eq 0 ]; then  # No argument(s) given to -m option so use default white noise only model
+        models=( White )
+        echo '! Warning ! No argument(s) given to -m option. Using default white noise model.'
+      fi
+      ;;
+
+    -n )  # n-sigma limits
+      n_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-n *//') )
+      if [ ${#n_args[*]} -eq 0 ]; then  # No argument(s) given to -n option so use default values (${nsigma0[*]})
+        nsigma=( ${nsigma0[*]} )
+        echo '! Warning ! No argument(s) given to -n option. Using default values.'
+      elif [ ${#n_args[*]} -eq 1 ]; then  # Apply limit to all three components
+        nsigma=( ${n_args[0]} ${n_args[0]} ${n_args[0]} )
+      elif [ ${#n_args[*]} -eq 2 ]; then  # Apply first limit to horizontal components and second to vertical
+        nsigma=( ${n_args[0]} ${n_args[0]} ${n_args[1]} )
+      elif [ ${#n_args[*]} -eq 3 ]; then # Apply limits to east, north and up components respectively
+        nsigma=( ${n_args[0]} ${n_args[1]} ${n_args[2]} )
+      else
+        nsigma=( ${nsigma0[*]} )
+        cat << END
+! Warning ! Too many arguments (${#n_args[*]}) given to -n option.
+            Must supply 1, 2 or 3 arguments. Proceeding using default values.
+END
+      fi
+      ;;
+
+    -o )  # Input rename-/eq-files
+      rename_files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-o *//') )
+      if [ ${#rename_files[@]} -eq 0 ]; then  # No arguments given to -o option
+        echo '! Warning ! No arguments given to -o option. No offsets to be used.'
+      fi
+      ;;
+
+    -p )  # Estimate periodic (annual plus semi-annual) terms for time series longer than <arg> years
+      years=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-p *//') )
+      if [ ${#years[*]} -eq 0 ]; then  # No argument given to -p option so use default value (${years0[0]})
+        years=( ${years0[0]} )
+        echo '! Warning ! No argument given to -p option. Using default value.'
+      elif [ ${#years[*]} -gt 1 ]; then  # Too many arguments
+        cat << END
+! Warning ! Too many arguments (${#years[*]}) given to -p option.
+            Proceeding using first argument only (${years[0]}).
+END
+      fi
+      annual="${years[0]}"   # Estimate annual cycles for time series longer than ${years[0]} years
+      semiann="${years[0]}"  # Estimate semi-annual cycles for time series longer than ${years[0]} years
+      ;;
+
+    -s )  # Maximum sigma limits
+      s_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-s *//') )
+      if [ ${#s_args[*]} -eq 0 ]; then  # No argument(s) given to -s option so use default values (${max_sigma0[*]})
+        max_sigma=( ${max_sigma[*]} )
+        echo '! Warning ! No argument(s) given to -s option. Using default values.'
+      elif [ ${#s_args[*]} -eq 1 ]; then  # Apply limit to all three components
+        max_sigma=( ${s_args[0]} ${s_args[0]} ${s_args[0]} )  # mm
+      elif [ ${#s_args[*]} -eq 2 ]; then  # Apply first limit to horizontal components and second to vertical
+        max_sigma=( ${s_args[0]} ${s_args[0]} ${s_args[1]} )  # mm
+      elif [ ${#s_args[*]} -eq 3 ]; then # Apply limits to east, north and up components respectively
+        max_sigma=( ${s_args[0]} ${s_args[1]} ${s_args[2]} )  # mm
+      else
+        max_sigma=( ${max_sigma[*]} )
+        cat << END
+! Warning ! Too many arguments (${#s_args[*]}) given to -s option.
+            Must supply 1, 2 or 3 arguments. Proceeding using default values.
+END
+      fi
+      ;;
+
+    -t )  # tsfit command file
+      tsfit_cmd=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-t *//') )
+      if [ ${#tsfit_cmd[@]} -eq 0 ]; then  # No argument given to -t option
+        echo '! Warning ! No argument given to -t option. No tsfit command file to be used.'
+      elif [ ${#tsfit_cmd[@]} -gt 1 ]; then
+        cat << END
+! Warning ! Multiple arguments (${#tsfit_cmd[@]}) given to -t option.
+            Proceeding using first argument only for tsfit command file.
+END
+      fi
+      ;;
+
+    -u )  # Unit
+      u_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-u *//') )
+      if [ ${#u_args[@]} -eq 0 ]; then  # No argument given to -u option
+        echo "! Warning ! No argument given to -u option. Using default [$unit]."
+      elif [ "${u_args[0]}" = 'm' -o "${u_args[0]}" = 'cm' -o "${u_args[0]}" = 'mm' -a ${#u_args[@]} -gt 1 ]; then
+        unit="${u_args[0]}"
+        cat << END
+! Warning ! Multiple arguments (${#u_args[@]}) given to -u option.
+            Proceeding using first argument only for unit ($unit).
+END
+      elif [ "${u_args[0]}" = 'm' -o "${u_args[0]}" = 'cm' -o "${u_args[0]}" = 'mm' -a ${#u_args[@]} -eq 1 ]; then
+        unit="${u_args[0]}"
+      else
+        cat << END
+! Warning ! Must specify unit of m, cm or mm with -u option.
+            Proceeding using default [$unit].
+END
+      fi
+      ;;
+
+    -v )  # Hector version
+      v_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-v *//') )
+      if [ ${#v_args[@]} -eq 0 ]; then  # No argument given to -v option
+        echo "! Warning ! No argument given to -v option. Assuming Hector version $(tr ' ' '.' <<< ${v[*]})."
+      elif [ ${#v_args[@]} -gt 1 ]; then
+        cat << END
+! Warning ! Multiple arguments (${#v_args[@]}) given to -v option.
+            Proceeding using first argument only for Hector version.
+END
+        v=( $(tr '.' ' ' <<< ${v_args[0]}) )
+      else
+        v=( $(tr '.' ' ' <<< $v_args) )
+      fi
+      ;;
+
+    -x )  # Remove Hector control files
+      remove=1
+      ;;
+
+  esac
+
+  shift
+
+done
+
+
+# Print version
+echo "$(basename $0) version $version (using Hector version $(tr ' ' '.' <<< ${v[*]}))"
+
+
+# Test if "Flicker" model needs to be corrected to "FlickerGGM" for Hector versions greater than 1.4, or vice versa
+if [ ${v[0]} -eq 1 -a ${v[1]} -le 4 -a -n "$(grep 'FlickerGGM' <<< ${models[@]})" ]; then
+  models=( $(sed 's/FlickerGGM/Flicker/g' <<< ${models[@]}) )
+  echo '! Warning ! "FlickerGGM" model corrected to "Flicker"'
+elif [ ${v[0]} -eq 1 -a ${v[1]} -gt 4 -a -n "$(grep 'Flicker' <<< ${models[@]} | grep -v 'FlickerGGM')" ]; then
+  models=( $(sed 's/Flicker/FlickerGGM/g' <<< ${models[@]}) )
+  echo '! Warning ! "Flicker" model corrected to "FlickerGGM"'
+fi
+
+# Test if tsfit command file given
+if [ ${#tsfit_cmd[@]} -gt 0 ]; then
+
+  # Test if other input options were given
+  if [ ${#rename_files[@]} -gt 0 -o ${#max_sigma[*]} -gt 0 -o ${#nsigma[*]} -gt 0 -o $annual -gt 0 -o ${#degpoly[*]} -gt 0 ]; then
+    echo '! Warning ! tsfit command file given with -t option. Ignoring non-global options'
+  fi  # END: Test if other input options were given
+
+  # Read tsfit command file(s) for rename-/eq-files
+  eq_files=( $(grep -h -i '^ *eq_file ' ${tsfit_cmd[0]} | awk '{print $2}') )
+  rename_files=( $(grep -h -i '^ *eq_file ' ${tsfit_cmd[0]} | awk '{print $2}') )
+
+#  # Read tsfit command file(s) for mean-only command
+  #if [ -n "$(grep -h -i '^ *mean_only' ${tsfit_cmd[0]})" -o "${tsfit_cmd[0]}" = 'MEAN' ]; then
+  #  degpoly=( 0 )
+  #else
+  #  degpoly=()
+  #fi
+
+  # Read tsfit command file(s) for periodic term estimation
+  periods=( $(grep -h -i '^ *periodic ' ${tsfit_cmd[0]} | awk '{print $2}' | sort -u) )
+  if [ ${#periods[*]} -eq 0 ]; then  # No periodic terms to be estimated
+    annual=0
+    semiann=0
+  else
+    # Test if ~ annual period is set to be estimated
+    if [ -n "$(echo "${periods[*]}" | tr ' ' '\n' | grep '365')" ]; then  # Annual periodic term set to be estimated
+      annual=2
+    else
+      annual=0
+    fi
+    # Test if ~ semi-annual period is set to be estimated
+    if [ -n "$(echo "${periods[*]}" | tr ' ' '\n' | grep '182')" ]; then  # Semi-annual periodic term set to be estimated
+      semiann=2
+    else
+      semiann=0
+    fi
+  fi
+
+  # Read tsfit command file(s) for maximum sigma limits
+  max_sigma=( $(grep -h -i '^ *max_sigma ' ${tsfit_cmd[0]} | awk '{printf "%.1f %.1f %.1f",$3*1e3,$2*1e3,$4*1e3}') )
+  if [ ${#max_sigma[*]} -ne 0 -a ${#max_sigma[*]} -ne 3 ]; then
+    cat << END && exit 1
+! Error ! Incorrect number of arguments (${#max_sigma[*]}) for maximum sigma
+          limits read from tsfit command file(s). Check "max_sigma" option in
+          $(echo ${tsfit_cmd[0]} | tr ' ' ',').
+Exiting...
+END
+  fi
+
+  # Read tsfit command file(s) for for n-sigma limits
+  nsigma=( $(grep -h -i '^ *nsigma ' ${tsfit_cmd[0]} | awk '{print $2,$2,$2}') )
+
+  echo "Options set from tsfit command file ${tsfit_cmd[0]}..."
+
+fi  # END: Test if tsfit command file given
+
+
+# Echo input parameters
+if [ ${#max_sigma[*]} -eq 3 ]; then  # Echo maximum sigma limits
+  echo "Maximum sigma limits set to ${max_sigma[0]} mm (E), ${max_sigma[1]} mm (N) and ${max_sigma[2]} mm (U)."
+fi
+if [ ${#nsigma[*]} -gt 0 -a ${#iq_factor[*]} -gt 0 ]; then
+  iq_factor=()
+  cat << END
+! Warning ! Both n-sigma and inter-quartile range factors set. Overriding inter-
+            quartile range factors with n-sigma limits...
+END
+fi
+if [ ${#nsigma[*]} -eq 3 ]; then  # Echo n-sigma residual limits
+  iq_factor=( $(echo ${nsigma[*]} | awk -v a=1.349 '{printf "%.3f %.3f %.3f",$1*a,$2*a,$3*a}') )
+  echo "n-sigma residual limits set to ${nsigma[0]} (E), ${nsigma[1]} (N) and ${nsigma[2]} (U):"
+fi
+if [ ${#iq_factor[*]} -eq 3 ]; then  # Echo inter-quartile range factor
+  echo "Inter-quartile range factor set to ${iq_factor[0]} (E), ${iq_factor[1]} (N), ${iq_factor[2]} (U) for removeoutliers."
+fi
+if [ ${#degpoly[*]} -gt 0 ]; then
+  echo "Estimating polynomial to degree ${degpoly[0]}."
+fi
+if [ $annual -gt 0 -a $semiann -gt 0 -a $annual -eq $semiann ]; then  # Echo periodic term estimation
+  echo "Seasonal (annual plus semi-annual) cycles to be estimated for time series longer than $annual years."
+elif [ $annual -gt 0 ]; then
+  echo "Annual cycles to be estimated for time series longer than $annual years."
+elif [ $semiann -gt 0 ]; then
+  echo "Semi-annual cycles to be estimated for time series longer than $annual years."
+fi
+if [ -n "$(echo "${periods[*]}" | tr ' ' '\n' | grep -v -E '365|182')" ]; then
+  echo "Non-seasonal cycles to be estimated for periods of: $(echo "${periods[*]}" | tr ' ' '\n' | grep -v -E '365|182' | tr '\n' ' ')"
+fi
+
+
+# Make directory in which to run Hector and write header information to $vel_file, $sig_file and $mar_file
+prog="$(echo $0 | awk -v FS='/' '{print $NF}')"
+user="$(finger $(whoami) | awk -v FS=':' 'NR == 1 {print $NF}')"
+date="$(date +'%Y-%m-%d')"
+xps_file="${dir[0]}/removeoutliers.xps"
+if [ -f "$xps_file.tmp" ]; then
+  rm -f $xps_file.tmp
+fi
+for model in ${models[@]}; do
+
+  model_dir="$(echo $model | tr '+' '_')"
+  mkdir -p ${dir[0]}/$model_dir/
+
+  cat << END >| ${dir[0]}/$model_dir.vel
+* Velocity field created with $prog by$user on $date
+*  Long         Lat        Evel    Nvel    dEv     dNv    E +-    N +-    Rne      Hvel     dHv    H +-  Site
+*  deg          deg       mm/yr   mm/yr   mm/yr   mm/yr   mm/yr   mm/yr            mm/yr   mm/yr   mm/yr
+END
+
+  echo "# Extended apr-file created with $prog by$user on $date" >| ${dir[0]}/$model_dir.apr
+
+  echo "# Created with $prog by$user on $date" >| ${dir[0]}/$model_dir.mar_neu
+
+  rm -f ${dir[0]}/$model_dir.removeoutliers_time ${dir[0]}/$model_dir.estimatetrend_time
+
+done
+
+
+# Loop over input pos-files
+for file in ${pos_files[@]} ${res_files[@]}; do
+
+  type="${file##*.}"
+  site="$(grep '^4-character ID' $file | awk '{print $NF}')"
+  ref_xyz=( $(grep '^XYZ Reference ' $file | awk '{print $5,$6,$7}') )
+  ref_llh=( $(grep '^NEU Reference ' $file | awk '{print $5,$6,$7}') )
+  t1="$(grep '^First Epoch ' $file | awk '{print $(NF-1)$NF}')"
+
+  # Calculate time series length from pos-file header
+  decyr1="$(grep '^First Epoch ' $file |
+             awk '{split("31 59 90 120 151 181 212 243 273 304 334 365",sum);
+                   year = substr($(NF-1),1,4)+0; mon = substr($(NF-1),5,2)+0; day = substr($(NF-1),7,2)+0;
+                   hour = substr($NF,1,2)+0; min = substr($NF,3,2)+0; sec = substr($NF,5,2)+0;
+                   doy = sum[mon-1] + day; dpy = 365;
+                   if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) && mon > 2) {doy++; dpy++};
+                   printf "%.5f",year+(doy+(hour+min/60+sec/3600)/24)/dpy}')"
+  decyr2="$(grep '^Last Epoch ' $file |
+             awk '{split("31 59 90 120 151 181 212 243 273 304 334 365",sum);
+                   year = substr($(NF-1),1,4)+0; mon = substr($(NF-1),5,2)+0; day = substr($(NF-1),7,2)+0;
+                   hour = substr($NF,1,2)+0; min = substr($NF,3,2)+0; sec = substr($NF,5,2)+0;
+                   doy = sum[mon-1] + day; dpy = 365;
+                   if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) && mon > 2) {doy++; dpy++};
+                   printf "%.5f",year+(doy+(hour+min/60+sec/3600)/24)/dpy}')"
+  dt=( $(echo $decyr1 $decyr2 | awk '{printf "%.4f %d",$2-$1,int($2-$1)}') )
+
+  # Remove "Field Description" from pos-file header to accommodate Hector input expectations
+  #awk '{if ($0 ~ /^Start Field Description/) exit; else print $0}' $file >| ${dir[0]}/$(basename ${file%.*}).pre.pos
+  #if [ ${#max_sigma[*]} -eq 3 ]; then  # Remove points according to maximum sigma limits
+  #  awk -v max_sig1=${max_sigma[0]} -v max_sig2=${max_sigma[1]} -v max_sig3=${max_sigma[2]} '/^End Field Description/,0 {if ($0 !~ /^End Field Description/ && $20*1e3 <= max_sig1 && $19*1e3 <= max_sig2 && $21*1e3 <= max_sig3) print $0}' $file |
+  #   grep -v '^\*YYYYMMDD ' >> ${dir[0]}/$(basename ${file%.*}).pre.pos
+  #else
+  #  awk '/^End Field Description/,0 {if ($0 !~ /^End Field Description/) print $0}' $file |
+  #   grep -v '^\*YYYYMMDD ' >> ${dir[0]}/$(basename ${file%.*}).pre.pos
+  #fi
+
+  # Convert pos-file to Hector enu-file
+  enu_file="${dir[0]}/$(basename ${file%.*}).enu"
+  #xps_file="${dir[0]}/$(basename ${file%.*}).xps"
+  echo '# sampling period 1.0' >| $enu_file
+  if [ "$type" = 'res' ]; then  # res-file
+    # Write header with post-seismic deformation terms, if necessary
+    if [ $estps -eq 1 -a ${v[0]} -ge 1 -a ${v[1]} -ge 6 ]; then
+      # Loop over defined earthquakes whose radius of influence encompasses site
+      #for eqk in $(grep -h -i '^ *eq_def ' ${eq_files[@]} ${rename_files[@]} | sort -k 7b,11b -u | awk -v a=${wgs84[0]} -v finv=${wgs84[1]} -v x=${ref_xyz[0]} -v y=${ref_xyz[1]} -v z=${ref_xyz[2]} 'BEGIN {pi = 4*atan2(1,1); f = 1/finv}; {N = a/sqrt(1-f*(2-f)*sin($3*pi/180)^2); xeqk = (N-$6*1e3)*cos($3*pi/180)*cos($4*pi/180); yeqk = (N-$6*1e3)*cos($3*pi/180)*sin($4*pi/180); zeqk = ((1-f)^2*N-$6*1e3)*sin($3*pi/180); dotprod = (x*xeqk + y*yeqk + z*zeqk)/(sqrt(x^2+y^2+z^2)*sqrt(xeqk^2+yeqk^2+zeqk^2)); if ( 6371e3*atan2(sqrt(1-dotprod^2,dotprod)) <= $5*1e3 ) print $2}'); do  # Spherical arc length
+      for eqk in $(grep -h -i '^ *eq_def ' ${eq_files[@]} ${rename_files[@]} | sort -k 7b,11b -u | awk -v a=${wgs84[0]} -v finv=${wgs84[1]} -v x=${ref_xyz[0]} -v y=${ref_xyz[1]} -v z=${ref_xyz[2]} 'BEGIN {pi = 4*atan2(1,1); f = 1/finv}; {N = a/sqrt(1-f*(2-f)*sin($3*pi/180)^2); xeqk = (N-$6*1e3)*cos($3*pi/180)*cos($4*pi/180); yeqk = (N-$6*1e3)*cos($3*pi/180)*sin($4*pi/180); zeqk = ((1-f)^2*N-$6*1e3)*sin($3*pi/180); if ( sqrt((x-xeqk)^2+(y-yeqk)^2+(z-zeqk)^2) <= $5*1e3 ) print $2}'); do  # Chord length (used by gg/kf/gen_util/eval_dist.f)
+        # Algorithm follows Equation 4 of Van Flandern and Pulkkinen (1979), Low-Precision Formulae for Planetary Positions, The Astrophysical Journal Supplement Series, 41, 391-411, doi:10.1086/190623
+        mjd="$(grep -h -i "^ *eq_def *$eqk " ${eq_files[@]} ${rename_files[@]} | sort -k 2b,2b -u | awk '{mjd = int(367*$7 - int(7*($7 + int(($8+9)/12))/4) + int(275*$8/9) + $9 + 1721014 - 2400000.5) + ($10+$11/60)/24; printf "%10.4f\n",mjd}')"
+        grep -h -i "^ *eq_l.* $eqk " ${eq_files[@]} ${rename_files[@]} |
+         awk -v mjd=$mjd '{printf "# log %10.4f %6.1f\n",mjd,$3}' |
+         sort -u >> $enu_file
+      done  # END: Loop over defined earthquakes whose radius of influence encompasses site
+    fi
+    if [ ${#max_sigma[*]} -eq 3 ]; then  # Remove points according to maximum sigma limits
+      grep '^ ' $file |
+       awk -v max_sig1=${max_sigma[0]} -v max_sig2=${max_sigma[1]} -v max_sig3=${max_sigma[2]} '{if ($12 <= max_sig1 && $9 <= max_sig2 && $15 <= max_sig3) p
+rintf "%12.6f %9.5f %9.5f %9.5f\n",int($4)+0.4993,$11,$8,$14}' >> $enu_file
+       #awk -v max_sig1=${max_sigma[0]} -v max_sig2=${max_sigma[1]} -v max_sig3=${max_sigma[2]} '{if ($12 <= max_sig1 && $9 <= max_sig2 && $15 <= max_sig3) printf "%12.6f %9.5f %9.5f %9.5f\n",$4,$11,$8,$14}' >> $enu_file
+      grep '^ ' $file |
+       awk -v max_sig1=${max_sigma[0]} -v max_sig2=${max_sigma[1]} -v max_sig3=${max_sigma[2]} -v site=$site '{split("31 28 31 30 31 30 31 31 30 31 30 31",days); dpy = 365; if ($12 > max_sig1) sigma_e = 1; else sigma_e = 0; if ($9 > max_sig2) sigma_n = 1; else sigma_n = 0; if ($15 > max_sig3) sigma_u = 1; else sigma_u = 0; if (sigma_e == 1 || sigma_n == 1 || sigma_u = 1) {y1 = substr($1,1,4)+0; m1 = substr($1,5,2)+0; d1 = substr($1,7,2); y2 = y1; m2 = m1; d2 = d1+1; if (y2 % 4 == 0 && (y2 % 100 != 0 || y2 % 400 == 0)) {days[2] = 29; dpy = 366}; if (d2 > days[m2]) {m2++; d2 = 1}; if (m2 > 12) {y2++; m2 = 1}; printf " rename %4s     %4s_XPS %4d %02d %02d 00 00 %4d %02d %02d 00 00  !",site,site,y1,m1,d1,y2,m2,d2; if (sigma_e == 1) printf " sigma_e"; if (sigma_n == 1) printf " sigma_n"; if (sigma_u == 1) printf " sigma_u"; printf "\n"}}' >> $xps_file.tmp
+    else
+      grep '^ ' $file |
+       awk '{printf "%12.6f %9.5f %9.5f %9.5f\n",int($4)+0.4993,$11,$8,$14}' >> $enu_file
+       #awk '{printf "%12.6f %9.5f %9.5f %9.5f\n",$4,$11,$8,$14}' >> $enu_file
+    fi
+    if [ "$unit" = 'm' ]; then
+      scalefactor='0.001'  # m
+    elif [ "$unit" = 'cm' ]; then
+      scalefactor='0.01'  # cm
+    else
+      scalefactor='1.0'  # mm
+    fi
+  else  # pos-file
+    # Write header with post-seismic deformation terms, if necessary
+    if [ $estps -eq 1 -a ${v[0]} -ge 1 -a ${v[1]} -ge 6 ]; then
+      # Loop over defined earthquakes whose radius of influence encompasses site
+      #for eqk in $(grep -h -i '^ *eq_def ' ${eq_files[@]} ${rename_files[@]} | sort -k 7b,11b -u | awk -v a=${wgs84[0]} -v finv=${wgs84[1]} -v x=${ref_xyz[0]} -v y=${ref_xyz[1]} -v z=${ref_xyz[2]} 'BEGIN {pi = 4*atan2(1,1); f = 1/finv}; {N = a/sqrt(1-f*(2-f)*sin($3*pi/180)^2); xeqk = (N-$6*1e3)*cos($3*pi/180)*cos($4*pi/180); yeqk = (N-$6*1e3)*cos($3*pi/180)*sin($4*pi/180); zeqk = ((1-f)^2*N-$6*1e3)*sin($3*pi/180); dotprod = (x*xeqk + y*yeqk + z*zeqk)/(sqrt(x^2+y^2+z^2)*sqrt(xeqk^2+yeqk^2+zeqk^2)); if ( 6371e3*atan2(sqrt(1-dotprod^2,dotprod)) <= $5*1e3 ) print $2}'); do  # Spherical arc length
+      for eqk in $(grep -h -i '^ *eq_def ' ${eq_files[@]} ${rename_files[@]} | sort -k 7b,11b -u | awk -v a=${wgs84[0]} -v finv=${wgs84[1]} -v x=${ref_xyz[0]} -v y=${ref_xyz[1]} -v z=${ref_xyz[2]} 'BEGIN {pi = 4*atan2(1,1); f = 1/finv}; {N = a/sqrt(1-f*(2-f)*sin($3*pi/180)^2); xeqk = (N-$6*1e3)*cos($3*pi/180)*cos($4*pi/180); yeqk = (N-$6*1e3)*cos($3*pi/180)*sin($4*pi/180); zeqk = ((1-f)^2*N-$6*1e3)*sin($3*pi/180); if ( sqrt((x-xeqk)^2+(y-yeqk)^2+(z-zeqk)^2) <= $5*1e3 ) print $2}'); do  # Chord length (used by gg/kf/gen_util/eval_dist.f)
+        # Algorithm follows Equation 4 of Van Flandern and Pulkkinen (1979), Low-Precision Formulae for Planetary Positions, The Astrophysical Journal Supplement Series, 41, 391-411, doi:10.1086/190623
+        mjd="$(grep -h -i "^ *eq_def *$eqk " ${eq_files[@]} ${rename_files[@]} | sort -k 2b,2b -u | awk '{mjd = int(367*$7 - int(7*($7 + int(($8+9)/12))/4) + int(275*$8/9) + $9 + 1721014 - 2400000.5) + ($10+$11/60)/24; printf "%10.4f",mjd}')"
+        grep -h -i "^ *eq_l.* $eqk " ${eq_files[@]} ${rename_files[@]} |
+         awk -v mjd=$mjd '{printf "# log %10.4f %6.1f\n",mjd,$3}' |
+         sort -u >> $enu_file
+      done  # END: Loop over defined earthquakes whose radius of influence encompasses site
+    fi
+    if [ ${#max_sigma[*]} -eq 3 ]; then  # Remove points according to maximum sigma limits
+      grep '^ ' $file |
+       awk -v max_sig1=${max_sigma[0]} -v max_sig2=${max_sigma[1]} -v max_sig3=${max_sigma[2]} '{if ($20*1e3 <= max_sig1 && $19*1e3 <= max_sig2 && $21*1e3 <= max_sig3) printf "%12.6f %9.5f %9.5f %9.5f\n",int($3)+0.4993,$17,$16,$18}' >> $enu_file
+       #awk -v max_sig1=${max_sigma[0]} -v max_sig2=${max_sigma[1]} -v max_sig3=${max_sigma[2]} '{if ($20*1e3 <= max_sig1 && $19*1e3 <= max_sig2 && $21*1e3 <= max_sig3) printf "%12.6f %9.5f %9.5f %9.5f\n",$3,$17,$16,$18}' >> $enu_file
+      grep '^ ' $file |
+       awk -v max_sig1=${max_sigma[0]} -v max_sig2=${max_sigma[1]} -v max_sig3=${max_sigma[2]} -v site=$site '{split("31 28 31 30 31 30 31 31 30 31 30 31",days); dpy = 365; if ($20*1e3 > max_sig1) sigma_e = 1; else sigma_e = 0; if ($19*1e3 > max_sig2) sigma_n = 1; else sigma_n = 0; if ($21*1e3 > max_sig3) sigma_u = 1; else sigma_u = 0; if (sigma_e == 1 || sigma_n == 1 || sigma_u == 1) {y1 = substr($1,1,4)+0; m1 = substr($1,5,2)+0; d1 = substr($1,7,2)+0; y2 = y1; m2 = m1; d2 = d1+1; if (y2 % 4 == 0 && (y2 % 100 != 0 || y2 % 400 == 0)) {days[2] = 29; dpy = 366}; if (d2 > days[m2]) {m2++; d2 = 1}; if (m2 > 12) {y2++; m2 = 1}; printf " rename %4s     %4s_XPS %4d %02d %02d 00 00 %4d %02d %02d 00 00  !",site,site,y1,m1,d1,y2,m2,d2; if (sigma_e == 1) printf " sigma_e"; if (sigma_n == 1) printf " sigma_n"; if (sigma_u == 1) printf " sigma_u"; printf "\n"}}' >> $xps_file.tmp
+    else
+      grep '^ ' $file |
+       awk '{printf "%12.6f %9.5f %9.5f %9.5f\n",int($3)+0.4993,$17,$16,$18}' >> $enu_file
+       #awk '{printf "%12.6f %9.5f %9.5f %9.5f\n",$3,$17,$16,$18}' >| $enu_file
+    fi
+    if [ "$unit" = 'm' ]; then
+      scalefactor='1.0'  # m
+    elif [ "$unit" = 'cm' ]; then
+      scalefactor='100.0'  # cm
+    else
+      scalefactor='1000.0'  # mm
+    fi
+  fi
+
+  # Calculate percentage of missing data
+  ndata="$(grep -c -v '^#' $enu_file)"
+  mjd1="$(grep -v '^#' $enu_file | awk 'NR == 1 {print $1}')"
+  mjd2="$(grep -v '^#' $enu_file | awk 'END {print $1}')"
+  data_pct="$(echo "$ndata $mjd1 $mjd2" | awk '{printf "%.2f",100*$1/($3-$2)}')"
+
+  # Read rename-/eq-files and write to Hector offset file format
+  offset_file="${dir[0]}/$site.OffsetFile"
+  if [ ${#rename_files[@]} -gt 0 ]; then
+    grep -h -i "^ *rename *$site" ${rename_files[@]} |
+     grep -v '_XPS' |
+     grep -v '_XCL' |
+     awk '{printf "%4d %02d %02d\n",$4,$5,$6}' >| temp.ymd
+    # Loop over defined earthquakes to find if site is within radius of influence
+    for eqk in $(grep -h -i '^ *eq_r' ${rename_files[@]} | awk '{print $2}'); do  # Only search for implemented (renamed) earthquake definitions
+      # Test if site is within earthquake's radius of influence
+      grep -h -i "^ *eq_def *$eqk " ${rename_files[@]} |
+       awk -v a=${wgs84[0]} -v finv=${wgs84[1]} -v x=${ref_xyz[0]} -v y=${ref_xyz[1]} -v z=${ref_xyz[2]} 'BEGIN {pi = 4*atan2(1,1); f = 1/finv}; {N = a/sqrt(1-f*(2-f)*sin($3*pi/180)^2); xeqk = (N-$6*1e3)*cos($3*pi/180)*cos($4*pi/180); yeqk = (N-$6*1e3)*cos($3*pi/180)*sin($4*pi/180); zeqk = ((1-f)^2*N-$6*1e3)*sin($3*pi/180); if ( sqrt((x-xeqk)^2+(y-yeqk)^2+(z-zeqk)^2) <= $5*1e3 ) printf "%4d %02d %02d\n",$7,$8,$9}' >> temp.ymd  # Chord length (used by gg/kf/gen_util/eval_dist.f)
+       #awk -v a=${wgs84[0]} -v finv=${wgs84[1]} -v x=${ref_xyz[0]} -v y=${ref_xyz[1]} -v z=${ref_xyz[2]} '{pi = 4*atan2(1,1); f = 1/finv; N = a/sqrt(1-f*(2-f)*sin($3*pi/180)^2); xeqk = (N-$6*1e3)*cos($3*pi/180)*cos($4*pi/180); yeqk = (N-$6*1e3)*cos($3*pi/180)*sin($4*pi/180); zeqk = ((1-f)^2*N-$6*1e3)*sin($3*pi/180); dotprod = (x*xeqk + y*yeqk + z*zeqk)/(sqrt(x^2+y^2+z^2)*sqrt(xeqk^2+yeqk^2+zeqk^2)); if ( 6371e3*atan2(sqrt(1-dotprod^2,dotprod)) <= $5*1e3 ) printf "%4d %02d %02d\n",$7,$8,$9}' >> temp.ymd  # Spherical arc length
+    done  # END: Loop over defined earthquakes to find if site is within radius of influence
+    # Write temporary file to final offset file
+    sort -u temp.ymd |
+     awk '{printf "%02d-%02d-%4d NaN NaN NaN\n",$3,$2,$1}' >| $offset_file
+    rm -f temp.ymd
+    # Remove offset file if empty
+    if [ ! -s "$offset_file" ]; then
+      rm -f $offset_file
+    fi
+  fi
+
+  # Test if removeoutliers is to be run
+  if [ ${#iq_factor[*]} -gt 0 -a $ndata -gt 1 ]; then
+
+    # Loop over components
+    for component in North East Up; do
+
+      # Define input/output files
+      ctl_file1="${dir[0]}/${site}_removeoutliers.${component:0:1}.ctl"
+      mom_file1="${dir[0]}/$(basename ${file%.*}).${component:0:1}_cut.mom"
+      time_file1="${dir[0]}/${model_dir}.removeoutliers_time"
+
+      # Write removeoutliers control file
+      # (also seems to require "ReferenceEpoch" keyword with <year> <month> <day> values)
+
+      # Keyword Value(s) from Section 9.1 of manual for version 1.7.2 of Hector
+      # DataFile             name of file with observations
+      # DataDirectory        directory where file with observations is stored
+      # OffsetFile           name of file with offset information (optional)
+      # OutputFile           name of file with observations and estimated model
+      #                      in .mom format
+      # component            only required for the .enu and .neu format or when
+      #                      an OffsetFile is being used. Select East, North or
+      #                      Up
+      # interpolate          yes|no
+      # DegreePolynomial     degree of polynomial: 0-6, (optional, default=1)
+      # estimatemultitrend   yes|no (optional, default=no. If yes, then
+      #                      DegreePolynomail keyword is ignored. Only linear
+      #                      trends are estimated)
+      # estimatepostseismic  yes|no (optional, default=no)
+      # seasonalsignal       yes|no
+      # halfseasonalsignal   yes|no
+      # periodicsignals      a sequence of numbers reprenting the period in days
+      #                      (optional)
+      # estimateoffsets      yes|no
+      # ScaleFactor          a number to scale the observations (optional,
+      #                      default=1)
+      # PhysicalUnit         the physical unit of the observations
+      # IQ_factor            the number used to scale the interquartile range
+
+      # Global keyword-value pairs
+      cat << END >| $ctl_file1
+DataFile            $(basename $enu_file)
+DataDirectory       $(dirname $enu_file)/
+OutputFile          $mom_file1
+ReferenceEpoch      ${t1:0:4} ${t1:4:2} ${t1:6:2}
+component           $component
+PhysicalUnit        $unit
+ScaleFactor         $scalefactor
+interpolate         no
+END
+      # Keyword-value pair for degree of polynomial
+      if [ ${#degpoly[*]} -gt 0 ]; then
+        echo "DegreePolynomial    ${degpoly[0]}" >> $ctl_file1
+      fi
+      # Keyword-value pair for postseismic terms
+      if  [ $estps -eq 1 ]; then
+        echo 'estimatepostseismic yes' >> $ctl_file1
+      else
+        echo 'estimatepostseismic no' >> $ctl_file1
+      fi
+      # Keyword-value pairs for periodic terms
+      if [ ${dt[1]} -ge $annual ]; then
+        echo 'seasonalsignal      yes' >> $ctl_file1
+      else
+        echo 'seasonalsignal      no' >> $ctl_file1
+      fi
+      if [ ${dt[1]} -ge $semiann ]; then
+        echo 'halfseasonalsignal  yes' >> $ctl_file1
+      else
+        echo 'halfseasonalsignal  no' >> $ctl_file1
+      fi
+      if [ -n "$(echo "${periods[*]}" | tr ' ' '\n' | grep -v -E '365|182')" ]; then
+        echo "periodicsignals     $(echo "${periods[*]}" | tr ' ' '\n' | grep -v -E '365|182' | tr '\n' ' ')" >> $ctl_file1
+      fi
+      # Keyword-value pairs for offsets
+      if [ -s "$offset_file" ]; then
+        echo 'estimateoffsets     yes' >> $ctl_file1
+        echo "OffsetFile          $offset_file" >> $ctl_file1
+      else
+        echo 'estimateoffsets     no' >> $ctl_file1
+      fi
+      # Keyword-value pair for identification and removal of outliers
+      if [ ${#iq_factor[*]} -eq 3 ]; then
+        if [ "$component" = 'East' ]; then
+          echo "IQ_factor           ${iq_factor[0]}" >> $ctl_file1
+        elif [ "$component" = 'North' ]; then
+          echo "IQ_factor           ${iq_factor[1]}" >> $ctl_file1
+        elif [ "$component" = 'Up' ]; then
+          echo "IQ_factor           ${iq_factor[2]}" >> $ctl_file1
+        fi
+      fi
+
+      # Run removeoutliers
+      echo "$(basename $enu_file) ${dt[0]} $ndata" >> $time_file1
+      { time -p removeoutliers $ctl_file1 >| ${ctl_file1%.ctl}.out 2>${ctl_file1%.ctl}.err; } 2>>$time_file1
+
+      # Remove offset information from header of output mom-file to prevent error message if using OffsetFile:
+      # "Cannot use header information from [$offset_file] and from the data file at the same time!"
+      grep -v '^# *offset ' $mom_file1 >| temp.mom
+      mv -f temp.mom $mom_file1
+
+      # Write removed outliers to temporary $xps_file
+      mjds=( $(join -v 1 $enu_file $mom_file1 | awk '{print $1}') )
+      if [ ${#mjds[*]} -gt 0 ]; then
+        for mjd in ${mjds[*]}; do
+          mjd2date $mjd |
+           awk -v FS=':' -v site="$site" 'BEGIN {split("31:28:31:30:31:30:31:31:30:31:30:31",days); dpy = 365}; {if (NR == 1) y1 = $2+0; else if (NR == 2) m1 = $2+0; else if (NR == 3) d1 = $2+0}; END {y2 = y1; m2 = m1; d2 = d1+1; if (y2 % 4 == 0 && (y2 % 100 != 0 || y2 % 400 == 0)) {days[2] = 29; dpy = 366}; if (d2 > days[m2]) {m2++; d2 = 1}; if (m2 > 12) {y2++; m2 = 1}; printf " rename %4s     %4s_XPS %4d %02d %02d 00 00 %4d %02d %02d 00 00  ! n-sigma\n",site,site,y1,m1,d1,y2,m2,d2}' >> $xps_file.tmp
+        done
+      fi
+
+      # Test if Hector control files are to be removed
+      if [ $remove -eq 1 ]; then
+        rm -fr $ctl_file1 ${ctl_file1%.ctl}.out ${ctl_file1%.ctl}.err
+      fi
+
+    done  # END: Loop over components
+
+    # Redefine "ScaleFactor" for estimatetrend control file
+    #scalefactor='1.0'
+
+  fi  # END: Test if removeoutliers needs to be run
+
+  # Loop over models
+  for model in ${models[@]}; do
+
+    model_dir="$(echo $model | tr '+' '_')"
+
+    # Define output files
+    vel_file="${dir[0]}/$model_dir.vel"
+    extapr_file="${dir[0]}/$model_dir.apr"
+    sig_file="${dir[0]}/temp.$model_dir.sig_neu"
+    mar_file="${dir[0]}/temp.$model_dir.mar_neu"
+
+    # Print message
+    if [ $annual -gt 0 -a ${dt[1]} -ge $annual -o $semiann -gt 0 -a ${dt[1]} -ge $semiann ]; then
+      echo "Estimating velocity and periodic terms for site $site using $(echo $model) noise model."
+    else
+      echo "Estimating velocity only for site $site using $(echo $model) noise model."
+    fi
+
+    # Loop over components
+    for component in North East Up; do
+
+      # Define input/output files
+      mom_file1="${dir[0]}/$(basename ${file%.*}).${component:0:1}_cut.mom"  # Available only if removeoutliers was run successfully
+      ctl_file2="${dir[0]}/$model_dir/${site}_estimatetrend.${component:0:1}.ctl"
+      mom_file2="${dir[0]}/$model_dir/$(basename ${file%.*}).${component:0:1}_est.mom"
+      time_file2="${dir[0]}/$model_dir.estimatetrend_time"
+
+      # Write estimatetrend control file
+      # (also seems to require "ReferenceEpoch" keyword with <year> <month> <day> values)
+
+      # Keyword Value(s) from Section 9.2 of manual for version 1.7.2 of Hector
+      # DataFile             name of file with observations
+      # DataDirectory        directory where file with observations is stored
+      # OffsetFile           name of file with offset information (optional)
+      # OutputFile           name of file with observations and estimated model
+      #                      in .mom format
+      # component            only required for the .enu and .neu format or when
+      #                      an OffsetFile is being used. Select East, North or
+      #                      Up
+      # interpolate          yes|no
+      # DegreePolynomial     degree of polynomial: 0-6, (optional, default=1)
+      # estimatemultitrend   yes|no (optional, default=no. If yes, then
+      #                      DegreePolynomail keyword is ignored. Only linear
+      #                      trends are estimated)
+      # estimatepostseismic  yes|no (optional, default=no)
+      # seasonalsignal       yes|no
+      # halfseasonalsignal   yes|no
+      # periodicsignals      a sequence of numbers, separated by spaced,
+      #                      representing the period of the periodic signals in
+      #                      days (optional)
+      # estimateoffsets      yes|no
+      # ScaleFactor          a number to scale the observations (optional,
+      #                      default=1)
+      # PhysicalUnit         the physical unit of the observations
+      # NoiseModels          chose any set from: White, FlickerGGM,
+      #                      RandomWalkGGM, Powerlaw, PowerlawApprox, ARFIMA,
+      #                      ARMA and GGM.
+      # LikelihoodMethod     chose one from: AmmarGrag or FullCov (optional,
+      #                      default=Ammargrag if percentage of missing data is
+      #                      less than 50% of the whole time series. Otherwise
+      #                      FullCov method is used.
+      # AR_p                 number of AR coefficients (only for ARFIMA or ARMA)
+      # MA_q                 number of MA coefficients (only for ARFIMA or ARMA)
+      # GGM_1mphi            value of 1−phi (optional, only for GGM)
+      # TimeNoiseStart       number of days before the start of the observations
+      #                      when it is assumed that the noise started (only for
+      #                      PowerlawApprox)
+
+      if [ ${#iq_factor[*]} -gt 0 -a -f $mom_file1 ]; then  # removeoutliers was run successfully
+        # Recalculate percentage of missing data
+        ndata="$(grep -c -v '^#' $mom_file1)"
+        mjd1="$(grep -v '^#' $mom_file1 | awk 'NR == 1 {print $1}')"
+        mjd2="$(grep -v '^#' $mom_file1 | awk 'END {print $1}')"
+        data_pct="$(echo "$ndata $mjd1 $mjd2" | awk '{printf "%.1f",100*$1/($3-$2)}')"
+        # Keyword-value pairs for input data
+        echo "DataFile            $(basename $mom_file1)" >| $ctl_file2
+        echo "DataDirectory       $(dirname $mom_file1)/" >> $ctl_file2
+      else
+        # Keyword-value pairs for input data
+        echo "DataFile            $(basename $enu_file)" >| $ctl_file2
+        echo "DataDirectory       $(dirname $enu_file)/" >> $ctl_file2
+      fi
+      # Global keyword-value pairs
+      cat << END >> $ctl_file2
+OutputFile          $mom_file2
+ReferenceEpoch      ${t1:0:4} ${t1:4:2} ${t1:6:2}
+component           $component
+PhysicalUnit        $unit
+END
+      # Test if time series is long enough for time-correlated noise estimation
+      nonstationary=0
+      ggm=0
+      if [ $ndata -lt $minnum -a "$model" != 'White' ]; then
+        echo 'NoiseModels         White' >> $ctl_file2  # Override noise model for short time series (< $minnum points)
+        echo "! Warning ! Using white noise model for $site (${component:0:1}) time series with < $minnum points."
+      else
+        echo "NoiseModels         $(echo $model | tr '+' ' ')" >> $ctl_file2
+        for submodel in $(echo $model | tr '+' ' '); do
+          # Test for non-stationary noise model
+          if [ "$submodel" = 'Flicker' -o "$submodel" = 'RandomWalk' -o "$submodel" = 'Powerlaw' ]; then
+            nonstationary=1
+          fi
+          # Test for FlickerGGM and RandomWalkGGM noise model
+          if [ "$submodel" = 'FlickerGGM' -o "$submodel" = 'RandomWalkGGM' ]; then
+            ggm=1
+          fi
+        done
+        if [ $ggm -eq 1 ]; then
+          #echo 'GGM_1mphi           6.881e-06' >> $ctl_file2  # From Section 7.6 of manual for version 1.6 of Hector
+          echo 'GGM_1mphi           6.9e-06' >> $ctl_file2  # From Section 7.6 of manual for version 1.7.2 of Hector
+        fi
+      fi
+      # Keyword-value pairs for handling time series
+      if [ $nonstationary -eq 1 -a ${v[0]} -eq 1 -a ${v[1]} -le 4 ]; then  # Non-stationary noise model
+        echo 'firstdifference     yes' >> $ctl_file2
+        if [ ${data_pct%.*} -lt 95 ]; then  # More than 5% missing data, so interpolate
+          echo 'interpolate         yes' >> $ctl_file2
+        else
+          echo 'interpolate         no' >> $ctl_file2
+        fi
+      else
+        if [ ${v[0]} -eq 1 -a ${v[1]} -le 4 ]; then
+          echo 'firstdifference     no' >> $ctl_file2
+        fi
+        echo 'interpolate         no' >> $ctl_file2
+      fi
+      # Keyword-value pair for degree of polynomial
+      if [ ${#degpoly[*]} -gt 0 ]; then
+        echo "DegreePolynomial    ${degpoly[0]}" >> $ctl_file2
+      fi
+      # Keyword-value pair for postseismic terms
+      if  [ $estps -eq 1 ]; then
+        echo 'estimatepostseismic yes' >> $ctl_file2
+      else
+        echo 'estimatepostseismic no' >> $ctl_file2
+      fi
+      # Keyword-value pairs for periodic terms
+      if [ $annual -gt 0 -a ${dt[1]} -ge $annual ]; then
+        echo 'seasonalsignal      yes' >> $ctl_file2
+      else
+        echo 'seasonalsignal      no' >> $ctl_file2
+      fi
+      if [ $semiann -gt 0 -a ${dt[1]} -ge $semiann ]; then
+        echo 'halfseasonalsignal  yes' >> $ctl_file2
+      else
+        echo 'halfseasonalsignal  no' >> $ctl_file2
+      fi
+      if [ -n "$(echo "${periods[*]}" | tr ' ' '\n' | grep -v -E '365|182')" ]; then
+        echo "periodicsignals     $(echo "${periods[*]}" | tr ' ' '\n' | grep -v -E '365|182' | tr '\n' ' ')" >> $ctl_file2
+      fi
+      # Keyword-value pairs for offsets
+      if [ -s "$offset_file" ]; then
+        echo 'estimateoffsets     yes' >> $ctl_file2
+        echo "OffsetFile          $offset_file" >> $ctl_file2
+      else
+        echo 'estimateoffsets     no' >> $ctl_file2
+      fi
+      if [ ${#iq_factor[*]} -gt 0 -a -f $mom_file1 ]; then  # removeoutliers was run successfully
+        echo 'ScaleFactor         1.0' >> $ctl_file2
+      else
+        echo "ScaleFactor         $scalefactor" >> $ctl_file2
+      fi
+
+      # Run estimatetrend
+      if [ ${#iq_factor[*]} -gt 0 -a -f $mom_file1 ]; then  # removeoutliers was run successfully
+        echo "$(basename $mom_file1) ${dt[0]} $ndata $component" >> $time_file2
+      else
+        echo "$(basename $enu_file) ${dt[0]} $ndata $component" >> $time_file2
+      fi
+      { time -p estimatetrend $ctl_file2 >| ${ctl_file2%.ctl}.out 2>${ctl_file2%.ctl}.err; } 2>>$time_file2
+      rm -f QQplot.dat
+
+      # Read estimate of velocity
+      if [ ${#degpoly[*]} -eq 0 -o ${degpoly[0]:-1} -gt 0 ]; then  # Rate is estimated
+
+        if [ "$component" = 'North' ]; then  # First component of current site and model
+          vel=( $(grep '^trend:' ${ctl_file2%.ctl}.out | awk '{print $(NF-3),$(NF-1)}') )
+        else
+          vel=( ${vel[*]} $(grep '^trend:' ${ctl_file2%.ctl}.out | awk '{print $(NF-3),$(NF-1)}') )
+        fi
+
+        # Convert estimates of velocity uncertainty in presence of time-correlated noise model to equivalent random walk magnitude, vel_sigma^2*dt (m^2/yr), and write to mar_neu command file
+        if [ $ndata -ge $minnum -a "$model" != 'White' ]; then
+          vel_sigma="$(grep '^trend:' ${ctl_file2%.ctl}.out | awk '{print $4}')"
+          if [ "$component" = 'North' ]; then
+            echo $site $vel_sigma ${dt[0]} |
+             awk -v f=$scalefactor '{printf " mar_neu %s %7.3fe-6",$1,($2/f)^2*$3*1e6}' >> $mar_file
+          elif [ "$component" = 'East' ]; then
+            echo $vel_sigma ${dt[0]} |
+             awk -v f=$scalefactor '{printf " %7.3fe-6",($1/f)^2*$2*1e6}' >> $mar_file
+          elif [ "$component" = 'Up' ]; then
+            echo $vel_sigma ${dt[0]} |
+             awk -v f=$scalefactor '{printf " %7.3fe-6 0 0 0\n",($1/f)^2*$2*1e6}' >> $mar_file
+          fi
+        fi
+
+      elif [ ${#degpoly[*]} -gt 0 -a ${degpoly[0]:-1} -eq 0 ]; then  # Rate is not estimated
+
+        vel=( 0 0 0 0 0 0 )
+
+      fi
+
+      # Read estimates of periodic terms
+      if [ "$component" = 'North' ]; then
+        annual_est=( $(grep '^[cs][oi][sn] *yearly' ${ctl_file2%.ctl}.out | awk '{print $(NF-3),$(NF-1)}') )
+        semiann_est=( $(grep '^[cs][oi][sn] *hyearly' ${ctl_file2%.ctl}.out | awk '{print $(NF-3),$(NF-1)}') )
+      else
+        annual_est=( ${annual_est[*]} $(grep '^[cs][oi][sn] *yearly' ${ctl_file2%.ctl}.out | awk '{print $(NF-3),$(NF-1)}') )
+        semiann_est=( ${semiann_est[*]} $(grep '^[cs][oi][sn] *hyearly' ${ctl_file2%.ctl}.out | awk '{print $(NF-3),$(NF-1)}') )
+      fi
+
+      # Write estimates of white noise to sig_neu command file
+      if [ $ndata -ge $minnum ]; then
+        sig_neu="$(awk '/^White:/,/^$/ {if ($1 == "sigma") printf $(NF-1)}' ${ctl_file2%.ctl}.out)"
+        if [ "$component" = 'North' -a -n "$sig_neu" ]; then
+          echo $site $sig_neu |
+           awk -v f=$scalefactor '{printf " sig_neu %s %7.3fe-3",$1,($2/f)*1e3}' >> $sig_file
+        elif [ "$component" = 'East' -a -n "$sig_neu" ]; then
+          echo $sig_neu |
+           awk -v f=$scalefactor '{printf " %7.3fe-3",($1/f)*1e3}' >> $sig_file
+        elif [ "$component" = 'Up' -a -n "$sig_neu" ]; then
+          echo $sig_neu |
+           awk -v f=$scalefactor '{printf " %7.3fe-3\n",($1/f)*1e3}' >> $sig_file
+        fi
+      fi
+
+    done  # END: Loop over components
+
+    # Write velocity estimates to vel-file
+    if [ ${#degpoly[*]} -eq 0 -a ${#vel[*]} -eq 6 ]; then  # Velocity estimated
+      echo ${ref_llh[*]} ${vel[*]} $site |
+       awk -v f=$scalefactor '{printf " %10.5f  %9.5f  %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %6.3f  %8.2f %7.2f %7.2f %4s_GPS \n",$2,$1,($6/f)*1e3,($4/f)*1e3,0,0,($7/f)*1e3,($5/f)*1e3,0,($8/f)*1e3,0,($9/f)*1e3,$10}' >> $vel_file
+    fi
+
+    # Write estimates of periodic terms to extended apr-file
+    if [ ${dt[1]} -ge $annual ]; then
+      echo $site ${t1:0:4} ${t1:4:2} ${t1:6:2} ${t1:8:2} ${t1:10:2} ${annual_est[*]} |
+       awk -v f=$scalefactor '{printf " EXTENDED %s_GPS PERIODIC %4d %02d %02d %02d %02d 365.2425  %9.6f  %9.6f  %9.6f  %9.6f  %9.6f  %9.6f \n",$1,2000,1,1,0,0,$7/f,$9/f,$11/f,$13/f,$15/f,$17/f}' >> $extapr_file
+       #awk -v f=$scalefactor '{printf " EXTENDED %s_GPS PERIODIC %4d %02d %02d %02d %02d 365.2425  %9.6f  %9.6f  %9.6f  %9.6f  %9.6f  %9.6f \n",$1,$2,$3,$4,$5,$6,$7/f,$9/f,$11/f,$13/f,$15/f,$17/f}' >> $extapr_file
+    fi
+    if [ ${dt[1]} -ge $semiann ]; then
+      echo $site ${t1:0:4} ${t1:4:2} ${t1:6:2} ${t1:8:2} ${t1:10:2} ${semiann_est[*]} |
+       awk -v f=$scalefactor '{printf " EXTENDED %s_GPS PERIODIC %4d %02d %02d %02d %02d 182.62125 %9.6f  %9.6f  %9.6f  %9.6f  %9.6f  %9.6f \n",$1,2000,1,1,0,0,$7/f,$9/f,$11/f,$13/f,$15/f,$17/f}' >> $extapr_file
+       #awk -v f=$scalefactor '{printf " EXTENDED %s_GPS PERIODIC %4d %02d %02d %02d %02d 182.62125 %9.6f  %9.6f  %9.6f  %9.6f  %9.6f  %9.6f \n",$1,$2,$3,$4,$5,$6,$7/f,$9/f,$11/f,$13/f,$15/f,$17/f}' >> $extapr_file
+    fi
+
+  done  # END: Loop over models
+
+  # Test if Hector control files are to be removed
+  if [ $remove -eq 1 ]; then
+    rm -f ${dir[0]}/$(basename ${file%.*}).enu ${dir[0]}/$site.OffsetFile ${dir[0]}/$(basename ${file%.*}).[ENU]_cut.mom
+  fi
+
+done  # END: Loop over input pos-files
+
+
+# Sort final $xps_file
+if [ -f "$xps_file.tmp" ]; then
+  sort $xps_file.tmp >| $xps_file &&
+   rm -f $xps_file.tmp
+fi
+
+
+# Loop over models
+for model in ${models[@]}; do
+
+  model_dir="$(echo $model | tr '+' '_')"
+
+  # Calculate median white noise magnitudes
+  sig_file="${dir[0]}/temp.$model_dir.sig_neu"
+  nrec="$(grep -c -i '^ *sig_neu ' $sig_file)"
+  median_n="$(grep -i '^ *sig_neu ' $sig_file | sort -g -k 3b | awk -v nrec=$nrec 'BEGIN {median=0}; {if (nrec % 2 == 0 && (NR == nrec/2 || NR == nrec/2+1)) median=median+$3; else if (nrec % 2 == 1 && NR == int(nrec/2)+1) median=2*$3}; END {printf "%7.3f",1e3*median/2}')"
+  median_e="$(grep -i '^ *sig_neu ' $sig_file | sort -g -k 4b | awk -v nrec=$nrec 'BEGIN {median=0}; {if (nrec % 2 == 0 && (NR == nrec/2 || NR == nrec/2+1)) median=median+$4; else if (nrec % 2 == 1 && NR == int(nrec/2)+1) median=2*$4}; END {printf "%7.3f",1e3*median/2}')"
+  median_u="$(grep -i '^ *sig_neu ' $sig_file | sort -g -k 5b | awk -v nrec=$nrec 'BEGIN {median=0}; {if (nrec % 2 == 0 && (NR == nrec/2 || NR == nrec/2+1)) median=median+$5; else if (nrec % 2 == 1 && NR == int(nrec/2)+1) median=2*$5}; END {printf "%7.3f",1e3*median/2}')"
+  echo '# Median white noise magnitudes (N,E,U / m):' >> ${dir[0]}/$model_dir.sig_neu
+  printf '#sig_neu all  %7.3fe-3 %7.3fe-3 %7.3fe-3\n' $median_n $median_e $median_u >> ${dir[0]}/$model_dir.sig_neu
+  cat $sig_file >> ${dir[0]}/$model_dir.sig_neu &&
+   rm -f $sig_file
+
+  if [ "$model" != 'White' ]; then  # Calculate median random walk magnitudes
+    mar_file="${dir[0]}/temp.$model_dir.mar_neu"
+    nrec="$(grep -c -i '^ *mar_neu ' $mar_file)"
+    median_n="$(grep -i '^ *mar_neu ' $mar_file | sort -g -k 3b | awk -v nrec=$nrec 'BEGIN {median=0}; {if (nrec % 2 == 0 && (NR == nrec/2 || NR == nrec/2+1)) median=median+$3; else if (nrec % 2 == 1 && NR == int(nrec/2)+1) median=2*$3}; END {printf "%7.3f",1e6*median/2}')"
+    median_e="$(grep -i '^ *mar_neu ' $mar_file | sort -g -k 4b | awk -v nrec=$nrec 'BEGIN {median=0}; {if (nrec % 2 == 0 && (NR == nrec/2 || NR == nrec/2+1)) median=median+$4; else if (nrec % 2 == 1 && NR == int(nrec/2)+1) median=2*$4}; END {printf "%7.3f",1e6*median/2}')"
+    median_u="$(grep -i '^ *mar_neu ' $mar_file | sort -g -k 5b | awk -v nrec=$nrec 'BEGIN {median=0}; {if (nrec % 2 == 0 && (NR == nrec/2 || NR == nrec/2+1)) median=median+$5; else if (nrec % 2 == 1 && NR == int(nrec/2)+1) median=2*$5}; END {printf "%7.3f",1e6*median/2}')"
+    echo '# Median random walk magnitudes (N,E,U / m^2/yr):' >> ${dir[0]}/$model_dir.mar_neu
+    printf '#mar_neu all  %7.3fe-6 %7.3fe-6 %7.3fe-6 0 0 0\n' $median_n $median_e $median_u >> ${dir[0]}/$model_dir.mar_neu
+    cat $mar_file >> ${dir[0]}/$model_dir.mar_neu &&
+     rm -f $mar_file
+  fi  # END: Calculate median random walk magnitudes
+
+  # Test if Hector control files are to be removed
+  if [ $remove -eq 1 ]; then
+    rm -fr ${dir[0]}/$model_dir ${dir[0]}/White
+  fi
+
+done  # END: Loop over models
+

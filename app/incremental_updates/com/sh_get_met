@@ -1,0 +1,388 @@
+#!/bin/csh -f
+
+# Script to download RINEX met files and/or zenith delay values in SINEX files from CDDIS
+#
+# R. King 16 December 2004 based almost entirely on code from P Tregoning's sh_pwcomp of 7 December
+# Last change R. King 10 January 2007
+#
+# modification for -ndays option by kr, 05 August 2009
+# MOD MAF 171119: Added trap to use ncftp when "ftp" client is actually "gftp", which interacts with the
+#                 server differently to legacy "ftp" and is tricky to use for non-interactive sessions.
+# MOD MAF 20210209: Corrected stripping of "/pub" from CDDIS FTP address, rather
+#                   than replacement with "/archive", as for CDDIS HTTPS address
+
+if( $#argv == 0 ) then
+  cat << END && exit 1
+====================================================================================
+ GET RINEX met files and/or SINEX zenith delay files from an external archive
+
+ Usage: sh_get_met -archive <archive> -yr <yr> -doy <doy> -ndays <num> -type <type> -sites <sites> -ftp_prog <curl|wget|ncftp>
+
+        <archive>  One of the archives specified in ftp_info [Default cddis]
+        <yr> 4 char year of nav data requested  [Required]
+        <doy> 3 char day of year of nav data requested [Required]
+	<num> Number of concecutive days of data to retrive [Default = 1]
+        <type> r for RINEX  s for SINEX  rs for both [Default rs]
+        <sites> List of sites to be retreived from the ftp archive [Required]
+        <curl|wget|ncftp> select the ftp program to be used  [default is curl;
+                          ftp and ncftp will not work for CDDIS]
+
+ Examples: sh_get_met -yr 2004 -doy 001 -sites zimm pots bvlk
+           sh_get_met -archive unavco -yr 2004 -doy 001 -type r -sites zimm pots bvlk -ftp_prog wget
+
+====================================================================================
+END
+endif
+
+##################### SET UP DEFAULTS #############################
+#
+# Setup necessary paths and filenames
+
+set year = ''
+set yr = ''
+set doy = ''
+set log = ''
+set numd = 1
+set archive = cddis
+set type = 'rs'
+set sitelist = ''
+set metdir = ''
+set tzddir = ''
+set ftplist = ''
+set ftplogin = ''
+set ftp_prog = 'ftp -inv'
+set prog = ''
+set doftp = "no"
+set firstsite = "yes"
+
+##################### DECIPHER COMMAND LINE #######################
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -a:
+    case -arc:
+    case -archive:
+      set archive  = $input[2]
+    breaksw
+    case -t*
+      set type = $input[2]
+    breaksw
+    case -y*:
+      set year = $input[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+      set yr = `sh_year -year $year`
+    breaksw
+    case -d:
+    case -doy:
+      set doy = $input[2]
+    breaksw
+# =============== by kr ===============================
+    case -nd*:
+    	set numd = $input[2]
+    breaksw
+# =====================================================
+    case -si*:
+       set sitelist = (`echo $argv | cut -d- -f2`); shift sitelist
+    breaksw
+    case -ftp_prog:
+      set ftp_prog = $input[2]
+      if ($ftp_prog == 'ftp') set ftp_prog = 'ftp -inv'
+    breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+
+# Added by MAF (2017-11-19, MIT) to check if ftp is aliased or linked to gftp on local machine
+# Appended by MAF (2018-06-07, MIT) to check if ftp is missing, e.g. on macOS High Sierra
+if ( `echo $ftp_prog | awk '{print $1}'` == 'ftp' && `ftp -v << quit` != '' ) then
+  if ( `which ncftp` =~ '*ncftp' ) then
+    set ftp_prog = 'ncftp'
+    echo 'ftp command aliased or linked to gftp; trying ncftp instead'
+  else if ( `which wget` =~ '*wget' ) then
+    set ftp_prog = 'wget'
+    echo 'ftp command aliased or linked to gftp; trying wget instead'
+  endif
+else if ( `echo $ftp_prog | awk '{print $1}'` == 'ftp' && `which ftp` !~ '*ftp' ) then
+  if ( `which ncftp` =~ '*ncftp' ) then
+    set ftp_prog = 'ncftp'
+    echo 'ftp command not found; trying ncftp instead'
+  else if ( `which wget` =~ '*wget' ) then
+    set ftp_prog = 'wget'
+    echo 'ftp command not found; trying wget instead'
+  endif
+endif
+
+# Added by MAF (2020-08-31, MIT)
+# Test which program to use for download
+if ( -e `which curl` ) then  # curl exists (preferred due to better directory listing and wget is not native on macOS)
+  set prog = 'curl -s -f -L'
+else if ( -e `which wget` ) then  # wget exists
+  set prog = 'wget -nv'
+else  # Neither curl nor wget available
+  echo 'Neither curl nor wget available to download meteorological files from CDDIS.'
+endif
+# END: Added by MAF (2020-08-31, MIT)
+
+##################### GET THE JOB DONE ############################
+#
+# Set timestamp hostname variable
+set ts = "`hostname`:`date +"%H%M%S"`"
+set log = `date "+get_met_${archive}_%y%m%d:%H%M.log"`
+touch $log
+
+# Check all required info given.
+if ( ${year} == '' ||  ${doy} == '' ) then
+  echo "Not all required fields given -- yr: $year doy: $doy --Stop"
+  exit
+endif
+set GPSW = `doy $year $doy | tail -n +2 | head -n 1 | awk '{printf "%4.4d \n", $3}'`
+
+# Set type of files to get
+if( $type == 'r' ) then
+  set sinex = "no"
+  set rinex = "yes"
+else if ( $type == 's' ) then
+  set rinex = "no"
+  set sinex = "yes"
+else
+  set sinex = "yes"
+  set rinex = "yes"
+endif
+
+echo " "
+echo "########################################"
+
+# loop through the sites --goes to end of routine
+foreach site (`echo $sitelist`)
+# ============ by kr ==============================
+ @ sday = `echo "ibase=10; ${doy} - 1" | bc`
+ @ count = `echo "ibase=10; ${numd}" | bc`
+ echo "count=$count"
+ while ( $count )
+  @ count = $count - 1
+  #echo "count=$count"
+  set sday = `echo $sday | awk '{printf" %03d \n", $1 + 1}'`
+
+# =================================================
+# change doy to sday
+#==================================================
+   set lc_site = ${site}${sday}0.${yr[2]}
+   if( $rinex == "yes" ) then
+     set ftp_info = `sh_get_ftp_info -archive $archive -type metfile`
+     #===============================================================
+     #echo "archive: $archive"
+     #===============================================================
+     echo Download file ${lc_site}m.Z
+     while ($#ftp_info > 0 )
+        set input = ( $ftp_info )
+        switch($input[1])
+          case -ftplogin:
+            set ftplogin  = (`echo $ftp_info | cut -d- -f2`); shift ftplogin
+          breaksw
+          case -ftpdir:
+            set metdir  = $input[2]
+          breaksw
+          case -ftpcmd:
+            set ftpcmd  = (`echo $ftp_info | cut -d% -f2`); shift ftpcmd
+          breaksw
+        endsw
+        if ( $#ftp_info > 0 ) shift ftp_info
+     end
+   endif
+
+   if( $sinex == "yes" ) then
+      set ftp_info = `sh_get_ftp_info -archive $archive -type tropo`
+      #echo Attempting to download ${site}${GPSW}.zpd
+      echo Attempting to download ${lc_site}zpd.gz
+      set ftp_info = `sh_get_ftp_info -archive $archive -type tropo`
+      while ($#ftp_info > 0 )
+        set input = ( $ftp_info )
+        switch($input[1])
+          case -archive:
+            set archive  = $input[2]
+          breaksw
+          case -ftplogin:
+            set ftplogin  = (`echo $ftp_info | cut -d- -f2`); shift ftplogin
+          breaksw
+          case -ftpdir:
+            set tzddir  = $input[2]
+          breaksw
+          case -ftpcmd:
+            set ftpcmd  = (`echo $ftp_info | cut -d% -f2`); shift ftpcmd
+          breaksw
+        endsw
+        if ( $#ftp_info > 0 ) shift ftp_info
+      end
+    endif
+
+    if( $firstsite == "yes" ) then
+#      echo "########################################"
+      echo "Information extracted from ftp_info"
+#      echo "----------------------------------------"
+      echo "  ftpsite $archive"
+      echo "  ftplogin $ftplogin"
+      echo "  metdir $metdir"
+      echo "  tzddir $tzddir"
+      echo "  ftpcmd $ftpcmd"
+      set firstsite = "no"
+#      echo "########################################"
+
+    endif
+
+    # Check if ncftp is requested
+    if ( `echo $ftp_prog | awk '{print $1}'` == 'ncftp' ) then
+      if (`echo $ftpcmd | awk '{print $1}'` == 'ftp') then
+        set ftpcmd = `echo $ftp_prog $archive`
+        echo "-ftp_prog = ncftp requested, ftpcmd now: $ftpcmd"
+      endif
+    endif
+
+# Set up the ftp script
+#  set up the directory names
+# ====================================================================================================================
+# for days and directory use "sday" instead of "doy"and modify the following lines as in sh_get_navi and sh_get_rinex
+# ${sday}/
+# ====================================================================================================================
+    set metdir = `echo $metdir | sed s/"YYYY"/$yr[1]/ | sed s/"YY"/$yr[2]/  | sed s/"YY"/$yr[2]/ | sed s/"DDD"/${sday}/ | sed s/"SSSS"/${site}/ `
+    set tzddir = `echo $tzddir | sed s/"YYYY"/$yr[1]/ | sed s/"YY"/$yr[2]/  | sed s/"YY"/$yr[2]/ | sed s/"DDD"/${sday}/ | sed s/"GPSW"/${GPSW}/ | sed s/"SSSS"/${site}/ | sed 's/trop_new/troposphere\/zpd/'`
+
+    if ( `echo $archive | cut -c 1-5` == 'cddis' && "$prog" != '' ) then
+
+      if ( `echo $prog | awk '{print $1}'` == 'curl' ) then
+        if ( -e ~/.netrc ) then  # Use authenticated secure HTTP
+          if ( "$rinex" == 'yes' ) then
+            cat << END >> tmp.curl.cfg
+url = "https://cddis.nasa.gov`echo $metdir | sed 's/pub/archive/'`/${lc_site}m.Z"
+END
+          endif
+          if ( "$sinex" == 'yes' ) then
+            cat << END >> tmp.curl.cfg
+url = "https://cddis.nasa.gov`echo $tzddir | sed 's/pub/archive/; s/zpd/zpd\/repro1/'`/${lc_site}zpd.gz"
+-O
+url = "https://cddis.nasa.gov`echo $tzddir | sed 's/pub/archive/'`/${lc_site}zpd.gz"
+END
+          endif
+        else if ( `curl --version | awk '{if (NR == 1) print substr($2,1,4)}' | sed 's/\.//g'` >= 711 ) then  # Use anonymous secure FTP (requires curl version >= 7.11.0)
+          if ( "$rinex" == 'yes' ) then
+            cat << END >> tmp.curl.cfg
+url = "ftp://gdc.cddis.eosdis.nasa.gov`echo $metdir | sed 's/\/pub//'`/${lc_site}m.Z"
+END
+          endif
+          if ( "$sinex" == 'yes' ) then
+            cat << END >> tmp.curl.cfg
+url = "ftp://gdc.cddis.eosdis.nasa.gov`echo $tzddir | sed 's/\/pub//; s/zpd/zpd\/repro1/'`/${lc_site}zpd.gz"
+-O
+url = "ftp://gdc.cddis.eosdis.nasa.gov`echo $tzddir | sed 's/\/pub//'`/${lc_site}zpd.gz"
+END
+          endif
+        endif
+        echo '-O' >> tmp.curl.cfg
+      else if ( `echo $prog | awk '{print $1}'` == 'wget' ) then
+        if ( -e ~/.netrc ) then  # Use authenticated secure HTTP
+          if ( "$rinex" == 'yes' ) then
+            cat << END >> tmp.wget_urls
+url = "https://cddis.nasa.gov`echo $metdir | sed 's/pub/archive/'`/${lc_site}m.Z"
+END
+          endif
+          if ( "$sinex" == 'yes' ) then
+            cat << END >> tmp.wget_urls
+url = "https://cddis.nasa.gov`echo $tzddir | sed 's/pub/archive/; s/zpd/zpd\/repro1/'`/${lc_site}zpd.gz"
+-O
+url = "https://cddis.nasa.gov`echo $tzddir | sed 's/pub/archive/'`/${lc_site}zpd.gz"
+END
+          endif
+        else if ( `wget --version | awk '{if (NR == 1) print substr($3,1,4)}' | sed 's/\.//g'` >= 118 ) then  # Use anonymous secure FTP (requires wget version >= 1.18)
+          if ( "$rinex" == 'yes' ) then
+            cat << END >> tmp.wget_urls
+url = "ftps://gdc.cddis.eosdis.nasa.gov`echo $metdir | sed 's/\/pub//'`/${lc_site}m.Z"
+END
+          endif
+          if ( "$sinex" == 'yes' ) then
+            cat << END >> tmp.wget_urls
+url = "ftps://gdc.cddis.eosdis.nasa.gov`echo $tzddir | sed 's/\/pub//; s/zpd/zpd\/repro1/'`/${lc_site}zpd.gz"
+-O
+url = "ftps://gdc.cddis.eosdis.nasa.gov`echo $tzddir | sed 's/\/pub//'`/${lc_site}zpd.gz"
+END
+          endif
+        endif
+      endif
+
+    else
+
+      if (`echo $ftpcmd | awk '{print $1}'` == 'ftp') then
+        echo "user $ftplogin" >! tmp.get.$ts
+        echo "binary" >> tmp.get.$ts
+        set getcmd = 'get'
+      else
+        echo "binary" >! tmp.get.$ts
+        set getcmd = 'get -f -z'
+      endif
+
+      if($rinex == "yes")then
+        echo cd $metdir         >> tmp.get.$ts
+        echo "mget ${lc_site}m.*"  >> tmp.get.$ts
+      endif
+      if($sinex == "yes")then
+        echo cd $tzddir         >> tmp.get.$ts
+        echo "mget ${lc_site}zpd.*" >> tmp.get.$ts
+      endif
+
+      echo 'quit' >> tmp.get.$ts
+      cat tmp.get.$ts >> $log
+      echo ' ' >> $log
+      echo '--------------------' >> $log
+
+# do the FTP
+      $ftpcmd < tmp.get.$ts | grep -v '^220' >! tmp.log.$ts
+      set num = `grep "Transfer completed" tmp.log.$ts | wc`
+      if( $num[2] == 0 ) then
+        echo "--file not found"
+      else
+        echo "--successfully downloaded"
+      endif
+      cat tmp.log.$ts >> $log
+
+# uncompress the files
+      if( -e ${lc_site}m.Z) gunzip ${lc_site}m.Z
+      if( -e ${site}${GPSW}.zpd.gz) gunzip  ${site}${GPSW}.zpd.gz
+
+    endif
+# ======= end of while (count) loop ================
+ end
+# ==================================================
+#-----end of site loop
+end
+
+if ( `echo $archive | cut -c 1-5` == 'cddis' && "$prog" != '' ) then
+  if ( `echo $prog | awk '{print $1}'` == 'curl' && -e 'tmp.curl.cfg' ) then
+    if ( -e ~/.netrc ) then  # Use authenticated secure HTTP
+      $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -b .urs_cookies -c .urs_cookies -n -R -O -K tmp.curl.cfg >! $log ||\
+       $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -b .urs_cookies -c .urs_cookies -n --ciphers 'DEFAULT@SECLEVEL=1' -R -O -K tmp.curl.cfg >! $log
+    else if ( `curl --version | awk '{if (NR == 1) print substr($2,1,4)}' | sed 's/\.//g'` >= 711 ) then  # Use anonymous secure FTP (requires curl version >= 7.11.0)
+      if ( `curl --version | awk '{if (NR == 1) print substr($2,1,4)}' | sed 's/\.//g'` >= 720 ) then  # Use newer "--ssl" option
+        set ssl_opt = '--ssl'
+      else  # Use older "--ftp-ssl" option
+        set ssl_opt = '--ftp-ssl'
+      endif
+      $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -u anonymous:$ftplogin[2] $ssl_opt -R -O -K tmp.curl.cfg >! $log ||\
+       $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -u anonymous:$ftplogin[2] $ssl_opt --ciphers 'DEFAULT@SECLEVEL=1' -R -O -K tmp.curl.cfg >! $log
+    endif
+    \rm tmp.curl.cfg
+  else if ( `echo $prog | awk '{print $1}'` == 'wget' && -e 'tmp.wget_urls' ) then
+    if ( -e ~/.netrc ) then  # Use authenticated secure HTTP
+      $prog -o $log --load-cookies .urs_cookies --save-cookies .urs_cookies --keep-session-cookies --auth-no-challenge -N -i tmp.wget_urls
+    else if ( `wget --version | awk '{if (NR == 1) print substr($3,1,4)}' | sed 's/\.//g'` >= 118 ) then  # Use anonymous secure FTP (requires wget version >= 1.18)
+      $prog -o $log --ftp-user anonymous --ftp-password $ftplogin[2] -N -i tmp.wget_urls
+    endif
+    \rm tmp.wget_urls
+  endif
+  gzip -d -f *0.${yr[2]}m.Z *0.${yr[2]}zpd.gz
+endif
+
+echo "########################################"
+echo " "
+
+# clean up
+\rm tmp* #get*.log
+

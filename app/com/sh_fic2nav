@@ -1,0 +1,90 @@
+#!/bin/csh -f
+if($#argv < 1) then
+more << EOF
+
+ sh_fic2nav converts FICA files to RINEX using program gamit/utils/fic2nav
+
+   Usage: sh_fic2nav -y [year] -d [day-of-year] -f [FICA files] 
+     
+    where  [FICA files] gives the list of FICA files to be translated (wildcards allowed)
+   
+    NOTE:  The script is currently restricted to handle one or more FICA files from 
+           a single day (see comments in script) 
+   
+           
+    Examples: sh_fic2nav -y 88 -d 69 -f wsfd069.fic 
+              sh_fic2nav -y 88 -d 69 -f ????069.fic
+              sh_fic2nav -y 88 -d 69 -f *.069.Z
+
+EOF
+
+exit
+endif
+#
+# NOTE:  In order to handle multiple days, we'll need to code in gamit/utils/fic2nav
+#        the ability to extract the year and day number from each of several different
+#        naming schemes for FICA files.  This didn't seem worth the effort initially
+#        since there are a limited number of days for which FICA-to-RINEX nav is needed. 
+#        R. King 010723
+#--------------------------------------------------------------------------------------
+  
+# set defaults
+ 
+# set the arguments
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1]) 
+    case -f:
+      set files = (`echo $argv | cut -d- -f2`) ; shift files
+      breaksw
+    case -y:
+        set year = $input[2]
+     breaksw  
+    case -d:
+        set day = $input[2]
+     breaksw
+
+   endsw
+   if( $#argv > 0 ) shift argv
+end
+   
+echo "Output of sh_fic2nav " >! tmp.outfile
+echo " " >> tmp.outfile
+echo " " >> tmp.outfile
+  
+foreach file ($files)        
+   if( $file:e == 'Z' ) then 
+       set body = $file:r
+       uncompress $file  
+       set file = $body
+   endif
+#   echo "fic2nav $file $lfile" 
+   echo "fic2nav $file $year $day" >> tmp.outfile
+   fic2nav $file $year $day                   
+   cat FIC2NA.status >> tmp.status 
+   if( -e FIC2NA.warning) then
+     cat FIC2NA.warning >> tmp.warning  
+   endif
+   if( -e FIC2NA.fatal ) then
+     cat FIC2NA.fatal >> tmp.fatal  
+   endif
+end
+   \mv tmp.status FIC2NAV.status
+   \mv tmp.warning FIC2NAV.warning 
+   \mv tmp.fatal FIC2NAV.fatal
+exit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

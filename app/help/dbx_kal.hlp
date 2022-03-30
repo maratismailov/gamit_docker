@@ -1,0 +1,15 @@
+DBX: VLBI Data file debugging program
+
+ Program to allow general updating of a KalObs file header
+ by using the dxb debugger.
+ Runstring:
+
+ % dbx dbx_kal
+
+ then
+ set a break point before the check on update, eg by
+ / update and set break point at line found.
+
+ Change the desired quantities and set update true
+ and continue.
+

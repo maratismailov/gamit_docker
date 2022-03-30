@@ -1,0 +1,11 @@
+AMBI: Resolves VLBI group delay ambiguities
+
+ Proper runstring is: 
+  
+     CI> ambi <KalObs> [<num_skip>] 
+  
+ where <KalObs> is the KalObs file descriptor and <num_skip> is the 
+ number of beginning KalObs records to be skipped when determining
+ SB polynomial [Default: <num_skip> = 0]
+  
+ 

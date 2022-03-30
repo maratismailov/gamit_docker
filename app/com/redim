@@ -1,0 +1,67 @@
+#!/bin/csh -f
+
+# Re-dimension GAMIT station, satellite, atmosphere, and epoch parameters in include files
+
+# redim [p_name:p_val] [p_name:p_val] ... [-d]
+
+#	p_name is parameter name (e.g. maxsat)
+#	p_val is parameter value (e.g. 28)
+#	-d Only display old settings without modifying. Not needed
+#	   when p_name:p_val is given since modifying mode implies
+#	   displaying old values.
+
+# Note: This script will work only on a pre-defined set of include 
+#       files and	parameters (see incls and keys varables).
+#	     Uppercase may be used for p_name as long as its counterpart
+#	     in keys is also in uppercase. Current settings are all in
+#	     lowercase.
+
+# by pfang@ucsd.edu July, 1996.  Last modified by R. King 960730
+
+if ($#argv < 1) then
+	sed -e "1,1d" -e "/pfang/q" $0
+	exit
+endif
+
+# set default
+set incls = (dimpar.h dimpar.h dimpar.h cview.h makex.h)
+set keys = (maxsat maxsit maxatm ncvsit maxepc)
+set nkey = $#keys
+set vals = ""; set oldk = ""
+
+# display old setting
+echo "The old settings are:"
+set i = 1
+while ($i <= $nkey)
+	if (! -e $incls[$i]) then
+		echo "$incls[$i] does not exist, SKIP"
+		set vals = ($vals 0)
+		set oldk = ($oldk 0)
+	else  
+		echo -n "$incls[$i]	"
+		set old = (`grep -i "$keys[$i]=" $incls[$i]`)
+		echo $old
+		set vals = ($vals `echo $old | cut -d= -f2 | tr ')' ' '`) 
+		set oldk = ($oldk `echo $old | cut -d"(" -f2`) 
+	endif
+	@ i++
+end
+echo ""
+set yn = `echo $argv | grep "-"`
+if ($#yn > 0) exit
+
+# modify the parameter values only if they are different
+foreach a ($argv)
+	set i = 1
+	while ($i <= $nkey)
+		if (-e $incls[$i]) then
+			set tmp = (`echo $a | tr ':' ' '`)
+			if ($tmp[1] == $keys[$i] && $tmp[2] != $vals[$i]) then
+				sed -e "s/$oldk[$i]/$tmp[1]=$tmp[2])/" $incls[$i] >! $incls[$i].new
+				echo "$tmp[1] is set to $tmp[2] in $incls[$i]"
+				\mv $incls[$i].new $incls[$i]
+			endif
+		endif
+		@ i++
+	end
+end

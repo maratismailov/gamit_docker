@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# Redirect standard error to /dev/null
+#exec 2>/dev/null
+
+tmp='/tmp'
+date=( $(date '+%y%m%d %Y-%m-%d') )
+
+while [ $# -gt 0 ]; do
+
+  case $1 in
+
+    cas )
+
+      # Download CAS daily DCB files
+      src=( ftp://ftp.cddis.eosdis.nasa.gov/gnss/products/bias/ CAS*_DCB.BSX.gz )
+      wget -q -N -r -nH -np -nd -A "${src[1]}" -P $tmp ${src[0]}
+
+      # Read C1[PWYM] minus C1C biases
+      gzip -d -c $tmp/CAS*_DCB.BSX.gz |
+       awk '/^\+BIAS\/SOLUTION/,/^-BIAS\/SOLUTION/ {if ($0 ~ /^ / && substr($0,7,8) ~ /[GRECIJ][0-9][0-9][0-9] [GRECIJ][0-9][0-9]/ && (substr($0,26,3) == "C1C" && substr($0,31,3) ~ /C1[PWYM]/) || substr($0,26,3) ~ /C1[PWYM]/ && substr($0,31,3) == "C1C") printf "%s_%s_%s_%s %s %s\n",substr($0,7,4),substr($0,12,3),substr($0,36,14),substr($0,51,14),substr($0,71,21),substr($0,93,11)}' >| $tmp/dcb.dat.$1.tmp &&
+       rm -f $tmp/CAS*_DCB.BSX.gz
+
+      ;;
+
+    cod )
+
+      # Download CODE monthly DCB files
+      src=( ftp://ftp.cddis.eosdis.nasa.gov/gnss/products/bias/code_monthly.bia )
+      wget -q -N -P $tmp ${src[0]}
+
+      # Read C1C biases
+      awk '/^\+BIAS\/SOLUTION/,/^-BIAS\/SOLUTION/ {if ($0 ~ /^ / && substr($0,7,8) ~ /[GRECIJ][0-9][0-9][0-9] [GRECIJ][0-9][0-9]/ && substr($0,26,3) == "C1C") printf "%s_%s_%s_%s %s %s\n",substr($0,7,4),substr($0,12,3),substr($0,36,14),substr($0,51,14),substr($0,71,21),substr($0,93,11)}' $tmp/code_monthly.bia |
+       sort -k 1b,1 >| $tmp/dcb.dat.$1.C1C
+      # Read C1W biases
+      awk '/^\+BIAS\/SOLUTION/,/^-BIAS\/SOLUTION/ {if ($0 ~ /^ / && substr($0,7,8) ~ /[GRECIJ][0-9][0-9][0-9] [GRECIJ][0-9][0-9]/ && substr($0,26,3) == "C1W") printf "%s_%s_%s_%s %s %s\n",substr($0,7,4),substr($0,12,3),substr($0,36,14),substr($0,51,14),substr($0,71,21),substr($0,93,11)}' $tmp/code_monthly.bia |
+       sort -k 1b,1 >| $tmp/dcb.dat.$1.C1W
+      # Subtract C1C biases from C1W biases, following equation for "classical" P1-C1 DCB in header of code_monthly.bia
+      join $tmp/dcb.dat.$1.C1W $tmp/dcb.dat.$1.C1C |
+       sort |
+       awk '{printf "%s %21.3f %11.3f\n",substr($0,1,38),$2-$4,sqrt($3^2+$5^2)}' >| $tmp/dcb.dat.$1.tmp &&
+       rm -f $tmp/dcb.dat.$1.C1W $tmp/dcb.dat.$1.C1C
+
+      ;;
+
+    dlr[17] )
+
+      # Download DLR quarterly DCB files
+      src=( ftp://ftp.cddis.eosdis.nasa.gov/gnss/products/bias/ DLR*_0${1:3:1}D_DCB.BSX.gz )
+      wget -q -N -r -nH -np -nd -A "${src[1]}" -P $tmp ${src[0]}
+
+      # Read C1[PWYM] minus C1C biases
+      gzip -d -c $tmp/DLR*_0${1:3:1}D_DCB.BSX.gz |
+       awk '/^\+BIAS\/SOLUTION/,/^-BIAS\/SOLUTION/ {if ($0 ~ /^ / && substr($0,7,8) ~ /[GRECIJ][0-9][0-9][0-9] [GRECIJ][0-9][0-9]/) {if ((substr($0,31,3) == "C1C" && substr($0,36,3) ~ /C1[PWYM]/) || (substr($0,31,3) ~ /C1[PWYM]/ && substr($0,36,3) == "C1C")) printf "%s_%s_20%s_20%s %s %s\n",substr($0,7,4),substr($0,12,3),substr($0,41,12),substr($0,54,12),substr($0,72,21),substr($0,94,11); else if ((substr($0,26,3) == "C1C" && substr($0,31,3) ~ /C1[PWYM]/) || (substr($0,26,3) ~ /C1[PWYM]/ && substr($0,31,3) == "C1C")) {if (substr($0,38,1) == ":") printf "%s_%s_20%s_20%s %s %s\n",substr($0,7,4),substr($0,12,3),substr($0,36,12),substr($0,49,12),substr($0,67,21),substr($0,90,11); else printf "%s_%s_%s_%s %s %s\n",substr($0,7,4),substr($0,12,3),substr($0,36,14),substr($0,51,14),substr($0,71,21),substr($0,93,11)}}}' >| $tmp/dcb.dat.$1.tmp &&
+       rm -f $tmp/DLR*_0${1:3:1}D_DCB.BSX.gz
+
+      ;;
+
+  esac
+
+  # Write sorted and formatted dcb.dat file
+  out="$HOME/gg/tables/dcb.dat.$1.${date[0]}"
+  cat << END >| $out
+* dcb.dat Version 2.0 - units are ns 
+* Last updated ${date[1]} from ${src[0]}${src[1]}
+*SYS SVN PRN  Start           Stop               P1-C1    rms
+END
+  if [ "$1" = 'cod' ]; then
+    awk '{y2 = substr($0,25,4)+0; d2 = substr($0,30,3)+0; if (y2 == 0 && d2 == 0) {y2 = 2100; d2 = 1}; printf " %1s   %3d  %2d  %4d %3d %2d %2d  %4d %3d %2d %2d %9.3f %9.3f\n",substr($0,1,1),substr($0,2,3),substr($0,7,2),substr($0,10,4),substr($0,15,3),int(substr($0,19,5)/3600),substr($0,19,5)%3600/60,y2,d2,int(substr($0,34,5)/3600),substr($0,34,5)%3600/60,substr($0,40,21),substr($0,62,11)}' $tmp/dcb.dat.$1.tmp >> $out
+  else
+    for sys in G R E C I J; do
+      grep "^$sys" $tmp/dcb.dat.$1.tmp |
+       sort |
+       awk '{y2 = substr($0,25,4)+0; d2 = substr($0,30,3)+0; if (y2 == 0 && d2 == 0) {y2 = 2100; d2 = 1}; printf " %1s   %3d  %2d  %4d %3d %2d %2d  %4d %3d %2d %2d %9.3f %9.3f\n",substr($0,1,1),substr($0,2,3),substr($0,7,2),substr($0,10,4),substr($0,15,3),int(substr($0,19,5)/3600),substr($0,19,5)%3600/60,y2,d2,int(substr($0,34,5)/3600),substr($0,34,5)%3600/60,substr($0,40,21),substr($0,62,11)}' >> $out
+    done
+  fi
+  rm -f $tmp/dcb.dat.$1.tmp
+
+  shift
+
+done
+

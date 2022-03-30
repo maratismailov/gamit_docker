@@ -1,0 +1,17 @@
+# Generic Makefile for fixdrv - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King  7 January 2015
+ 
+#LABELS: fixdrv:fixdrv:fixdrv_lib:fixdrv
+#LABELS: read_sestbl:read_sestbl:NONE:read_sestbl
+
+#SHARELIB gpslib
+
+#SHARELIB: ../lib:gamit_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+
+#OBJ_fixdrv_lib 	acmake	armake	bmake 	chdred	chrnum 
+#OBJ_fixdrv_lib 	clkprm	cmmake	dcheck  dbmake	fversn  imakef	lfntop 
+#OBJ_fixdrv_lib 	mdmake	newchr 	nextt1	ngmake 	nxepoc	nxsat 
+#OBJ_fixdrv_lib 	rdsitt	seschk  somake  tgsats 
+#OBJ_fixdrv_lib 	timeup 	upchr	xcheck  xcsats 
+

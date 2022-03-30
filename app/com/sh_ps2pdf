@@ -1,0 +1,42 @@
+#!/bin/csh          
+#
+#doc Convert a set of files from Postscript (ps) to pdf 
+#doc
+# 
+######################## INSTRUCTIONS #############################
+if ( $#argv == 0 ) then
+  echo "==================================================================================="
+  echo "   Convert a given set of files from ps to pdf  "
+  echo "  "
+  echo "  USAGE : sh_ps2pdf -files <list> "
+  echo "  "
+  echo "          <list>   The names of file names to be casefolded (wild cards OK)"
+  echo "  "
+  echo "  Example : sh_ps2pdf -files *.ps"
+  echo "  "
+  echo "  "
+  echo "==================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+set files    = " "
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -f:
+    case -files:
+      set files = ( $input[2-] )
+      echo $files >! tmp.files
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ######################  
+foreach i (`echo $files`)
+  ps2pdf $i
+end
+
+#Thats it we're done 
+exit

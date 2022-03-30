@@ -1,0 +1,40 @@
+COMPARE_PMU: Program to compare tables of polar motion UT1 series
+
+COMPARE_PMU: Program to compare tables of polar motion UT1 series. 
+
+The runstring is:
+
+% compare_pmu <output smooth> <spacing> <smoothing> <UT1_def> \
+                   <in primary>   <UT1_def> <out primary> \
+                   <in secondary> <UT1_def> <out secondary> \
+                        ""           ""         "" (Repeats)
+
+where <output smooth> is the names of the output smoothed filed
+               (which can be used in update_pmu)  If the name 
+               USEPR is entered then the primary series will be
+               used as the smoothed series.  Spacing, smmothing,
+               and UT1_def will then have no effect. 
+           *** NOTE: Primary must be uniformly spaced for this
+                     option to work.
+      <spacing> is the spacing of the smoothed entries (days)
+      <smoothing> is a multiplier to the FWHM computed to pass
+               through the primary data. A value >1 will tend to
+               smooth the primary series.
+      <UT1_def> is the definition for UT1 or UT1R in the output
+               (UT1R will be output if UT1_def=R, otherwise UT1 
+                will be output)
+      <in primary> is the input primary series which will be
+                smoothed (IRIS formar)
+      <UT1_def> is UT1 definition in primary series.
+      <out primary> is name of the output file for the 
+                     differences (primary-smoothed) (mas for output)
+ Repeating group of elements
+    | <in secondary> is the input secondary series which will be
+    |           smoothed (IRIS format)
+    | <UT1_def> is UT1 definition in primary series.
+    | <out secondary> is name of the output file for the 
+    |         differences (secondary-smoothed) (mas for output)
+ The last group can be repeated for as many secondary files
+ as desired.
+
+

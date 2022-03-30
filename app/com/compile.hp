@@ -1,0 +1,7256 @@
+ 
+Reading gamit/Makefile.config to get program dimensions
+ 
+The old settings are:
+dimpar.h	PARAMETER (maxsat=30)
+dimpar.h	PARAMETER (maxsit=45)
+dimpar.h	PARAMETER (maxatm=13)
+cview.h	parameter(ncvsit=45)
+makex.h	PARAMETER (MAXEPC=2880)
+
+ 
+++++++++++++++++++++++++++++++++++++++++++
+Make sure the common libraries are current
+++++++++++++++++++++++++++++++++++++++++++
+ 
+ 
+Running unimake to create Makefile for comlib
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for comlib, SKIP
+ 
+Running unimake to create Makefile for matrix
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for matrix, SKIP
+ 
++++++++++++++++++++++++++++++++++++++++++
+Making the GAMIT library...
++++++++++++++++++++++++++++++++++++++++++
+ 
+Running unimake to create Makefile for lib
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for lib, SKIP
+	fort77    -c -u +O3 +U77 bilin.f
+bilin.f:
+   bilin:
+	ar rv gamit_lib.a bilin.o
+r - bilin.o
+	rm -f bilin.o
+	fort77    -c -u +O3 +U77 copens.f
+copens.f:
+   copens:
+	ar rv gamit_lib.a copens.o
+r - copens.o
+	rm -f copens.o
+	fort77    -c -u +O3 +U77 errcod.f
+errcod.f:
+   errcod:
+	ar rv gamit_lib.a errcod.o
+r - errcod.o
+	rm -f errcod.o
+	fort77    -c -u +O3 +U77 getdat.f
+getdat.f:
+   getdat:
+	ar rv gamit_lib.a getdat.o
+r - getdat.o
+	rm -f getdat.o
+	fort77    -c -u +O3 +U77 get_antpcv.f
+get_antpcv.f:
+   get_antpcv:
+	ar rv gamit_lib.a get_antpcv.o
+r - get_antpcv.o
+	rm -f get_antpcv.o
+	fort77    -c -u +O3 +U77 get_svantpcv.f
+get_svantpcv.f:
+   get_svantpcv:
+	ar rv gamit_lib.a get_svantpcv.o
+r - get_svantpcv.o
+	rm -f get_svantpcv.o
+	fort77    -c -u +O3 +U77 getusr.f
+getusr.f:
+   getusr:
+	ar rv gamit_lib.a getusr.o
+r - getusr.o
+	rm -f getusr.o
+	fort77    -c -u +O3 +U77 ghdred.f
+ghdred.f:
+   ghdred:
+	ar rv gamit_lib.a ghdred.o
+r - ghdred.o
+	rm -f ghdred.o
+	fort77    -c -u +O3 +U77 gps_only.f
+gps_only.f:
+   gps_only:
+	ar rv gamit_lib.a gps_only.o
+r - gps_only.o
+	rm -f gps_only.o
+	fort77    -c -u +O3 +U77 gsatel.f
+gsatel.f:
+   gsatel:
+	ar rv gamit_lib.a gsatel.o
+r - gsatel.o
+	rm -f gsatel.o
+	fort77    -c -u +O3 +U77 hisub.f
+hisub.f:
+   hisub:
+   checkslant:
+	ar rv gamit_lib.a hisub.o
+r - hisub.o
+	rm -f hisub.o
+	fort77    -c -u +O3 +U77 ier2df.f
+ier2df.f:
+   ier2df:
+	ar rv gamit_lib.a ier2df.o
+r - ier2df.o
+	rm -f ier2df.o
+	fort77    -c -u +O3 +U77 ierrcm.f
+ierrcm.f:
+   ierrcm:
+	ar rv gamit_lib.a ierrcm.o
+r - ierrcm.o
+	rm -f ierrcm.o
+	fort77    -c -u +O3 +U77 lbias.f
+lbias.f:
+   lbias:
+	ar rv gamit_lib.a lbias.o
+r - lbias.o
+	rm -f lbias.o
+	fort77    -c -u +O3 +U77 lgood.f
+lgood.f:
+   lgood:
+	ar rv gamit_lib.a lgood.o
+r - lgood.o
+	rm -f lgood.o
+	fort77    -c -u +O3 +U77 linear.f
+linear.f:
+   linear:
+	ar rv gamit_lib.a linear.o
+r - linear.o
+	rm -f linear.o
+	fort77    -c -u +O3 +U77 lloel.f
+lloel.f:
+   lloel:
+	ar rv gamit_lib.a lloel.o
+r - lloel.o
+	rm -f lloel.o
+	fort77    -c -u +O3 +U77 lmarg.f
+lmarg.f:
+   lmarg:
+	ar rv gamit_lib.a lmarg.o
+r - lmarg.o
+	rm -f lmarg.o
+	fort77    -c -u +O3 +U77 lread.f
+lread.f:
+   lread:
+   rename_match:
+   sorteq:
+	ar rv gamit_lib.a lread.o
+r - lread.o
+	rm -f lread.o
+	fort77    -c -u +O3 +U77 lversn.f
+lversn.f:
+   lversn:
+	ar rv gamit_lib.a lversn.o
+r - lversn.o
+	rm -f lversn.o
+	fort77    -c -u +O3 +U77 mapamp.f
+mapamp.f:
+   mapamp:
+	ar rv gamit_lib.a mapamp.o
+r - mapamp.o
+	rm -f mapamp.o
+	fort77    -c -u +O3 +U77 read_antmod.f
+read_antmod.f:
+   read_antmod:
+	ar rv gamit_lib.a read_antmod.o
+r - read_antmod.o
+	rm -f read_antmod.o
+	fort77    -c -u +O3 +U77 read_antex.f
+read_antex.f:
+   read_antex:
+	ar rv gamit_lib.a read_antex.o
+r - read_antex.o
+	rm -f read_antex.o
+	fort77    -c -u +O3 +U77 read_antex_head.f
+read_antex_head.f:
+   read_antex_head:
+	ar rv gamit_lib.a read_antex_head.o
+r - read_antex_head.o
+	rm -f read_antex_head.o
+	fort77    -c -u +O3 +U77 readc1.f
+readc1.f:
+   readc1:
+	ar rv gamit_lib.a readc1.o
+r - readc1.o
+	rm -f readc1.o
+	fort77    -c -u +O3 +U77 readc2.f
+readc2.f:
+   readc2:
+	ar rv gamit_lib.a readc2.o
+r - readc2.o
+	rm -f readc2.o
+	fort77    -c -u +O3 +U77 readc3.f
+readc3.f:
+   readc3:
+	ar rv gamit_lib.a readc3.o
+r - readc3.o
+	rm -f readc3.o
+	fort77    -c -u +O3 +U77 readc4.f
+readc4.f:
+   readc4:
+	ar rv gamit_lib.a readc4.o
+r - readc4.o
+	rm -f readc4.o
+	fort77    -c -u +O3 +U77 readc5.f
+readc5.f:
+   readc5:
+	ar rv gamit_lib.a readc5.o
+r - readc5.o
+	rm -f readc5.o
+	fort77    -c -u +O3 +U77 readd.f
+readd.f:
+   readd:
+	ar rv gamit_lib.a readd.o
+r - readd.o
+	rm -f readd.o
+	fort77    -c -u +O3 +U77 reade.f
+reade.f:
+   reade:
+	ar rv gamit_lib.a reade.o
+r - reade.o
+	rm -f reade.o
+	fort77    -c -u +O3 +U77 readj.f
+readj.f:
+   readj:
+	ar rv gamit_lib.a readj.o
+r - readj.o
+	rm -f readj.o
+	fort77    -c -u +O3 +U77 readm1.f
+readm1.f:
+   readm1:
+	ar rv gamit_lib.a readm1.o
+r - readm1.o
+	rm -f readm1.o
+	fort77    -c -u +O3 +U77 readm2.f
+readm2.f:
+   readm2:
+	ar rv gamit_lib.a readm2.o
+r - readm2.o
+	rm -f readm2.o
+	fort77    -c -u +O3 +U77 readm3.f
+readm3.f:
+   readm3:
+	ar rv gamit_lib.a readm3.o
+r - readm3.o
+	rm -f readm3.o
+	fort77    -c -u +O3 +U77 rot_gfile.f
+rot_gfile.f:
+   rot_gfile:
+	ar rv gamit_lib.a rot_gfile.o
+r - rot_gfile.o
+	rm -f rot_gfile.o
+	fort77    -c -u +O3 +U77 rrinex.f
+rrinex.f:
+   rrinex:
+   rxerr:
+	ar rv gamit_lib.a rrinex.o
+r - rrinex.o
+	rm -f rrinex.o
+	fort77    -c -u +O3 +U77 rrxhed.f
+rrxhed.f:
+   rrxhed:
+	ar rv gamit_lib.a rrxhed.o
+r - rrxhed.o
+	rm -f rrxhed.o
+	fort77    -c -u +O3 +U77 rsesfo.f
+rsesfo.f:
+   rsesfo:
+	ar rv gamit_lib.a rsesfo.o
+r - rsesfo.o
+	rm -f rsesfo.o
+	fort77    -c -u +O3 +U77 rstnfo.f
+rstnfo.f:
+   rstnfo:
+       entry    rstnf1:
+	ar rv gamit_lib.a rstnfo.o
+r - rstnfo.o
+	rm -f rstnfo.o
+	fort77    -c -u +O3 +U77 settyp.f
+settyp.f:
+   settyp:
+	ar rv gamit_lib.a settyp.o
+r - settyp.o
+	rm -f settyp.o
+	fort77    -c -u +O3 +U77 shadow1.f
+shadow1.f:
+   shadow1:
+	ar rv gamit_lib.a shadow1.o
+r - shadow1.o
+	rm -f shadow1.o
+	fort77    -c -u +O3 +U77 svnav_read.f
+svnav_read.f:
+   svnav_read:
+	ar rv gamit_lib.a svnav_read.o
+r - svnav_read.o
+	rm -f svnav_read.o
+	fort77    -c -u +O3 +U77 thdred.f
+thdred.f:
+   thdred:
+	ar rv gamit_lib.a thdred.o
+r - thdred.o
+	rm -f thdred.o
+	fort77    -c -u +O3 +U77 writc1.f
+writc1.f:
+   writc1:
+	ar rv gamit_lib.a writc1.o
+r - writc1.o
+	rm -f writc1.o
+	fort77    -c -u +O3 +U77 writc2.f
+writc2.f:
+   writc2:
+	ar rv gamit_lib.a writc2.o
+r - writc2.o
+	rm -f writc2.o
+	fort77    -c -u +O3 +U77 writc3.f
+writc3.f:
+   writc3:
+	ar rv gamit_lib.a writc3.o
+r - writc3.o
+	rm -f writc3.o
+	fort77    -c -u +O3 +U77 writc4.f
+writc4.f:
+   writc4:
+	ar rv gamit_lib.a writc4.o
+r - writc4.o
+	rm -f writc4.o
+	fort77    -c -u +O3 +U77 writc5.f
+writc5.f:
+   writc5:
+	ar rv gamit_lib.a writc5.o
+r - writc5.o
+	rm -f writc5.o
+	fort77    -c -u +O3 +U77 writm1.f
+writm1.f:
+   writm1:
+	ar rv gamit_lib.a writm1.o
+r - writm1.o
+	rm -f writm1.o
+	fort77    -c -u +O3 +U77 writm2.f
+writm2.f:
+   writm2:
+	ar rv gamit_lib.a writm2.o
+r - writm2.o
+	rm -f writm2.o
+	fort77    -c -u +O3 +U77 writm3.f
+writm3.f:
+   writm3:
+	ar rv gamit_lib.a writm3.o
+r - writm3.o
+	rm -f writm3.o
+	fort77    -c -u +O3 +U77 wrxhed.f
+wrxhed.f:
+   wrxhed:
+	ar rv gamit_lib.a wrxhed.o
+r - wrxhed.o
+	rm -f wrxhed.o
+	fort77    -c -u +O3 +U77 wstnfo.f
+wstnfo.f:
+   wstnfo:
+	ar rv gamit_lib.a wstnfo.o
+r - wstnfo.o
+	rm -f wstnfo.o
+	fort77    -c -u +O3 +U77 xhdred.f
+xhdred.f:
+   xhdred:
+	ar rv gamit_lib.a xhdred.o
+r - xhdred.o
+	rm -f xhdred.o
+	fort77    -c -u +O3 +U77 yaw_attit.f
+yaw_attit.f:
+   yaw_attit:
+	ar rv gamit_lib.a yaw_attit.o
+r - yaw_attit.o
+	rm -f yaw_attit.o
+Made lib
+ 
+++++++++++++++++++++++++++++++++++
+Making the main modules
+++++++++++++++++++++++++++++++++++
+ 
+ 
+Running unimake to create Makefile for makex
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+Makefile for makex remade by unimake
+	fort77    -c -u +O3 +U77 blk1001.f
+blk1001.f:
+   blk1001:
+	ar rv makex_lib.a blk1001.o
+r - blk1001.o
+	rm -f blk1001.o
+	fort77    -c -u +O3 +U77 blk101.f
+blk101.f:
+   blk101:
+	ar rv makex_lib.a blk101.o
+r - blk101.o
+	rm -f blk101.o
+	fort77    -c -u +O3 +U77 blk1101.f
+blk1101.f:
+   blk1101:
+	ar rv makex_lib.a blk1101.o
+r - blk1101.o
+	rm -f blk1101.o
+	fort77    -c -u +O3 +U77 blk1201.f
+blk1201.f:
+   blk1201:
+	ar rv makex_lib.a blk1201.o
+r - blk1201.o
+	rm -f blk1201.o
+	fort77    -c -u +O3 +U77 blk1301.f
+blk1301.f:
+   blk1301:
+	ar rv makex_lib.a blk1301.o
+r - blk1301.o
+	rm -f blk1301.o
+	fort77    -c -u +O3 +U77 blk1080.f
+blk1080.f:
+   blk1080:
+	ar rv makex_lib.a blk1080.o
+r - blk1080.o
+	rm -f blk1080.o
+	fort77    -c -u +O3 +U77 blk1180.f
+blk1180.f:
+   blk1180:
+	ar rv makex_lib.a blk1180.o
+r - blk1180.o
+	rm -f blk1180.o
+	fort77    -c -u +O3 +U77 blk1280.f
+blk1280.f:
+   blk1280:
+	ar rv makex_lib.a blk1280.o
+r - blk1280.o
+	rm -f blk1280.o
+	fort77    -c -u +O3 +U77 blk1380.f
+blk1380.f:
+   blk1380:
+	ar rv makex_lib.a blk1380.o
+r - blk1380.o
+	rm -f blk1380.o
+	fort77    -c -u +O3 +U77 blk401.f
+blk401.f:
+   blk401:
+	ar rv makex_lib.a blk401.o
+r - blk401.o
+	rm -f blk401.o
+	fort77    -c -u +O3 +U77 blk6.f
+blk6.f:
+   blk6:
+	ar rv makex_lib.a blk6.o
+r - blk6.o
+	rm -f blk6.o
+	fort77    -c -u +O3 +U77 blk670.f
+blk670.f:
+   blk670:
+	ar rv makex_lib.a blk670.o
+r - blk670.o
+	rm -f blk670.o
+	fort77    -c -u +O3 +U77 blk70.f
+blk70.f:
+   blk70:
+	ar rv makex_lib.a blk70.o
+r - blk70.o
+	rm -f blk70.o
+	fort77    -c -u +O3 +U77 blk80.f
+blk80.f:
+   blk80:
+	ar rv makex_lib.a blk80.o
+r - blk80.o
+	rm -f blk80.o
+	fort77    -c -u +O3 +U77 blk9.f
+blk9.f:
+   blk9:
+	ar rv makex_lib.a blk9.o
+r - blk9.o
+	rm -f blk9.o
+	fort77    -c -u +O3 +U77 closem.f
+closem.f:
+   closem:
+	ar rv makex_lib.a closem.o
+r - closem.o
+	rm -f closem.o
+	fort77    -c -u +O3 +U77 dofica.f
+dofica.f:
+   dofica:
+	ar rv makex_lib.a dofica.o
+r - dofica.o
+	rm -f dofica.o
+	fort77    -c -u +O3 +U77 geteph.f
+geteph.f:
+   geteph:
+	ar rv makex_lib.a geteph.o
+r - geteph.o
+	rm -f geteph.o
+	fort77    -c -u +O3 +U77 get_ficfiles.f
+get_ficfiles.f:
+   get_ficfiles:
+   scan_fica:
+	ar rv makex_lib.a get_ficfiles.o
+r - get_ficfiles.o
+	rm -f get_ficfiles.o
+	fort77    -c -u +O3 +U77 get_rxfiles.f
+get_rxfiles.f:
+   get_rxfiles:
+   scan_rinex:
+   add_day:
+   sub_day:
+	ar rv makex_lib.a get_rxfiles.o
+r - get_rxfiles.o
+	rm -f get_rxfiles.o
+	fort77    -c -u +O3 +U77 inqf.f
+inqf.f:
+   inqf:
+	ar rv makex_lib.a inqf.o
+r - inqf.o
+	rm -f inqf.o
+	fort77    -c -u +O3 +U77 inscen.f
+inscen.f:
+   inscen:
+	ar rv makex_lib.a inscen.o
+r - inscen.o
+	rm -f inscen.o
+	fort77    -c -u +O3 +U77 isgood.f
+isgood.f:
+   isgood:
+   chkdat:
+	ar rv makex_lib.a isgood.o
+r - isgood.o
+	rm -f isgood.o
+	fort77    -c -u +O3 +U77 mversn.f
+mversn.f:
+   mversn:
+	ar rv makex_lib.a mversn.o
+r - mversn.o
+	rm -f mversn.o
+	fort77    -c -u +O3 +U77 openf.f
+openf.f:
+   openf:
+	ar rv makex_lib.a openf.o
+r - openf.o
+	rm -f openf.o
+	fort77    -c -u +O3 +U77 rbatch.f
+rbatch.f:
+   rbatch:
+       entry    rbatch1:
+	ar rv makex_lib.a rbatch.o
+r - rbatch.o
+	rm -f rbatch.o
+	fort77    -c -u +O3 +U77 rcoord.f
+rcoord.f:
+   rcoord:
+	ar rv makex_lib.a rcoord.o
+r - rcoord.o
+	rm -f rcoord.o
+	fort77    -c -u +O3 +U77 rhead.f
+rhead.f:
+   rhead:
+	ar rv makex_lib.a rhead.o
+r - rhead.o
+	rm -f rhead.o
+	fort77    -c -u +O3 +U77 settim.f
+settim.f:
+   settim:
+	ar rv makex_lib.a settim.o
+r - settim.o
+	rm -f settim.o
+	fort77    -c -u +O3 +U77 stnclk.f
+stnclk.f:
+   stnclk:
+	ar rv makex_lib.a stnclk.o
+r - stnclk.o
+	rm -f stnclk.o
+	fort77    -c -u +O3 +U77 tagchk.f
+tagchk.f:
+   tagchk:
+	ar rv makex_lib.a tagchk.o
+r - tagchk.o
+	rm -f tagchk.o
+	fort77    -c -u +O3 +U77 unpad.f
+unpad.f:
+   unpad:
+	ar rv makex_lib.a unpad.o
+r - unpad.o
+	rm -f unpad.o
+	fort77    -c -u +O3 +U77 wclock.f
+wclock.f:
+   wclock:
+	ar rv makex_lib.a wclock.o
+r - wclock.o
+	rm -f wclock.o
+	fort77    -c -u +O3 +U77 wxhead.f
+wxhead.f:
+   wxhead:
+	ar rv makex_lib.a wxhead.o
+r - wxhead.o
+	rm -f wxhead.o
+	fort77    -c -u +O3 +U77 kincrd.f
+kincrd.f:
+   kincrd:
+	ar rv makex_lib.a kincrd.o
+r - kincrd.o
+	rm -f kincrd.o
+	fort77    -u +O3 +U77 makex.f makex_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o makex
+makex.f:
+   MAIN makex:
+	rm -f makex.o
+	fort77    -c -u +O3 +U77 jversn.f
+jversn.f:
+   jversn:
+	ar rv makej_lib.a jversn.o
+r - jversn.o
+	rm -f jversn.o
+	fort77    -c -u +O3 +U77 jreadc.f
+jreadc.f:
+   jreadc:
+	ar rv makej_lib.a jreadc.o
+r - jreadc.o
+	rm -f jreadc.o
+	fort77    -c -u +O3 +U77 avgclk.f
+avgclk.f:
+   avgclk:
+	ar rv makej_lib.a avgclk.o
+r - avgclk.o
+	rm -f avgclk.o
+	fort77    -c -u +O3 +U77 allanv.f
+allanv.f:
+   allanv:
+	ar rv makej_lib.a allanv.o
+r - allanv.o
+	rm -f allanv.o
+	fort77    -c -u +O3 +U77 rate_est.f
+rate_est.f:
+   rate_est:
+	ar rv makej_lib.a rate_est.o
+r - rate_est.o
+	rm -f rate_est.o
+	fort77    -c -u +O3 +U77 j_from_c.f
+j_from_c.f:
+   j_from_c:
+	ar rv makej_lib.a j_from_c.o
+r - j_from_c.o
+	rm -f j_from_c.o
+	fort77    -c -u +O3 +U77 j_from_e.f
+j_from_e.f:
+   j_from_e:
+	ar rv makej_lib.a j_from_e.o
+r - j_from_e.o
+	rm -f j_from_e.o
+	fort77    -c -u +O3 +U77 mversn.f
+mversn.f:
+   mversn:
+	ar rv makej_lib.a mversn.o
+r - mversn.o
+	rm -f mversn.o
+	fort77    -c -u +O3 +U77 pickfns.f
+pickfns.f:
+   pickfns:
+	ar rv makej_lib.a pickfns.o
+r - pickfns.o
+	rm -f pickfns.o
+	fort77    -c -u +O3 +U77 count_arg.f
+count_arg.f:
+   count_arg:
+	ar rv makej_lib.a count_arg.o
+r - count_arg.o
+	rm -f count_arg.o
+	fort77    -c -u +O3 +U77 lift_arg.f
+lift_arg.f:
+   lift_arg:
+	ar rv makej_lib.a lift_arg.o
+r - lift_arg.o
+	rm -f lift_arg.o
+	fort77    -u +O3 +U77 makej.f makej_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o makej
+makej.f:
+   MAIN makej:
+	rm -f makej.o
+	fort77    -c -u +O3 +U77 blk9.f
+blk9.f:
+   blk9:
+	ar rv makek_lib.a blk9.o
+r - blk9.o
+	rm -f blk9.o
+	fort77    -c -u +O3 +U77 closem.f
+closem.f:
+   closem:
+	ar rv makek_lib.a closem.o
+r - closem.o
+	rm -f closem.o
+	fort77    -c -u +O3 +U77 geteph.f
+geteph.f:
+   geteph:
+	ar rv makek_lib.a geteph.o
+r - geteph.o
+	rm -f geteph.o
+	fort77    -c -u +O3 +U77 getpr.f
+getpr.f:
+   getpr:
+	ar rv makek_lib.a getpr.o
+r - getpr.o
+	rm -f getpr.o
+	fort77    -c -u +O3 +U77 rcoord.f
+rcoord.f:
+   rcoord:
+	ar rv makek_lib.a rcoord.o
+r - rcoord.o
+	rm -f rcoord.o
+	fort77    -c -u +O3 +U77 stnclk.f
+stnclk.f:
+   stnclk:
+	ar rv makek_lib.a stnclk.o
+r - stnclk.o
+	rm -f stnclk.o
+	fort77    -c -u +O3 +U77 stncrd.f
+stncrd.f:
+   stncrd:
+	ar rv makek_lib.a stncrd.o
+r - stncrd.o
+	rm -f stncrd.o
+	fort77    -c -u +O3 +U77 wclock.f
+wclock.f:
+   wclock:
+	ar rv makek_lib.a wclock.o
+r - wclock.o
+	rm -f wclock.o
+	fort77    -c -u +O3 +U77 mversn.f
+mversn.f:
+   mversn:
+	ar rv makek_lib.a mversn.o
+r - mversn.o
+	rm -f mversn.o
+	fort77    -u +O3 +U77 makek.f makek_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o makek
+makek.f:
+   MAIN makek:
+	rm -f makek.o
+	fort77    -u +O3 +U77 rxscan.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o rxscan
+rxscan.f:
+   MAIN rxscan:
+	rm -f rxscan.o
+	fort77    -c -u +O3 +U77 blk1001.f
+blk1001.f:
+   blk1001:
+	ar rv fic2rx_lib.a blk1001.o
+r - blk1001.o
+	rm -f blk1001.o
+	fort77    -c -u +O3 +U77 blk101.f
+blk101.f:
+   blk101:
+	ar rv fic2rx_lib.a blk101.o
+r - blk101.o
+	rm -f blk101.o
+	fort77    -c -u +O3 +U77 blk1101.f
+blk1101.f:
+   blk1101:
+	ar rv fic2rx_lib.a blk1101.o
+r - blk1101.o
+	rm -f blk1101.o
+	fort77    -c -u +O3 +U77 blk1201.f
+blk1201.f:
+   blk1201:
+	ar rv fic2rx_lib.a blk1201.o
+r - blk1201.o
+	rm -f blk1201.o
+	fort77    -c -u +O3 +U77 blk1301.f
+blk1301.f:
+   blk1301:
+	ar rv fic2rx_lib.a blk1301.o
+r - blk1301.o
+	rm -f blk1301.o
+	fort77    -c -u +O3 +U77 blk1080.f
+blk1080.f:
+   blk1080:
+	ar rv fic2rx_lib.a blk1080.o
+r - blk1080.o
+	rm -f blk1080.o
+	fort77    -c -u +O3 +U77 blk1180.f
+blk1180.f:
+   blk1180:
+	ar rv fic2rx_lib.a blk1180.o
+r - blk1180.o
+	rm -f blk1180.o
+	fort77    -c -u +O3 +U77 blk1280.f
+blk1280.f:
+   blk1280:
+	ar rv fic2rx_lib.a blk1280.o
+r - blk1280.o
+	rm -f blk1280.o
+	fort77    -c -u +O3 +U77 blk1380.f
+blk1380.f:
+   blk1380:
+	ar rv fic2rx_lib.a blk1380.o
+r - blk1380.o
+	rm -f blk1380.o
+	fort77    -c -u +O3 +U77 blk401.f
+blk401.f:
+   blk401:
+	ar rv fic2rx_lib.a blk401.o
+r - blk401.o
+	rm -f blk401.o
+	fort77    -c -u +O3 +U77 blk6.f
+blk6.f:
+   blk6:
+	ar rv fic2rx_lib.a blk6.o
+r - blk6.o
+	rm -f blk6.o
+	fort77    -c -u +O3 +U77 blk670.f
+blk670.f:
+   blk670:
+	ar rv fic2rx_lib.a blk670.o
+r - blk670.o
+	rm -f blk670.o
+	fort77    -c -u +O3 +U77 blk70.f
+blk70.f:
+   blk70:
+	ar rv fic2rx_lib.a blk70.o
+r - blk70.o
+	rm -f blk70.o
+	fort77    -c -u +O3 +U77 blk80.f
+blk80.f:
+   blk80:
+	ar rv fic2rx_lib.a blk80.o
+r - blk80.o
+	rm -f blk80.o
+	fort77    -c -u +O3 +U77 blk9.f
+blk9.f:
+   blk9:
+	ar rv fic2rx_lib.a blk9.o
+r - blk9.o
+	rm -f blk9.o
+	fort77    -c -u +O3 +U77 dofica.f
+dofica.f:
+   dofica:
+	ar rv fic2rx_lib.a dofica.o
+r - dofica.o
+	rm -f dofica.o
+	fort77    -c -u +O3 +U77 mversn.f
+mversn.f:
+   mversn:
+	ar rv fic2rx_lib.a mversn.o
+r - mversn.o
+	rm -f mversn.o
+	fort77    -c -u +O3 +U77 rficahd.f
+rficahd.f:
+   rficahd:
+	ar rv fic2rx_lib.a rficahd.o
+r - rficahd.o
+	rm -f rficahd.o
+	fort77    -u +O3 +U77 fic2rx.f fic2rx_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o fic2rx
+fic2rx.f:
+   MAIN fic2rx:
+	rm -f fic2rx.o
+	fort77    -c -u +O3 +U77 mversn.f
+mversn.f:
+   mversn:
+	ar rv xtorx_lib.a mversn.o
+r - mversn.o
+	rm -f mversn.o
+	fort77    -c -u +O3 +U77 scanx.f
+scanx.f:
+   scanx:
+	ar rv xtorx_lib.a scanx.o
+r - scanx.o
+	rm -f scanx.o
+	fort77    -u +O3 +U77 xtorx.f xtorx_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o xtorx
+xtorx.f:
+   MAIN xtorx:
+   passheader:
+	rm -f xtorx.o
+Made makex
+ 
+Running unimake to create Makefile for arc
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+Makefile for arc remade by unimake
+	fort77    -c -u +O3 +U77 adam.f
+adam.f:
+   adam:
+	ar rv arc_lib.a adam.o
+r - adam.o
+	rm -f adam.o
+	fort77    -c -u +O3 +U77 arcmrg.f
+arcmrg.f:
+   arcmrg:
+	ar rv arc_lib.a arcmrg.o
+r - arcmrg.o
+	rm -f arcmrg.o
+	fort77    -c -u +O3 +U77 aversn.f
+aversn.f:
+   aversn:
+	ar rv arc_lib.a aversn.o
+r - aversn.o
+	rm -f aversn.o
+	fort77    -c -u +O3 +U77 binoml.f
+binoml.f:
+   binoml:
+	ar rv arc_lib.a binoml.o
+r - binoml.o
+	rm -f binoml.o
+	fort77    -c -u +O3 +U77 calcof.f
+calcof.f:
+   calcof:
+	ar rv arc_lib.a calcof.o
+r - calcof.o
+	rm -f calcof.o
+	fort77    -c -u +O3 +U77 dtwopi.f
+dtwopi.f:
+   dtwopi:
+	ar rv arc_lib.a dtwopi.o
+r - dtwopi.o
+	rm -f dtwopi.o
+	fort77    -c -u +O3 +U77 ephdrd.f
+ephdrd.f:
+   ephdrd:
+	ar rv arc_lib.a ephdrd.o
+r - ephdrd.o
+	rm -f ephdrd.o
+	fort77    -c -u +O3 +U77 ertorb.f
+ertorb.f:
+   ertorb:
+Warning on line 600 of ertorb.f: Uninitialized variable "sinuu0" in function "ertorb" (5004)
+Warning on line 600 of ertorb.f: Uninitialized variable "sin3uu0" in function "ertorb" (5004)
+	ar rv arc_lib.a ertorb.o
+r - ertorb.o
+	rm -f ertorb.o
+	fort77    -c -u +O3 +U77 eval.f
+eval.f:
+   eval:
+	ar rv arc_lib.a eval.o
+r - eval.o
+	rm -f eval.o
+	fort77    -c -u +O3 +U77 evrtcf.f
+evrtcf.f:
+   evrtcf:
+	ar rv arc_lib.a evrtcf.o
+r - evrtcf.o
+	rm -f evrtcf.o
+	fort77    -c -u +O3 +U77 filopn.f
+filopn.f:
+   filopn:
+	ar rv arc_lib.a filopn.o
+r - filopn.o
+	rm -f filopn.o
+	fort77    -c -u +O3 +U77 hms.f
+hms.f:
+   hms:
+	ar rv arc_lib.a hms.o
+r - hms.o
+	rm -f hms.o
+	fort77    -c -u +O3 +U77 hofrad.f
+hofrad.f:
+   hofrad:
+	ar rv arc_lib.a hofrad.o
+r - hofrad.o
+	rm -f hofrad.o
+	fort77    -c -u +O3 +U77 igs92.f
+igs92.f:
+   igs92:
+	ar rv arc_lib.a igs92.o
+r - igs92.o
+	rm -f igs92.o
+	fort77    -c -u +O3 +U77 egm96.f
+egm96.f:
+   egm96:
+	ar rv arc_lib.a egm96.o
+r - egm96.o
+	rm -f egm96.o
+	fort77    -c -u +O3 +U77 init.f
+init.f:
+   init:
+	ar rv arc_lib.a init.o
+r - init.o
+	rm -f init.o
+	fort77    -c -u +O3 +U77 ipksat.f
+ipksat.f:
+   ipksat:
+	ar rv arc_lib.a ipksat.o
+r - ipksat.o
+	rm -f ipksat.o
+	fort77    -c -u +O3 +U77 keplr.f
+keplr.f:
+   keplr:
+	ar rv arc_lib.a keplr.o
+r - keplr.o
+	rm -f keplr.o
+	fort77    -c -u +O3 +U77 legnd2.f
+legnd2.f:
+   legnd2:
+	ar rv arc_lib.a legnd2.o
+r - legnd2.o
+	rm -f legnd2.o
+	fort77    -c -u +O3 +U77 legndr.f
+legndr.f:
+   legndr:
+	ar rv arc_lib.a legndr.o
+r - legndr.o
+	rm -f legndr.o
+	fort77    -c -u +O3 +U77 lunred.f
+lunred.f:
+   lunred:
+	ar rv arc_lib.a lunred.o
+r - lunred.o
+	rm -f lunred.o
+	fort77    -c -u +O3 +U77 matmpy.f
+matmpy.f:
+   matmpy:
+	ar rv arc_lib.a matmpy.o
+r - matmpy.o
+	rm -f matmpy.o
+	fort77    -c -u +O3 +U77 mattrn.f
+mattrn.f:
+   mattrn:
+	ar rv arc_lib.a mattrn.o
+r - mattrn.o
+	rm -f mattrn.o
+	fort77    -c -u +O3 +U77 merit.f
+merit.f:
+   merit:
+	ar rv arc_lib.a merit.o
+r - merit.o
+	rm -f merit.o
+	fort77    -c -u +O3 +U77 oscrat.f
+oscrat.f:
+   oscrat:
+	ar rv arc_lib.a oscrat.o
+r - oscrat.o
+	rm -f oscrat.o
+	fort77    -c -u +O3 +U77 redsat.f
+redsat.f:
+   redsat:
+	ar rv arc_lib.a redsat.o
+r - redsat.o
+	rm -f redsat.o
+	fort77    -c -u +O3 +U77 revrec.f
+revrec.f:
+   revrec:
+	ar rv arc_lib.a revrec.o
+r - revrec.o
+	rm -f revrec.o
+	fort77    -c -u +O3 +U77 sbfn.f
+sbfn.f:
+   sbfn:
+	ar rv arc_lib.a sbfn.o
+r - sbfn.o
+	rm -f sbfn.o
+	fort77    -c -u +O3 +U77 sbfn1.f
+sbfn1.f:
+   sbfn1:
+	ar rv arc_lib.a sbfn1.o
+r - sbfn1.o
+	rm -f sbfn1.o
+	fort77    -c -u +O3 +U77 sbout.f
+sbout.f:
+   sbout:
+	ar rv arc_lib.a sbout.o
+r - sbout.o
+	rm -f sbout.o
+	fort77    -c -u +O3 +U77 sclcof.f
+sclcof.f:
+   sclcof:
+	ar rv arc_lib.a sclcof.o
+r - sclcof.o
+	rm -f sclcof.o
+	fort77    -c -u +O3 +U77 shadow.f
+shadow.f:
+   shadow:
+	ar rv arc_lib.a shadow.o
+r - shadow.o
+	rm -f shadow.o
+	fort77    -c -u +O3 +U77 shwprt.f
+shwprt.f:
+   shwprt:
+   eclout:
+   pjdhms:
+	ar rv arc_lib.a shwprt.o
+r - shwprt.o
+	rm -f shwprt.o
+	fort77    -c -u +O3 +U77 solred.f
+solred.f:
+   solred:
+	ar rv arc_lib.a solred.o
+r - solred.o
+	rm -f solred.o
+	fort77    -c -u +O3 +U77 start_int.f
+start_int.f:
+   start_int:
+	ar rv arc_lib.a start_int.o
+r - start_int.o
+	rm -f start_int.o
+	fort77    -c -u +O3 +U77 wgs72.f
+wgs72.f:
+   wgs72:
+	ar rv arc_lib.a wgs72.o
+r - wgs72.o
+	rm -f wgs72.o
+	fort77    -c -u +O3 +U77 wgs84.f
+wgs84.f:
+   wgs84:
+	ar rv arc_lib.a wgs84.o
+r - wgs84.o
+	rm -f wgs84.o
+	fort77    -c -u +O3 +U77 wrthed.f
+wrthed.f:
+   wrthed:
+	ar rv arc_lib.a wrthed.o
+r - wrthed.o
+	rm -f wrthed.o
+	fort77    -u +O3 +U77 arc.f arc_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o arc
+arc.f:
+   MAIN arc:
+	rm -f arc.o
+Made arc
+ 
+Running unimake to create Makefile for cfmrg
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+Makefile for cfmrg remade by unimake
+	fort77    -c -u +O3 +U77 aprior.f
+aprior.f:
+   aprior:
+	ar rv cfmrg_lib.a aprior.o
+r - aprior.o
+	rm -f aprior.o
+	fort77    -c -u +O3 +U77 check_limits.f
+check_limits.f:
+   check_limits:
+	ar rv cfmrg_lib.a check_limits.o
+r - check_limits.o
+	rm -f check_limits.o
+	fort77    -c -u +O3 +U77 cversn.f
+cversn.f:
+   cversn:
+	ar rv cfmrg_lib.a cversn.o
+r - cversn.o
+	rm -f cversn.o
+	fort77    -c -u +O3 +U77 fills1.f
+fills1.f:
+   fills1:
+	ar rv cfmrg_lib.a fills1.o
+r - fills1.o
+	rm -f fills1.o
+	fort77    -c -u +O3 +U77 fills2.f
+fills2.f:
+   fills2:
+	ar rv cfmrg_lib.a fills2.o
+r - fills2.o
+	rm -f fills2.o
+	fort77    -c -u +O3 +U77 getcfs.f
+getcfs.f:
+   getcfs:
+	ar rv cfmrg_lib.a getcfs.o
+r - getcfs.o
+	rm -f getcfs.o
+	fort77    -c -u +O3 +U77 queryb.f
+queryb.f:
+   queryb:
+	ar rv cfmrg_lib.a queryb.o
+r - queryb.o
+	rm -f queryb.o
+	fort77    -c -u +O3 +U77 queryp.f
+queryp.f:
+   queryp:
+	ar rv cfmrg_lib.a queryp.o
+r - queryp.o
+	rm -f queryp.o
+	fort77    -c -u +O3 +U77 reordr.f
+reordr.f:
+   reordr:
+	ar rv cfmrg_lib.a reordr.o
+r - reordr.o
+	rm -f reordr.o
+	fort77    -u +O3 +U77 cfmrg.f cfmrg_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o cfmrg
+cfmrg.f:
+   MAIN cfmrg:
+	rm -f cfmrg.o
+Made cfmrg
+ 
+Running unimake to create Makefile for clean
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+Machine-dependent source-files selected for cview_lib :  csubs_hp
+Machine-dependent source-files selected for dblcln_lib :  csubs_hp
+Machine-dependent source-files selected for sincln_lib :  csubs_hp
+Machine-dependent source-files selected for scan_lib :  csubs_hp
+Makefile for clean remade by unimake
+	fort77    -c -u +O3 +U77 addadj.f
+addadj.f:
+   addadj:
+	ar rv cview_lib.a addadj.o
+r - addadj.o
+	rm -f addadj.o
+	fort77    -c -u +O3 +U77 allan.f
+allan.f:
+   allan:
+	ar rv cview_lib.a allan.o
+r - allan.o
+	rm -f allan.o
+	fort77    -c -u +O3 +U77 bound.f
+bound.f:
+   bound:
+	ar rv cview_lib.a bound.o
+r - bound.o
+	rm -f bound.o
+	fort77    -c -u +O3 +U77 atm_grad_part.f
+atm_grad_part.f:
+   atm_grad_part:
+	ar rv cview_lib.a atm_grad_part.o
+r - atm_grad_part.o
+	rm -f atm_grad_part.o
+	fort77    -c -u +O3 +U77 check_wl.f
+check_wl.f:
+   check_wl:
+	ar rv cview_lib.a check_wl.o
+r - check_wl.o
+	rm -f check_wl.o
+	fort77    -c -u +O3 +U77 combo.f
+combo.f:
+   combo:
+	ar rv cview_lib.a combo.o
+r - combo.o
+	rm -f combo.o
+	fort77    -c -u +O3 +U77 cversn.f
+cversn.f:
+   cversn:
+	ar rv cview_lib.a cversn.o
+r - cversn.o
+	rm -f cversn.o
+	fort77    -c -u +O3 +U77 clkdif.f
+clkdif.f:
+   clkdif:
+	ar rv cview_lib.a clkdif.o
+r - clkdif.o
+	rm -f clkdif.o
+	fort77    -c -u +O3 +U77 editor.f
+editor.f:
+   editor:
+	ar rv cview_lib.a editor.o
+r - editor.o
+	rm -f editor.o
+	fort77    -c -u +O3 +U77 ed_bias.f
+ed_bias.f:
+   ed_bias:
+	ar rv cview_lib.a ed_bias.o
+r - ed_bias.o
+	rm -f ed_bias.o
+	fort77    -c -u +O3 +U77 ed_data.f
+ed_data.f:
+   ed_data:
+	ar rv cview_lib.a ed_data.o
+r - ed_data.o
+	rm -f ed_data.o
+	fort77    -c -u +O3 +U77 ed_elim.f
+ed_elim.f:
+   ed_elim:
+	ar rv cview_lib.a ed_elim.o
+r - ed_elim.o
+	rm -f ed_elim.o
+	fort77    -c -u +O3 +U77 ed_find.f
+ed_find.f:
+   ed_find:
+   ed_find1:
+   ed_find2:
+   check_bias:
+   check_gap:
+   check_bgap:
+	ar rv cview_lib.a ed_find.o
+r - ed_find.o
+	rm -f ed_find.o
+	fort77    -c -u +O3 +U77 ed_line.f
+ed_line.f:
+   ed_line:
+	ar rv cview_lib.a ed_line.o
+r - ed_line.o
+	rm -f ed_line.o
+	fort77    -c -u +O3 +U77 ed_list.f
+ed_list.f:
+   read_list:
+   ed_list:
+	ar rv cview_lib.a ed_list.o
+r - ed_list.o
+	rm -f ed_list.o
+	fort77    -c -u +O3 +U77 ed_mlbs.f
+ed_mlbs.f:
+   multibias:
+   newdd:
+   formsd:
+	ar rv cview_lib.a ed_mlbs.o
+r - ed_mlbs.o
+	rm -f ed_mlbs.o
+	fort77    -c -u +O3 +U77 ed_mnu0.f
+ed_mnu0.f:
+   ed_menus:
+	ar rv cview_lib.a ed_mnu0.o
+r - ed_mnu0.o
+	rm -f ed_mnu0.o
+	fort77    -c -u +O3 +U77 ed_mnu1.f
+ed_mnu1.f:
+   ed_seek:
+   ed_plot:
+   ed_file:
+   ed_1way:
+   ed_sat1:
+   ed_sat2:
+   ed_site1:
+   ed_site2:
+   ed_seekch:
+   ed_print:
+   ed_l12v:
+   ed_ipoly:
+   ed_skymap:
+   ed_stack:
+   ed_movie:
+   ed_stop:
+	ar rv cview_lib.a ed_mnu1.o
+r - ed_mnu1.o
+	rm -f ed_mnu1.o
+	fort77    -c -u +O3 +U77 ed_mnu2.f
+ed_mnu2.f:
+   ed_abort:
+   ed_span:
+   ed_all:
+   ed_marg:
+   ed_hide:
+   ed_lt:
+   ed_gt:
+   ed_mvleft:
+   ed_mvright:
+	ar rv cview_lib.a ed_mnu2.o
+r - ed_mnu2.o
+	rm -f ed_mnu2.o
+	fort77    -c -u +O3 +U77 ed_mnu3.f
+ed_mnu3.f:
+   ed_unwe:
+   ed_rewe:
+   ed_undo:
+   ed_cncl:
+   ed_note:
+	ar rv cview_lib.a ed_mnu3.o
+r - ed_mnu3.o
+	rm -f ed_mnu3.o
+	fort77    -c -u +O3 +U77 ed_move.f
+ed_move.f:
+   ed_move:
+   ed_menu12:
+	ar rv cview_lib.a ed_move.o
+r - ed_move.o
+	rm -f ed_move.o
+	fort77    -c -u +O3 +U77 ed_ptch.f
+ed_ptch.f:
+   ed_ptch:
+   ed_ptch1:
+   patch_save:
+   ptch_l1:
+   ptch_l2:
+   check_patch:
+   ptch_wl:
+	ar rv cview_lib.a ed_ptch.o
+r - ed_ptch.o
+	rm -f ed_ptch.o
+	fort77    -c -u +O3 +U77 ed_save.f
+ed_save.f:
+   ed_save:
+	ar rv cview_lib.a ed_save.o
+r - ed_save.o
+	rm -f ed_save.o
+	fort77    -c -u +O3 +U77 ed_slip.f
+ed_slip.f:
+   ed_slip:
+   autoslip:
+   initial:
+   findslip_ed:
+   ed_check_slip:
+   noise_lev:
+	ar rv cview_lib.a ed_slip.o
+r - ed_slip.o
+	rm -f ed_slip.o
+	fort77    -c -u +O3 +U77 ed_subs1.f
+ed_subs1.f:
+   editor_windos:
+   editor_menus:
+   editor_labels:
+   editor_plotsm:
+   editor_plotal:
+   editor_plotps:
+   editor_yaxis:
+   editor_xaxis:
+   editor_penplt:
+	ar rv cview_lib.a ed_subs1.o
+r - ed_subs1.o
+	rm -f ed_subs1.o
+	fort77    -c -u +O3 +U77 ed_subs2.f
+ed_subs2.f:
+   editor_plotts:
+   data_yaxis:
+   editor_plotdt:
+	ar rv cview_lib.a ed_subs2.o
+r - ed_subs2.o
+	rm -f ed_subs2.o
+	fort77    -c -u +O3 +U77 evlmem.f
+evlmem.f:
+   evlmem:
+	ar rv cview_lib.a evlmem.o
+r - evlmem.o
+	rm -f evlmem.o
+	fort77    -c -u +O3 +U77 finish.f
+finish.f:
+   finish:
+	ar rv cview_lib.a finish.o
+r - finish.o
+	rm -f finish.o
+	fort77    -c -u +O3 +U77 getser.f
+getser.f:
+   getser:
+	ar rv cview_lib.a getser.o
+r - getser.o
+	rm -f getser.o
+	fort77    -c -u +O3 +U77 getfil.f
+getfil.f:
+   getfil:
+	ar rv cview_lib.a getfil.o
+r - getfil.o
+	rm -f getfil.o
+	fort77    -c -u +O3 +U77 gj.f
+gj.f:
+   gj:
+	ar rv cview_lib.a gj.o
+r - gj.o
+	rm -f gj.o
+	fort77    -c -u +O3 +U77 gsubs_x.f
+gsubs_x.f:
+   gtsize:
+   gmsg:
+   gdump:
+	ar rv cview_lib.a gsubs_x.o
+r - gsubs_x.o
+	rm -f gsubs_x.o
+	fort77    -c -u +O3 +U77 gmsg_dumb.f
+gmsg_dumb.f:
+   gmsgd:
+	ar rv cview_lib.a gmsg_dumb.o
+r - gmsg_dumb.o
+	rm -f gmsg_dumb.o
+	fort77    -c -u +O3 +U77 memcof.f
+memcof.f:
+   memcof:
+	ar rv cview_lib.a memcof.o
+r - memcof.o
+	rm -f memcof.o
+	fort77    -c -u +O3 +U77 multip.f
+multip.f:
+   multip:
+   realp:
+   phase:
+   znorm:
+	ar rv cview_lib.a multip.o
+r - multip.o
+	rm -f multip.o
+	fort77    -c -u +O3 +U77 nicer.f
+nicer.f:
+   nicer:
+	ar rv cview_lib.a nicer.o
+r - nicer.o
+	rm -f nicer.o
+	fort77    -c -u +O3 +U77 nextob.f
+nextob.f:
+   nextobserv:
+   nextob:
+   seekback:
+   seeklist:
+	ar rv cview_lib.a nextob.o
+r - nextob.o
+	rm -f nextob.o
+	fort77    -c -u +O3 +U77 patch.f
+patch.f:
+   patch:
+   scanlgood:
+   fitlin:
+   mislcg:
+   estn:
+   rankc:
+   adyadd:
+   gvarcg:
+   getlcg:
+   erscan:
+   patch_lgwl:
+	ar rv cview_lib.a patch.o
+r - patch.o
+	rm -f patch.o
+	fort77    -c -u +O3 +U77 pointers.f
+pointers.f:
+   pointers:
+	ar rv cview_lib.a pointers.o
+r - pointers.o
+	rm -f pointers.o
+	fort77    -c -u +O3 +U77 polyft.f
+polyft.f:
+   polyft:
+	ar rv cview_lib.a polyft.o
+r - polyft.o
+	rm -f polyft.o
+	fort77    -c -u +O3 +U77 readc.f
+readc.f:
+   readc:
+	ar rv cview_lib.a readc.o
+r - readc.o
+	rm -f readc.o
+	fort77    -c -u +O3 +U77 readm.f
+readm.f:
+   readm:
+	ar rv cview_lib.a readm.o
+r - readm.o
+	rm -f readm.o
+	fort77    -c -u +O3 +U77 readx.f
+readx.f:
+   readx:
+	ar rv cview_lib.a readx.o
+r - readx.o
+	rm -f readx.o
+	fort77    -c -u +O3 +U77 rinex.f
+rinex.f:
+   rinex:
+	ar rv cview_lib.a rinex.o
+r - rinex.o
+	rm -f rinex.o
+	fort77    -c -u +O3 +U77 smooth.f
+smooth.f:
+   smooft:
+   realft:
+   four1:
+	ar rv cview_lib.a smooth.o
+r - smooth.o
+	rm -f smooth.o
+	fort77    -c -u +O3 +U77 vcopy.f
+vcopy.f:
+   vcopy:
+	ar rv cview_lib.a vcopy.o
+r - vcopy.o
+	rm -f vcopy.o
+	fort77    -c -u +O3 +U77 writec.f
+writec.f:
+   writec:
+	ar rv cview_lib.a writec.o
+r - writec.o
+	rm -f writec.o
+	fort77    -c -u +O3 +U77 write_vcview.f
+write_vcview.f:
+   write_vcview:
+	ar rv cview_lib.a write_vcview.o
+r - write_vcview.o
+	rm -f write_vcview.o
+	cc -c -g -I/usr/include/X11R5 get_color_ro.c
+	ar rv cview_lib.a get_color_ro.o
+r - get_color_ro.o
+	rm -f get_color_ro.o
+	fort77    -u +O3 +U77 cview.f cview_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -L/usr/lib/X11R5 -lX11 -o cview
+cview.f:
+   MAIN cview:
+/usr/ccs/bin/ld: (Warning) Linker features were used that may not be supported in future releases. The +vallcompatwarnings option can be used to display more detail -ns, and the ld(1) man page contains additional information. This warning can be suppressed with the +vnocompatwarnings option.
+	rm -f cview.o
+	fort77    -c -u +O3 +U77 addadj.f
+addadj.f:
+   addadj:
+	ar rv dblcln_lib.a addadj.o
+r - addadj.o
+	rm -f addadj.o
+	fort77    -c -u +O3 +U77 atm_grad_part.f
+atm_grad_part.f:
+   atm_grad_part:
+	ar rv dblcln_lib.a atm_grad_part.o
+r - atm_grad_part.o
+	rm -f atm_grad_part.o
+	fort77    -c -u +O3 +U77 bound.f
+bound.f:
+   bound:
+	ar rv dblcln_lib.a bound.o
+r - bound.o
+	rm -f bound.o
+	fort77    -c -u +O3 +U77 check_wl.f
+check_wl.f:
+   check_wl:
+	ar rv dblcln_lib.a check_wl.o
+r - check_wl.o
+	rm -f check_wl.o
+	fort77    -c -u +O3 +U77 combo.f
+combo.f:
+   combo:
+	ar rv dblcln_lib.a combo.o
+r - combo.o
+	rm -f combo.o
+	fort77    -c -u +O3 +U77 clkdif.f
+clkdif.f:
+   clkdif:
+	ar rv dblcln_lib.a clkdif.o
+r - clkdif.o
+	rm -f clkdif.o
+	fort77    -c -u +O3 +U77 drv_dbl0.f
+drv_dbl0.f:
+   driver:
+	ar rv dblcln_lib.a drv_dbl0.o
+r - drv_dbl0.o
+	rm -f drv_dbl0.o
+	fort77    -c -u +O3 +U77 drv_dbl1.f
+drv_dbl1.f:
+   iden_slips_dbl:
+   sort_slips_dbl:
+   patch_slips_dbl:
+   do_patch1_dbl:
+   do_patch2_dbl:
+   do_patch0:
+   find_bias:
+	ar rv dblcln_lib.a drv_dbl1.o
+r - drv_dbl1.o
+	rm -f drv_dbl1.o
+	fort77    -c -u +O3 +U77 dr_srch.f
+dr_srch.f:
+   search_slip:
+   find5:
+   get_eps:
+   dr_check_slip:
+   confirm_slip:
+   check_global:
+   find_gap:
+	ar rv dblcln_lib.a dr_srch.o
+r - dr_srch.o
+	rm -f dr_srch.o
+	fort77    -c -u +O3 +U77 dr_ptch.f
+dr_ptch.f:
+   dr_patch:
+   unwt_left:
+   unwt_right:
+   dr_save:
+   check_unwt:
+   cal_rms:
+	ar rv dblcln_lib.a dr_ptch.o
+r - dr_ptch.o
+	rm -f dr_ptch.o
+	fort77    -c -u +O3 +U77 evlmem.f
+evlmem.f:
+   evlmem:
+	ar rv dblcln_lib.a evlmem.o
+r - evlmem.o
+	rm -f evlmem.o
+	fort77    -c -u +O3 +U77 getfil.f
+getfil.f:
+   getfil:
+	ar rv dblcln_lib.a getfil.o
+r - getfil.o
+	rm -f getfil.o
+	fort77    -c -u +O3 +U77 gj.f
+gj.f:
+   gj:
+	ar rv dblcln_lib.a gj.o
+r - gj.o
+	rm -f gj.o
+	fort77    -c -u +O3 +U77 gmsg_dumb.f
+gmsg_dumb.f:
+   gmsgd:
+	ar rv dblcln_lib.a gmsg_dumb.o
+r - gmsg_dumb.o
+	rm -f gmsg_dumb.o
+	fort77    -c -u +O3 +U77 gsubs_x.f
+gsubs_x.f:
+   gtsize:
+   gmsg:
+   gdump:
+	ar rv dblcln_lib.a gsubs_x.o
+r - gsubs_x.o
+	rm -f gsubs_x.o
+	fort77    -c -u +O3 +U77 finish.f
+finish.f:
+   finish:
+	ar rv dblcln_lib.a finish.o
+r - finish.o
+	rm -f finish.o
+	fort77    -c -u +O3 +U77 memcof.f
+memcof.f:
+   memcof:
+	ar rv dblcln_lib.a memcof.o
+r - memcof.o
+	rm -f memcof.o
+	fort77    -c -u +O3 +U77 multip.f
+multip.f:
+   multip:
+   realp:
+   phase:
+   znorm:
+	ar rv dblcln_lib.a multip.o
+r - multip.o
+	rm -f multip.o
+	fort77    -c -u +O3 +U77 nicer.f
+nicer.f:
+   nicer:
+	ar rv dblcln_lib.a nicer.o
+r - nicer.o
+	rm -f nicer.o
+	fort77    -c -u +O3 +U77 nextob.f
+nextob.f:
+   nextobserv:
+   nextob:
+   seekback:
+   seeklist:
+	ar rv dblcln_lib.a nextob.o
+r - nextob.o
+	rm -f nextob.o
+	fort77    -c -u +O3 +U77 patch.f
+patch.f:
+   patch:
+   scanlgood:
+   fitlin:
+   mislcg:
+   estn:
+   rankc:
+   adyadd:
+   gvarcg:
+   getlcg:
+   erscan:
+   patch_lgwl:
+	ar rv dblcln_lib.a patch.o
+r - patch.o
+	rm -f patch.o
+	fort77    -c -u +O3 +U77 pointers.f
+pointers.f:
+   pointers:
+	ar rv dblcln_lib.a pointers.o
+r - pointers.o
+	rm -f pointers.o
+	fort77    -c -u +O3 +U77 polyft.f
+polyft.f:
+   polyft:
+	ar rv dblcln_lib.a polyft.o
+r - polyft.o
+	rm -f polyft.o
+	fort77    -c -u +O3 +U77 readc.f
+readc.f:
+   readc:
+	ar rv dblcln_lib.a readc.o
+r - readc.o
+	rm -f readc.o
+	fort77    -c -u +O3 +U77 readm.f
+readm.f:
+   readm:
+	ar rv dblcln_lib.a readm.o
+r - readm.o
+	rm -f readm.o
+	fort77    -c -u +O3 +U77 readx.f
+readx.f:
+   readx:
+	ar rv dblcln_lib.a readx.o
+r - readx.o
+	rm -f readx.o
+	fort77    -c -u +O3 +U77 rinex.f
+rinex.f:
+   rinex:
+	ar rv dblcln_lib.a rinex.o
+r - rinex.o
+	rm -f rinex.o
+	fort77    -c -u +O3 +U77 smooth.f
+smooth.f:
+   smooft:
+   realft:
+   four1:
+	ar rv dblcln_lib.a smooth.o
+r - smooth.o
+	rm -f smooth.o
+	fort77    -c -u +O3 +U77 vcopy.f
+vcopy.f:
+   vcopy:
+	ar rv dblcln_lib.a vcopy.o
+r - vcopy.o
+	rm -f vcopy.o
+	fort77    -c -u +O3 +U77 writec.f
+writec.f:
+   writec:
+	ar rv dblcln_lib.a writec.o
+r - writec.o
+	rm -f writec.o
+	fort77    -c -u +O3 +U77 write_vcview.f
+write_vcview.f:
+   write_vcview:
+	ar rv dblcln_lib.a write_vcview.o
+r - write_vcview.o
+	rm -f write_vcview.o
+	fort77    -c -u +O3 +U77 cversn.f
+cversn.f:
+   cversn:
+	ar rv dblcln_lib.a cversn.o
+r - cversn.o
+	rm -f cversn.o
+	fort77    -c -u +O3 +U77 getser1.f
+getser1.f:
+   getser1:
+   getser2:
+   getser4:
+   minmax:
+   check_ngood:
+	ar rv dblcln_lib.a getser1.o
+r - getser1.o
+	rm -f getser1.o
+	cc -c -g -I/usr/include/X11R5 get_color_ro.c
+	ar rv dblcln_lib.a get_color_ro.o
+r - get_color_ro.o
+	rm -f get_color_ro.o
+	fort77    -u +O3 +U77 dblcln.f dblcln_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -L/usr/lib/X11R5 -lX11 -o dblcln
+dblcln.f:
+   MAIN dblcln:
+/usr/ccs/bin/ld: (Warning) Linker features were used that may not be supported in future releases. The +vallcompatwarnings option can be used to display more detail -ns, and the ld(1) man page contains additional information. This warning can be suppressed with the +vnocompatwarnings option.
+	rm -f dblcln.o
+	fort77    -c -u +O3 +U77 addadj.f
+addadj.f:
+   addadj:
+	ar rv sincln_lib.a addadj.o
+r - addadj.o
+	rm -f addadj.o
+	fort77    -c -u +O3 +U77 atm_grad_part.f
+atm_grad_part.f:
+   atm_grad_part:
+	ar rv sincln_lib.a atm_grad_part.o
+r - atm_grad_part.o
+	rm -f atm_grad_part.o
+	fort77    -c -u +O3 +U77 bound.f
+bound.f:
+   bound:
+	ar rv sincln_lib.a bound.o
+r - bound.o
+	rm -f bound.o
+	fort77    -c -u +O3 +U77 check_wl.f
+check_wl.f:
+   check_wl:
+	ar rv sincln_lib.a check_wl.o
+r - check_wl.o
+	rm -f check_wl.o
+	fort77    -c -u +O3 +U77 combo.f
+combo.f:
+   combo:
+	ar rv sincln_lib.a combo.o
+r - combo.o
+	rm -f combo.o
+	fort77    -c -u +O3 +U77 clkdif.f
+clkdif.f:
+   clkdif:
+	ar rv sincln_lib.a clkdif.o
+r - clkdif.o
+	rm -f clkdif.o
+	fort77    -c -u +O3 +U77 drv_sin0.f
+drv_sin0.f:
+   driver1:
+   driver2:
+	ar rv sincln_lib.a drv_sin0.o
+r - drv_sin0.o
+	rm -f drv_sin0.o
+	fort77    -c -u +O3 +U77 drv_sin1.f
+drv_sin1.f:
+   cln_1way:
+   findslip1:
+	ar rv sincln_lib.a drv_sin1.o
+r - drv_sin1.o
+	rm -f drv_sin1.o
+	fort77    -c -u +O3 +U77 drv_sin2.f
+drv_sin2.f:
+   iden_slips_sin:
+   sort_slips_sin:
+   patch_slips_sin:
+   do_patch1:
+   do_patch2_sin:
+   load_slip:
+	ar rv sincln_lib.a drv_sin2.o
+r - drv_sin2.o
+	rm -f drv_sin2.o
+	fort77    -c -u +O3 +U77 dr_srch.f
+dr_srch.f:
+   search_slip:
+   find5:
+   get_eps:
+   dr_check_slip:
+   confirm_slip:
+   check_global:
+   find_gap:
+	ar rv sincln_lib.a dr_srch.o
+r - dr_srch.o
+	rm -f dr_srch.o
+	fort77    -c -u +O3 +U77 dr_ptch.f
+dr_ptch.f:
+   dr_patch:
+   unwt_left:
+   unwt_right:
+   dr_save:
+   check_unwt:
+   cal_rms:
+	ar rv sincln_lib.a dr_ptch.o
+r - dr_ptch.o
+	rm -f dr_ptch.o
+	fort77    -c -u +O3 +U77 dr_unwt.f
+dr_unwt.f:
+   unwt_short:
+   unwt_ends:
+   unwt_sngl:
+   unwt_trbl:
+   unwt_trbl1:
+   unwt_all:
+	ar rv sincln_lib.a dr_unwt.o
+r - dr_unwt.o
+	rm -f dr_unwt.o
+	fort77    -c -u +O3 +U77 evlmem.f
+evlmem.f:
+   evlmem:
+	ar rv sincln_lib.a evlmem.o
+r - evlmem.o
+	rm -f evlmem.o
+	fort77    -c -u +O3 +U77 getser1.f
+getser1.f:
+   getser1:
+   getser2:
+   getser4:
+   minmax:
+   check_ngood:
+	ar rv sincln_lib.a getser1.o
+r - getser1.o
+	rm -f getser1.o
+	fort77    -c -u +O3 +U77 gj.f
+gj.f:
+   gj:
+	ar rv sincln_lib.a gj.o
+r - gj.o
+	rm -f gj.o
+	fort77    -c -u +O3 +U77 gsubs_x.f
+gsubs_x.f:
+   gtsize:
+   gmsg:
+   gdump:
+	ar rv sincln_lib.a gsubs_x.o
+r - gsubs_x.o
+	rm -f gsubs_x.o
+	fort77    -c -u +O3 +U77 gmsg_dumb.f
+gmsg_dumb.f:
+   gmsgd:
+	ar rv sincln_lib.a gmsg_dumb.o
+r - gmsg_dumb.o
+	rm -f gmsg_dumb.o
+	fort77    -c -u +O3 +U77 memcof.f
+memcof.f:
+   memcof:
+	ar rv sincln_lib.a memcof.o
+r - memcof.o
+	rm -f memcof.o
+	fort77    -c -u +O3 +U77 multip.f
+multip.f:
+   multip:
+   realp:
+   phase:
+   znorm:
+	ar rv sincln_lib.a multip.o
+r - multip.o
+	rm -f multip.o
+	fort77    -c -u +O3 +U77 nicer.f
+nicer.f:
+   nicer:
+	ar rv sincln_lib.a nicer.o
+r - nicer.o
+	rm -f nicer.o
+	fort77    -c -u +O3 +U77 nextob.f
+nextob.f:
+   nextobserv:
+   nextob:
+   seekback:
+   seeklist:
+	ar rv sincln_lib.a nextob.o
+r - nextob.o
+	rm -f nextob.o
+	fort77    -c -u +O3 +U77 patch.f
+patch.f:
+   patch:
+   scanlgood:
+   fitlin:
+   mislcg:
+   estn:
+   rankc:
+   adyadd:
+   gvarcg:
+   getlcg:
+   erscan:
+   patch_lgwl:
+	ar rv sincln_lib.a patch.o
+r - patch.o
+	rm -f patch.o
+	fort77    -c -u +O3 +U77 pointers.f
+pointers.f:
+   pointers:
+	ar rv sincln_lib.a pointers.o
+r - pointers.o
+	rm -f pointers.o
+	fort77    -c -u +O3 +U77 polyft.f
+polyft.f:
+   polyft:
+	ar rv sincln_lib.a polyft.o
+r - polyft.o
+	rm -f polyft.o
+	fort77    -c -u +O3 +U77 readc.f
+readc.f:
+   readc:
+	ar rv sincln_lib.a readc.o
+r - readc.o
+	rm -f readc.o
+	fort77    -c -u +O3 +U77 readm.f
+readm.f:
+   readm:
+	ar rv sincln_lib.a readm.o
+r - readm.o
+	rm -f readm.o
+	fort77    -c -u +O3 +U77 readx.f
+readx.f:
+   readx:
+	ar rv sincln_lib.a readx.o
+r - readx.o
+	rm -f readx.o
+	fort77    -c -u +O3 +U77 rinex.f
+rinex.f:
+   rinex:
+	ar rv sincln_lib.a rinex.o
+r - rinex.o
+	rm -f rinex.o
+	fort77    -c -u +O3 +U77 smooth.f
+smooth.f:
+   smooft:
+   realft:
+   four1:
+	ar rv sincln_lib.a smooth.o
+r - smooth.o
+	rm -f smooth.o
+	fort77    -c -u +O3 +U77 vcopy.f
+vcopy.f:
+   vcopy:
+	ar rv sincln_lib.a vcopy.o
+r - vcopy.o
+	rm -f vcopy.o
+	fort77    -c -u +O3 +U77 writec.f
+writec.f:
+   writec:
+	ar rv sincln_lib.a writec.o
+r - writec.o
+	rm -f writec.o
+	fort77    -c -u +O3 +U77 cversn.f
+cversn.f:
+   cversn:
+	ar rv sincln_lib.a cversn.o
+r - cversn.o
+	rm -f cversn.o
+	cc -c -g -I/usr/include/X11R5 get_color_ro.c
+	ar rv sincln_lib.a get_color_ro.o
+r - get_color_ro.o
+	rm -f get_color_ro.o
+	fort77    -u +O3 +U77 sincln.f sincln_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -L/usr/lib/X11R5 -lX11 -o sincln
+sincln.f:
+   MAIN sincln:
+/usr/ccs/bin/ld: (Warning) Linker features were used that may not be supported in future releases. The +vallcompatwarnings option can be used to display more detail -ns, and the ld(1) man page contains additional information. This warning can be suppressed with the +vnocompatwarnings option.
+	rm -f sincln.o
+	fort77    -c -u +O3 +U77 addadj.f
+addadj.f:
+   addadj:
+	ar rv scan_lib.a addadj.o
+r - addadj.o
+	rm -f addadj.o
+	fort77    -c -u +O3 +U77 atm_grad_part.f
+atm_grad_part.f:
+   atm_grad_part:
+	ar rv scan_lib.a atm_grad_part.o
+r - atm_grad_part.o
+	rm -f atm_grad_part.o
+	fort77    -c -u +O3 +U77 bound.f
+bound.f:
+   bound:
+	ar rv scan_lib.a bound.o
+r - bound.o
+	rm -f bound.o
+	fort77    -c -u +O3 +U77 check_wl.f
+check_wl.f:
+   check_wl:
+	ar rv scan_lib.a check_wl.o
+r - check_wl.o
+	rm -f check_wl.o
+	fort77    -c -u +O3 +U77 combo.f
+combo.f:
+   combo:
+	ar rv scan_lib.a combo.o
+r - combo.o
+	rm -f combo.o
+	fort77    -c -u +O3 +U77 drv_scn.f
+drv_scn.f:
+   findslip_scn:
+	ar rv scan_lib.a drv_scn.o
+r - drv_scn.o
+	rm -f drv_scn.o
+	fort77    -c -u +O3 +U77 dr_srch.f
+dr_srch.f:
+   search_slip:
+   find5:
+   get_eps:
+   dr_check_slip:
+   confirm_slip:
+   check_global:
+   find_gap:
+	ar rv scan_lib.a dr_srch.o
+r - dr_srch.o
+	rm -f dr_srch.o
+	fort77    -c -u +O3 +U77 dr_ptch.f
+dr_ptch.f:
+   dr_patch:
+   unwt_left:
+   unwt_right:
+   dr_save:
+   check_unwt:
+   cal_rms:
+	ar rv scan_lib.a dr_ptch.o
+r - dr_ptch.o
+	rm -f dr_ptch.o
+	fort77    -c -u +O3 +U77 clkdif.f
+clkdif.f:
+   clkdif:
+	ar rv scan_lib.a clkdif.o
+r - clkdif.o
+	rm -f clkdif.o
+	fort77    -c -u +O3 +U77 finish.f
+finish.f:
+   finish:
+	ar rv scan_lib.a finish.o
+r - finish.o
+	rm -f finish.o
+	fort77    -c -u +O3 +U77 getfil.f
+getfil.f:
+   getfil:
+	ar rv scan_lib.a getfil.o
+r - getfil.o
+	rm -f getfil.o
+	fort77    -c -u +O3 +U77 getser.f
+getser.f:
+   getser:
+	ar rv scan_lib.a getser.o
+r - getser.o
+	rm -f getser.o
+	fort77    -c -u +O3 +U77 gmsg_dumb.f
+gmsg_dumb.f:
+   gmsgd:
+	ar rv scan_lib.a gmsg_dumb.o
+r - gmsg_dumb.o
+	rm -f gmsg_dumb.o
+	fort77    -c -u +O3 +U77 gsubs_x.f
+gsubs_x.f:
+   gtsize:
+   gmsg:
+   gdump:
+	ar rv scan_lib.a gsubs_x.o
+r - gsubs_x.o
+	rm -f gsubs_x.o
+	fort77    -c -u +O3 +U77 multip.f
+multip.f:
+   multip:
+   realp:
+   phase:
+   znorm:
+	ar rv scan_lib.a multip.o
+r - multip.o
+	rm -f multip.o
+	fort77    -c -u +O3 +U77 patch.f
+patch.f:
+   patch:
+   scanlgood:
+   fitlin:
+   mislcg:
+   estn:
+   rankc:
+   adyadd:
+   gvarcg:
+   getlcg:
+   erscan:
+   patch_lgwl:
+	ar rv scan_lib.a patch.o
+r - patch.o
+	rm -f patch.o
+	fort77    -c -u +O3 +U77 nextob.f
+nextob.f:
+   nextobserv:
+   nextob:
+   seekback:
+   seeklist:
+	ar rv scan_lib.a nextob.o
+r - nextob.o
+	rm -f nextob.o
+	fort77    -c -u +O3 +U77 pointers.f
+pointers.f:
+   pointers:
+	ar rv scan_lib.a pointers.o
+r - pointers.o
+	rm -f pointers.o
+	fort77    -c -u +O3 +U77 readc.f
+readc.f:
+   readc:
+	ar rv scan_lib.a readc.o
+r - readc.o
+	rm -f readc.o
+	fort77    -c -u +O3 +U77 readm.f
+readm.f:
+   readm:
+	ar rv scan_lib.a readm.o
+r - readm.o
+	rm -f readm.o
+	fort77    -c -u +O3 +U77 readx.f
+readx.f:
+   readx:
+	ar rv scan_lib.a readx.o
+r - readx.o
+	rm -f readx.o
+	fort77    -c -u +O3 +U77 rinex.f
+rinex.f:
+   rinex:
+	ar rv scan_lib.a rinex.o
+r - rinex.o
+	rm -f rinex.o
+	fort77    -c -u +O3 +U77 scanner.f
+scanner.f:
+   scannerdd:
+   push_bias:
+   get_rms:
+	ar rv scan_lib.a scanner.o
+r - scanner.o
+	rm -f scanner.o
+	fort77    -c -u +O3 +U77 vcopy.f
+vcopy.f:
+   vcopy:
+	ar rv scan_lib.a vcopy.o
+r - vcopy.o
+	rm -f vcopy.o
+	fort77    -c -u +O3 +U77 writec.f
+writec.f:
+   writec:
+	ar rv scan_lib.a writec.o
+r - writec.o
+	rm -f writec.o
+	fort77    -c -u +O3 +U77 write_vcview.f
+write_vcview.f:
+   write_vcview:
+	ar rv scan_lib.a write_vcview.o
+r - write_vcview.o
+	rm -f write_vcview.o
+	fort77    -c -u +O3 +U77 cversn.f
+cversn.f:
+   cversn:
+	ar rv scan_lib.a cversn.o
+r - cversn.o
+	rm -f cversn.o
+	cc -c -g -I/usr/include/X11R5 get_color_ro.c
+	ar rv scan_lib.a get_color_ro.o
+r - get_color_ro.o
+	rm -f get_color_ro.o
+	fort77    -u +O3 +U77 scandd.f scan_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -L/usr/lib/X11R5 -lX11 -o scandd
+scandd.f:
+   MAIN scandd:
+/usr/ccs/bin/ld: (Warning) Linker features were used that may not be supported in future releases. The +vallcompatwarnings option can be used to display more detail -ns, and the ld(1) man page contains additional information. This warning can be suppressed with the +vnocompatwarnings option.
+	rm -f scandd.o
+	fort77    -c -u +O3 +U77 addadj.f
+addadj.f:
+   addadj:
+	ar rv rmbias_lib.a addadj.o
+r - addadj.o
+	rm -f addadj.o
+	fort77    -c -u +O3 +U77 atm_grad_part.f
+atm_grad_part.f:
+   atm_grad_part:
+	ar rv rmbias_lib.a atm_grad_part.o
+r - atm_grad_part.o
+	rm -f atm_grad_part.o
+	fort77    -c -u +O3 +U77 cversn.f
+cversn.f:
+   cversn:
+	ar rv rmbias_lib.a cversn.o
+r - cversn.o
+	rm -f cversn.o
+	fort77    -c -u +O3 +U77 pointers.f
+pointers.f:
+   pointers:
+	ar rv rmbias_lib.a pointers.o
+r - pointers.o
+	rm -f pointers.o
+	fort77    -c -u +O3 +U77 readc.f
+readc.f:
+   readc:
+	ar rv rmbias_lib.a readc.o
+r - readc.o
+	rm -f readc.o
+	fort77    -c -u +O3 +U77 writec.f
+writec.f:
+   writec:
+	ar rv rmbias_lib.a writec.o
+r - writec.o
+	rm -f writec.o
+	fort77    -u +O3 +U77 rmbias.f rmbias_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o rmbias
+rmbias.f:
+   MAIN rmbias:
+   rm_driver:
+/usr/ccs/bin/ld: (Warning) Linker features were used that may not be supported in future releases. The +vallcompatwarnings option can be used to display more detail -ns, and the ld(1) man page contains additional information. This warning can be suppressed with the +vnocompatwarnings option.
+	rm -f rmbias.o
+	fort77    -u +O3 +U77 showrms.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o showrms
+showrms.f:
+   MAIN showrms:
+   remove:
+   showtb:
+   getsum:
+   rdrms:
+   help:
+	rm -f showrms.o
+Made clean
+ 
+Running unimake to create Makefile for ctox
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+Makefile for ctox remade by unimake
+	fort77    -c -u +O3 +U77 beat.f
+beat.f:
+   beat:
+	ar rv ctox_lib.a beat.o
+r - beat.o
+	rm -f beat.o
+	fort77    -c -u +O3 +U77 cdtred.f
+cdtred.f:
+   cdtred:
+	ar rv ctox_lib.a cdtred.o
+r - cdtred.o
+	rm -f cdtred.o
+	fort77    -c -u +O3 +U77 chdred.f
+chdred.f:
+   chdred:
+	ar rv ctox_lib.a chdred.o
+r - chdred.o
+	rm -f chdred.o
+	fort77    -c -u +O3 +U77 cversn.f
+cversn.f:
+   cversn:
+	ar rv ctox_lib.a cversn.o
+r - cversn.o
+	rm -f cversn.o
+	fort77    -c -u +O3 +U77 diagno.f
+diagno.f:
+   diagno:
+	ar rv ctox_lib.a diagno.o
+r - diagno.o
+	rm -f diagno.o
+	fort77    -c -u +O3 +U77 gj.f
+gj.f:
+   gj:
+	ar rv ctox_lib.a gj.o
+r - gj.o
+	rm -f gj.o
+	fort77    -c -u +O3 +U77 groupn.f
+groupn.f:
+   groupn:
+	ar rv ctox_lib.a groupn.o
+r - groupn.o
+	rm -f groupn.o
+	fort77    -c -u +O3 +U77 nmpnt.f
+nmpnt.f:
+   nmpnt:
+	ar rv ctox_lib.a nmpnt.o
+r - nmpnt.o
+	rm -f nmpnt.o
+	fort77    -c -u +O3 +U77 polyft.f
+polyft.f:
+   polyft:
+	ar rv ctox_lib.a polyft.o
+r - polyft.o
+	rm -f polyft.o
+	fort77    -c -u +O3 +U77 raddeg.f
+raddeg.f:
+   raddeg:
+	ar rv ctox_lib.a raddeg.o
+r - raddeg.o
+	rm -f raddeg.o
+	fort77    -c -u +O3 +U77 xdtrit.f
+xdtrit.f:
+   xdtrit:
+	ar rv ctox_lib.a xdtrit.o
+r - xdtrit.o
+	rm -f xdtrit.o
+	fort77    -c -u +O3 +U77 xhdrit.f
+xhdrit.f:
+   xhdrit:
+	ar rv ctox_lib.a xhdrit.o
+r - xhdrit.o
+	rm -f xhdrit.o
+	fort77    -u +O3 +U77 ctox.f ctox_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ctox
+ctox.f:
+   MAIN ctox:
+	rm -f ctox.o
+	fort77    -c -u +O3 +U77 cversn.f
+cversn.f:
+   cversn:
+	ar rv ctoc92_lib.a cversn.o
+r - cversn.o
+	rm -f cversn.o
+	fort77    -u +O3 +U77 ctoc92.f ctoc92_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ctoc92
+ctoc92.f:
+   MAIN ctoc92:
+   readc1:
+   readc2:
+   readc3:
+   readc4:
+   readc5:
+	rm -f ctoc92.o
+	fort77    -c -u +O3 +U77 cversn.f
+cversn.f:
+   cversn:
+	ar rv ctoc95_lib.a cversn.o
+r - cversn.o
+	rm -f cversn.o
+	fort77    -u +O3 +U77 ctoc95.f ctoc95_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ctoc95
+ctoc95.f:
+   MAIN ctoc95:
+   readc2:
+   readc5:
+	rm -f ctoc95.o
+Made ctox
+ 
+Running unimake to create Makefile for fica
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for fica, SKIP
+	fort77    -u +O3 +U77 ficachop.f  ../makex/makex_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ficachop
+ficachop.f:
+   MAIN ficachop:
+	rm -f ficachop.o
+	fort77    -u +O3 +U77 ficacomp.f  ../makex/makex_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ficacomp
+ficacomp.f:
+   MAIN ficacomp:
+   uptaly:
+	rm -f ficacomp.o
+	fort77    -u +O3 +U77 ficalabl.f  ../makex/makex_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ficalabl
+ficalabl.f:
+   MAIN ficalabl:
+   uptaly:
+	rm -f ficalabl.o
+	fort77    -u +O3 +U77 ficamerg.f  ../makex/makex_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ficamerg
+ficamerg.f:
+   MAIN ficamerg:
+   uptaly:
+	rm -f ficamerg.o
+	fort77    -u +O3 +U77 ficamove.f  ../makex/makex_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ficamove
+ficamove.f:
+   MAIN ficamove:
+   uptaly:
+	rm -f ficamove.o
+	fort77    -u +O3 +U77 ficapull.f  ../makex/makex_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ficapull
+ficapull.f:
+   MAIN ficapull:
+   uptaly:
+	rm -f ficapull.o
+	fort77    -u +O3 +U77 ficascan.f  ../makex/makex_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ficascan
+ficascan.f:
+   MAIN ficascan:
+   uptaly:
+	rm -f ficascan.o
+	fort77    -u +O3 +U77 ficaslim.f  ../makex/makex_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ficaslim
+ficaslim.f:
+   MAIN ficaslim:
+   uptaly:
+	rm -f ficaslim.o
+	fort77    -u +O3 +U77 ficaspan.f  ../makex/makex_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ficaspan
+ficaspan.f:
+   MAIN ficaspan:
+	rm -f ficaspan.o
+	fort77    -u +O3 +U77 ficaweek.f  ../makex/makex_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ficaweek
+ficaweek.f:
+   MAIN ficaweek:
+   uptaly:
+	rm -f ficaweek.o
+Made fica
+ 
+Running unimake to create Makefile for fixdrv
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+Makefile for fixdrv remade by unimake
+	fort77    -c -u +O3 +U77 acmake.f
+acmake.f:
+   acmake:
+	ar rv fixdrv_lib.a acmake.o
+r - acmake.o
+	rm -f acmake.o
+	fort77    -c -u +O3 +U77 armake.f
+armake.f:
+   armake:
+	ar rv fixdrv_lib.a armake.o
+r - armake.o
+	rm -f armake.o
+	fort77    -c -u +O3 +U77 bmake.f
+bmake.f:
+   bmake:
+	ar rv fixdrv_lib.a bmake.o
+r - bmake.o
+	rm -f bmake.o
+	fort77    -c -u +O3 +U77 chdred.f
+chdred.f:
+   chdred:
+	ar rv fixdrv_lib.a chdred.o
+r - chdred.o
+	rm -f chdred.o
+	fort77    -c -u +O3 +U77 chrnum.f
+chrnum.f:
+   chrnum:
+	ar rv fixdrv_lib.a chrnum.o
+r - chrnum.o
+	rm -f chrnum.o
+	fort77    -c -u +O3 +U77 clkprm.f
+clkprm.f:
+   clkprm:
+	ar rv fixdrv_lib.a clkprm.o
+r - clkprm.o
+	rm -f clkprm.o
+	fort77    -c -u +O3 +U77 cmmake.f
+cmmake.f:
+   cmmake:
+	ar rv fixdrv_lib.a cmmake.o
+r - cmmake.o
+	rm -f cmmake.o
+	fort77    -c -u +O3 +U77 dcheck.f
+dcheck.f:
+   dcheck:
+	ar rv fixdrv_lib.a dcheck.o
+r - dcheck.o
+	rm -f dcheck.o
+	fort77    -c -u +O3 +U77 dbmake.f
+dbmake.f:
+   dbmake:
+	ar rv fixdrv_lib.a dbmake.o
+r - dbmake.o
+	rm -f dbmake.o
+	fort77    -c -u +O3 +U77 fversn.f
+fversn.f:
+   fversn:
+	ar rv fixdrv_lib.a fversn.o
+r - fversn.o
+	rm -f fversn.o
+	fort77    -c -u +O3 +U77 imakef.f
+imakef.f:
+   imakef:
+	ar rv fixdrv_lib.a imakef.o
+r - imakef.o
+	rm -f imakef.o
+	fort77    -c -u +O3 +U77 lfntop.f
+lfntop.f:
+   lfntop:
+	ar rv fixdrv_lib.a lfntop.o
+r - lfntop.o
+	rm -f lfntop.o
+	fort77    -c -u +O3 +U77 mdmake.f
+mdmake.f:
+   mdmake:
+	ar rv fixdrv_lib.a mdmake.o
+r - mdmake.o
+	rm -f mdmake.o
+	fort77    -c -u +O3 +U77 newchr.f
+newchr.f:
+   newchr:
+	ar rv fixdrv_lib.a newchr.o
+r - newchr.o
+	rm -f newchr.o
+	fort77    -c -u +O3 +U77 nextt1.f
+nextt1.f:
+   nextt1:
+	ar rv fixdrv_lib.a nextt1.o
+r - nextt1.o
+	rm -f nextt1.o
+	fort77    -c -u +O3 +U77 ngmake.f
+ngmake.f:
+   ngmake:
+	ar rv fixdrv_lib.a ngmake.o
+r - ngmake.o
+	rm -f ngmake.o
+	fort77    -c -u +O3 +U77 nxepoc.f
+nxepoc.f:
+   nxepoc:
+	ar rv fixdrv_lib.a nxepoc.o
+r - nxepoc.o
+	rm -f nxepoc.o
+	fort77    -c -u +O3 +U77 nxsat.f
+nxsat.f:
+   nxsat:
+	ar rv fixdrv_lib.a nxsat.o
+r - nxsat.o
+	rm -f nxsat.o
+	fort77    -c -u +O3 +U77 rdsitt.f
+rdsitt.f:
+   rdsitt:
+	ar rv fixdrv_lib.a rdsitt.o
+r - rdsitt.o
+	rm -f rdsitt.o
+	fort77    -c -u +O3 +U77 satnmr.f
+satnmr.f:
+   satnmr:
+	ar rv fixdrv_lib.a satnmr.o
+r - satnmr.o
+	rm -f satnmr.o
+	fort77    -c -u +O3 +U77 seschk.f
+seschk.f:
+   seschk:
+   sort1i:
+	ar rv fixdrv_lib.a seschk.o
+r - seschk.o
+	rm -f seschk.o
+	fort77    -c -u +O3 +U77 somake.f
+somake.f:
+   somake:
+	ar rv fixdrv_lib.a somake.o
+r - somake.o
+	rm -f somake.o
+	fort77    -c -u +O3 +U77 tgsats.f
+tgsats.f:
+   tgsats:
+	ar rv fixdrv_lib.a tgsats.o
+r - tgsats.o
+	rm -f tgsats.o
+	fort77    -c -u +O3 +U77 timeup.f
+timeup.f:
+   timeup:
+	ar rv fixdrv_lib.a timeup.o
+r - timeup.o
+	rm -f timeup.o
+	fort77    -c -u +O3 +U77 upchr.f
+upchr.f:
+   upchr:
+	ar rv fixdrv_lib.a upchr.o
+r - upchr.o
+	rm -f upchr.o
+	fort77    -c -u +O3 +U77 xcheck.f
+xcheck.f:
+   xcheck:
+	ar rv fixdrv_lib.a xcheck.o
+r - xcheck.o
+	rm -f xcheck.o
+	fort77    -c -u +O3 +U77 xcsats.f
+xcsats.f:
+   xcsats:
+	ar rv fixdrv_lib.a xcsats.o
+r - xcsats.o
+	rm -f xcsats.o
+	fort77    -u +O3 +U77 fixdrv.f fixdrv_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o fixdrv
+fixdrv.f:
+   MAIN fixdrv:
+	rm -f fixdrv.o
+Made fixdrv
+ 
+Running unimake to create Makefile for hi
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+Makefile for hi remade by unimake
+	fort77    -u +O3 +U77 hi.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o hi
+hi.f:
+   MAIN hi:
+	rm -f hi.o
+	fort77    -u +O3 +U77 hi2stnfo.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o hi2stnfo
+hi2stnfo.f:
+   MAIN hi2stnfo:
+	rm -f hi2stnfo.o
+	fort77    -u +O3 +U77 hi2hi92.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o hi2hi92
+hi2hi92.f:
+   MAIN hi2hi92:
+	rm -f hi2hi92.o
+	fort77    -u +O3 +U77 hi2hi90.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o hi2hi90
+hi2hi90.f:
+   MAIN hi2hi90:
+	rm -f hi2hi90.o
+	fort77    -u +O3 +U77 make_stnfo.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o make_stnfo
+make_stnfo.f:
+   MAIN:
+	rm -f make_stnfo.o
+	fort77    -u +O3 +U77 conv_stnfo.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o conv_stnfo
+conv_stnfo.f:
+   MAIN:
+   read_old_stnfo:
+	rm -f conv_stnfo.o
+	fort77    -u +O3 +U77 test_stnfo.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o test_stnfo
+test_stnfo.f:
+   MAIN:
+	rm -f test_stnfo.o
+Made hi
+ 
+Running unimake to create Makefile for makexp
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+Makefile for makexp remade by unimake
+	fort77    -c -u +O3 +U77 checke.f
+checke.f:
+   checke:
+	ar rv makexp_lib.a checke.o
+r - checke.o
+	rm -f checke.o
+	fort77    -u +O3 +U77 makexp.f makexp_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o makexp
+makexp.f:
+   MAIN makexp:
+   sinfo_check:
+	rm -f makexp.o
+Made makexp
+ 
+Running unimake to create Makefile for model
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+Makefile for model remade by unimake
+	fort77    -c -u +O3 +U77 atmdel.f
+atmdel.f:
+   atmdel:
+	ar rv model_lib.a atmdel.o
+r - atmdel.o
+	rm -f atmdel.o
+	fort77    -c -u +O3 +U77 atmred.f
+atmred.f:
+   atmred:
+	ar rv model_lib.a atmred.o
+r - atmred.o
+	rm -f atmred.o
+	fort77    -c -u +O3 +U77 avclck.f
+avclck.f:
+   avclck:
+	ar rv model_lib.a avclck.o
+r - avclck.o
+	rm -f avclck.o
+	fort77    -c -u +O3 +U77 az_elev.f
+az_elev.f:
+   az_elev:
+	ar rv model_lib.a az_elev.o
+r - az_elev.o
+	rm -f az_elev.o
+	fort77    -c -u +O3 +U77 cfa.f
+cfa.f:
+   cfa:
+	ar rv model_lib.a cfa.o
+r - cfa.o
+	rm -f cfa.o
+	fort77    -c -u +O3 +U77 cfout.f
+cfout.f:
+   cfout:
+	ar rv model_lib.a cfout.o
+r - cfout.o
+	rm -f cfout.o
+	fort77    -c -u +O3 +U77 chdred.f
+chdred.f:
+   chdred:
+	ar rv model_lib.a chdred.o
+r - chdred.o
+	rm -f chdred.o
+	fort77    -c -u +O3 +U77 corsim.f
+corsim.f:
+   corsim:
+	ar rv model_lib.a corsim.o
+r - corsim.o
+	rm -f corsim.o
+	fort77    -c -u +O3 +U77 cortyp.f
+cortyp.f:
+   cortyp:
+	ar rv model_lib.a cortyp.o
+r - cortyp.o
+	rm -f cortyp.o
+	fort77    -c -u +O3 +U77 dchao.f
+dchao.f:
+   dchao:
+	ar rv model_lib.a dchao.o
+r - dchao.o
+	rm -f dchao.o
+	fort77    -c -u +O3 +U77 dipole_comp.f
+dipole_comp.f:
+   dipole_comp:
+	ar rv model_lib.a dipole_comp.o
+r - dipole_comp.o
+	rm -f dipole_comp.o
+	fort77    -c -u +O3 +U77 eopart.f
+eopart.f:
+   eopart:
+	ar rv model_lib.a eopart.o
+r - eopart.o
+	rm -f eopart.o
+	fort77    -c -u +O3 +U77 epoch_clk.f
+epoch_clk.f:
+   epoch_clk:
+	ar rv model_lib.a epoch_clk.o
+r - epoch_clk.o
+	rm -f epoch_clk.o
+	fort77    -c -u +O3 +U77 etide.f
+etide.f:
+   etide:
+	ar rv model_lib.a etide.o
+r - etide.o
+	rm -f etide.o
+	fort77    -c -u +O3 +U77 ffun.f
+ffun.f:
+   ffun:
+	ar rv model_lib.a ffun.o
+r - ffun.o
+	rm -f ffun.o
+	fort77    -c -u +O3 +U77 gdetic.f
+gdetic.f:
+   gdetic:
+	ar rv model_lib.a gdetic.o
+r - gdetic.o
+	rm -f gdetic.o
+	fort77    -c -u +O3 +U77 gps_coords.f
+gps_coords.f:
+   gps_coords:
+	ar rv model_lib.a gps_coords.o
+r - gps_coords.o
+	rm -f gps_coords.o
+	fort77    -c -u +O3 +U77 height.f
+height.f:
+   height:
+	ar rv model_lib.a height.o
+r - height.o
+	rm -f height.o
+	fort77    -c -u +O3 +U77 lunred.f
+lunred.f:
+   lunred:
+	ar rv model_lib.a lunred.o
+r - lunred.o
+	rm -f lunred.o
+	fort77    -c -u +O3 +U77 marini.f
+marini.f:
+   marini:
+	ar rv model_lib.a marini.o
+r - marini.o
+	rm -f marini.o
+	fort77    -c -u +O3 +U77 metmod.f
+metmod.f:
+   metmod:
+	ar rv model_lib.a metmod.o
+r - metmod.o
+	rm -f metmod.o
+	fort77    -c -u +O3 +U77 mversn.f
+mversn.f:
+   mversn:
+	ar rv model_lib.a mversn.o
+r - mversn.o
+	rm -f mversn.o
+	fort77    -c -u +O3 +U77 nmfh2p1.f
+nmfh2p1.f:
+   nmfh2p1:
+	ar rv model_lib.a nmfh2p1.o
+r - nmfh2p1.o
+	rm -f nmfh2p1.o
+	fort77    -c -u +O3 +U77 nmfw2.f
+nmfw2.f:
+   nmfw2:
+	ar rv model_lib.a nmfw2.o
+r - nmfw2.o
+	rm -f nmfw2.o
+	fort77    -c -u +O3 +U77 obsmod.f
+obsmod.f:
+   obsmod:
+	ar rv model_lib.a obsmod.o
+r - obsmod.o
+	rm -f obsmod.o
+	fort77    -c -u +O3 +U77 obsred.f
+obsred.f:
+   obsred:
+	ar rv model_lib.a obsred.o
+r - obsred.o
+	rm -f obsred.o
+	fort77    -c -u +O3 +U77 ocearg.f
+ocearg.f:
+   ocearg:
+	ar rv model_lib.a ocearg.o
+r - ocearg.o
+	rm -f ocearg.o
+	fort77    -c -u +O3 +U77 ocearg2.f
+ocearg2.f:
+   ocearg2:
+	ar rv model_lib.a ocearg2.o
+r - ocearg2.o
+	rm -f ocearg2.o
+	fort77    -c -u +O3 +U77 open.f
+open.f:
+   open:
+	ar rv model_lib.a open.o
+r - open.o
+	rm -f open.o
+	fort77    -c -u +O3 +U77 partl.f
+partl.f:
+   partl:
+	ar rv model_lib.a partl.o
+r - partl.o
+	rm -f partl.o
+	fort77    -c -u +O3 +U77 phasecc.f
+phasecc.f:
+   phasecc:
+	ar rv model_lib.a phasecc.o
+r - phasecc.o
+	rm -f phasecc.o
+	fort77    -c -u +O3 +U77 poly_clk.f
+poly_clk.f:
+   poly_clk:
+	ar rv model_lib.a poly_clk.o
+r - poly_clk.o
+	rm -f poly_clk.o
+	fort77    -c -u +O3 +U77 ptide.f
+ptide.f:
+   ptide:
+	ar rv model_lib.a ptide.o
+r - ptide.o
+	rm -f ptide.o
+	fort77    -c -u +O3 +U77 readi.f
+readi.f:
+   readi:
+	ar rv model_lib.a readi.o
+r - readi.o
+	rm -f readi.o
+	fort77    -c -u +O3 +U77 saaszd.f
+saaszd.f:
+   saaszd:
+	ar rv model_lib.a saaszd.o
+r - saaszd.o
+	rm -f saaszd.o
+	fort77    -c -u +O3 +U77 satatt.f
+satatt.f:
+   satatt:
+	ar rv model_lib.a satatt.o
+r - satatt.o
+	rm -f satatt.o
+	fort77    -c -u +O3 +U77 setup.f
+setup.f:
+   setup:
+	ar rv model_lib.a setup.o
+r - setup.o
+	rm -f setup.o
+	fort77    -c -u +O3 +U77 shftor.f
+shftor.f:
+   shftor:
+	ar rv model_lib.a shftor.o
+r - shftor.o
+	rm -f shftor.o
+	fort77    -c -u +O3 +U77 simred.f
+simred.f:
+   simred:
+	ar rv model_lib.a simred.o
+r - simred.o
+	rm -f simred.o
+	fort77    -c -u +O3 +U77 sitcor.f
+sitcor.f:
+   sitcor:
+	ar rv model_lib.a sitcor.o
+r - sitcor.o
+	rm -f sitcor.o
+	fort77    -c -u +O3 +U77 solred.f
+solred.f:
+   solred:
+	ar rv model_lib.a solred.o
+r - solred.o
+	rm -f solred.o
+	fort77    -c -u +O3 +U77 svant.f
+svant.f:
+   svant:
+	ar rv model_lib.a svant.o
+r - svant.o
+	rm -f svant.o
+	fort77    -c -u +O3 +U77 update_coords.f
+update_coords.f:
+   update_coords:
+	ar rv model_lib.a update_coords.o
+r - update_coords.o
+	rm -f update_coords.o
+	fort77    -c -u +O3 +U77 wchao.f
+wchao.f:
+   wchao:
+	ar rv model_lib.a wchao.o
+r - wchao.o
+	rm -f wchao.o
+	fort77    -c -u +O3 +U77 whdred.f
+whdred.f:
+   whdred:
+	ar rv model_lib.a whdred.o
+r - whdred.o
+	rm -f whdred.o
+	fort77    -c -u +O3 +U77 wpress.f
+wpress.f:
+   wpress:
+	ar rv model_lib.a wpress.o
+r - wpress.o
+	rm -f wpress.o
+	fort77    -c -u +O3 +U77 wrthed.f
+wrthed.f:
+   wrthed:
+	ar rv model_lib.a wrthed.o
+r - wrthed.o
+	rm -f wrthed.o
+	fort77    -c -u +O3 +U77 wvrred.f
+wvrred.f:
+   wvrred:
+	ar rv model_lib.a wvrred.o
+r - wvrred.o
+	rm -f wvrred.o
+	fort77    -c -u +O3 +U77 zentmp.f
+zentmp.f:
+   zentmp:
+	ar rv model_lib.a zentmp.o
+r - zentmp.o
+	rm -f zentmp.o
+	fort77    -c -u +O3 +U77 zhdred.f
+zhdred.f:
+   zhdred:
+	ar rv model_lib.a zhdred.o
+r - zhdred.o
+	rm -f zhdred.o
+	fort77    -u +O3 +U77 model.f model_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o model
+model.f:
+   MAIN model:
+	rm -f model.o
+Made model
+ 
+Running unimake to create Makefile for orbits
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+Makefile for orbits remade by unimake
+	fort77    -c -u +O3 +U77 brdxyz.f
+brdxyz.f:
+   brdxyz:
+	ar rv bccheck_lib.a brdxyz.o
+r - brdxyz.o
+	rm -f brdxyz.o
+	fort77    -c -u +O3 +U77 oversn.f
+oversn.f:
+   oversn:
+	ar rv bccheck_lib.a oversn.o
+r - oversn.o
+	rm -f oversn.o
+	fort77    -c -u +O3 +U77 writee.f
+writee.f:
+   writee:
+	ar rv bccheck_lib.a writee.o
+r - writee.o
+	rm -f writee.o
+	fort77    -u +O3 +U77 bccheck.f bccheck_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o bccheck
+bccheck.f:
+   MAIN bccheck:
+	rm -f bccheck.o
+	fort77    -c -u +O3 +U77 arcinp.f
+arcinp.f:
+   arcinp:
+	ar rv bctot_lib.a arcinp.o
+r - arcinp.o
+	rm -f arcinp.o
+	fort77    -c -u +O3 +U77 brdxyz.f
+brdxyz.f:
+   brdxyz:
+	ar rv bctot_lib.a brdxyz.o
+r - brdxyz.o
+	rm -f brdxyz.o
+	fort77    -c -u +O3 +U77 chksvs.f
+chksvs.f:
+   chksvs:
+	ar rv bctot_lib.a chksvs.o
+r - chksvs.o
+	rm -f chksvs.o
+	fort77    -c -u +O3 +U77 closeb.f
+closeb.f:
+   closeb:
+	ar rv bctot_lib.a closeb.o
+r - closeb.o
+	rm -f closeb.o
+	fort77    -c -u +O3 +U77 closest_epoch.f
+closest_epoch.f:
+   closest_epoch:
+	ar rv bctot_lib.a closest_epoch.o
+r - closest_epoch.o
+	rm -f closest_epoch.o
+	fort77    -c -u +O3 +U77 filnmb.f
+filnmb.f:
+   filnmb:
+	ar rv bctot_lib.a filnmb.o
+r - filnmb.o
+	rm -f filnmb.o
+	fort77    -c -u +O3 +U77 gmake.f
+gmake.f:
+   gmake:
+	ar rv bctot_lib.a gmake.o
+r - gmake.o
+	rm -f gmake.o
+	fort77    -c -u +O3 +U77 openb.f
+openb.f:
+   openb:
+	ar rv bctot_lib.a openb.o
+r - openb.o
+	rm -f openb.o
+	fort77    -c -u +O3 +U77 oversn.f
+oversn.f:
+   oversn:
+	ar rv bctot_lib.a oversn.o
+r - oversn.o
+	rm -f oversn.o
+	fort77    -c -u +O3 +U77 rotcrd.f
+rotcrd.f:
+   rotcrd:
+	ar rv bctot_lib.a rotcrd.o
+r - rotcrd.o
+	rm -f rotcrd.o
+	fort77    -c -u +O3 +U77 sortbc.f
+sortbc.f:
+   sortbc:
+	ar rv bctot_lib.a sortbc.o
+r - sortbc.o
+	rm -f sortbc.o
+	fort77    -c -u +O3 +U77 spanup.f
+spanup.f:
+   spanup:
+	ar rv bctot_lib.a spanup.o
+r - spanup.o
+	rm -f spanup.o
+	fort77    -c -u +O3 +U77 thdrit.f
+thdrit.f:
+   thdrit:
+	ar rv bctot_lib.a thdrit.o
+r - thdrit.o
+	rm -f thdrit.o
+	fort77    -c -u +O3 +U77 timese.f
+timese.f:
+   timese:
+	ar rv bctot_lib.a timese.o
+r - timese.o
+	rm -f timese.o
+	fort77    -c -u +O3 +U77 tinput.f
+tinput.f:
+   tinput:
+	ar rv bctot_lib.a tinput.o
+r - tinput.o
+	rm -f tinput.o
+	fort77    -c -u +O3 +U77 trot.f
+trot.f:
+   trot:
+	ar rv bctot_lib.a trot.o
+r - trot.o
+	rm -f trot.o
+	fort77    -u +O3 +U77 bctot.f bctot_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o bctot
+bctot.f:
+   MAIN bctot:
+   get_models:
+	rm -f bctot.o
+	fort77    -c -u +O3 +U77 open_eop.f
+open_eop.f:
+   open_eop:
+	ar rv gtog_lib.a open_eop.o
+r - open_eop.o
+	rm -f open_eop.o
+	fort77    -c -u +O3 +U77 oversn.f
+oversn.f:
+   oversn:
+	ar rv gtog_lib.a oversn.o
+r - oversn.o
+	rm -f oversn.o
+	fort77    -u +O3 +U77 gtog.f gtog_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o gtog
+gtog.f:
+   MAIN gtog:
+	rm -f gtog.o
+	fort77    -c -u +O3 +U77 elem.f
+elem.f:
+   elem:
+	ar rv orbfit_lib.a elem.o
+r - elem.o
+	rm -f elem.o
+	fort77    -c -u +O3 +U77 eopart.f
+eopart.f:
+   eopart:
+	ar rv orbfit_lib.a eopart.o
+r - eopart.o
+	rm -f eopart.o
+	fort77    -c -u +O3 +U77 gpgt.f
+gpgt.f:
+   gpgt:
+	ar rv orbfit_lib.a gpgt.o
+r - gpgt.o
+	rm -f gpgt.o
+	fort77    -c -u +O3 +U77 kepler.f
+kepler.f:
+   kepler:
+	ar rv orbfit_lib.a kepler.o
+r - kepler.o
+	rm -f kepler.o
+	fort77    -c -u +O3 +U77 norminc.f
+norminc.f:
+   norminc:
+	ar rv orbfit_lib.a norminc.o
+r - norminc.o
+	rm -f norminc.o
+	fort77    -c -u +O3 +U77 norm_solve.f
+norm_solve.f:
+   norm_solve:
+	ar rv orbfit_lib.a norm_solve.o
+r - norm_solve.o
+	rm -f norm_solve.o
+	fort77    -c -u +O3 +U77 oversn.f
+oversn.f:
+   oversn:
+	ar rv orbfit_lib.a oversn.o
+r - oversn.o
+	rm -f oversn.o
+	fort77    -c -u +O3 +U77 partl.f
+partl.f:
+   partl:
+	ar rv orbfit_lib.a partl.o
+r - partl.o
+	rm -f partl.o
+	fort77    -c -u +O3 +U77 plt_postfit.f
+plt_postfit.f:
+   plt_postfit:
+	ar rv orbfit_lib.a plt_postfit.o
+r - plt_postfit.o
+	rm -f plt_postfit.o
+	fort77    -c -u +O3 +U77 read_input.f
+read_input.f:
+   read_input:
+   zero1i:
+	ar rv orbfit_lib.a read_input.o
+r - read_input.o
+	rm -f read_input.o
+	fort77    -c -u +O3 +U77 tran_part.f
+tran_part.f:
+   tran_part:
+	ar rv orbfit_lib.a tran_part.o
+r - tran_part.o
+	rm -f tran_part.o
+	fort77    -c -u +O3 +U77 write_g.f
+write_g.f:
+   write_g:
+	ar rv orbfit_lib.a write_g.o
+r - write_g.o
+	rm -f write_g.o
+	fort77    -c -u +O3 +U77 write_summary.f
+write_summary.f:
+   write_summary:
+	ar rv orbfit_lib.a write_summary.o
+r - write_summary.o
+	rm -f write_summary.o
+	fort77    -c -u +O3 +U77 xyz2rac.f
+xyz2rac.f:
+   xyz2rac:
+	ar rv orbfit_lib.a xyz2rac.o
+r - xyz2rac.o
+	rm -f xyz2rac.o
+	fort77    -u +O3 +U77 orbfit.f orbfit_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o orbfit
+orbfit.f:
+   MAIN orbfit:
+   open_orbfiles:
+	rm -f orbfit.o
+	fort77    -c -u +O3 +U77 orbrms.f
+orbrms.f:
+   orbrms:
+	ar rv orbdif_lib.a orbrms.o
+r - orbrms.o
+	rm -f orbrms.o
+	fort77    -c -u +O3 +U77 oversn.f
+oversn.f:
+   oversn:
+	ar rv orbdif_lib.a oversn.o
+r - oversn.o
+	rm -f oversn.o
+	fort77    -c -u +O3 +U77 ttemp.f
+ttemp.f:
+   ttemp:
+	ar rv orbdif_lib.a ttemp.o
+r - ttemp.o
+	rm -f ttemp.o
+	fort77    -u +O3 +U77 orbdif.f orbdif_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o orbdif
+orbdif.f:
+   MAIN orbdif:
+   rdsphd:
+	rm -f orbdif.o
+	fort77    -c -u +O3 +U77 closeb.f
+closeb.f:
+   closeb:
+	ar rv ngstot_lib.a closeb.o
+r - closeb.o
+	rm -f closeb.o
+	fort77    -c -u +O3 +U77 gmake.f
+gmake.f:
+   gmake:
+	ar rv ngstot_lib.a gmake.o
+r - gmake.o
+	rm -f gmake.o
+	fort77    -c -u +O3 +U77 getics.f
+getics.f:
+   getics:
+	ar rv ngstot_lib.a getics.o
+r - getics.o
+	rm -f getics.o
+	fort77    -c -u +O3 +U77 ngsopn.f
+ngsopn.f:
+   ngsopn:
+	ar rv ngstot_lib.a ngsopn.o
+r - ngsopn.o
+	rm -f ngsopn.o
+	fort77    -c -u +O3 +U77 oversn.f
+oversn.f:
+   oversn:
+	ar rv ngstot_lib.a oversn.o
+r - oversn.o
+	rm -f oversn.o
+	fort77    -c -u +O3 +U77 openb.f
+openb.f:
+   openb:
+	ar rv ngstot_lib.a openb.o
+r - openb.o
+	rm -f openb.o
+	fort77    -c -u +O3 +U77 rsp1hd.f
+rsp1hd.f:
+   rsp1hd:
+	ar rv ngstot_lib.a rsp1hd.o
+r - rsp1hd.o
+	rm -f rsp1hd.o
+	fort77    -c -u +O3 +U77 rsp3hd.f
+rsp3hd.f:
+   rsp3hd:
+	ar rv ngstot_lib.a rsp3hd.o
+r - rsp3hd.o
+	rm -f rsp3hd.o
+	fort77    -c -u +O3 +U77 rotcrd.f
+rotcrd.f:
+   rotcrd:
+	ar rv ngstot_lib.a rotcrd.o
+r - rotcrd.o
+	rm -f rotcrd.o
+	fort77    -c -u +O3 +U77 thdrit.f
+thdrit.f:
+   thdrit:
+	ar rv ngstot_lib.a thdrit.o
+r - thdrit.o
+	rm -f thdrit.o
+	fort77    -c -u +O3 +U77 tdtrit.f
+tdtrit.f:
+   tdtrit:
+	ar rv ngstot_lib.a tdtrit.o
+r - tdtrit.o
+	rm -f tdtrit.o
+	fort77    -c -u +O3 +U77 trot.f
+trot.f:
+   trot:
+	ar rv ngstot_lib.a trot.o
+r - trot.o
+	rm -f trot.o
+	fort77    -u +O3 +U77 ngstot.f ngstot_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ngstot
+ngstot.f:
+   MAIN ngstot:
+Warning on line 370 of ngstot.f: Uninitialized variable "nics" in function "ngstot" (5004)
+	rm -f ngstot.o
+	fort77    -c -u +O3 +U77 thdrit.f
+thdrit.f:
+   thdrit:
+	ar rv tmerge_lib.a thdrit.o
+r - thdrit.o
+	rm -f thdrit.o
+	fort77    -c -u +O3 +U77 oversn.f
+oversn.f:
+   oversn:
+	ar rv tmerge_lib.a oversn.o
+r - oversn.o
+	rm -f oversn.o
+	fort77    -u +O3 +U77 tmerge.f tmerge_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o tmerge
+tmerge.f:
+   MAIN tmerge:
+	rm -f tmerge.o
+	fort77    -c -u +O3 +U77 oversn.f
+oversn.f:
+   oversn:
+	ar rv ttoasc_lib.a oversn.o
+r - oversn.o
+	rm -f oversn.o
+	fort77    -u +O3 +U77 ttoasc.f ttoasc_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ttoasc
+ttoasc.f:
+   MAIN ttoasc:
+	rm -f ttoasc.o
+	fort77    -c -u +O3 +U77 gmake.f
+gmake.f:
+   gmake:
+	ar rv ttog_lib.a gmake.o
+r - gmake.o
+	rm -f gmake.o
+	fort77    -c -u +O3 +U77 oversn.f
+oversn.f:
+   oversn:
+	ar rv ttog_lib.a oversn.o
+r - oversn.o
+	rm -f oversn.o
+	fort77    -u +O3 +U77 ttog.f ttog_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ttog
+ttog.f:
+   MAIN ttog:
+	rm -f ttog.o
+	fort77    -c -u +O3 +U77 oversn.f
+oversn.f:
+   oversn:
+	ar rv ttoics_lib.a oversn.o
+r - oversn.o
+	rm -f oversn.o
+	fort77    -u +O3 +U77 ttoics.f ttoics_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ttoics
+ttoics.f:
+   MAIN ttoics:
+	rm -f ttoics.o
+	fort77    -c -u +O3 +U77 closeb.f
+closeb.f:
+   closeb:
+	ar rv ttot_lib.a closeb.o
+r - closeb.o
+	rm -f closeb.o
+	fort77    -c -u +O3 +U77 openb.f
+openb.f:
+   openb:
+	ar rv ttot_lib.a openb.o
+r - openb.o
+	rm -f openb.o
+	fort77    -c -u +O3 +U77 oversn.f
+oversn.f:
+   oversn:
+	ar rv ttot_lib.a oversn.o
+r - oversn.o
+	rm -f oversn.o
+	fort77    -c -u +O3 +U77 rotcrd.f
+rotcrd.f:
+   rotcrd:
+	ar rv ttot_lib.a rotcrd.o
+r - rotcrd.o
+	rm -f rotcrd.o
+	fort77    -c -u +O3 +U77 thdrit.f
+thdrit.f:
+   thdrit:
+	ar rv ttot_lib.a thdrit.o
+r - thdrit.o
+	rm -f thdrit.o
+	fort77    -c -u +O3 +U77 trot.f
+trot.f:
+   trot:
+	ar rv ttot_lib.a trot.o
+r - trot.o
+	rm -f trot.o
+	fort77    -u +O3 +U77 ttot.f ttot_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ttot
+ttot.f:
+   MAIN ttot:
+	rm -f ttot.o
+	fort77    -c -u +O3 +U77 closeb.f
+closeb.f:
+   closeb:
+	ar rv ttongs_lib.a closeb.o
+r - closeb.o
+	rm -f closeb.o
+	fort77    -c -u +O3 +U77 openb.f
+openb.f:
+   openb:
+	ar rv ttongs_lib.a openb.o
+r - openb.o
+	rm -f openb.o
+	fort77    -c -u +O3 +U77 oversn.f
+oversn.f:
+   oversn:
+	ar rv ttongs_lib.a oversn.o
+r - oversn.o
+	rm -f oversn.o
+	fort77    -c -u +O3 +U77 rdsvclk.f
+rdsvclk.f:
+   rdsvclk:
+	ar rv ttongs_lib.a rdsvclk.o
+r - rdsvclk.o
+	rm -f rdsvclk.o
+	fort77    -c -u +O3 +U77 rotcrd.f
+rotcrd.f:
+   rotcrd:
+	ar rv ttongs_lib.a rotcrd.o
+r - rotcrd.o
+	rm -f rotcrd.o
+	fort77    -c -u +O3 +U77 sdtrit.f
+sdtrit.f:
+   sdtrit:
+	ar rv ttongs_lib.a sdtrit.o
+r - sdtrit.o
+	rm -f sdtrit.o
+	fort77    -c -u +O3 +U77 trot.f
+trot.f:
+   trot:
+	ar rv ttongs_lib.a trot.o
+r - trot.o
+	rm -f trot.o
+	fort77    -c -u +O3 +U77 thdrit.f
+thdrit.f:
+   thdrit:
+	ar rv ttongs_lib.a thdrit.o
+r - thdrit.o
+	rm -f thdrit.o
+	fort77    -c -u +O3 +U77 wsp1hd.f
+wsp1hd.f:
+   wsp1hd:
+	ar rv ttongs_lib.a wsp1hd.o
+r - wsp1hd.o
+	rm -f wsp1hd.o
+	fort77    -c -u +O3 +U77 wsp3hd.f
+wsp3hd.f:
+   wsp3hd:
+	ar rv ttongs_lib.a wsp3hd.o
+r - wsp3hd.o
+	rm -f wsp3hd.o
+	fort77    -u +O3 +U77 ttongs.f ttongs_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ttongs
+ttongs.f:
+   MAIN ttongs:
+	rm -f ttongs.o
+	fort77    -c -u +O3 +U77 block_IIr.f
+block_IIr.f:
+   block_iir:
+	ar rv yawtab_lib.a block_IIr.o
+r - block_IIr.o
+	rm -f block_IIr.o
+	fort77    -c -u +O3 +U77 calc_attit.f
+calc_attit.f:
+   calc_attit:
+	ar rv yawtab_lib.a calc_attit.o
+r - calc_attit.o
+	rm -f calc_attit.o
+	fort77    -c -u +O3 +U77 chkmode.f
+chkmode.f:
+   chkmode:
+	ar rv yawtab_lib.a chkmode.o
+r - chkmode.o
+	rm -f chkmode.o
+	fort77    -c -u +O3 +U77 get_att.f
+get_att.f:
+   get_att:
+	ar rv yawtab_lib.a get_att.o
+r - get_att.o
+	rm -f get_att.o
+	fort77    -c -u +O3 +U77 get_dusk.f
+get_dusk.f:
+   get_dusk:
+	ar rv yawtab_lib.a get_dusk.o
+r - get_dusk.o
+	rm -f get_dusk.o
+	fort77    -c -u +O3 +U77 get_ecl_pos.f
+get_ecl_pos.f:
+   get_ecl_pos:
+	ar rv yawtab_lib.a get_ecl_pos.o
+r - get_ecl_pos.o
+	rm -f get_ecl_pos.o
+	fort77    -c -u +O3 +U77 get_yaw_rate.f
+get_yaw_rate.f:
+   get_yaw_rate:
+	ar rv yawtab_lib.a get_yaw_rate.o
+r - get_yaw_rate.o
+	rm -f get_yaw_rate.o
+	fort77    -c -u +O3 +U77 opn_yaw.f
+opn_yaw.f:
+   opn_yaw:
+	ar rv yawtab_lib.a opn_yaw.o
+r - opn_yaw.o
+	rm -f opn_yaw.o
+	fort77    -c -u +O3 +U77 oversn.f
+oversn.f:
+   oversn:
+	ar rv yawtab_lib.a oversn.o
+r - oversn.o
+	rm -f oversn.o
+	fort77    -c -u +O3 +U77 read_yaw.f
+read_yaw.f:
+   read_yaw:
+	ar rv yawtab_lib.a read_yaw.o
+r - read_yaw.o
+	rm -f read_yaw.o
+	fort77    -c -u +O3 +U77 write_yaw.f
+write_yaw.f:
+   write_yaw:
+	ar rv yawtab_lib.a write_yaw.o
+r - write_yaw.o
+	rm -f write_yaw.o
+	fort77    -c -u +O3 +U77 yaw_ctrl.f
+yaw_ctrl.f:
+   yaw_ctrl:
+	ar rv yawtab_lib.a yaw_ctrl.o
+r - yaw_ctrl.o
+	rm -f yaw_ctrl.o
+	fort77    -u +O3 +U77 yawtab.f yawtab_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o yawtab
+yawtab.f:
+   MAIN yawtab:
+	rm -f yawtab.o
+	fort77    -c -u +O3 +U77 oversn.f
+oversn.f:
+   oversn:
+	ar rv ytoasc_lib.a oversn.o
+r - oversn.o
+	rm -f oversn.o
+	fort77    -u +O3 +U77 ytoasc.f ytoasc_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o ytoasc
+ytoasc.f:
+   MAIN ytoasc:
+	rm -f ytoasc.o
+Made orbits
+ 
+Running unimake to create Makefile for solve
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+Makefile for solve remade by unimake
+	fort77    -c +O3 +U77 -K abnew.f
+abnew.f:
+   abnew:
+	ar rv solve_lib.a abnew.o
+ar: Permission denied
+ar: cannot create solve_lib.a
+r - abnew.o
+*** Error exit code 1
+
+Stop.
+ 
+Reading gamit/Makefile.config to get program dimensions
+ 
+The old settings are:
+dimpar.h	PARAMETER (maxsat=30)
+dimpar.h	PARAMETER (maxsit=45)
+dimpar.h	PARAMETER (maxatm=13)
+cview.h	parameter(ncvsit=45)
+makex.h	PARAMETER (MAXEPC=2880)
+
+ 
+++++++++++++++++++++++++++++++++++++++++++
+Make sure the common libraries are current
+++++++++++++++++++++++++++++++++++++++++++
+ 
+ 
+Running unimake to create Makefile for comlib
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for comlib, SKIP
+ 
+Running unimake to create Makefile for matrix
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for matrix, SKIP
+ 
++++++++++++++++++++++++++++++++++++++++++
+Making the GAMIT library...
++++++++++++++++++++++++++++++++++++++++++
+ 
+Running unimake to create Makefile for lib
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for lib, SKIP
+Made lib
+ 
+++++++++++++++++++++++++++++++++++
+Making the main modules
+++++++++++++++++++++++++++++++++++
+ 
+ 
+Running unimake to create Makefile for makex
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for makex, SKIP
+Made makex
+ 
+Running unimake to create Makefile for arc
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for arc, SKIP
+Made arc
+ 
+Running unimake to create Makefile for cfmrg
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for cfmrg, SKIP
+Made cfmrg
+ 
+Running unimake to create Makefile for clean
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for clean, SKIP
+Made clean
+ 
+Running unimake to create Makefile for ctox
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for ctox, SKIP
+Made ctox
+ 
+Running unimake to create Makefile for fica
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for fica, SKIP
+Made fica
+ 
+Running unimake to create Makefile for fixdrv
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for fixdrv, SKIP
+Made fixdrv
+ 
+Running unimake to create Makefile for hi
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for hi, SKIP
+Made hi
+ 
+Running unimake to create Makefile for makexp
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for makexp, SKIP
+Made makexp
+ 
+Running unimake to create Makefile for model
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for model, SKIP
+Made model
+ 
+Running unimake to create Makefile for orbits
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for orbits, SKIP
+Made orbits
+ 
+Running unimake to create Makefile for solve
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for solve, SKIP
+	fort77    -c +O3 +U77 -K abnew.f
+abnew.f:
+   abnew:
+	ar rv solve_lib.a abnew.o
+r - abnew.o
+	rm -f abnew.o
+	fort77    -c +O3 +U77 -K add1.f
+add1.f:
+   add1:
+	ar rv solve_lib.a add1.o
+r - add1.o
+	rm -f add1.o
+	fort77    -c +O3 +U77 -K add2.f
+add2.f:
+   add2:
+	ar rv solve_lib.a add2.o
+r - add2.o
+	rm -f add2.o
+	fort77    -c +O3 +U77 -K add2i.f
+add2i.f:
+   add2i:
+	ar rv solve_lib.a add2i.o
+r - add2i.o
+	rm -f add2i.o
+	fort77    -c +O3 +U77 -K addwgt.f
+addwgt.f:
+   addwgt:
+	ar rv solve_lib.a addwgt.o
+r - addwgt.o
+	rm -f addwgt.o
+	fort77    -c +O3 +U77 -K apply.f
+apply.f:
+   apply:
+	ar rv solve_lib.a apply.o
+r - apply.o
+	rm -f apply.o
+	fort77    -c +O3 +U77 -K atmcon.f
+atmcon.f:
+   atmcon:
+	ar rv solve_lib.a atmcon.o
+r - atmcon.o
+	rm -f atmcon.o
+	fort77    -c +O3 +U77 -K atmdif.f
+atmdif.f:
+   atmdif:
+	ar rv solve_lib.a atmdif.o
+r - atmdif.o
+	rm -f atmdif.o
+	fort77    -c +O3 +U77 -K atm_grad_part.f
+atm_grad_part.f:
+   atm_grad_part:
+	ar rv solve_lib.a atm_grad_part.o
+r - atm_grad_part.o
+	rm -f atm_grad_part.o
+	fort77    -c +O3 +U77 -K atmstr.f
+atmstr.f:
+   atmstr:
+	ar rv solve_lib.a atmstr.o
+r - atmstr.o
+	rm -f atmstr.o
+	fort77    -c +O3 +U77 -K atpa.f
+atpa.f:
+   atpa:
+	ar rv solve_lib.a atpa.o
+r - atpa.o
+	rm -f atpa.o
+	fort77    -c +O3 +U77 -K atpdal.f
+atpdal.f:
+   atpdal:
+	ar rv solve_lib.a atpdal.o
+r - atpdal.o
+	rm -f atpdal.o
+	fort77    -c +O3 +U77 -K avgvar.f
+avgvar.f:
+   avgvar:
+	ar rv solve_lib.a avgvar.o
+r - avgvar.o
+	rm -f avgvar.o
+	fort77    -c +O3 +U77 -K badsta.f
+badsta.f:
+   badsta:
+	ar rv solve_lib.a badsta.o
+r - badsta.o
+	rm -f badsta.o
+	fort77    -c +O3 +U77 -K bakcfl.f
+bakcfl.f:
+   bakcfl:
+	ar rv solve_lib.a bakcfl.o
+r - bakcfl.o
+	rm -f bakcfl.o
+	fort77    -c +O3 +U77 -K baslin.f
+baslin.f:
+   baslin:
+	ar rv solve_lib.a baslin.o
+r - baslin.o
+	rm -f baslin.o
+	fort77    -c +O3 +U77 -K bcheck.f
+bcheck.f:
+   bcheck:
+	ar rv solve_lib.a bcheck.o
+r - bcheck.o
+	rm -f bcheck.o
+	fort77    -c +O3 +U77 -K bdeci.f
+bdeci.f:
+   bdeci:
+   erf:
+   erfc:
+   gammp:
+   gammq:
+   gammln:
+   gcf:
+   gser:
+	ar rv solve_lib.a bdeci.o
+r - bdeci.o
+	rm -f bdeci.o
+	fort77    -c +O3 +U77 -K bexpec.f
+bexpec.f:
+   bexpec:
+	ar rv solve_lib.a bexpec.o
+r - bexpec.o
+	rm -f bexpec.o
+	fort77    -c +O3 +U77 -K bfwork.f
+bfwork.f:
+   bfwork:
+	ar rv solve_lib.a bfwork.o
+r - bfwork.o
+	rm -f bfwork.o
+	fort77    -c +O3 +U77 -K biset.f
+biset.f:
+   biset:
+	ar rv solve_lib.a biset.o
+r - biset.o
+	rm -f biset.o
+	fort77    -c +O3 +U77 -K bisopt.f
+bisopt.f:
+   bisopt:
+	ar rv solve_lib.a bisopt.o
+r - bisopt.o
+	rm -f bisopt.o
+	fort77    -c +O3 +U77 -K bnew.f
+bnew.f:
+   bnew:
+	ar rv solve_lib.a bnew.o
+r - bnew.o
+	rm -f bnew.o
+	fort77    -c +O3 +U77 -K bnew1.f
+bnew1.f:
+   bnew1:
+	ar rv solve_lib.a bnew1.o
+r - bnew1.o
+	rm -f bnew1.o
+	fort77    -c +O3 +U77 -K bsort.f
+bsort.f:
+   bsort:
+	ar rv solve_lib.a bsort.o
+r - bsort.o
+	rm -f bsort.o
+	fort77    -c +O3 +U77 -K bstat.f
+bstat.f:
+   bstat:
+	ar rv solve_lib.a bstat.o
+r - bstat.o
+	rm -f bstat.o
+	fort77    -c +O3 +U77 -K copy1d.f
+copy1d.f:
+   copy1d:
+	ar rv solve_lib.a copy1d.o
+r - copy1d.o
+	rm -f copy1d.o
+	fort77    -c +O3 +U77 -K copy1i.f
+copy1i.f:
+   copy1i:
+	ar rv solve_lib.a copy1i.o
+r - copy1i.o
+	rm -f copy1i.o
+	fort77    -c +O3 +U77 -K covbln.f
+covbln.f:
+   covbln:
+   filsig:
+   dosig:
+	ar rv solve_lib.a covbln.o
+r - covbln.o
+	rm -f covbln.o
+	fort77    -c +O3 +U77 -K covst1.f
+covst1.f:
+   covst1:
+	ar rv solve_lib.a covst1.o
+r - covst1.o
+	rm -f covst1.o
+	fort77    -c +O3 +U77 -K covst2.f
+covst2.f:
+   covst2:
+	ar rv solve_lib.a covst2.o
+r - covst2.o
+	rm -f covst2.o
+	fort77    -c +O3 +U77 -K cpmat2.f
+cpmat2.f:
+   cpmat2:
+	ar rv solve_lib.a cpmat2.o
+r - cpmat2.o
+	rm -f cpmat2.o
+	fort77    -c +O3 +U77 -K csort.f
+csort.f:
+   csort:
+	ar rv solve_lib.a csort.o
+r - csort.o
+	rm -f csort.o
+	fort77    -c +O3 +U77 -K dbadst.f
+dbadst.f:
+   dbadst:
+	ar rv solve_lib.a dbadst.o
+r - dbadst.o
+	rm -f dbadst.o
+	fort77    -c +O3 +U77 -K dbar.f
+dbar.f:
+   dbar:
+	ar rv solve_lib.a dbar.o
+r - dbar.o
+	rm -f dbar.o
+	fort77    -c +O3 +U77 -K dbcnt.f
+dbcnt.f:
+   dbcnt:
+	ar rv solve_lib.a dbcnt.o
+r - dbcnt.o
+	rm -f dbcnt.o
+	fort77    -c +O3 +U77 -K dbias.f
+dbias.f:
+   dbias:
+   enlarg:
+	ar rv solve_lib.a dbias.o
+r - dbias.o
+	rm -f dbias.o
+	fort77    -c +O3 +U77 -K dcheck.f
+dcheck.f:
+   dcheck:
+	ar rv solve_lib.a dcheck.o
+r - dcheck.o
+	rm -f dcheck.o
+	fort77    -c +O3 +U77 -K degfrm.f
+degfrm.f:
+   degfrm:
+	ar rv solve_lib.a degfrm.o
+r - degfrm.o
+	rm -f degfrm.o
+	fort77    -c +O3 +U77 -K degred.f
+degred.f:
+   degred:
+	ar rv solve_lib.a degred.o
+r - degred.o
+	rm -f degred.o
+	fort77    -c +O3 +U77 -K delcon.f
+delcon.f:
+   delcon:
+	ar rv solve_lib.a delcon.o
+r - delcon.o
+	rm -f delcon.o
+	fort77    -c +O3 +U77 -K distnc.f
+distnc.f:
+   distnc:
+	ar rv solve_lib.a distnc.o
+r - distnc.o
+	rm -f distnc.o
+	fort77    -c +O3 +U77 -K dopt.f
+dopt.f:
+   dopt:
+	ar rv solve_lib.a dopt.o
+r - dopt.o
+	rm -f dopt.o
+	fort77    -c +O3 +U77 -K dot.f
+dot.f:
+   dot:
+	ar rv solve_lib.a dot.o
+r - dot.o
+	rm -f dot.o
+	fort77    -c +O3 +U77 -K double.f
+double.f:
+   double:
+   chkmis:
+   chkcut:
+	ar rv solve_lib.a double.o
+r - double.o
+	rm -f double.o
+	fort77    -c +O3 +U77 -K dxyz_to_neu.f
+dxyz_to_neu.f:
+   dxyz_to_neu:
+	ar rv solve_lib.a dxyz_to_neu.o
+r - dxyz_to_neu.o
+	rm -f dxyz_to_neu.o
+	fort77    -c +O3 +U77 -K eptime.f
+eptime.f:
+   eptime:
+	ar rv solve_lib.a eptime.o
+r - eptime.o
+	rm -f eptime.o
+	fort77    -c +O3 +U77 -K filld.f
+filld.f:
+   filld:
+	ar rv solve_lib.a filld.o
+r - filld.o
+	rm -f filld.o
+	fort77    -c +O3 +U77 -K fillj.f
+fillj.f:
+   fillj:
+	ar rv solve_lib.a fillj.o
+r - fillj.o
+	rm -f fillj.o
+	fort77    -c +O3 +U77 -K elem.f
+elem.f:
+   elem:
+	ar rv solve_lib.a elem.o
+r - elem.o
+	rm -f elem.o
+	fort77    -c +O3 +U77 -K filobs.f
+filobs.f:
+   filobs:
+	ar rv solve_lib.a filobs.o
+r - filobs.o
+	rm -f filobs.o
+	fort77    -c +O3 +U77 -K filomc.f
+filomc.f:
+   filomc:
+	ar rv solve_lib.a filomc.o
+r - filomc.o
+	rm -f filomc.o
+	fort77    -c +O3 +U77 -K filpar.f
+filpar.f:
+   filpar:
+	ar rv solve_lib.a filpar.o
+r - filpar.o
+	rm -f filpar.o
+	fort77    -c +O3 +U77 -K fnddbi.f
+fnddbi.f:
+   fnddbi:
+   fillan22:
+	ar rv solve_lib.a fnddbi.o
+r - fnddbi.o
+	rm -f fnddbi.o
+	fort77    -c +O3 +U77 -K formn1.f
+formn1.f:
+   formn1:
+	ar rv solve_lib.a formn1.o
+r - formn1.o
+	rm -f formn1.o
+	fort77    -c +O3 +U77 -K formn2.f
+formn2.f:
+   formn2:
+	ar rv solve_lib.a formn2.o
+r - formn2.o
+	rm -f formn2.o
+	fort77    -c +O3 +U77 -K fxbias.f
+fxbias.f:
+   fxbias:
+	ar rv solve_lib.a fxbias.o
+r - fxbias.o
+	rm -f fxbias.o
+	fort77    -c +O3 +U77 -K getcda.f
+getcda.f:
+   getcda:
+	ar rv solve_lib.a getcda.o
+r - getcda.o
+	rm -f getcda.o
+	fort77    -c +O3 +U77 -K gethed.f
+gethed.f:
+   gethed:
+	ar rv solve_lib.a gethed.o
+r - gethed.o
+	rm -f gethed.o
+	fort77    -c +O3 +U77 -K getslt.f
+getslt.f:
+   getslt:
+	ar rv solve_lib.a getslt.o
+r - getslt.o
+	rm -f getslt.o
+	fort77    -c +O3 +U77 -K get_eop_apr.f
+get_eop_apr.f:
+   get_eop_apr:
+	ar rv solve_lib.a get_eop_apr.o
+r - get_eop_apr.o
+	rm -f get_eop_apr.o
+	fort77    -c +O3 +U77 -K get_err_apr.f
+get_err_apr.f:
+   get_err_apr:
+	ar rv solve_lib.a get_err_apr.o
+r - get_err_apr.o
+	rm -f get_err_apr.o
+	fort77    -c +O3 +U77 -K get_grad_apr.f
+get_grad_apr.f:
+   get_grad_apr:
+	ar rv solve_lib.a get_grad_apr.o
+r - get_grad_apr.o
+	rm -f get_grad_apr.o
+	fort77    -c +O3 +U77 -K get_sat_apr.f
+get_sat_apr.f:
+   get_sat_apr:
+	ar rv solve_lib.a get_sat_apr.o
+r - get_sat_apr.o
+	rm -f get_sat_apr.o
+	fort77    -c +O3 +U77 -K get_sit_apr.f
+get_sit_apr.f:
+   get_sit_apr:
+	ar rv solve_lib.a get_sit_apr.o
+r - get_sit_apr.o
+	rm -f get_sit_apr.o
+	fort77    -c +O3 +U77 -K get_solve_cut.f
+get_solve_cut.f:
+   get_solve_cut:
+	ar rv solve_lib.a get_solve_cut.o
+r - get_solve_cut.o
+	rm -f get_solve_cut.o
+	fort77    -c +O3 +U77 -K get_zen_apr.f
+get_zen_apr.f:
+   get_zen_apr:
+	ar rv solve_lib.a get_zen_apr.o
+r - get_zen_apr.o
+	rm -f get_zen_apr.o
+	fort77    -c +O3 +U77 -K getwl.f
+getwl.f:
+   getwl:
+	ar rv solve_lib.a getwl.o
+r - getwl.o
+	rm -f getwl.o
+	fort77    -c +O3 +U77 -K glohed.f
+glohed.f:
+   glohed:
+	ar rv solve_lib.a glohed.o
+r - glohed.o
+	rm -f glohed.o
+	fort77    -c +O3 +U77 -K gpgt.f
+gpgt.f:
+   gpgt:
+	ar rv solve_lib.a gpgt.o
+r - gpgt.o
+	rm -f gpgt.o
+	fort77    -c +O3 +U77 -K gradout.f
+gradout.f:
+   gradout:
+	ar rv solve_lib.a gradout.o
+r - gradout.o
+	rm -f gradout.o
+	fort77    -c +O3 +U77 -K gtpgx.f
+gtpgx.f:
+   gtpgx:
+	ar rv solve_lib.a gtpgx.o
+r - gtpgx.o
+	rm -f gtpgx.o
+	fort77    -c +O3 +U77 -K invers.f
+invers.f:
+   invers:
+	ar rv solve_lib.a invers.o
+r - invers.o
+	rm -f invers.o
+	fort77    -c +O3 +U77 -K kepxyz.f
+kepxyz.f:
+   kepxyz:
+	ar rv solve_lib.a kepxyz.o
+r - kepxyz.o
+	rm -f kepxyz.o
+	fort77    -c +O3 +U77 -K keywrd.f
+keywrd.f:
+   keywrd:
+	ar rv solve_lib.a keywrd.o
+r - keywrd.o
+	rm -f keywrd.o
+	fort77    -c +O3 +U77 -K lcloos.f
+lcloos.f:
+   lcloos:
+	ar rv solve_lib.a lcloos.o
+r - lcloos.o
+	rm -f lcloos.o
+	fort77    -c +O3 +U77 -K lcnorm.f
+lcnorm.f:
+   lcnorm:
+	ar rv solve_lib.a lcnorm.o
+r - lcnorm.o
+	rm -f lcnorm.o
+	fort77    -c +O3 +U77 -K live.f
+live.f:
+   live:
+	ar rv solve_lib.a live.o
+r - live.o
+	rm -f live.o
+	fort77    -c +O3 +U77 -K loos12.f
+loos12.f:
+   loos12:
+	ar rv solve_lib.a loos12.o
+r - loos12.o
+	rm -f loos12.o
+	fort77    -c +O3 +U77 -K lrgint.f
+lrgint.f:
+   lrgint:
+	ar rv solve_lib.a lrgint.o
+r - lrgint.o
+	rm -f lrgint.o
+	fort77    -c +O3 +U77 -K lsqdo1.f
+lsqdo1.f:
+   lsqdo1:
+	ar rv solve_lib.a lsqdo1.o
+r - lsqdo1.o
+	rm -f lsqdo1.o
+	fort77    -c +O3 +U77 -K lsqerr.f
+lsqerr.f:
+   lsqerr:
+	ar rv solve_lib.a lsqerr.o
+r - lsqerr.o
+	rm -f lsqerr.o
+	fort77    -c +O3 +U77 -K lsqint.f
+lsqint.f:
+   lsqint:
+	ar rv solve_lib.a lsqint.o
+r - lsqint.o
+	rm -f lsqint.o
+	fort77    -c +O3 +U77 -K lsqio.f
+lsqio.f:
+   lsqio:
+	ar rv solve_lib.a lsqio.o
+r - lsqio.o
+	rm -f lsqio.o
+	fort77    -c +O3 +U77 -K lsqprt.f
+lsqprt.f:
+   lsqprt:
+	ar rv solve_lib.a lsqprt.o
+r - lsqprt.o
+	rm -f lsqprt.o
+	fort77    -c +O3 +U77 -K lsquar.f
+lsquar.f:
+   lsquar:
+	ar rv solve_lib.a lsquar.o
+r - lsquar.o
+	rm -f lsquar.o
+	fort77    -c +O3 +U77 -K lweop.f
+lweop.f:
+   lweop:
+	ar rv solve_lib.a lweop.o
+r - lweop.o
+	rm -f lweop.o
+	fort77    -c +O3 +U77 -K lwgrad.f
+lwgrad.f:
+   lwgrad:
+	ar rv solve_lib.a lwgrad.o
+r - lwgrad.o
+	rm -f lwgrad.o
+	fort77    -c +O3 +U77 -K lwsat.f
+lwsat.f:
+   lwsat:
+	ar rv solve_lib.a lwsat.o
+r - lwsat.o
+	rm -f lwsat.o
+	fort77    -c +O3 +U77 -K lwstat.f
+lwstat.f:
+   lwstat:
+	ar rv solve_lib.a lwstat.o
+r - lwstat.o
+	rm -f lwstat.o
+	fort77    -c +O3 +U77 -K lwzen.f
+lwzen.f:
+   lwzen:
+	ar rv solve_lib.a lwzen.o
+r - lwzen.o
+	rm -f lwzen.o
+	fort77    -c +O3 +U77 -K matprt.f
+matprt.f:
+   matprt:
+	ar rv solve_lib.a matprt.o
+r - matprt.o
+	rm -f matprt.o
+	fort77    -c +O3 +U77 -K mmply.f
+mmply.f:
+   mmply:
+	ar rv solve_lib.a mmply.o
+r - mmply.o
+	rm -f mmply.o
+	fort77    -c +O3 +U77 -K modelc.f
+modelc.f:
+   modelc:
+	ar rv solve_lib.a modelc.o
+r - modelc.o
+	rm -f modelc.o
+	fort77    -c +O3 +U77 -K nbias.f
+nbias.f:
+   nbias:
+	ar rv solve_lib.a nbias.o
+r - nbias.o
+	rm -f nbias.o
+	fort77    -c +O3 +U77 -K nbias1.f
+nbias1.f:
+   nbias1:
+	ar rv solve_lib.a nbias1.o
+r - nbias1.o
+	rm -f nbias1.o
+	fort77    -c +O3 +U77 -K nbiasp.f
+nbiasp.f:
+   nbiasp:
+	ar rv solve_lib.a nbiasp.o
+r - nbiasp.o
+	rm -f nbiasp.o
+	fort77    -c +O3 +U77 -K nbiasr.f
+nbiasr.f:
+   nbiasr:
+	ar rv solve_lib.a nbiasr.o
+r - nbiasr.o
+	rm -f nbiasr.o
+	fort77    -c +O3 +U77 -K newfil.f
+newfil.f:
+   newfil:
+	ar rv solve_lib.a newfil.o
+r - newfil.o
+	rm -f newfil.o
+	fort77    -c +O3 +U77 -K nm2131.f
+nm2131.f:
+   nm2131:
+	ar rv solve_lib.a nm2131.o
+r - nm2131.o
+	rm -f nm2131.o
+	fort77    -c +O3 +U77 -K nm2233.f
+nm2233.f:
+   nm2233:
+	ar rv solve_lib.a nm2233.o
+r - nm2233.o
+	rm -f nm2233.o
+	fort77    -c +O3 +U77 -K nm32.f
+nm32.f:
+   nm32:
+	ar rv solve_lib.a nm32.o
+r - nm32.o
+	rm -f nm32.o
+	fort77    -c +O3 +U77 -K nmu11.f
+nmu11.f:
+   nmu11:
+	ar rv solve_lib.a nmu11.o
+r - nmu11.o
+	rm -f nmu11.o
+	fort77    -c +O3 +U77 -K normd.f
+normd.f:
+   normd:
+	ar rv solve_lib.a normd.o
+r - normd.o
+	rm -f normd.o
+	fort77    -c +O3 +U77 -K nrmsc2.f
+nrmsc2.f:
+   nrmsc2:
+	ar rv solve_lib.a nrmsc2.o
+r - nrmsc2.o
+	rm -f nrmsc2.o
+	fort77    -c +O3 +U77 -K nrmscl.f
+nrmscl.f:
+   nrmscl:
+	ar rv solve_lib.a nrmscl.o
+r - nrmscl.o
+	rm -f nrmscl.o
+	fort77    -c +O3 +U77 -K nu23.f
+nu23.f:
+   nu23:
+	ar rv solve_lib.a nu23.o
+r - nu23.o
+	rm -f nu23.o
+	fort77    -c +O3 +U77 -K oline.f
+oline.f:
+   oline:
+	ar rv solve_lib.a oline.o
+r - oline.o
+	rm -f oline.o
+	fort77    -c +O3 +U77 -K opera.f
+opera.f:
+   opera:
+	ar rv solve_lib.a opera.o
+r - opera.o
+	rm -f opera.o
+	fort77    -c +O3 +U77 -K opera2.f
+opera2.f:
+   opera2:
+	ar rv solve_lib.a opera2.o
+r - opera2.o
+	rm -f opera2.o
+	fort77    -c +O3 +U77 -K pclock.f
+pclock.f:
+   pclock:
+	ar rv solve_lib.a pclock.o
+r - pclock.o
+	rm -f pclock.o
+	fort77    -c +O3 +U77 -K pgrad.f
+pgrad.f:
+   pgrad:
+	ar rv solve_lib.a pgrad.o
+r - pgrad.o
+	rm -f pgrad.o
+	fort77    -c +O3 +U77 -K pseuwl.f
+pseuwl.f:
+   pseuwl:
+	ar rv solve_lib.a pseuwl.o
+r - pseuwl.o
+	rm -f pseuwl.o
+	fort77    -c +O3 +U77 -K pzenth.f
+pzenth.f:
+   pzenth:
+	ar rv solve_lib.a pzenth.o
+r - pzenth.o
+	rm -f pzenth.o
+	fort77    -c +O3 +U77 -K qhead1.f
+qhead1.f:
+   qhead1:
+	ar rv solve_lib.a qhead1.o
+r - qhead1.o
+	rm -f qhead1.o
+	fort77    -c +O3 +U77 -K qhead2.f
+qhead2.f:
+   qhead2:
+	ar rv solve_lib.a qhead2.o
+r - qhead2.o
+	rm -f qhead2.o
+	fort77    -c +O3 +U77 -K qhead3.f
+qhead3.f:
+   qhead3:
+	ar rv solve_lib.a qhead3.o
+r - qhead3.o
+	rm -f qhead3.o
+	fort77    -c +O3 +U77 -K qhead4.f
+qhead4.f:
+   qhead4:
+	ar rv solve_lib.a qhead4.o
+r - qhead4.o
+	rm -f qhead4.o
+	fort77    -c +O3 +U77 -K raddeg.f
+raddeg.f:
+   raddeg:
+	ar rv solve_lib.a raddeg.o
+r - raddeg.o
+	rm -f raddeg.o
+	fort77    -c +O3 +U77 -K remenu.f
+remenu.f:
+   remenu:
+	ar rv solve_lib.a remenu.o
+r - remenu.o
+	rm -f remenu.o
+	fort77    -c +O3 +U77 -K read_bfl.f
+read_bfl.f:
+   read_bfl:
+	ar rv solve_lib.a read_bfl.o
+r - read_bfl.o
+	rm -f read_bfl.o
+	fort77    -c +O3 +U77 -K read_bfl_sess.f
+read_bfl_sess.f:
+   read_bfl_sess:
+	ar rv solve_lib.a read_bfl_sess.o
+r - read_bfl_sess.o
+	rm -f read_bfl_sess.o
+	fort77    -c +O3 +U77 -K reodrd.f
+reodrd.f:
+   reodrd:
+	ar rv solve_lib.a reodrd.o
+r - reodrd.o
+	rm -f reodrd.o
+	fort77    -c +O3 +U77 -K rmjunk.f
+rmjunk.f:
+   rmjunk:
+	ar rv solve_lib.a rmjunk.o
+r - rmjunk.o
+	rm -f rmjunk.o
+	fort77    -c +O3 +U77 -K set_para.f
+set_para.f:
+   set_para:
+	ar rv solve_lib.a set_para.o
+r - set_para.o
+	rm -f set_para.o
+	fort77    -c +O3 +U77 -K solve1.f
+solve1.f:
+   solve1:
+	ar rv solve_lib.a solve1.o
+r - solve1.o
+	rm -f solve1.o
+	fort77    -c +O3 +U77 -K solve2.f
+solve2.f:
+   solve2:
+	ar rv solve_lib.a solve2.o
+r - solve2.o
+	rm -f solve2.o
+	fort77    -c +O3 +U77 -K solve3.f
+solve3.f:
+   solve3:
+	ar rv solve_lib.a solve3.o
+r - solve3.o
+	rm -f solve3.o
+	fort77    -c +O3 +U77 -K solvlc.f
+solvlc.f:
+   solvlc:
+	ar rv solve_lib.a solvlc.o
+r - solvlc.o
+	rm -f solvlc.o
+	fort77    -c +O3 +U77 -K sort1i.f
+sort1i.f:
+   sort1i:
+	ar rv solve_lib.a sort1i.o
+r - sort1i.o
+	rm -f sort1i.o
+	fort77    -c +O3 +U77 -K sort4i.f
+sort4i.f:
+   sort4i:
+	ar rv solve_lib.a sort4i.o
+r - sort4i.o
+	rm -f sort4i.o
+	fort77    -c +O3 +U77 -K sortbl.f
+sortbl.f:
+   sortbl:
+	ar rv solve_lib.a sortbl.o
+r - sortbl.o
+	rm -f sortbl.o
+	fort77    -c +O3 +U77 -K sphxyz.f
+sphxyz.f:
+   sphxyz:
+	ar rv solve_lib.a sphxyz.o
+r - sphxyz.o
+	rm -f sphxyz.o
+	fort77    -c +O3 +U77 -K stack.f
+stack.f:
+   stack:
+	ar rv solve_lib.a stack.o
+r - stack.o
+	rm -f stack.o
+	fort77    -c +O3 +U77 -K sversn.f
+sversn.f:
+   sversn:
+	ar rv solve_lib.a sversn.o
+r - sversn.o
+	rm -f sversn.o
+	fort77    -c +O3 +U77 -K tapdrv.f
+tapdrv.f:
+   tapdrv:
+	ar rv solve_lib.a tapdrv.o
+r - tapdrv.o
+	rm -f tapdrv.o
+	fort77    -c +O3 +U77 -K trans.f
+trans.f:
+   trans:
+	ar rv solve_lib.a trans.o
+r - trans.o
+	rm -f trans.o
+	fort77    -c +O3 +U77 -K transx.f
+transx.f:
+   transx:
+	ar rv solve_lib.a transx.o
+r - transx.o
+	rm -f transx.o
+	fort77    -c +O3 +U77 -K updat3.f
+updat3.f:
+   updat3:
+	ar rv solve_lib.a updat3.o
+r - updat3.o
+	rm -f updat3.o
+	fort77    -c +O3 +U77 -K update.f
+update.f:
+   update:
+	ar rv solve_lib.a update.o
+r - update.o
+	rm -f update.o
+	fort77    -c +O3 +U77 -K upi.f
+upi.f:
+   upi:
+	ar rv solve_lib.a upi.o
+r - upi.o
+	rm -f upi.o
+	fort77    -c +O3 +U77 -K upl.f
+upl.f:
+   upl:
+	ar rv solve_lib.a upl.o
+r - upl.o
+	rm -f upl.o
+	fort77    -c +O3 +U77 -K uporb.f
+uporb.f:
+   uporb:
+	ar rv solve_lib.a uporb.o
+r - uporb.o
+	rm -f uporb.o
+	fort77    -c +O3 +U77 -K uselss.f
+uselss.f:
+   uselss:
+	ar rv solve_lib.a uselss.o
+r - uselss.o
+	rm -f uselss.o
+	fort77    -c +O3 +U77 -K vinv2.f
+vinv2.f:
+   vinv2:
+	ar rv solve_lib.a vinv2.o
+r - vinv2.o
+	rm -f vinv2.o
+	fort77    -c +O3 +U77 -K weop.f
+weop.f:
+   weop:
+	ar rv solve_lib.a weop.o
+r - weop.o
+	rm -f weop.o
+	fort77    -c +O3 +U77 -K wgrad.f
+wgrad.f:
+   wgrad:
+	ar rv solve_lib.a wgrad.o
+r - wgrad.o
+	rm -f wgrad.o
+	fort77    -c +O3 +U77 -K wlmode.f
+wlmode.f:
+   wlmode:
+	ar rv solve_lib.a wlmode.o
+r - wlmode.o
+	rm -f wlmode.o
+	fort77    -c +O3 +U77 -K write_soln.f
+write_soln.f:
+   write_soln:
+	ar rv solve_lib.a write_soln.o
+r - write_soln.o
+	rm -f write_soln.o
+	fort77    -c +O3 +U77 -K wsat.f
+wsat.f:
+   wsat:
+	ar rv solve_lib.a wsat.o
+r - wsat.o
+	rm -f wsat.o
+	fort77    -c +O3 +U77 -K wstat.f
+wstat.f:
+   wstat:
+	ar rv solve_lib.a wstat.o
+r - wstat.o
+	rm -f wstat.o
+	fort77    -c +O3 +U77 -K wzen.f
+wzen.f:
+   wzen:
+	ar rv solve_lib.a wzen.o
+r - wzen.o
+	rm -f wzen.o
+	fort77    -c +O3 +U77 -K xyzkep.f
+xyzkep.f:
+   xyzkep:
+	ar rv solve_lib.a xyzkep.o
+r - xyzkep.o
+	rm -f xyzkep.o
+	fort77    -c +O3 +U77 -K zenout.f
+zenout.f:
+   zenout:
+	ar rv solve_lib.a zenout.o
+r - zenout.o
+	rm -f zenout.o
+	fort77    -c +O3 +U77 -K zero1d.f
+zero1d.f:
+   zero1d:
+	ar rv solve_lib.a zero1d.o
+r - zero1d.o
+	rm -f zero1d.o
+	fort77    -c +O3 +U77 -K zero1i.f
+zero1i.f:
+   zero1i:
+	ar rv solve_lib.a zero1i.o
+r - zero1i.o
+	rm -f zero1i.o
+	fort77    -c +O3 +U77 -K zero2d.f
+zero2d.f:
+   zero2d:
+	ar rv solve_lib.a zero2d.o
+r - zero2d.o
+	rm -f zero2d.o
+	fort77    -c +O3 +U77 -K zero2i.f
+zero2i.f:
+   zero2i:
+	ar rv solve_lib.a zero2i.o
+r - zero2i.o
+	rm -f zero2i.o
+	fort77    +O3 +U77 -K solve.f solve_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o solve
+solve.f:
+   MAIN solve:
+/usr/ccs/bin/ld: (Warning) Linker features were used that may not be supported in future releases. The +vallcompatwarnings option can be used to display more detail -ns, and the ld(1) man page contains additional information. This warning can be suppressed with the +vnocompatwarnings option.
+	rm -f solve.o
+Made solve
+ 
+Running unimake to create Makefile for tform
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for tform, SKIP
+	fort77    -c -u +O3 +U77 estimt.f
+estimt.f:
+   estimt:
+	ar rv tform_lib.a estimt.o
+r - estimt.o
+	rm -f estimt.o
+	fort77    -c -u +O3 +U77 estref.f
+estref.f:
+   estref:
+	ar rv tform_lib.a estref.o
+r - estref.o
+	rm -f estref.o
+	fort77    -c -u +O3 +U77 forsys.f
+forsys.f:
+   forsys:
+	ar rv tform_lib.a forsys.o
+r - forsys.o
+	rm -f forsys.o
+	fort77    -c -u +O3 +U77 getcar.f
+getcar.f:
+   getcar:
+	ar rv tform_lib.a getcar.o
+r - getcar.o
+	rm -f getcar.o
+	fort77    -c -u +O3 +U77 getcor.f
+getcor.f:
+   getcor:
+	ar rv tform_lib.a getcor.o
+r - getcor.o
+	rm -f getcor.o
+	fort77    -c -u +O3 +U77 getcyl.f
+getcyl.f:
+   getcyl:
+Warning on line 62 of getcyl.f: local variable i never used
+Warning on line 62 of getcyl.f: Uninitialized variable "pi" in function "getcyl" (5004)
+	ar rv tform_lib.a getcyl.o
+r - getcyl.o
+	rm -f getcyl.o
+	fort77    -c -u +O3 +U77 getgeo.f
+getgeo.f:
+   getgeo:
+	ar rv tform_lib.a getgeo.o
+r - getgeo.o
+	rm -f getgeo.o
+	fort77    -c -u +O3 +U77 getloc.f
+getloc.f:
+   getloc:
+	ar rv tform_lib.a getloc.o
+r - getloc.o
+	rm -f getloc.o
+	fort77    -c -u +O3 +U77 getsph.f
+getsph.f:
+   getsph:
+   sphxyz:
+	ar rv tform_lib.a getsph.o
+r - getsph.o
+	rm -f getsph.o
+	fort77    -c -u +O3 +U77 gettfr.f
+gettfr.f:
+   gettfr:
+	ar rv tform_lib.a gettfr.o
+r - gettfr.o
+	rm -f gettfr.o
+	fort77    -c -u +O3 +U77 putcar.f
+putcar.f:
+   putcar:
+	ar rv tform_lib.a putcar.o
+r - putcar.o
+	rm -f putcar.o
+	fort77    -c -u +O3 +U77 putcyl.f
+putcyl.f:
+   putcyl:
+	ar rv tform_lib.a putcyl.o
+r - putcyl.o
+	rm -f putcyl.o
+	fort77    -c -u +O3 +U77 putgeo.f
+putgeo.f:
+   putgeo:
+	ar rv tform_lib.a putgeo.o
+r - putgeo.o
+	rm -f putgeo.o
+	fort77    -c -u +O3 +U77 putloc.f
+putloc.f:
+   putloc:
+	ar rv tform_lib.a putloc.o
+r - putloc.o
+	rm -f putloc.o
+	fort77    -c -u +O3 +U77 putsph.f
+putsph.f:
+   putsph:
+	ar rv tform_lib.a putsph.o
+r - putsph.o
+	rm -f putsph.o
+	fort77    -u +O3 +U77 tform.f tform_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o tform
+tform.f:
+   MAIN tform:
+	rm -f tform.o
+	fort77    -c -u +O3 +U77 putgeo.f
+putgeo.f:
+   putgeo:
+	ar rv conv_xyz2geo_lib.a putgeo.o
+ar: Permission denied
+ar: cannot create conv_xyz2geo_lib.a
+r - putgeo.o
+*** Error exit code 1
+
+Stop.
+ 
+Reading gamit/Makefile.config to get program dimensions
+ 
+The old settings are:
+dimpar.h	PARAMETER (maxsat=30)
+dimpar.h	PARAMETER (maxsit=45)
+dimpar.h	PARAMETER (maxatm=13)
+cview.h	parameter(ncvsit=45)
+makex.h	PARAMETER (MAXEPC=2880)
+
+ 
+++++++++++++++++++++++++++++++++++++++++++
+Make sure the common libraries are current
+++++++++++++++++++++++++++++++++++++++++++
+ 
+ 
+Running unimake to create Makefile for comlib
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for comlib, SKIP
+ 
+Running unimake to create Makefile for matrix
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for matrix, SKIP
+ 
++++++++++++++++++++++++++++++++++++++++++
+Making the GAMIT library...
++++++++++++++++++++++++++++++++++++++++++
+ 
+Running unimake to create Makefile for lib
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for lib, SKIP
+Made lib
+ 
+++++++++++++++++++++++++++++++++++
+Making the main modules
+++++++++++++++++++++++++++++++++++
+ 
+ 
+Running unimake to create Makefile for makex
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for makex, SKIP
+Made makex
+ 
+Running unimake to create Makefile for arc
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for arc, SKIP
+Made arc
+ 
+Running unimake to create Makefile for cfmrg
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for cfmrg, SKIP
+Made cfmrg
+ 
+Running unimake to create Makefile for clean
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for clean, SKIP
+Made clean
+ 
+Running unimake to create Makefile for ctox
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for ctox, SKIP
+Made ctox
+ 
+Running unimake to create Makefile for fica
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for fica, SKIP
+Made fica
+ 
+Running unimake to create Makefile for fixdrv
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for fixdrv, SKIP
+Made fixdrv
+ 
+Running unimake to create Makefile for hi
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for hi, SKIP
+Made hi
+ 
+Running unimake to create Makefile for makexp
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for makexp, SKIP
+Made makexp
+ 
+Running unimake to create Makefile for model
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for model, SKIP
+Made model
+ 
+Running unimake to create Makefile for orbits
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for orbits, SKIP
+Made orbits
+ 
+Running unimake to create Makefile for solve
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for solve, SKIP
+Made solve
+ 
+Running unimake to create Makefile for tform
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for tform, SKIP
+	fort77    -c -u +O3 +U77 putgeo.f
+putgeo.f:
+   putgeo:
+	ar rv conv_xyz2geo_lib.a putgeo.o
+r - putgeo.o
+	rm -f putgeo.o
+	fort77    -u +O3 +U77 conv_xyz2geo.f conv_xyz2geo_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o conv_xyz2geo
+conv_xyz2geo.f:
+   MAIN conv_xyz2geo:
+	rm -f conv_xyz2geo.o
+Made tform
+ 
+Running unimake to create Makefile for utils
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+Makefile for utils remade by unimake
+	fort77    -u +O3 +U77 addvec.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o addvec
+addvec.f:
+   MAIN addvec:
+	rm -f addvec.o
+	fort77    -u +O3 +U77 argo2rx.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o argo2rx
+argo2rx.f:
+   MAIN argo2rx:
+	rm -f argo2rx.o
+	fort77    -u +O3 +U77 argo2fic.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o argo2fic
+argo2fic.f:
+   MAIN argo2fic:
+   openf:
+   tsort:
+   rdeph:
+   rdphas:
+   wb0:
+   wb0a:
+   wb9:
+   wb55:
+   wb101:
+   wb1101:
+   wb1180:
+   wb1201:
+   wb1280:
+   wb1301:
+   wb1380:
+   wfica:
+   uptaly:
+	rm -f argo2fic.o
+	fort77    -u +O3 +U77 argo2nav.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o argo2nav
+argo2nav.f:
+   MAIN argo2nav:
+   rdeph:
+	rm -f argo2nav.o
+	fort77    -u +O3 +U77 autecl.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o autecl
+autecl.f:
+   MAIN autecl:
+	rm -f autecl.o
+	fort77    -u +O3 +U77 check_lfile.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o check_lfile
+check_lfile.f:
+   MAIN:
+/usr/ccs/bin/ld: Can't create check_lfile
+/usr/ccs/bin/ld: Permission denied
+*** Error exit code 1
+
+Stop.
+ 
+Reading gamit/Makefile.config to get program dimensions
+ 
+The old settings are:
+dimpar.h	PARAMETER (maxsat=30)
+dimpar.h	PARAMETER (maxsit=45)
+dimpar.h	PARAMETER (maxatm=13)
+cview.h	parameter(ncvsit=45)
+makex.h	PARAMETER (MAXEPC=2880)
+
+ 
+++++++++++++++++++++++++++++++++++++++++++
+Make sure the common libraries are current
+++++++++++++++++++++++++++++++++++++++++++
+ 
+ 
+Running unimake to create Makefile for comlib
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for comlib, SKIP
+ 
+Running unimake to create Makefile for matrix
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for matrix, SKIP
+ 
++++++++++++++++++++++++++++++++++++++++++
+Making the GAMIT library...
++++++++++++++++++++++++++++++++++++++++++
+ 
+Running unimake to create Makefile for lib
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for lib, SKIP
+Made lib
+ 
+++++++++++++++++++++++++++++++++++
+Making the main modules
+++++++++++++++++++++++++++++++++++
+ 
+ 
+Running unimake to create Makefile for makex
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for makex, SKIP
+Made makex
+ 
+Running unimake to create Makefile for arc
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for arc, SKIP
+Made arc
+ 
+Running unimake to create Makefile for cfmrg
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for cfmrg, SKIP
+Made cfmrg
+ 
+Running unimake to create Makefile for clean
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for clean, SKIP
+Made clean
+ 
+Running unimake to create Makefile for ctox
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for ctox, SKIP
+Made ctox
+ 
+Running unimake to create Makefile for fica
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for fica, SKIP
+Made fica
+ 
+Running unimake to create Makefile for fixdrv
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for fixdrv, SKIP
+Made fixdrv
+ 
+Running unimake to create Makefile for hi
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for hi, SKIP
+Made hi
+ 
+Running unimake to create Makefile for makexp
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for makexp, SKIP
+Made makexp
+ 
+Running unimake to create Makefile for model
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for model, SKIP
+Made model
+ 
+Running unimake to create Makefile for orbits
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for orbits, SKIP
+Made orbits
+ 
+Running unimake to create Makefile for solve
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for solve, SKIP
+Made solve
+ 
+Running unimake to create Makefile for tform
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for tform, SKIP
+Made tform
+ 
+Running unimake to create Makefile for utils
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for utils, SKIP
+	fort77    -u +O3 +U77 check_lfile.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o check_lfile
+check_lfile.f:
+   MAIN:
+	rm -f check_lfile.o
+	fort77    -u +O3 +U77 cml.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o cml
+cml.f:
+   MAIN cml:
+	rm -f cml.o
+	fort77    -u +O3 +U77 convertc.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o convertc
+convertc.f:
+   MAIN convertc:
+   dvswp:
+   dvdot:
+   geod_to_xyz:
+   xyz_to_geod:
+   help_convert:
+	rm -f convertc.o
+	fort77    -u +O3 +U77 convert_antmod.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o convert_antmod
+convert_antmod.f:
+   MAIN:
+	rm -f convert_antmod.o
+	fort77    -u +O3 +U77 convert_antpcv.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o convert_antpcv
+convert_antpcv.f:
+   MAIN:
+   read_ngs:
+   write_antex:
+   write_antmod:
+   error:
+	rm -f convert_antpcv.o
+	fort77    -u +O3 +U77 countx.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o countx
+countx.f:
+   MAIN countx:
+	rm -f countx.o
+	fort77    -u +O3 +U77 cvedt.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o cvedt
+cvedt.f:
+   MAIN cvedt:
+	rm -f cvedt.o
+	fort77    -u +O3 +U77 dafexpand.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o dafexpand
+dafexpand.f:
+   MAIN:
+   expand_long:
+   expand_lat:
+	rm -f dafexpand.o
+	fort77    -c -u +O3 +U77 uversn.f
+uversn.f:
+   uversn:
+	ar rv daf2da_lib.a uversn.o
+r - uversn.o
+	rm -f uversn.o
+	fort77    -u +O3 +U77 daf2da.f daf2da_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o daf2da
+daf2da.f:
+   MAIN:
+	rm -f daf2da.o
+	fort77    -c -u +O3 +U77 uversn.f
+uversn.f:
+   uversn:
+	ar rv nao2da_lib.a uversn.o
+r - uversn.o
+	rm -f uversn.o
+	fort77    -u +O3 +U77 nao2da.f nao2da_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o nao2da
+nao2da.f:
+   MAIN:
+	rm -f nao2da.o
+	fort77    -u +O3 +U77 decyr_atm.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o decyr_atm
+decyr_atm.f:
+   MAIN decyr_atm:
+	rm -f decyr_atm.o
+	fort77    -u +O3 +U77 emerge.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o emerge
+emerge.f:
+   MAIN emerge:
+	rm -f emerge.o
+	fort77    -u +O3 +U77 emntab.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o emntab
+emntab.f:
+   MAIN:
+   tabsun:
+   tabmon:
+   tabnut:
+	rm -f emntab.o
+	fort77    -u +O3 +U77 erptab.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o erptab
+erptab.f:
+   MAIN erptab:
+   peput1:
+   pepwob:
+	rm -f erptab.o
+	fort77    -u +O3 +U77 fic2nav.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o fic2nav
+fic2nav.f:
+   MAIN fic2nav:
+	rm -f fic2nav.o
+	fort77    -u +O3 +U77 fixsst.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o fixsst
+fixsst.f:
+   MAIN fixsst:
+	rm -f fixsst.o
+	fort77    -u +O3 +U77 fixx.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o fixx
+fixx.f:
+   MAIN fixx:
+	rm -f fixx.o
+	fort77    -u +O3 +U77 merge_rinex.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o merge_rinex
+merge_rinex.f:
+   MAIN merge_rinex:
+   help_rinex_merge:
+	rm -f merge_rinex.o
+	fort77    -c -u +O3 +U77 uversn.f
+uversn.f:
+   uversn:
+	ar rv octtab_lib.a uversn.o
+r - uversn.o
+	rm -f uversn.o
+	fort77    -u +O3 +U77 octtab.f octtab_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o octtab
+octtab.f:
+   MAIN:
+   get_station:
+   geoc_to_geod:
+   grid_interp:
+   terp2:
+   gradx2:
+   grady2:
+   infminor:
+   calr:
+   fitadm:
+   ludcmp:
+   lubksb:
+   calhth:
+   calhtd:
+	rm -f octtab.o
+	fort77    -u +O3 +U77 poly01.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o poly01
+poly01.f:
+   MAIN:
+	rm -f poly01.o
+	fort77    -u +O3 +U77 poly01r.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o poly01r
+poly01r.f:
+   MAIN:
+	rm -f poly01r.o
+	fort77    -u +O3 +U77 plotk.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o plotk
+plotk.f:
+   MAIN plotk:
+	rm -f plotk.o
+	fort77    -u +O3 +U77 profile.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o profile
+profile.f:
+   MAIN profile:
+   geod2xy:
+   nuvel1:
+   vrot:
+   erot:
+   xy2geod:
+	rm -f profile.o
+	fort77    -u +O3 +U77 pull_bias.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o pull_bias
+pull_bias.f:
+   MAIN pull_bias:
+	rm -f pull_bias.o
+	fort77    -u +O3 +U77 rx2apr.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o rx2apr
+rx2apr.f:
+   MAIN rx2apr:
+   xyzedit:
+	rm -f rx2apr.o
+	fort77    -u +O3 +U77 svdlin.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o svdlin
+svdlin.f:
+   MAIN svdlin:
+	rm -f svdlin.o
+	fort77    -u +O3 +U77 svdsig.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o svdsig
+svdsig.f:
+   MAIN svdsig:
+	rm -f svdsig.o
+	fort77    -u +O3 +U77 upd_stnfo.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o upd_stnfo
+upd_stnfo.f:
+   MAIN upd_stnfo:
+   get_rxinfo:
+	rm -f upd_stnfo.o
+	fort77    -u +O3 +U77 vector_stat.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o vector_stat
+vector_stat.f:
+   MAIN:
+	rm -f vector_stat.o
+	fort77    -c -u +O3 +U77 read_q.f
+read_q.f:
+   read_q:
+	ar rv vexclude_lib.a read_q.o
+r - read_q.o
+	rm -f read_q.o
+	fort77    -c -u +O3 +U77 change_excl.f
+change_excl.f:
+   change_excl:
+	ar rv vexclude_lib.a change_excl.o
+r - change_excl.o
+	rm -f change_excl.o
+	fort77    -c -u +O3 +U77 uversn.f
+uversn.f:
+   uversn:
+	ar rv vexclude_lib.a uversn.o
+r - uversn.o
+	rm -f uversn.o
+	fort77    -u +O3 +U77 vexclude.f vexclude_lib.a ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o vexclude
+vexclude.f:
+   MAIN exclude:
+	rm -f vexclude.o
+	fort77    -u +O3 +U77 wbslfilt.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o wbslfilt
+wbslfilt.f:
+   MAIN wblsfilt:
+   geninv:
+   dotd:
+   condnum:
+   svd1:
+	rm -f wbslfilt.o
+	cc -g -Aa crx2rnx.c -o crx2rnx
+	rm -f crx2rnx.o
+	cc -g -Aa rnx2crx.c -o rnx2crx
+	rm -f rnx2crx.o
+	fort77    -u +O3 +U77 gmt2vel.f  ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a  -o gmt2vel
+gmt2vel.f:
+   MAIN:
+	rm -f gmt2vel.o
+Made utils
+ 
+Remaking the links from ../bin to the executables
+ 
+Links made
+ 
+
+++++++++++++++++++
+GAMIT installed
+++++++++++++++++++
+
+ 
+++++++++++++++++++++++++++++++
+Making the GLOBK software
+++++++++++++++++++++++++++++++
+ 
+++++++++++++++++++++++++++++++++++++++++++
+Make sure the common libraries are current
+++++++++++++++++++++++++++++++++++++++++++
+ 
+ 
+Running unimake to create Makefile for comlib
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for comlib, SKIP
+ 
+Running unimake to create Makefile for matrix
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for matrix, SKIP
+ 
+++++++++++++++++++++++++++++++++++
+Making the Kalman filter libraries
+++++++++++++++++++++++++++++++++++
+ 
+ 
+Running unimake to create Makefile for gen_util
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for gen_util, SKIP
+	fort77    -c -u +O3 +U77 gst_jd.f
+gst_jd.f:
+   gst_jd:
+	ar rv gen_util_lib.a gst_jd.o
+r - gst_jd.o
+	rm -f gst_jd.o
+	fort77    -c -u +O3 +U77 decode_optio.f
+decode_optio.f:
+   decode_option:
+	ar rv gen_util_lib.a decode_optio.o
+r - decode_optio.o
+	rm -f decode_optio.o
+	fort77    -c -u +O3 +U77 list_markov.f
+list_markov.f:
+   list_markov:
+	ar rv gen_util_lib.a list_markov.o
+r - list_markov.o
+	rm -f list_markov.o
+	fort77    -c -u +O3 +U77 frame_to_fra.f
+frame_to_fra.f:
+   frame_to_frame:
+	ar rv gen_util_lib.a frame_to_fra.o
+r - frame_to_fra.o
+	rm -f frame_to_fra.o
+	fort77    -c -u +O3 +U77 datum_def.f
+datum_def.f:
+   datum_def:
+   cm_def:
+	ar rv gen_util_lib.a datum_def.o
+r - datum_def.o
+	rm -f datum_def.o
+Made gen_util
+ 
+Running unimake to create Makefile for Khandlers
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for Khandlers, SKIP
+	fort77    -c -u +O3 +U77 rw_KalObs_he.f
+rw_KalObs_he.f:
+   rw_kalobs_header:
+	ar rv KalObs_hndl_lib.a rw_KalObs_he.o
+r - rw_KalObs_he.o
+	rm -f rw_KalObs_he.o
+Made Khandlers
+ 
+Running unimake to create Makefile for Ghandlers
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for Ghandlers, SKIP
+Made Ghandlers
+ 
+++++++++++++++++++++++++++++++++++
+Making the Kalman filter programs
+++++++++++++++++++++++++++++++++++
+ 
+ 
+Running unimake to create Makefile for globk
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for globk, SKIP
+	fort77    -c -u +O3 +U77 get_apr_posi.f
+get_apr_posi.f:
+   get_apr_positions:
+	ar rv globk_lib.a get_apr_posi.o
+r - get_apr_posi.o
+	rm -f get_apr_posi.o
+	fort77    -c -u +O3 +U77 decode_nonse.f
+decode_nonse.f:
+   decode_nonsec:
+   nonsec_convert:
+   get_nonlog:
+	ar rv globk_lib.a decode_nonse.o
+r - decode_nonse.o
+	rm -f decode_nonse.o
+	fort77    -u +O3 +U77 globk.f globk_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o globs
+globk.f:
+   MAIN globk:
+	rm -f globk.o
+Made globk
+ 
+Running unimake to create Makefile for glfor
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for glfor, SKIP
+	fort77    -c -u +O3 +U77 glfor.f
+glfor.f:
+   glfor:
+   glfoo:
+   glfop:
+   check_param:
+   debug_ut1:
+   scan_site:
+   glfok:
+   rep_plst:
+	ar rv glfor_lib.a glfor.o
+r - glfor.o
+	rm -f glfor.o
+	fort77    -c -u +O3 +U77 compute_OC.f
+compute_OC.f:
+   compute_oc:
+	ar rv glfor_lib.a compute_OC.o
+r - compute_OC.o
+	rm -f compute_OC.o
+	fort77    -c -u +O3 +U77 site_OC.f
+site_OC.f:
+   site_oc:
+	ar rv glfor_lib.a site_OC.o
+r - site_OC.o
+	rm -f site_OC.o
+	fort77    -c -u +O3 +U77 eval_nonsec.f
+eval_nonsec.f:
+   eval_nonsec:
+	ar rv glfor_lib.a eval_nonsec.o
+r - eval_nonsec.o
+	rm -f eval_nonsec.o
+	fort77    -u +O3 +U77 glfor_main.f glfor_lib.a ../globk/globk_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o glfor
+glfor_main.f:
+   MAIN glfor_main:
+	rm -f glfor_main.o
+Made glfor
+ 
+Running unimake to create Makefile for glout
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for glout, SKIP
+	fort77    -c -u +O3 +U77 glout.f
+glout.f:
+   glout:
+	ar rv glout_lib.a glout.o
+r - glout.o
+	rm -f glout.o
+	fort77    -c -u +O3 +U77 write_glb_he.f
+write_glb_he.f:
+   write_glb_header:
+   list_sort:
+	ar rv glout_lib.a write_glb_he.o
+r - write_glb_he.o
+	rm -f write_glb_he.o
+	fort77    -c -u +O3 +U77 write_glb_pa.f
+write_glb_pa.f:
+   write_glb_params:
+   max_corr:
+	ar rv glout_lib.a write_glb_pa.o
+r - write_glb_pa.o
+	rm -f write_glb_pa.o
+	fort77    -c -u +O3 +U77 write_glb_su.f
+write_glb_su.f:
+   write_glb_sum:
+   write_log_sum:
+	ar rv glout_lib.a write_glb_su.o
+r - write_glb_su.o
+	rm -f write_glb_su.o
+	fort77    -c -u +O3 +U77 report_nonse.f
+report_nonse.f:
+   report_nonsec:
+	ar rv glout_lib.a report_nonse.o
+r - report_nonse.o
+	rm -f report_nonse.o
+	fort77    -u +O3 +U77 glout_main.f glout_lib.a ../glfor/glfor_lib.a ../globk/globk_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o glout
+glout_main.f:
+   MAIN glout_main:
+	rm -f glout_main.o
+Made glout
+ 
+Running unimake to create Makefile for glinit
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for glinit, SKIP
+	fort77    -c -u +O3 +U77 glinit.f
+glinit.f:
+   glinit:
+   debug_out:
+	ar rv glinit_lib.a glinit.o
+r - glinit.o
+	rm -f glinit.o
+	fort77    -u +O3 +U77 glinit_main.f glinit_lib.a ../globk/globk_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o glinit
+glinit_main.f:
+   MAIN glinit_main:
+	rm -f glinit_main.o
+Made glinit
+ 
+Running unimake to create Makefile for glist
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for glist, SKIP
+	fort77    -u +O3 +U77 glist.f  ../glinit/glinit_lib.a ../glout/glout_lib.a ../globk/globk_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o glist
+glist.f:
+   MAIN glist:
+   decode_glist_run:
+   sum_site_source:
+   clear_used:
+   write_header:
+   accum_write:
+   write_sum:
+   write_sum_pos:
+   check_apr_inf:
+   check_apr_crd:
+	rm -f glist.o
+	fort77    -u +O3 +U77 glist_gmt.f  ../glinit/glinit_lib.a ../glout/glout_lib.a ../globk/globk_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o glist_gmt
+glist_gmt.f:
+   MAIN glist:
+   decode_glist_run:
+   sum_site_source:
+   clear_used:
+   write_header:
+   accum_write:
+   write_sum:
+   write_sum_pos:
+	rm -f glist_gmt.o
+Made glist
+ 
+Running unimake to create Makefile for glbak
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for glbak, SKIP
+	fort77    -u +O3 +U77 glbak_main.f glbak_lib.a ../glout/glout_lib.a ../glfor/glfor_lib.a ../globk/globk_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o glbak
+glbak_main.f:
+   MAIN glbak_main:
+	rm -f glbak_main.o
+Made glbak
+ 
+Running unimake to create Makefile for glorg
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for glorg, SKIP
+	fort77    -c -u +O3 +U77 glorg.f
+glorg.f:
+   glorg:
+   gloro:
+   glors:
+   glorw:
+   decode_glorg_run:
+   apply_rot:
+   apply_trans:
+   gloref:
+	ar rv glorg_lib.a glorg.o
+r - glorg.o
+	rm -f glorg.o
+	fort77    -c -u +O3 +U77 glorg_util.f
+glorg_util.f:
+   read_glorg_commands:
+   glorg_upd_apr:
+   decode_equates:
+   update_glorg_aprs:
+   decode_unequates:
+   decode_eq_dist:
+   set_param_names:
+   check_use_sites:
+   eqfixa:
+   decode_stab_opt:
+   eqfixlog:
+Warning on line 1608 of glorg_util.f: Uninitialized variable "j" in function "eqfixlog" (5004)
+	ar rv glorg_lib.a glorg_util.o
+r - glorg_util.o
+	rm -f glorg_util.o
+	fort77    -c -u +O3 +U77 equate.f
+equate.f:
+   equate:
+	ar rv glorg_lib.a equate.o
+r - equate.o
+	rm -f equate.o
+	fort77    -c -u +O3 +U77 decode_param.f
+decode_param.f:
+   decode_param:
+	ar rv glorg_lib.a decode_param.o
+r - decode_param.o
+	rm -f decode_param.o
+	fort77    -c -u +O3 +U77 apply_cfull.f
+apply_cfull.f:
+   apply_cond_full:
+   form_cnd_parts:
+   write_cond_result:
+   form_hgt_wgh:
+   dumdsol:
+	ar rv glorg_lib.a apply_cfull.o
+r - apply_cfull.o
+	rm -f apply_cfull.o
+	fort77    -c -u +O3 +U77 merge_nonsec.f
+merge_nonsec.f:
+   merge_nonsec:
+Warning on line 191 of merge_nonsec.f: Uninitialized variable "is" in function "merge_nonsec" (5004)
+	ar rv glorg_lib.a merge_nonsec.o
+r - merge_nonsec.o
+	rm -f merge_nonsec.o
+	fort77    -u +O3 +U77 glorg_main.f glorg_lib.a ../glout/glout_lib.a ../glfor/glfor_lib.a ../globk/globk_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o glorg
+glorg_main.f:
+   MAIN glorg_main:
+	rm -f glorg_main.o
+Made glorg
+ 
+Running unimake to create Makefile for glsave
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for glsave, SKIP
+	fort77    -c -u +O3 +U77 gw_descripti.f
+gw_descripti.f:
+   gw_description:
+   gw_soln_rec:
+   cr_sinf_rec:
+   acc_sinf:
+   save_full_names:
+   update_arp:
+	ar rv glsave_lib.a gw_descripti.o
+r - gw_descripti.o
+	rm -f gw_descripti.o
+	fort77    -c -u +O3 +U77 gw_mul_ep.f
+gw_mul_ep.f:
+   gw_mul_ep:
+	ar rv glsave_lib.a gw_mul_ep.o
+r - gw_mul_ep.o
+	rm -f gw_mul_ep.o
+	fort77    -c -u +O3 +U77 gw_cons.f
+gw_cons.f:
+   gw_cons:
+	ar rv glsave_lib.a gw_cons.o
+r - gw_cons.o
+	rm -f gw_cons.o
+	fort77    -u +O3 +U77 glsave_main.f glsave_lib.a ../globk/globk_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o glsave
+glsave_main.f:
+   MAIN glsave_main:
+	rm -f glsave_main.o
+Made glsave
+ 
+Running unimake to create Makefile for globc
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for globc, SKIP
+	fort77    -u +O3 +U77 globc.f globc_lib.a ../glsave/glsave_lib.a ../glinit/glinit_lib.a ../glbak/glbak_lib.a ../glfor/glfor_lib.a ../glout/glout_lib.a ../glorg/glorg_lib.a ../globk/globk_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o globk
+globc.f:
+   MAIN globk:
+	rm -f globc.o
+Made globc
+ 
+Running unimake to create Makefile for glred
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for glred, SKIP
+	fort77    -u +O3 +U77 glred.f  ../gen_util/gen_util_lib.a ../../libraries/comlib/com_lib.a  -o glred
+glred.f:
+   MAIN glred:
+	rm -f glred.o
+Made glred
+ 
+Running unimake to create Makefile for htoglb
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for htoglb, SKIP
+	fort77    -c -u +O3 +U77 htog_ut.f
+htog_ut.f:
+   make_glb:
+   read_rem_gpshead:
+   read_rem_terhead:
+   read_aprioris:
+   read_cov:
+   llr_to_xyz:
+   rotate_cov:
+   rotate_sol:
+   gen_gname:
+   qgen_codes:
+   make_jpl:
+   num_month:
+   get_slr_parn:
+   make_slr:
+   init_hfr:
+   stacov_heights:
+	ar rv htoglb_lib.a htog_ut.o
+r - htog_ut.o
+	rm -f htog_ut.o
+	fort77    -c -u +O3 +U77 glbsx_ut.f
+glbsx_ut.f:
+   read_glb:
+   sr_names:
+   sr_full:
+   sr_description:
+   sr_sinf_rec:
+   sr_aprioris:
+   sr_codes:
+   sr_soln:
+   sr_apr_cov:
+	ar rv htoglb_lib.a glbsx_ut.o
+r - glbsx_ut.o
+	rm -f glbsx_ut.o
+	fort77    -c -u +O3 +U77 hfupd_ut.f
+hfupd_ut.f:
+   read_edit:
+   apply_edit:
+   read_stinfo:
+   racode_to_name:
+   ck_rcv_dup:
+   ck_ant_dup:
+   ck_ecc_dup:
+	ar rv htoglb_lib.a hfupd_ut.o
+r - hfupd_ut.o
+	rm -f hfupd_ut.o
+	fort77    -c -u +O3 +U77 hw_util.f
+hw_util.f:
+   qw_glb_header:
+   qw_glb_names:
+   qw_glb_full:
+   qw_description:
+   qr_sinf_rec:
+   qw_codes:
+   qw_mul_ep:
+   qw_aprioris:
+   qw_soln:
+   list_soln:
+   qw_cons:
+   mk_sln_gamit:
+	ar rv htoglb_lib.a hw_util.o
+r - hw_util.o
+	rm -f hw_util.o
+	fort77    -c -u +O3 +U77 decsnx_soln.f
+decsnx_soln.f:
+   decsnx_soln:
+   dec_soln_epochs:
+   dec_soln_stats:
+   dec_soln_est:
+   dec_soln_apr:
+   dec_soln_mat:
+   dec_soln_con:
+   dec_remv_con:
+	ar rv htoglb_lib.a decsnx_soln.o
+r - decsnx_soln.o
+	rm -f decsnx_soln.o
+	fort77    -u +O3 +U77 htoglb.f  ./htoglb_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a ../../gamit/lib//gamit_lib.a  -o htoglb
+htoglb.f:
+   MAIN htoglb:
+   htog_mem:
+	rm -f htoglb.o
+	fort77    -u +O3 +U77 glbtosnx.f  ./htoglb_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a ../../gamit/lib//gamit_lib.a  -o glbtosnx
+glbtosnx.f:
+   MAIN glbtosnx:
+   decode_gts_runs:
+   gts_mem:
+	rm -f glbtosnx.o
+	fort77    -u +O3 +U77 hfupd.f  ./htoglb_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a ../../gamit/lib//gamit_lib.a  -o hfupd
+hfupd.f:
+   MAIN hfupd:
+   decode_snx_site_run:
+   init_hfupd:
+   report_opts:
+   read_igs_snx:
+   snx_id:
+   snx_rec:
+   snx_ant:
+   snx_ecc:
+   snx_gps_pc:
+   snx_rep:
+   check_sinf:
+   read_hfinf:
+   upd_hf_soln:
+   upd_hf_hdr:
+   ckmax:
+	rm -f hfupd.o
+	fort77    -u +O3 +U77 mstinf.f  ./htoglb_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a ../../gamit/lib//gamit_lib.a  -o mstinf
+mstinf.f:
+   MAIN mstinf:
+   decode_stinf_run:
+   read_stinf:
+   check_match:
+   check_max:
+   merge_stinf:
+   sort_snames:
+   write_stinf:
+   read_use:
+	rm -f mstinf.o
+	fort77    -u +O3 +U77 mstinf2.f  ./htoglb_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a ../../gamit/lib//gamit_lib.a  -o mstinf2
+mstinf2.f:
+   MAIN mstinf2:
+   decode_stinf_run:
+   read_stinf:
+   check_match:
+   check_max:
+   merge_stinf:
+   sort_snames:
+   write_stinf:
+   read_use:
+   update_stinf:
+   get_rinex_times:
+   guess_rcvant:
+Warning on line 1697 of mstinf2.f: Uninitialized variable "jerr" in function "read_stinf" (5004)
+	rm -f mstinf2.o
+Made htoglb
+ 
+Running unimake to create Makefile for ctogobs
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No match.
+Makefile for ctogobs remade by unimake
+	fort77    -c -u +O3 +U77 ctog_cmds_bd.f
+ctog_cmds_bd.f:
+   BLOCK DATA ctog_cmds_bd:
+	ar rv ctogobs_lib.a ctog_cmds_bd.o
+r - ctog_cmds_bd.o
+	rm -f ctog_cmds_bd.o
+	fort77    -c -u +O3 +U77 ctog_utils.f
+ctog_utils.f:
+   init_ctogobs:
+   out_ctogobs_head:
+   get_ctogobs_run:
+   read_cfheads:
+   save_cfinfo:
+   cf_unmatch:
+   get_code_series:
+   ctog_mem:
+   cerrfl_to_df:
+   init_receiver:
+   update_init_clk:
+   init_clk:
+   init_norm:
+   data_ok:
+   good_bf:
+   set_rng_mask:
+   set_phs_mask:
+   rng_omc:
+   jmp_sort:
+   est_clk_rng:
+   write_clk:
+   init_rms:
+   update_stats:
+   report_clk_rng:
+   get_rng_resets:
+   ltoc:
+	ar rv ctogobs_lib.a ctog_utils.o
+r - ctog_utils.o
+	rm -f ctog_utils.o
+	fort77    -c -u +O3 +U77 ctog_utm.f
+ctog_utm.f:
+   read_cfdata:
+   process_rng:
+   check_elev:
+	ar rv ctogobs_lib.a ctog_utm.o
+r - ctog_utm.o
+	rm -f ctog_utm.o
+	fort77    -c -u +O3 +U77 ctog_ut2.f
+ctog_ut2.f:
+   process_phs:
+   est_clk_phs:
+   est_cyc:
+   phs_omc:
+   write_phs:
+   prescan_phs:
+Warning on line 1296 of ctog_ut2.f: Uninitialized variable "biases" in function "est_clk_phs" (5004)
+	ar rv ctogobs_lib.a ctog_ut2.o
+r - ctog_ut2.o
+	rm -f ctog_ut2.o
+	fort77    -c -u +O3 +U77 upd_cf_sd.f
+upd_cf_sd.f:
+   update_cfiles:
+   gen_new_cfname:
+   copy_cfheads:
+   copy_cfdata:
+   df_to_cerrfl:
+	ar rv ctogobs_lib.a upd_cf_sd.o
+r - upd_cf_sd.o
+	rm -f upd_cf_sd.o
+	fort77    -c -u +O3 +U77 flag_np.f
+flag_np.f:
+   flag_np:
+	ar rv ctogobs_lib.a flag_np.o
+r - flag_np.o
+	rm -f flag_np.o
+	fort77    -c -u +O3 +U77 trim_oneways.f
+trim_oneways.f:
+   trim_oneways:
+   flag_data:
+   trim_ss:
+	ar rv ctogobs_lib.a trim_oneways.o
+r - trim_oneways.o
+	rm -f trim_oneways.o
+	fort77    -c -u +O3 +U77 ctogobs_dd.f
+ctogobs_dd.f:
+   clean_dd:
+   get_clean_order:
+   sort_dd_list:
+   scan_and_fix:
+   init_cyc_est:
+   copy_dtow:
+   get_one_way:
+   inc_cyc_est:
+   inc_norm:
+   form_data:
+   form_rhda:
+   fit_obs:
+   est_dd_cyc:
+   check_jump_bad:
+   check_pb:
+	ar rv ctogobs_lib.a ctogobs_dd.o
+r - ctogobs_dd.o
+	rm -f ctogobs_dd.o
+	fort77    -c -u +O3 +U77 ctogobs_dd2.f
+ctogobs_dd2.f:
+   create_dd_search:
+   update_dd_search:
+   get_dd_data:
+   get_sdep:
+   get_ddep:
+   form_dd:
+   copy_norm:
+	ar rv ctogobs_lib.a ctogobs_dd2.o
+r - ctogobs_dd2.o
+	rm -f ctogobs_dd2.o
+	fort77    -c -u +O3 +U77 make_sd_file.f
+make_sd_file.f:
+   write_sd_file:
+	ar rv ctogobs_lib.a make_sd_file.o
+r - make_sd_file.o
+	rm -f make_sd_file.o
+	fort77    -c -u +O3 +U77 prescan_clk.f
+prescan_clk.f:
+   prescan_clk:
+   preedit_range:
+	ar rv ctogobs_lib.a prescan_clk.o
+r - prescan_clk.o
+	rm -f prescan_clk.o
+	fort77    -c -u +O3 +U77 set_pre_edit.f
+set_pre_edit.f:
+   set_pre_edit:
+	ar rv ctogobs_lib.a set_pre_edit.o
+r - set_pre_edit.o
+	rm -f set_pre_edit.o
+	fort77    -c -u +O3 +U77 chk_scan_ed.f
+chk_scan_ed.f:
+   chk_scan_edit:
+   rep_num_dd_flag:
+	ar rv ctogobs_lib.a chk_scan_ed.o
+r - chk_scan_ed.o
+	rm -f chk_scan_ed.o
+	fort77    -c -u +O3 +U77 rd_ctog_cmds.f
+rd_ctog_cmds.f:
+   read_ctog_cmds:
+	ar rv ctogobs_lib.a rd_ctog_cmds.o
+r - rd_ctog_cmds.o
+	rm -f rd_ctog_cmds.o
+	fort77    -c -u +O3 +U77 prc_ctog_cmd.f
+prc_ctog_cmd.f:
+   proc_ctog_cmd:
+   read_az_mask:
+	ar rv ctogobs_lib.a prc_ctog_cmd.o
+r - prc_ctog_cmd.o
+	rm -f prc_ctog_cmd.o
+	fort77    -c -u +O3 +U77 rep_params.f
+rep_params.f:
+   rep_run_params:
+   report_azmask:
+	ar rv ctogobs_lib.a rep_params.o
+r - rep_params.o
+	rm -f rep_params.o
+	fort77    -c -u +O3 +U77 ctogobs_scan.f
+ctogobs_scan.f:
+   scan_dd:
+   do_scan_eps:
+   check_continuity:
+   check_dd_quality:
+   get_scan_sd:
+   get_scan_dd:
+   test_scan_dd:
+   scan_chk_2nd_ss:
+	ar rv ctogobs_lib.a ctogobs_scan.o
+r - ctogobs_scan.o
+	rm -f ctogobs_scan.o
+	fort77    -c -u +O3 +U77 set_scan_lis.f
+set_scan_lis.f:
+   set_scan_list:
+	ar rv ctogobs_lib.a set_scan_lis.o
+r - set_scan_lis.o
+	rm -f set_scan_lis.o
+	fort77    -c -u +O3 +U77 flag_gaps.f
+flag_gaps.f:
+   flag_gaps:
+	ar rv ctogobs_lib.a flag_gaps.o
+r - flag_gaps.o
+	rm -f flag_gaps.o
+	fort77    -c -u +O3 +U77 remove_fb.f
+remove_fb.f:
+   remove_fb:
+	ar rv ctogobs_lib.a remove_fb.o
+r - remove_fb.o
+	rm -f remove_fb.o
+	fort77    -c -u +O3 +U77 push_ddbf.f
+push_ddbf.f:
+   push_ddbf:
+	ar rv ctogobs_lib.a push_ddbf.o
+r - push_ddbf.o
+	rm -f push_ddbf.o
+	fort77    -c -u +O3 +U77 report_bf.f
+report_bf.f:
+   report_bf:
+	ar rv ctogobs_lib.a report_bf.o
+r - report_bf.o
+	rm -f report_bf.o
+	fort77    -c -u +O3 +U77 find_dd_slip.f
+find_dd_slip.f:
+   find_dd_slip:
+   lv_to_list:
+	ar rv ctogobs_lib.a find_dd_slip.o
+r - find_dd_slip.o
+	rm -f find_dd_slip.o
+	fort77    -c -u +O3 +U77 force_lc_pol.f
+force_lc_pol.f:
+   force_lc_poly:
+	ar rv ctogobs_lib.a force_lc_pol.o
+r - force_lc_pol.o
+	rm -f force_lc_pol.o
+	fort77    -c -u +O3 +U77 gen_gobs.f
+gen_gobs.f:
+   gen_gobs:
+	ar rv ctogobs_lib.a gen_gobs.o
+r - gen_gobs.o
+	rm -f gen_gobs.o
+	fort77    -c -u +O3 +U77 comp_dphs.f
+comp_dphs.f:
+   gen_mfile_name:
+   comp_dphs:
+   get_mfs:
+   set_np:
+   comp_grad_part:
+   get_atm_iel:
+	ar rv ctogobs_lib.a comp_dphs.o
+r - comp_dphs.o
+	rm -f comp_dphs.o
+	fort77    -c -u +O3 +U77 proc_phsfin.f
+proc_phsfin.f:
+   proc_phsfin:
+   est_clk_fin:
+   update_cyc:
+   get_mean_owwl:
+   biased_clear:
+   biased_stats:
+   end_resolve:
+   comp_pf_rms:
+   report_rms:
+   reset_cyc:
+   rm_ow_mean:
+   check_convd:
+   pf_edit:
+   comp_elev_rms:
+   pf_check_rms:
+	ar rv ctogobs_lib.a proc_phsfin.o
+r - proc_phsfin.o
+	rm -f proc_phsfin.o
+	fort77    -c -u +O3 +U77 ctog_ow.f
+ctog_ow.f:
+   clean_ow:
+   set_oneway:
+	ar rv ctogobs_lib.a ctog_ow.o
+r - ctog_ow.o
+	rm -f ctog_ow.o
+	fort77    -c -u +O3 +U77 pf_ow_sf.f
+pf_ow_sf.f:
+   pf_ow_sf:
+   ow_scan_fix:
+	ar rv ctogobs_lib.a pf_ow_sf.o
+r - pf_ow_sf.o
+	rm -f pf_ow_sf.o
+	fort77    -c -u +O3 +U77 est_bps.f
+est_bps.f:
+   est_bps:
+   implicit_clk:
+   bp_elim:
+   incr_bp:
+   fin_bp:
+   get_est:
+   implicit_bias:
+Warning on line 969 of est_bps.f: Uninitialized variable "pn" in function "bp_elim" (5004)
+	ar rv ctogobs_lib.a est_bps.o
+r - est_bps.o
+	rm -f est_bps.o
+	fort77    -c -u +O3 +U77 flat_dd.f
+flat_dd.f:
+   flat_dd:
+   get_biases:
+   scan_longest:
+   set_ref_bfs:
+   fdd_check_svs:
+   fdd_check_dd:
+   fdd_form_dd:
+   fdd_rm_bias:
+   fdd_check_resolved:
+	ar rv ctogobs_lib.a flat_dd.o
+r - flat_dd.o
+	rm -f flat_dd.o
+	fort77    -c -u +O3 +U77 wr_igs_clk.f
+wr_igs_clk.f:
+   wr_igs_clk:
+	ar rv ctogobs_lib.a wr_igs_clk.o
+r - wr_igs_clk.o
+	rm -f wr_igs_clk.o
+	fort77    -c -u +O3 +U77 allign_phs.f
+allign_phs.f:
+   allign_phs:
+   get_lcwl_cyc:
+	ar rv ctogobs_lib.a allign_phs.o
+r - allign_phs.o
+	rm -f allign_phs.o
+	fort77    -c -u +O3 +U77 fit_igs_clk.f
+fit_igs_clk.f:
+   fit_igs_clk:
+	ar rv ctogobs_lib.a fit_igs_clk.o
+r - fit_igs_clk.o
+	rm -f fit_igs_clk.o
+	fort77    -u +O3 +U77 ctogobs.f  ./ctogobs_lib.a ../Ghandlers/cf_hndl_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o autcln
+ctogobs.f:
+   MAIN ctogobs:
+	rm -f ctogobs.o
+	fort77    -u +O3 +U77 ctogobs.f  ./ctogobs_lib.a ../Ghandlers/cf_hndl_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o ctogobs
+ctogobs.f:
+   MAIN ctogobs:
+	rm -f ctogobs.o
+	fort77    -u +O3 +U77 dd_sd.f  ./ctogobs_lib.a ../Ghandlers/cf_hndl_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o dd_sd
+dd_sd.f:
+   MAIN dd_sd:
+	rm -f dd_sd.o
+	fort77    -u +O3 +U77 sd_ow.f  ./ctogobs_lib.a ../Ghandlers/cf_hndl_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o sd_ow
+sd_ow.f:
+   MAIN sd_ow:
+	rm -f sd_ow.o
+	fort77    -u +O3 +U77 diff_igs.f  ./ctogobs_lib.a ../Ghandlers/cf_hndl_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o diff_igs
+diff_igs.f:
+   MAIN diff_igs:
+	rm -f diff_igs.o
+	fort77    -u +O3 +U77 merge_igs_clk.f  ./ctogobs_lib.a ../Ghandlers/cf_hndl_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o merge_igs_clk
+merge_igs_clk.f:
+   MAIN merge_igs_clk:
+   mic_runstring:
+   read_clk:
+   init_flags:
+   read_ref:
+   read_sta:
+   read_sats:
+   get_clk_ep:
+   ptol:
+   fit_clk:
+   fit_rcv:
+   inc_neq:
+   clear_neq:
+   comm_dat:
+   allign_clk:
+   gen_mesh:
+   diff_net:
+   gen_fin:
+   average_net:
+   wr_clk:
+   offset_clk:
+   get_domes:
+	rm -f merge_igs_clk.o
+Made ctogobs
+ 
+Running unimake to create Makefile for extract
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for extract, SKIP
+	fort77    -u +O3 +U77 extract.f  ../gen_util/gen_util_lib.a ../../libraries/comlib/com_lib.a  -o extract
+extract.f:
+   MAIN extract:
+   decode_extract_run:
+   process_extract_com:
+   decode_quotes:
+   decode_field_com:
+   extract_data:
+   init_search_fields:
+   find_starts:
+   find_fields:
+   read_field:
+   find_ends:
+   make_output:
+   reset_field_inf:
+   init_extract:
+   extract_status:
+   BLOCK DATA extract_combd:
+	rm -f extract.o
+	fort77    -u +O3 +U77 extract.f extract_lib.a ../gen_util/gen_util_lib.a ../../libraries/comlib/com_lib.a  -o exbrk
+extract.f:
+   MAIN extract:
+   decode_extract_run:
+   process_extract_com:
+   decode_quotes:
+   decode_field_com:
+   extract_data:
+   init_search_fields:
+   find_starts:
+   find_fields:
+   read_field:
+   find_ends:
+   make_output:
+   reset_field_inf:
+   init_extract:
+   extract_status:
+   BLOCK DATA extract_combd:
+	rm -f extract.o
+Made extract
+ 
+Running unimake to create Makefile for blsum
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for blsum, SKIP
+	fort77    -u +O3 +U77 blsum.f  ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o blsum
+blsum.f:
+   MAIN blsum:
+   get_soln_file:
+   check_soln_file:
+   read_soln:
+   add_name:
+   save_ema:
+   sum_solution:
+   clear_stat:
+   clear_norm:
+   write_header:
+   slope_acc:
+   compute_slope:
+   accum_stat:
+   complete_stat:
+   write_rec:
+   write_summary:
+   trailing:
+   read_values_file:
+   blsort:
+	rm -f blsum.o
+	fort77    -u +O3 +U77 ensum.f  ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o ensum
+ensum.f:
+   MAIN ensum:
+   get_soln_file:
+   check_soln_file:
+   read_soln:
+   find_enu:
+   add_name:
+   save_ema:
+   sum_solution:
+   clear_stat:
+   clear_norm:
+   write_header:
+   slope_acc:
+   compute_slope:
+   accum_stat:
+   complete_stat:
+   write_rec:
+   write_summary:
+   trailing:
+   read_values_file:
+   blsort:
+   match_sites:
+	rm -f ensum.o
+	fort77    -u +O3 +U77 xysum.f  ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o xysum
+xysum.f:
+   MAIN xysum:
+   get_soln_file:
+   check_soln_file:
+   read_soln:
+   find_xyz:
+   add_name:
+   save_ema:
+   sum_solution:
+   clear_stat:
+   clear_norm:
+   write_header:
+   slope_acc:
+   compute_slope:
+   accum_stat:
+   complete_stat:
+   write_rec:
+   write_summary:
+   trailing:
+   read_values_file:
+   blsort:
+   match_sites:
+	rm -f xysum.o
+	fort77    -u +O3 +U77 enfit.f  ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o enfit
+enfit.f:
+   MAIN enfit:
+   get_soln_file:
+   check_soln_file:
+   read_soln:
+   find_enu:
+   add_name:
+   save_ema:
+   sum_solution:
+   clear_stat:
+   clear_norm:
+   write_header:
+   fit_acc:
+   compute_fit:
+   accum_stat:
+   complete_stat:
+   write_rec:
+   write_summary:
+   trailing:
+   read_values_file:
+   blsort:
+   match_sites:
+   read_fit_file:
+   write_sum_head:
+   form_apart:
+   gen_out:
+   write_out_head:
+   nonlin:
+   check_ss:
+   extract_ss:
+Warning on line 2578 of enfit.f: Uninitialized variable "ierr" in function "sum_solution" (5004)
+	rm -f enfit.o
+	fort77    -u +O3 +U77 blavg.f  ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o blavg
+blavg.f:
+   MAIN blavg:
+Warning on line 193 of blavg.f: statement cannot be reached
+   clear_av:
+   acc_av:
+   finish_av:
+   write_av:
+   read_soln:
+   check_soln_file:
+   get_soln_file:
+   sum_solution:
+   trailing:
+   write_header:
+   compute_slope:
+   write_summary:
+   slope_acc:
+   clear_stat:
+   accum_stat:
+   read_values_file:
+   save_ema:
+   add_name:
+   ema8:
+	rm -f blavg.o
+	fort77    -u +O3 +U77 bcsum.f  ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o bcsum
+bcsum.f:
+   MAIN bcsum:
+   get_soln_file:
+   check_soln_file:
+   read_soln:
+   add_name:
+   save_ema:
+   sum_solution:
+   clear_stat:
+   clear_norm:
+   write_header:
+   slope_acc:
+   compute_slope:
+   accum_stat:
+   complete_stat:
+   write_rec:
+   trailing:
+   read_values_file:
+   blsort:
+   ema8:
+   save_comp:
+   write_sumcomp:
+   write_summary:
+	rm -f bcsum.o
+	fort77    -u +O3 +U77 makebase.f  ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o makebase
+makebase.f:
+   MAIN makebase:
+	rm -f makebase.o
+	fort77    -u +O3 +U77 tsjumps.f  ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o tsjumps
+tsjumps.f:
+   MAIN tsjumps:
+   tsinit:
+   get_runstring:
+   read_org:
+   get_ts:
+   tsanal:
+   init_est:
+   formsoln:
+   find_jmp:
+   tssort:
+   write_vals:
+   save_rn:
+   write_rn:
+   read_jmp_file:
+   proc_jmp_cmd:
+Warning on line 1489 of tsjumps.f: Uninitialized variable "jmax" in function "find_jmp" (5004)
+Warning on line 1489 of tsjumps.f: Uninitialized variable "imax" in function "find_jmp" (5004)
+Warning on line 1489 of tsjumps.f: Uninitialized variable "res" in function "find_jmp" (5004)
+	rm -f tsjumps.o
+	fort77    -u +O3 +U77 enfit2apr.f  ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o enfit2apr
+enfit2apr.f:
+   MAIN enfit2apr:
+	rm -f enfit2apr.o
+Made blsum
+ 
+Running unimake to create Makefile for utils
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+Makefile for utils remade by unimake
+	fort77    -u +O3 +U77 apr_to_vel.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o apr_to_vel
+apr_to_vel.f:
+   MAIN apr_to_vel:
+	rm -f apr_to_vel.o
+	fort77    -u +O3 +U77 block.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o block
+block.f:
+   MAIN block:
+   get_name:
+   find_name:
+   push:
+   pop:
+   report_error:
+   block_program:
+   trim_lead:
+   find_quotes:
+   check_fortran:
+   replace_program:
+   replace_segld:
+   replace_linca:
+	rm -f block.o
+	fort77    -u +O3 +U77 checkx.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o checkx
+checkx.f:
+   MAIN checkx:
+   uncompress:
+   compress:
+   get_com_xfile:
+   compare_xfiles:
+   skip_ahead:
+Warning on line 589 of checkx.f: Uninitialized variable "ierr" in function "compare_xfiles" (5004)
+	rm -f checkx.o
+	fort77    -u +O3 +U77 corcom.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o corcom
+corcom.f:
+   MAIN corcom:
+   get_corcom_run:
+   read_sys:
+   frame_update:
+   read_ties:
+   apply_ties:
+   read_fund_sites:
+   transframe:
+   clear_norm:
+   get_parts:
+   increment_norm:
+   output_frame:
+	rm -f corcom.o
+	fort77    -u +O3 +U77 velrot.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o velrot
+velrot.f:
+   MAIN velrot:
+   get_velrot_run:
+   read_sys:
+   frame_update:
+   read_fund_sites:
+   check_lmax:
+   transframe:
+   clear_norm:
+   get_parts:
+   increment_norm:
+   output_sum:
+   output_frame:
+   update_tran:
+   check_cp:
+   av_frame:
+   blen:
+	rm -f velrot.o
+	fort77    -u +O3 +U77 merge_apr_vel.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o merge_apr_vel
+merge_apr_vel.f:
+   MAIN merge_apr_vel:
+   get_run_mav:
+   read_vel_mav:
+   calcd:
+   change_vel:
+	rm -f merge_apr_vel.o
+	fort77    -u +O3 +U77 doy.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o doy
+doy.f:
+   MAIN doy:
+	rm -f doy.o
+	fort77    -u +O3 +U77 ndoy.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o ndoy
+ndoy.f:
+   MAIN ndoy:
+	rm -f ndoy.o
+	fort77    -u +O3 +U77 edit_ext.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o edit_ext
+edit_ext.f:
+   MAIN edit_ext:
+	rm -f edit_ext.o
+	fort77    -u +O3 +U77 edit_apr.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o edit_apr
+edit_apr.f:
+   MAIN edit_apr:
+	rm -f edit_apr.o
+	fort77    -u +O3 +U77 edit_val.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o edit_val
+edit_val.f:
+   MAIN edit_val:
+	rm -f edit_val.o
+	fort77    -u +O3 +U77 gapr_to_l.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o gapr_to_l
+gapr_to_l.f:
+   MAIN gapr_to_l:
+   get_gapr_runstring:
+   get_full_names:
+   write_lfile_header:
+   make_lfile:
+   check_eq:
+	rm -f gapr_to_l.o
+	fort77    -u +O3 +U77 genrelref.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o genrelref
+genrelref.f:
+   MAIN genrelref:
+   gen_res_name:
+	rm -f genrelref.o
+	fort77    -u +O3 +U77 gen_sng.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o gen_sng
+gen_sng.f:
+   MAIN gen_sng:
+	rm -f gen_sng.o
+	fort77    -u +O3 +U77 gen_uselist.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o gen_uselist
+gen_uselist.f:
+   MAIN:
+   getpos:
+   sorta:
+	rm -f gen_uselist.o
+	fort77    -u +O3 +U77 gen_ssu.f gen_ssu_lib.a ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o gen_ssu
+gen_ssu.f:
+   MAIN gen_ssu:
+	rm -f gen_ssu.o
+	fort77    -u +O3 +U77 getrel.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o getrel
+getrel.f:
+   MAIN getrel:
+Warning on line 255 of getrel.f: Uninitialized variable "indx" in function "getrel" (5004)
+	rm -f getrel.o
+	fort77    -u +O3 +U77 glbtog.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o glbtog
+glbtog.f:
+   MAIN glbtog:
+   write_gfile:
+	rm -f glbtog.o
+	fort77    -u +O3 +U77 mit_to_iers.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o mit_to_iers
+mit_to_iers.f:
+   MAIN mit_to_iers:
+	rm -f mit_to_iers.o
+	fort77    -u +O3 +U77 plate.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o plate
+plate.f:
+   MAIN plate:
+	rm -f plate.o
+	fort77    -u +O3 +U77 cvframe.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o cvframe
+cvframe.f:
+   MAIN cvframe:
+	rm -f cvframe.o
+	fort77    -u +O3 +U77 ppb.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o ppb
+ppb.f:
+   MAIN ppb:
+   clear_norm:
+   get_ppb_est:
+   init_apr:
+   fix_neg:
+   inc_norm:
+   bl_part:
+   out_ppb_est:
+   out_repeat:
+	rm -f ppb.o
+	fort77    -u +O3 +U77 poles.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o poles
+poles.f:
+   MAIN poles:
+	rm -f poles.o
+	fort77    -u +O3 +U77 seasonal.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o seasonal
+seasonal.f:
+   MAIN seasonal:
+   read_data:
+   init_nobs:
+   sumdat:
+   fit_seas:
+   clear_fit:
+   incr_norm:
+   out_seas:
+   fit_gmean:
+   out_global:
+   BLOCK DATA seas_bd:
+   fit_gseas:
+	rm -f seasonal.o
+	fort77    -u +O3 +U77 swaph.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o swaph
+swaph.f:
+   MAIN swaph:
+   swap_head:
+   swap_write_blocks:
+   sw_glb_names:
+   sw_description:
+   sw_sinf:
+   sw_glb_full:
+   sw_codes:
+   sw_aprioris:
+   sw_mul_pmu:
+   sw_soln:
+   sw_cons:
+	rm -f swaph.o
+	fort77    -u +O3 +U77 unify_apr.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o unify_apr
+unify_apr.f:
+   MAIN unify_apr:
+	rm -f unify_apr.o
+	fort77    -u +O3 +U77 unify_svs.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o unify_svs
+unify_svs.f:
+   MAIN unify_svs:
+	rm -f unify_svs.o
+	fort77    -u +O3 +U77 velcom.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o velcom
+velcom.f:
+   MAIN velcom:
+   get_velcom_runstring:
+   read_vel_fields:
+   clear_av_field:
+   gen_res_field:
+   accum_stat:
+   gen_res_name:
+   gen_av_field:
+	rm -f velcom.o
+	fort77    -u +O3 +U77 global_sel.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o global_sel
+global_sel.f:
+   MAIN global_sel:
+   nb:
+	rm -f global_sel.o
+	fort77    -u +O3 +U77 tgrep.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o tgrep
+tgrep.f:
+   MAIN tgrep:
+	rm -f tgrep.o
+	fort77    -u +O3 +U77 netsel.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o netsel
+netsel.f:
+   MAIN netsel:
+   net_init:
+   get_net_run:
+   read_net_vel:
+   read_net_ftp:
+   base_net_sel:
+   rep_net:
+   sel_net:
+   net_den:
+   netdist:
+   netrank:
+   tie_net_sel:
+   check_stinf:
+   out_nets:
+	rm -f netsel.o
+	fort77    -u +O3 +U77 cc2noncc.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o cc2noncc
+cc2noncc.f:
+   MAIN cc2noncc:
+   upcase:
+   blnkstrng:
+   skip_header:
+   copy_header:
+   writeline:
+   write_rec:
+   read_rec:
+   ymd2mjd:
+   read_bias:
+	rm -f cc2noncc.o
+	fort77    -u +O3 +U77 phase_ext.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o phase_ext
+phase_ext.f:
+   MAIN phase_ext:
+	rm -f phase_ext.o
+	fort77    -u +O3 +U77 cortran.f  ../Khandlers/KalObs_hndl_lib.a ../glinit/glinit_lib.a ../globk/globk_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o cortran
+cortran.f:
+   MAIN cortran:
+	rm -f cortran.o
+Made utils
+ 
+Running unimake to create Makefile for svpos
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for svpos, SKIP
+	fort77    -u +O3 +U77 svpos.f  ../Khandlers/KalObs_hndl_lib.a ../Ghandlers/cf_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o svpos
+svpos.f:
+   MAIN svpos:
+   init_est:
+   write_mat:
+   increment_est:
+   scan_omc:
+   acat:
+   read_range:
+   read_data_head:
+   get_svsrun:
+   read_nav:
+   eph_to_xyz:
+Warning on line 1157 of svpos.f: Uninitialized variable "j" in function "increment_est" (5004)
+	rm -f svpos.o
+	fort77    -u +O3 +U77 svdiff.f  ../Khandlers/KalObs_hndl_lib.a ../Ghandlers/cf_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o svdiff
+svdiff.f:
+   MAIN svdiff:
+   init_est:
+   write_mat:
+   increment_est:
+   scan_omc:
+   acat:
+   read_range:
+   read_rdiff:
+   read_data_head:
+   read_diff_head:
+   get_svsrun:
+   read_nav:
+   eph_to_xyz:
+	rm -f svdiff.o
+	fort77    -u +O3 +U77 svsp3.f  ../Khandlers/KalObs_hndl_lib.a ../Ghandlers/cf_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o svsp3
+svsp3.f:
+   MAIN svsp3:
+   init_est:
+   write_mat:
+   increment_est:
+   scan_omc:
+   acat:
+   read_range:
+   read_rdiff:
+   read_data_head:
+   read_diff_head:
+   get_svsrun:
+   read_sp3:
+   eph_to_xyz:
+   polint:
+   get_elev:
+   mit_dry:
+	rm -f svsp3.o
+	fort77    -u +O3 +U77 svpdiff.f  ../Khandlers/KalObs_hndl_lib.a ../Ghandlers/cf_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o svpdiff
+svpdiff.f:
+   MAIN svpdiff:
+	rm -f svpdiff.o
+	fort77    -u +O3 +U77 svtrack.f  ../Khandlers/KalObs_hndl_lib.a ../Ghandlers/cf_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o svtrack
+svtrack.f:
+   MAIN svtrack:
+   get_svsrun:
+   read_nav:
+   svs_i3d:
+   svs_t3d:
+   svs_gtrck:
+   svs_skymap:
+   svs_riseset:
+   gen_name:
+   eph_to_xyz:
+	rm -f svtrack.o
+	fort77    -u +O3 +U77 svsnr.f  ../Khandlers/KalObs_hndl_lib.a ../Ghandlers/cf_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o svsnr
+svsnr.f:
+   MAIN svsnr:
+   write_out:
+   read_range:
+   read_data_head:
+   get_svsrun:
+   read_nav:
+   eph_to_xyz:
+   svs_skymap:
+	rm -f svsnr.o
+	fort77    -u +O3 +U77 fitsnr.f  ../Khandlers/KalObs_hndl_lib.a ../Ghandlers/cf_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o fitsnr
+fitsnr.f:
+   MAIN fitsnr:
+   copyr:
+   out_dphs:
+   read_snr:
+   get_chan:
+   fit_elev:
+   clear_norm:
+   inc_norm:
+   smooth:
+   estphs:
+	rm -f fitsnr.o
+	fort77    -u +O3 +U77 spcsnr.f spcsnr_lib.a ../Khandlers/KalObs_hndl_lib.a ../Ghandlers/cf_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o spcsnr
+spcsnr.f:
+   MAIN spcsnr:
+   copyr:
+   out_dphs:
+   read_snr:
+   get_chan:
+   fit_elev:
+   clear_norm:
+   inc_norm:
+   estphs:
+   ext_data:
+   copy_fft:
+   swap_seq:
+   comp_dphs:
+   find_max_spec:
+   est_snr_spec:
+   sum_dphs:
+   corr_cf:
+   BLOCK DATA spcbd:
+	rm -f spcsnr.o
+	fort77    -u +O3 +U77 simsnr.f  ../Khandlers/KalObs_hndl_lib.a ../Ghandlers/cf_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o simsnr
+simsnr.f:
+   MAIN simsnr:
+   read_snr:
+   get_chan:
+   sim_elev:
+	rm -f simsnr.o
+	fort77    -u +O3 +U77 fixms.f  ../Khandlers/KalObs_hndl_lib.a ../Ghandlers/cf_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o fixms
+fixms.f:
+   MAIN fixms:
+   fix_carange:
+   read_range:
+   read_data_head:
+   get_svsrun:
+   read_nav:
+   eph_to_xyz:
+	rm -f fixms.o
+	fort77    -c -u +O3 +U77 update_cfi.f
+update_cfi.f:
+   update_cf:
+   init_comp:
+   dry_hgtcon:
+   epdep_comp:
+   earth_tide:
+   tide_u:
+   theory_comp:
+   svs_cm_to_phs:
+   sun20:
+   xprod:
+	ar rv modear_lib.a update_cfi.o
+r - update_cfi.o
+	rm -f update_cfi.o
+	fort77    -c -u +O3 +U77 preread_cf.f
+preread_cf.f:
+   preread_cf:
+   ydsd_to_mjd:
+   ymdhms_to_mjd:
+	ar rv modear_lib.a preread_cf.o
+r - preread_cf.o
+	rm -f preread_cf.o
+	fort77    -c -u +O3 +U77 comp_clock.f
+comp_clock.f:
+   comp_clock:
+   scan_omc:
+   eph_to_xyz:
+   polint:
+   get_elev:
+   mit_dry:
+   comp_svs_clk:
+	ar rv modear_lib.a comp_clock.o
+r - comp_clock.o
+	rm -f comp_clock.o
+	fort77    -u +O3 +U77 modear.f modear_lib.a ../Khandlers/KalObs_hndl_lib.a ../Ghandlers/cf_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o modear
+modear.f:
+   MAIN modear:
+	rm -f modear.o
+Made svpos
+ 
+Running unimake to create Makefile for update_pmu
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for update_pmu, SKIP
+	fort77    -u +O3 +U77 update_pmu.f  ../utils/gen_ssu_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o update_pmu
+update_pmu.f:
+   MAIN update_pmu:
+   get_runstring:
+   get_initial_info:
+   get_new_tables:
+   scan_pmu_file:
+   grid:
+   order_array:
+   get_new_wob_inf:
+   get_new_ut1_inf:
+   finish:
+   change_ut1:
+   pmu_update_theo:
+   update_mid_pmu:
+   update_apriori_info:
+   remove_trend:
+   get_last_pmu:
+	rm -f update_pmu.o
+	fort77    -u +O3 +U77 update_pmu_tab.f  ../utils/gen_ssu_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o update_pmu_tab
+update_pmu_tab.f:
+   MAIN update_pmu_tab:
+   get_runstring:
+   get_initial_info:
+   get_new_tabs:
+   finish:
+   change_ut1:
+   pmu_update_theo:
+   update_mid_pmu:
+   update_apriori_info:
+   get_last_pmu:
+	rm -f update_pmu_tab.o
+	fort77    -u +O3 +U77 fix_ut1_tide.f  ../utils/gen_ssu_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o fix_ut1_tide
+fix_ut1_tide.f:
+   MAIN fix_ut1_tide:
+	rm -f fix_ut1_tide.o
+	fort77    -u +O3 +U77 fix_apr.f  ../utils/gen_ssu_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o fix_apr
+fix_apr.f:
+   MAIN fix_apr:
+   get_runstring:
+   get_initial_info:
+   finish:
+   update_mid_pmu:
+   update_apriori_info:
+   get_last_pmu:
+Warning on line 445 of fix_apr.f: Uninitialized variable "printer" in function "fix_apr" (5004)
+	rm -f fix_apr.o
+	fort77    -u +O3 +U77 gsfc_to_iris.f  ../utils/gen_ssu_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o gsfc_to_iris
+gsfc_to_iris.f:
+   MAIN gsfc_to_iris:
+	rm -f gsfc_to_iris.o
+	fort77    -u +O3 +U77 mit_to_iris.f  ../utils/gen_ssu_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o mit_to_iris
+mit_to_iris.f:
+   MAIN mit_to_iris:
+	rm -f mit_to_iris.o
+	fort77    -u +O3 +U77 gamit_to_iris.f  ../utils/gen_ssu_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o gamit_to_iris
+gamit_to_iris.f:
+   MAIN gamit_to_iris:
+Warning on line 193 of gamit_to_iris.f: Uninitialized variable "i" in function "gamit_to_iris" (5004)
+	rm -f gamit_to_iris.o
+	fort77    -u +O3 +U77 compare_pmu.f  ../utils/gen_ssu_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o compare_pmu
+compare_pmu.f:
+   MAIN compare_pmu:
+   get_cp_runstring:
+   read_primary:
+   gen_smooth:
+   copy_smooth:
+   get_sample:
+   make_ut1_tab:
+   diff_pr:
+   clear_stats:
+   accum_stats:
+   out_stats:
+   get_sec_run:
+   diff_sec:
+   remove_trend:
+   write_sec:
+	rm -f compare_pmu.o
+	fort77    -u +O3 +U77 excite_pmu.f  ../utils/gen_ssu_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o excite_pmu
+excite_pmu.f:
+   MAIN excite_pmu:
+   get_cp_runstring:
+   read_primary:
+   gen_exite:
+   get_sample:
+   make_ut1_tab:
+	rm -f excite_pmu.o
+	fort77    -u +O3 +U77 nmc_to_iris.f  ../utils/gen_ssu_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o nmc_to_iris
+nmc_to_iris.f:
+   MAIN nmc_to_iris:
+Warning on line 226 of nmc_to_iris.f: local variable dut1 never used
+	rm -f nmc_to_iris.o
+	fort77    -u +O3 +U77 usno_to_iris.f  ../utils/gen_ssu_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o usno_to_iris
+usno_to_iris.f:
+   MAIN usno_to_iris:
+	rm -f usno_to_iris.o
+	fort77    -u +O3 +U77 mjd_to_date.f  ../utils/gen_ssu_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o mjd_to_date
+mjd_to_date.f:
+   MAIN mjd_to_date:
+	rm -f mjd_to_date.o
+	fort77    -u +O3 +U77 utc_to_tai.f  ../utils/gen_ssu_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o utc_to_tai
+utc_to_tai.f:
+   MAIN utc_to_tai:
+	rm -f utc_to_tai.o
+	fort77    -u +O3 +U77 igs_to_pmu.f  ../utils/gen_ssu_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o igs_to_pmu
+igs_to_pmu.f:
+   MAIN igs_to_pmu:
+	rm -f igs_to_pmu.o
+	fort77    -u +O3 +U77 extend_iers.f  ../utils/gen_ssu_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o extend_iers
+extend_iers.f:
+   MAIN extend_iers:
+	rm -f extend_iers.o
+Made update_pmu
+ 
+Running unimake to create Makefile for track
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for track, SKIP
+	fort77    -c -u +O3 +U77 assign_con.f
+assign_con.f:
+   assign_con:
+	ar rv track_lib.a assign_con.o
+r - assign_con.o
+	rm -f assign_con.o
+	fort77    -c -u +O3 +U77 comp_clock.f
+comp_clock.f:
+   eph_to_xyz:
+   polint:
+   comp_svs_clk:
+	ar rv track_lib.a comp_clock.o
+r - comp_clock.o
+	rm -f comp_clock.o
+	fort77    -c -u +O3 +U77 earth_to_inert.f
+earth_to_inert.f:
+   earth_to_inert:
+   make_rot:
+   mult_rot:
+   gst_mjd:
+	ar rv track_lib.a earth_to_inert.o
+r - earth_to_inert.o
+	rm -f earth_to_inert.o
+	fort77    -c -u +O3 +U77 get_elev.f
+get_elev.f:
+   get_elev:
+	ar rv track_lib.a get_elev.o
+r - get_elev.o
+	rm -f get_elev.o
+	fort77    -c -u +O3 +U77 get_miss.f
+get_miss.f:
+   get_miss:
+	ar rv track_lib.a get_miss.o
+r - get_miss.o
+	rm -f get_miss.o
+	fort77    -c -u +O3 +U77 get_obsfile.f
+get_obsfile.f:
+   get_obsfile:
+	ar rv track_lib.a get_obsfile.o
+r - get_obsfile.o
+	rm -f get_obsfile.o
+	fort77    -c -u +O3 +U77 get_site.f
+get_site.f:
+   get_site:
+	ar rv track_lib.a get_site.o
+r - get_site.o
+	rm -f get_site.o
+	fort77    -c -u +O3 +U77 get_svsrun.f
+get_svsrun.f:
+   get_svsrun:
+   err_msg:
+	ar rv track_lib.a get_svsrun.o
+r - get_svsrun.o
+	rm -f get_svsrun.o
+	fort77    -c -u +O3 +U77 neph_to_xyz.f
+neph_to_xyz.f:
+   neph_to_xyz:
+	ar rv track_lib.a neph_to_xyz.o
+r - neph_to_xyz.o
+	rm -f neph_to_xyz.o
+	fort77    -c -u +O3 +U77 read_bat.f
+read_bat.f:
+   read_bat:
+   subsrdw:
+	ar rv track_lib.a read_bat.o
+r - read_bat.o
+	rm -f read_bat.o
+	fort77    -c -u +O3 +U77 read_nav.f
+read_nav.f:
+   read_nav:
+	ar rv track_lib.a read_nav.o
+r - read_nav.o
+	rm -f read_nav.o
+	fort77    -c -u +O3 +U77 read_nav_clk.f
+read_nav_clk.f:
+   read_nav_clk:
+   sort_nav:
+	ar rv track_lib.a read_nav_clk.o
+r - read_nav_clk.o
+	rm -f read_nav_clk.o
+	fort77    -c -u +O3 +U77 save_head.f
+save_head.f:
+   save_head:
+   get_headinfor:
+	ar rv track_lib.a save_head.o
+r - save_head.o
+	rm -f save_head.o
+	fort77    -c -u +O3 +U77 read_sp3.f
+read_sp3.f:
+   read_sp3:
+   get_svs_blk:
+   clean_sp3_clk:
+	ar rv track_lib.a read_sp3.o
+r - read_sp3.o
+	rm -f read_sp3.o
+	fort77    -c -u +O3 +U77 init_track.f
+init_track.f:
+   init_track:
+   report_setup:
+	ar rv track_lib.a init_track.o
+r - init_track.o
+	rm -f init_track.o
+	fort77    -c -u +O3 +U77 read_all_rinex.f
+read_all_rinex.f:
+   read_all_rinex:
+   flag_gaps:
+   data_ok:
+   select_arb_bf:
+   report_bf:
+   resolve_wl:
+   res_one_wl:
+   get_wl:
+   get_ow:
+   comp_wl:
+   report_wls:
+   all_wls_res:
+   check_arb_bf:
+   unify_bf:
+   scan_ddlg:
+   mark_slip:
+   read_bf:
+   rep_addbf:
+   check_wl:
+   scan_sdlg:
+   output_wls:
+Warning on line 2317 of read_all_rinex.f: Uninitialized variable "save_wls_all" in function "get_wl" (5004)
+	ar rv track_lib.a read_all_rinex.o
+r - read_all_rinex.o
+	rm -f read_all_rinex.o
+	fort77    -c -u +O3 +U77 est_pos.f
+est_pos.f:
+   est_pos:
+   init_mat:
+   float_end:
+   setup:
+   get_kine_apr:
+   update_pos:
+   partials:
+   form_dd:
+   get_ow_omc:
+   form_iondd:
+   pos_anal:
+   resolve_float:
+   fix_ms:
+   check_clk:
+	ar rv track_lib.a est_pos.o
+r - est_pos.o
+	rm -f est_pos.o
+	fort77    -c -u +O3 +U77 theory.f
+theory.f:
+   theory:
+   earth_tide:
+   tide_u:
+   svs_cm_to_phs:
+   sun20:
+   xprod:
+	ar rv track_lib.a theory.o
+r - theory.o
+	rm -f theory.o
+	fort77    -c -u +O3 +U77 search.f
+search.f:
+   search:
+   select_best:
+   add_to_rank:
+   check_trial:
+   find_bfs:
+   select_trials:
+   inc_sent:
+   check_ion:
+   precalc_ion:
+   precalc_atm:
+   verify_search:
+   ddbf_ok:
+   reorder:
+   sort_elev:
+   base_len:
+   get_ow_ion:
+   resolve_slip:
+   find_gap:
+   update_wls_all:
+   out_resid:
+   gen_res_format:
+   get_num_dtype:
+   clear_stats:
+   phase_stats:
+Warning on line 2377 of search.f: Uninitialized variable "num_res" in function "out_resid" (5004)
+Warning on line 2377 of search.f: Uninitialized variable "k" in function "out_resid" (5004)
+	ar rv track_lib.a search.o
+r - search.o
+	rm -f search.o
+	fort77    -c -u +O3 +U77 atm_lib.f
+atm_lib.f:
+   dry_mtt_map:
+   wet_mtt_map:
+   wet_press:
+   wet_saas_zen:
+   dry_saas_zen:
+   hyrdo_press:
+   get_atm:
+   read_atm_file:
+   report_atm_ref:
+	ar rv track_lib.a atm_lib.o
+r - atm_lib.o
+	rm -f atm_lib.o
+	fort77    -c -u +O3 +U77 rd_rinex_head.f
+rd_rinex_head.f:
+   read_rinex_head:
+	ar rv track_lib.a rd_rinex_head.o
+r - rd_rinex_head.o
+	rm -f rd_rinex_head.o
+	fort77    -c -u +O3 +U77 rd_rinex_obs.f
+rd_rinex_obs.f:
+   read_rinex_obs_1:
+   read_rinex_obs_2:
+   clean_char:
+	ar rv track_lib.a rd_rinex_obs.o
+r - rd_rinex_obs.o
+	rm -f rd_rinex_obs.o
+	fort77    -c -u +O3 +U77 smooth.f
+smooth.f:
+   wr_cov_parm:
+   dump_cov:
+   smooth:
+	ar rv track_lib.a smooth.o
+r - smooth.o
+	rm -f smooth.o
+	fort77    -u +O3 +U77 track.f  ./track_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a  -o track
+track.f:
+   MAIN track:
+	rm -f track.o
+Made track
+Skipping making of NCAR graphics library (g1000)
+ 
+Running unimake to create Makefile for plot
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for plot, SKIP
+Made plot/x1000 
+ 
+Running unimake to create Makefile for plot
+System name:  HP-UX mtglas B.10.20 A 9000/735 2001284103 two-user license
+System release number translated to  1020
+No need to rebuild Makefile for plot, SKIP
+	fort77    -u +O3 +U77 cplot.f  ./plot_lib.a x1000/x1000.a ../gen_util/gen_util_lib.a ../../libraries/comlib/com_lib.a  -L/usr/lib/X11R5 -lX11 -o cplotx
+cplot.f:
+   MAIN plot:
+/usr/ccs/bin/ld: (Warning) Linker features were used that may not be supported in future releases. The +vallcompatwarnings option can be used to display more detail -ns, and the ld(1) man page contains additional information. This warning can be suppressed with the +vnocompatwarnings option.
+	rm -f cplot.o
+	fort77    -u +O3 +U77 multiplot.f  ./plot_lib.a x1000/x1000.a ../gen_util/gen_util_lib.a ../../libraries/comlib/com_lib.a  -L/usr/lib/X11R5 -lX11 -o multiplot
+multiplot.f:
+   MAIN multiplot:
+   get_runstring:
+   edit_data:
+   write_data:
+   write_plot:
+   open_plot_data:
+	rm -f multiplot.o
+	fort77    -u +O3 +U77 multibase.f  ./plot_lib.a x1000/x1000.a ../gen_util/gen_util_lib.a ../../libraries/comlib/com_lib.a  -L/usr/lib/X11R5 -lX11 -o multibase
+multibase.f:
+   MAIN multibase:
+   get_runstring:
+   help_multibase:
+   exit_multibase:
+   write_data:
+   open_plot_data:
+   create_baseline:
+   read_basefile:
+   suicid:
+   lowerc:
+	rm -f multibase.o
+Made plot
+ 
+Remaking the links from ../bin to the executables
+ 
+Usage: ln [-f] [-i] [-s] f1 f2
+       ln [-f] [-i] [-s] f1 ... fn d1
+Links made
+ 
+
+++++++++++++++++++
+GLOBK installed
+++++++++++++++++++
+

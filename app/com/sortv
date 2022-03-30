@@ -1,0 +1,125 @@
+#!/bin/csh 
+# K. Feigl April 96
+if ($#argv == 0) then
+   echo ' '                                       
+   echo ' Sort vscan.out by epoch and jumps '
+   echo ' '        
+   echo '  Format: '
+   echo ' '
+   echo '     vscan.out  filename   [number]   [flag] '
+   echo ' '        
+   echo '     Required: '   
+   echo ' '
+   echo '         filename = v (for sort vscan.out)  or [other filename] '
+   echo ' '
+   echo '     Optional: '
+   echo ' '
+   echo "         number   = number of series with slips to be included in 'worst' list "
+   echo '                    (default is 70 -- one page of printout)   '
+   echo ' '
+   echo "         flag     = 'bias' to include flagged jumps; otherwise consider only unflagged jumps"
+   echo ' '
+   echo '   Examples:'
+   echo ' '
+   echo '         sortv v                    # Sort vscan.out and tabulate 75 largest unflagged jumps'
+   echo '         sortv vfile.123            # Sort vfile.123 and tabulate 75 largest unflagged jumps'
+   echo '         sortv vfile.123 500 '      # Sort vfile.123 and tabulate 500 largest unflagged jumps'
+   echo '         sortv vfile.123 100 bias   # Sort vfile.123 and tabulate 100 largest jumps'
+else
+
+   set NAME = $1
+
+#  special case for output of scanrms
+   if ( $NAME ==  v ) then
+     if ( -e  vscan.out  ) then
+        echo " "
+        echo "Sorting  vscan.out "
+        set NAME = vscan.out
+     else 
+        echo "Could not find output of scanrms: vscan.out "
+        exit
+     endif 
+   endif
+
+#  get the c lines
+   grep c  < $NAME >! $NAME.sort
+
+#  sort by epoch number
+   if ($#argv < 3) then
+      echo 'Sorted by epoch of JUMP (U)' >> $NAME.sort
+      grep SAT  < $NAME >> $NAME.sort
+      grep CHAN < $NAME >> $NAME.sort
+#     EPOCH(I) starts in field 8
+      cat $NAME | egrep -v '[A-z]' | egrep -v '^$' | sort -k 8 >> $NAME.sort
+   else
+      echo 'Sorted by epoch of JUMP (F)' >> $NAME.sort
+      grep SAT  < $NAME >> $NAME.sort
+      grep CHAN < $NAME >> $NAME.sort
+#     EPOCH(U) starts in field 6
+      cat $NAME | egrep -v '[A-z]' | egrep -v '^$' | sort -k 6 >> $NAME.sort
+   endif
+
+#  how many to put in list?
+   if ($#argv == 2) then
+      set number = $2
+   else
+#     This is how many line fit on 1 page in Toulouse.
+#     Change to fit your taste.
+      set number = 75
+   endif
+
+
+#  find $number worst jumps
+#  do backward and foward sort to get large magnitude (plus and minus)
+   if ($#argv < 3) then
+
+      echo $number ' worst jumps' >! tmp.sortv
+      grep SAT  < $NAME >> tmp.sortv
+      grep CHAN < $NAME >> tmp.sortv
+#     JUMP(I) starts in field 9
+      cat $NAME | egrep -v '[A-z]' | sed -e 's/ -\./-0./g' -e 's/ \./0./g' | egrep -v '^$' | sort -br -k 9.1 >> tmp.sortv
+
+#     resort worst by epoch number
+      head -n 2 tmp.sortv >! $NAME.worst
+      head -n $number tmp.sortv | sort -k 8 >> $NAME.worst
+   else
+      echo $number ' worst steps' >! tmp.sortv
+      grep SAT  < $NAME >> tmp.sortv
+      grep CHAN < $NAME >> tmp.sortv
+#     JUMP(T) starts in field 7
+      cat $NAME | egrep -v '[A-z]' | sed -e 's/ -\./-0./g' -e 's/ \./0./g' | egrep -v '^$' | sort -r -k 7.1 >> tmp.sortv
+
+#     resort worst 80 by epoch number
+      head -n 2 tmp.sortv >! $NAME.worst
+      head -n $number tmp.sortv | sort -k 6 >> $NAME.worst
+   endif
+
+#  cat tmp.sortv >> $NAME.sort
+
+   head -n 40 tmp.sortv 
+
+   echo ' '
+   echo 'Created' $NAME.sort
+   echo 'Created' $NAME.worst
+   echo ' '
+
+   echo 'Print with: lpf' $NAME.sort
+   echo 'Print with: lpf' $NAME.worst
+   echo ' '
+
+   #echo 'Print with: enscript -fCourier7' $NAME.sort
+   #echo 'Print with: enscript -fCourier7' $NAME.worst
+
+# No longer print the following to the screen since sortv is called in batch by sh_scan_residuals
+#  echo "To find all unflagged jumps above a a threshold of 0.25 cycles, try: "
+#  echo "   "                       
+#  echo " cat" $NAME".sort | awk ' BEGIN {n = 0.25 } "'$10'" > n ;" '$10'" < - n {print} ' "
+#  echo "   "                       
+
+#  echo 'Print with: a2ps -nn -nw -p ' $NAME.worst ' | lpr -h'
+   \rm -f tmp.sortv
+endif
+
+
+
+

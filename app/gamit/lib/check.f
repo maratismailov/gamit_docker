@@ -1,0 +1,32 @@
+      SUBROUTINE CHECK(IFLAG)
+C
+C  PURPOSE:
+C     CHECK FOR USER PROMPT OF (Y)ES OR (N)O
+C
+C  OUTPUT:
+C     IFLAG - INTEGER
+C        1 IF YES
+C        2 IF NO
+C
+C  SUBROUTINES CALLED:
+C     UPPERC
+C
+      INTEGER     IFLAG
+      CHARACTER*1 YESNO,UPPERC,YES,NO
+      DATA YES,NO/'Y','N'/
+      YES = UPPERC(YES)
+      NO  = UPPERC(NO)
+C
+   10 WRITE (6,'(30X,A)') '<Y>ES OR <N>O: '
+      READ (5,'(A1)') YESNO
+      YESNO = UPPERC(YESNO)
+      IF (YESNO.EQ.YES) THEN
+         IFLAG=1
+      ELSEIF (YESNO.EQ.NO ) THEN
+         IFLAG=2
+      ELSE
+         WRITE (6,'(1X,A)') 'INAPPROPRIATE RESPONSE'
+         GO TO 10
+      ENDIF
+      RETURN
+      END

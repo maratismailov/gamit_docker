@@ -1,0 +1,588 @@
+#!/bin/csh -f
+#
+#doc Selects station networks base on available rinex data in IGS archives
+#doc
+#
+# sh_network_sel
+#
+# Purpose      Selects station networks base on available rinex data in IGS archives.
+#              Generate sites.defaults file for sh_gamit processing.
+#
+# Required     Year and doy plus site control file
+#
+# Output       sites.default file with the list of sites to use in each network
+#
+# sh_network_select -d <yr> <doy> -f <control file>
+#
+# All options are:
+#  -d <yr> <doy>   Date to get data
+#  -f <control>    Name of contol file with preferred sites
+#  -get            Get the site coordinates from sopac archive (needs wget)
+#  -apr   <file>   Name of apriori coordinate file (default igs_rerun.apr)
+#  -stinf <file>   Name of station.info file (default station.info)
+#  -archive <name> Name of archive/s to use (sopac / cddis / unavco)
+#  -clear_list     Remove and list file for this day (re-enquire about data holdings
+#  -method  <global_sel or sim_ann> Program to do network selection (default global_sel).
+#  -net_dim <size> Number of sites to be included in each selected network (default 50).
+#  -net_overlap <size> Number of overlapping sites between networks (default 2).
+#  -tie_method <num> Method of tieing subnets together (default 1):
+#                    0 = No ties calculated.
+#                    1 = Each subnet tied to the next using (net_overlap) sites
+#                    2 = Each subnet is tied to all other subnets using (net_overlap) sites.
+# NOTE - Using tie_method 1 - total network size = net_dim+net_overlap sites
+#        Using tie_method 2 - total network size = net_dim+(net_overlap*num_subnets) sites.
+#  -core_list <name> Name of a file contianing sites to be used first in 
+#                  network selection process (default none).
+#  -sec_list <name>  Name of a file containing secondary sites that will fill the 
+#                  networks if they can't be completed with core_list 
+#  -net_name       3-char code for net names (default net)
+#  -excl_stinf     Exclude sites NOT listed in station info  file from selection.  
+#  -excl_apr       Exclude sites NOT listed in .apr file from selection.
+#  -delete_old     Delete any existing sites.defaults.yyyy.ddd. After 200513 version
+#                  exisiting files are appended to.
+#
+# MOD TAH 200513: Modified to update the sites.default file rather than overwring it.
+#   Entries that have the same net name are replaced.
+# MOD TAH 200513: Removed default apr_file setting because sites in this file must
+#   also be available for processing.
+# MOD TAH 200527: Added secondary site list (allowing priority sites in core)
+# MOD TAH 200604: Updated for GNSS site selection.
+# MOD TAH 200708: Added check to mkae sure $slist of core sites is not zero length.
+#
+# Example of <control> file (required).
+# EXAMPLE ref_net.sites
+## START OF EXAMPLE
+## The number of REF_NET lines sets the number of networks to be created.
+# REF_NET NET1 ONSA|ALGO|KOUR|S071|WDC1|WDC3
+# REF_NET NET2 AMC2|MATE|KHAJ|KOKB
+# REF_NET NET3 NYAL|CHUR|CRO1|TWTF
+# REF_NET NET4 GOL2|NIST|PIE1|WSRT
+# REF_NET NET5 BREW|STJO|IENG|NOT1
+# REF_NET NET6 WAB2|BRUS|NLIB|HOB2
+## May also have exclude site list (formated for egrep).
+## 190606: Added DSEA which has failed but returning data
+# EXCL AB06|AV07|AV04|DSEA
+## END OF EXAMPLE
+# 
+# EXAMPLE of core_list file.  This is just a list of 4-character codes with leading space.
+# Comments can be added after the 4-char code i.e., only one entry per lines is read
+## Example core.list
+## Site  Clk core
+## NOTE: This file can not have blank lines in it!
+#  ALBH (HM)   	       
+#  ALGO (HM) 106  	       
+## ...
+#  DUM1   IGS08 core site
+#  MQZG   IGS08 core site
+#  DAKR   IGS New site
+## END  OF EXAMPLE
+#
+# The apriori coordinate files is standard globk apriori file (name X Y Z dX/dt dY/dt dZ/dt Epoch (dec. yr))
+# Only sites in this file will be included in the final solution (-get option will download file from sopac).
+#
+ 
+# by Tom Herring 01/24/2003, mod S. McClusky 21/12/2006
+# end doc
+
+if ($#argv < 1) then
+        sed -e "1d" -e "/end doc/q" -e "s/#//" $0
+        exit
+endif
+# Set Defaults
+#set conf = "ref_net.sites"
+#set aprf = "igs_rerun.apr"
+set conf = "ref_repro3.sites"
+set aprf = ""
+set stinfo = "station.info"
+set getcoord = 0
+set archive =  ( cddis unavco sopac cors geoaus bkgi bkge wcda )
+set method = global_sel
+set net_dim = 50
+set tie_num = 2
+set tie_method = 2
+set sim_ann_iter = 30
+set core_list = ""
+set sec_list = ""
+set excl_user = ""
+set excl_apr = "no"
+set excl_stinf = "no"
+set clear_list = "no"
+set delete_old = "no"
+
+set ncd = "net"   # Default network code (ncd), gps, glo, gal, bds other possible choices.
+#
+foreach a ($argv)
+  switch($a)
+    case -d:
+      set year  = $argv[2]
+      set doy = $argv[3]
+    breaksw
+    case -f:
+       set conf = $argv[2]
+    breaksw
+    case -get*
+       set getcoord = 1
+    breaksw
+    case -apr*
+       set aprf = $argv[2]
+    breaksw
+    case -arch*
+#       set archive = $argv[2]
+       set archive =  (`echo $argv | cut -d- -f2`); shift archive 
+    breaksw
+    case -clear*
+       set clear_list = "yes"
+    breaksw
+    case -meth*
+       set method = $argv[2]
+    breaksw
+    case -net_d*
+       set net_dim = $argv[2]
+    breaksw
+    case -net_o*
+       set tie_num = $argv[2]
+    breaksw
+    case -net_n*
+       set ncd = $argv[2]
+    breaksw
+    case -core*
+       set core_list = $argv[2]
+    breaksw
+    case -sec*
+       set sec_list = $argv[2]
+    breaksw
+    case -excl_st*
+      set excl_stinf = "yes" 
+    breaksw
+    case -excl_ap*
+      set excl_apr = "yes" 
+    breaksw
+    case -tie_m*
+       set tie_method = $argv[2]
+    breaksw
+    case -del**
+       set delete_old = "yes"
+    breaksw
+  endsw
+shift
+end
+#
+# Make sure all the time arguments are OK
+set yr = `sh_year -year $year`
+set doy = `doy $yr[1] $doy| head -n 1 | awk '{printf("%3.3d",$6)}'`
+set ID = "${yr[1]}.$doy"
+set JD = "${yr[1]}_$doy"
+
+# Name of the sites.defaults file
+set sdf = "sites.defaults.${ID}"
+#
+echo "sh_network_sel: Options: -d $year $doy -f $conf  -net_name $ncd"
+echo "Options: -core $core_list -sec $sec_list -net_dim $net_dim -apr_file $aprf"
+echo "Options: -tie_method $tie_method -net_overlap $tie_num"
+echo "Options: -arch $archive"
+echo " "
+#
+# Get the list of available data from SOPAC
+set ln = "list_${ID}"
+set an = "avail_${ID}"
+echo "Getting lists $ln and $an"
+set cwd = `pwd`
+
+# Get lists of available sites from rinex archives
+if( ! -e $ln || $clear_list == "yes" ) then
+  if ( $archive[1] == "all" ) set archive = (cddis unavco sopac geoaus bkgi)
+  foreach arch ( $archive ) 
+#   Use old list if it is around
+    if( ! -e ${arch}.list_${JD}.log ) then
+       sh_get_rinex -archive $arch -yr $yr[1] -doy $doy -list
+       \mv list_${JD}.log ${arch}.list_${JD}.log
+    else
+       echo "Using ${arch}.list_${JD}.log"
+    endif
+  end
+# Make a list of local rinex files
+  if( -e ../$yr[1]/rinex ) then
+    pushd ../$yr[1]/rinex
+      # time-style may not be needed (not supported on mac)
+      #ls -l --time-style=+"%b %e %H:%M" ????${doy}?.${yr[2]}[od]* >! ${cwd}/local.list_${JD}.log 
+      ls -l ????${doy}?.${yr[2]}[od]* >! ${cwd}/local.list_${JD}.log 
+    popd 
+  else
+    touch local.list_${JD}.log
+  endif
+     
+
+# Make a unique list of station available from all archives that were interogated.
+  touch $ln
+  cat *.list_${JD}.log | grep ".${yr[2]}[do]" | awk '{print " ",$9,$5}' | sort -u -k 1.1,1.10  >! sort.$ln
+  \cp sort.$ln $ln
+
+# Check the size of the list file and exit if too small
+  set num = `wc -l $ln`
+  if( $num[1] < 10 ) then
+    echo "$ln file too small, Only $num lines: Exiting sh_network_sel"
+    cat $ln
+    \rm $ln
+    exit -1 
+  endif
+endif
+
+# See if we need to refresh coordinates
+if( $getcoord ) then
+   wget http://sopac.ucsd.edu/input/processing/coordinates/coords.txt
+   echo "Option Removed: Inout $aprf should be definitive"
+   #echo "* Approximate coordinates of sites archived at SOPAC: Generated "`date` >! $aprf
+   #tail -n +3 coords.txt | awk '{printf(" %s_GPS %13.3f %13.3f %13.3f  0.000 0.000 0.000 2000.30\n",$1,$2,$3,$4)}' coords.txt >> $aprf
+endif 
+
+# Make a list of available sites and the file size
+# Set size based on year
+set min_rxsze = `echo $yr[1] | awk '{if( $1 < 1996 ) {print "45"} else {print "100"}}'`
+cat $ln | awk '{printf(" %s_GPS  %s %6.1d\n",toupper(substr($1,1,4)),$1,$2/1024)}' | \
+    awk -v ms=$min_rxsze '{if ( $3 > ms ) {print $0}}' | sort -n -r -k 3  | sort -u >! $an
+
+  echo "Number of rinex found in rinex archives: " `wc -l $an` 
+  echo " "
+
+# Make a list of available data that have no .apr coordinates.
+if ( $excl_apr == "yes" ) then
+  echo "Checking list of available sites against a priori coordinate file: $aprf"
+  \cp $an ${an}.no_apr
+  foreach c ( `cat $aprf | awk ' substr($0,1,1) == " " {print $1}'` )
+    grep -v $c ${an}.no_apr >! t.an.no_apr.${ID}
+    \mv t.an.no_apr.${ID} ${an}.no_apr
+  end
+  set excl_apr = `cat ${an}.no_apr | awk '{if ( NR == 1 ) {printf("%s",substr($1,1,8))} else {printf("|%s",substr($1,1,8))}}'`
+endif
+   
+# Make a list of available data that have no station.info entries.
+if ( $excl_stinf == "yes" ) then
+  echo "Checking list of available sites against station info file: $stinfo"
+  \rm -r ${an}.no_stinf >&! /dev/null
+  touch ${an}.no_stinf
+  foreach c ( `cat $an | awk ' substr($0,1,1) == " " {print $2}'` )
+    \rm -f CHKSTINF.warning >& /dev/null
+    set no_stinf = 0
+    chkstinf $stinfo $c >& /dev/null
+    set no_stinf = `grep "not in station.info" CHKSTINF.warning | wc -l`
+    if ( $no_stinf != 0 ) grep $c ${an} >> ${an}.no_stinf
+  end
+  set excl_stinf = `cat ${an}.no_stinf | awk '{if ( NR == 1 ) {printf("%s",substr($1,1,8))} else {printf("|%s",substr($1,1,8))}}'`
+  if( $#excl_stinf == 0 ) then
+      set excl_stinf = no
+  endif
+  echo $excl_stinf
+endif
+
+# Read the list of sites the user wants to exclude.
+set excl_user = `grep EXCL $conf | awk '{if (substr($0,1,1) == " ") {printf "%s",$2}}'`
+
+# Remove sites from the an.all list that are slated for exclusion.
+# an.all is a list of ALL sites available for selection 
+cat $an >! an.all.${ID}
+if ( $#excl_user != 0 ) then
+  egrep -vi $excl_user an.all.${ID} >! an.new.${ID}
+  \mv an.new.${ID} an.all.${ID}  
+  echo "Excluding user sites from selection process: $excl_user" 
+  echo " "
+endif
+
+if ( $excl_apr[1] != "no" ) then
+  egrep -vi $excl_apr an.all.${ID} >! an.new.${ID}
+  \mv an.new.${ID} an.all.${ID}  
+  echo "Excluding missing $aprf sites from selection process: $excl_apr" 
+  echo " "
+endif
+
+if ( $excl_stinf[1] != "no" ) then
+  egrep -vi $excl_stinf an.all.${ID} >! an.new.${ID}
+  \mv an.new.${ID} an.all.${ID} 
+  echo "Excluding missing $stinfo sites from selection process: $excl_stinf" 
+  echo " "
+endif
+
+# Get the list of available core sites if core list file specified (clist). 
+# an.core is a list of CORE sites available for selection.
+if ( $core_list != "" ) then
+  set clist = `cat $core_list | awk '{if (substr($0,1,1) == " ") {print $0}}'  | awk '{if ( NR == 1) {printf("%s",substr($1,1,8))} else {printf("|%s",substr($1,1,8))}}'`
+  egrep  $clist an.all.${ID} >! an.core.${ID} 
+  set ncore = `grep '^ ' $core_list  | wc -l`
+  echo "Number of core list sites $ncore - available this day: " `wc -l an.core.${ID}` 
+else
+  \rm $core_list ; touch $core_list
+  echo "Using an empty core_list file"
+endif
+# Check secondary list
+if ( $sec_list != "" ) then
+  set secl = `cat $sec_list | awk '{if (substr($0,1,1) == " ") {print $0}}'  | awk '{if ( NR == 1) {printf("%s",substr($1,1,8))} else {printf("|%s",substr($1,1,8))}}'`
+  egrep  $secl an.all.${ID} >! an.secd.${ID} 
+  set nsecd = `grep '^ ' $sec_list  | wc -l`
+  echo "Number of secd list sites $nsecd - available this day: " `wc -l an.secd.${ID}` 
+endif
+
+# Get list of networks to be processed: CODE checks for blank at start of line.
+set net_list = `grep REF_NET $conf | awk '{if (substr($0,1,1) == " "){print $2}}'`
+
+# Start generating lists of reference sites (rlist)
+\rm -f t.* t.refs.${ID} >& /dev/null
+set num_nets = 0
+foreach net ($net_list)
+  @ num_nets++
+  touch t.${net}.${ID} t.refs.${ID} 
+# MOD TAH 090318: added to upper in awk print $3 and removed -i from egrep (site s071 was matching all xxxs071 rinex names on day 071).
+  set slist = `grep "^ " $conf | grep $net | awk '{print toupper($3)}'`; egrep  $slist an.all.${ID} | awk '{print $0}' >> t.${net}.${ID}
+  set rlist = `cat t.${net}.${ID} | awk '{if ( NR == 1 ) {printf("%s",substr($1,1,8))} else {printf("|%s",substr($1,1,8))}}'`
+  cat t.${net}.${ID} >> t.refs.${ID} 
+# MOD TAH 201111: Make sure that sites are unique in t.${net}.${ID}
+   \mv  t.${net}.${ID} t.${net}.${ID}.tmp ; sort -u -k 1,1 t.${net}.${ID}.tmp >! t.${net}.${ID}
+end
+
+# Add any ref sites not in the core list to the core list, as the user has selected these sites and wants them used.
+if ( $core_list != "" ) then
+  egrep -v $clist t.refs.${ID} >> an.core.${ID}
+endif
+
+# Save list of available stations.
+\cp an.all.${ID} useable.${an}
+\cp an.core.${ID} useable.core.${ID}
+echo "Number of useable sites found in rinex archives:   " `wc -l useable.${an}` 
+echo " "
+
+# Setup reference site list for selection programs
+set slist = ""
+
+foreach net ($net_list)
+  set slist = `echo ${slist}; awk '{printf "%s:",$1}' t.${net}.${ID}`
+  set slist = `echo ${slist}| awk '{printf "%s#",$0}'`
+end
+set slist = `echo $slist | sed -e  s/":# "/"#"/g | awk '{print substr($1,1,length($1)-2)}'`
+
+# Core list of stations is used for site selection first.
+# Do the network selection
+if ( $core_list != "" ) then
+  echo "First pass for core sites"
+  echo "Selecting networks from available core list sites list - useable.core.${yr[1]}.${doy} "
+  echo "Selecting " $num_nets "networks using: $method Size: $net_dim sites."
+  echo "Reference sites: $slist" 
+  if( $#slist == 0 ) then
+     echo "**ERROR** No sites in Reference list: CORE"
+     exit -1
+  endif
+  echo " "
+  if ( $method == "global_sel") then
+    echo "global_sel <slist> ${net_dim} $aprf an.core.${ID} "
+    echo "global_sel $slist"
+    echo "global_sel created core_net_sel.crd.${ID}"
+    echo "global_sel $slist ${net_dim} $aprf an.core.${ID}"
+    global_sel $slist ${net_dim} $aprf an.core.${ID} >! core_net_sel.crd.${ID}
+  else
+      echo " No simm_ann yet!"
+      exit -1
+##    echo "sim_ann doing: $sim_ann_iter iterations." 
+##    echo "sim_ann    $slist $net_dim $sim_ann_iter $aprf an.core"
+##    sim_ann    $slist $net_dim $sim_ann_iter $aprf an.u | tail -${net_dim}  >! ${net}.crd
+  endif
+endif
+
+# New code to do one more pass to add a secondary group of sites.
+set snum = `seq 1 $num_nets`
+if( $sec_list != "" ) then
+   # Now fill networks from all sites list.
+   set slist = ""
+   set i = 0
+   while ( $i < ${num_nets} )
+     @ i++
+     set snum[$i] = `grep ${i}N core_net_sel.crd.${ID} | wc -l`
+     set slist = `echo ${slist}; grep ${i}N core_net_sel.crd.${ID} | awk '{printf "%s:",$1}'`
+     set slist = `echo ${slist}| awk '{printf "%s#",$0}'`
+   end
+   set slist = `echo $slist | sed -e  s/":# "/"#"/g | awk '{print substr($1,1,length($1)-2)}'`
+
+   # Do the network selection.  List rinex files that are available in the core and secondary
+   # lists.
+   cat an.core.${ID} an.secd.${ID} >! an.comb.${ID}
+   echo " "
+   echo "Second pass with secondary sites" 
+   echo "Selecting networks from list of all available data found in rinex archives - useable.${an}"
+   echo "Selecting " $num_nets "networks using: $method Size: $net_dim sites."
+   echo "Secondary list from $sec_list added" 
+   echo "Reference sites <slist>: $slist" 
+   echo "All sites in available list `wc -l an.comb.${ID}`"
+   echo "Core reference sites per network"
+   foreach i ( `seq 1 $num_nets` )
+      echo -n "Net $i # $snum[$i] | "
+   end
+   echo " "
+   if( $#slist == 0 ) then
+      echo "**ERROR** No sites in Reference list: SECD"
+      exit -2
+   endif
+   echo " "
+   if ( $method == "global_sel") then
+       echo "global_sel <sites> ${net_dim} $aprf an.comb.${ID}"
+       global_sel $slist ${net_dim} $aprf an.comb.${ID} >! all_net_sel.crd.${ID}
+   endif
+else
+   echo "No secondary list; using core_net_sel.crd.${ID}"
+   \cp core_net_sel.crd.${ID} all_net_sel.crd.${ID}
+endif
+
+# Now fill networks from all sites list.
+set slist = ""
+set snum = `seq 1 $num_nets`
+set i = 0
+while ( $i < ${num_nets} )
+  @ i++
+  set snum[$i] = `grep ${i}N all_net_sel.crd.${ID} | wc -l`
+  set slist = `echo ${slist}; grep ${i}N all_net_sel.crd.${ID} | awk '{printf "%s:",$1}'`
+  set slist = `echo ${slist}| awk '{printf "%s#",$0}'`
+end
+set slist = `echo $slist | sed -e  s/":# "/"#"/g | awk '{print substr($1,1,length($1)-2)}'`
+
+# Do the network selection
+echo " "
+echo "Selecting networks from list of all available data found in rinex archives - useable.${an}"
+echo "Selecting " $num_nets "networks using: $method Size: $net_dim sites."
+echo "Reference sites: $slist" 
+echo "Reference sites per network"
+set done = 1
+foreach i ( `seq 1 $num_nets` )
+   echo -n "Net $i # $snum[$i] | "
+   if( $snum[$i] != ${net_dim} ) set done = 0
+end
+echo " "
+if( $done == 1 ) then
+   echo "All sites selected from core and secondary lists"
+else   
+   echo "Third pass to fill sites" 
+   echo "Selecting networks from list of all available data found in rinex archives - `wc -l an.all.${ID}`"
+   echo "Selecting " $num_nets "networks using: $method Size: $net_dim sites."
+   echo "Reference sites <slist>: $slist" 
+   echo "Created all_net_sel.crd.${ID}"
+   echo "global_sel $slist ${net_dim} $aprf an.all.${ID}"
+         global_sel $slist ${net_dim} $aprf an.all.${ID} >! all_net_sel.crd.${ID}
+endif
+
+echo " "
+echo "Now creating tie connections Method $tie_method"
+# Now we pick the tie sites for each network
+\rm -f all_net_sel_ties.crd.${ID} >&! /dev/null
+cat all_net_sel.crd.${ID} >! all_net_sel_ties.crd.${ID}
+# Method 0 no ties computed
+if ($tie_method == 0) then
+  echo "Tie method 0 has no computed ties (user defined)"
+
+# Method 1 tie each network to the next with the top $num_tie sites from the next network
+else if ($tie_method == 1) then
+  echo " "
+  echo "Tie method 1 Each netowrk is tied to the next with $tie_num sites"
+  set i = 0
+  set j = 1
+  while ( $i < ${num_nets} )
+    @ i++
+    @ j++
+    if ( $j > ${num_nets} ) set j = 1
+    grep ${i}N all_net_sel.crd.${ID} | awk '{print $0}' | head -n ${tie_num} | \
+    awk -v net=$j '{printf " %s %15.4f %15.4f %15.4f %9.4f %8.4f %8.4f %11.4f %4d %6s %7s \n",$1, $2, $3, $4, $5, $6, $7, $8, " 0 ", net"Tie", net"N"}' >> all_net_sel_ties.crd.${ID}
+  end
+
+# Methed 2 tie all networks to each other using $num_tie sites from all other networks
+else if ($tie_method == 2) then
+  echo " "
+  echo "Tie method 2 Each netowrk is tied to all other network by $tie_num sites"
+  set i = 0
+  while ( $i < ${num_nets} )
+    set j = 0
+    @ i++
+    while ( $j <= ${num_nets})
+      @ j++
+      @ k = $i * $tie_num
+      if ( $j != $i ) then
+        grep ${j}N all_net_sel.crd.${ID} | awk '{print $0}' | head -n $k | tail -n $tie_num | \
+        awk -v net=$i '{printf " %s %15.4f %15.4f %15.4f %9.4f %8.4f %8.4f %11.4f %4d %6s %7s \n",$1, $2, $3, $4, $5, $6, $7, $8, " 0 ", net"Tie", net"N"}'>> all_net_sel_ties.crd.${ID}
+      endif
+    end
+  end
+endif
+
+# Get list of remaing sites not selected for any network
+cat an.all.${ID} >! an.unselected.${ID}
+foreach i ( `cat all_net_sel_ties.crd.${ID} | awk 'substr($0,1,1) == " " {print $1}'` )
+   grep -v $i an.unselected.${ID} >! tmp.list.${ID}
+   \mv tmp.list.${ID} an.unselected.${ID}
+end
+
+echo " "
+echo "Unselected sites listed in: netna.crd.${ID}"
+echo "* Sites not used $yr[1] $doy" >! netna.crd.${ID}
+foreach s (`awk '{print $1}' an.unselected.${ID}`)
+   grep $s $aprf >>  netna.crd.${ID}
+end
+apr_to_vel netna.crd.${ID} netna.pos.${ID} >& /dev/null; cvframe netna.pos.${ID} netna.vel.${ID} nafd nuv-nnr >& /dev/null
+
+#### Now make the sites.defaults file
+# 
+echo " "
+set n = 0 
+while ( $n < ${num_nets} )
+  @ n++
+  grep ${n}N all_net_sel_ties.crd.${ID} | awk '{print $0}' >! net${n}.crd.${ID}
+end
+
+# MOD TAH 200513: See if we will append or delete sites.defaults file 
+if( $delete_old == 'yes' ) then
+   \rm ${sdf} >&! /dev/null &
+endif
+
+# See if append of start new file
+if( ! -e $sdf ) then
+#  New file
+   echo "# Sites.defaults generated by sh_network_sel Created `date`" >! ${sdf}
+else
+#  Create copy and remove any existing $ncd entres (these will be re-created)
+   set ts = `date +"%H%M%S"`
+   \mv ${sdf} ${sdf}.${ts}
+   egrep -v "gps ${ncd}| for ${ncd} " ${sdf}.${ts} >!  ${sdf}
+   echo "#" >> ${sdf}
+   echo "# Sites.defaults updated by sh_network_sel `date`" >> ${sdf}
+   \rm ${sdf}.${ts}
+endif
+
+#echo "# Reference Sites: $refs" >> ${sdf}
+echo "# Generated for $yr[1] $doy for ${ncd} " `date -u +"%Y/%m/%d %H:%M UTC"` >> ${sdf}
+echo "# Options: -f $conf " >> ${sdf}
+echo "# -core $core_list -sec $sec_list -net_dim $net_dim -apr_file $aprf" >> ${sdf}
+echo "# -tie_method $tie_method -net_overlap $tie_num" >> ${sdf}
+echo "# -arch $archive" >> ${sdf}
+echo "# " >> ${sdf}
+echo "# New coordinates needed" >! new.apr.${ID}
+
+set n = 0
+while ( $n < ${num_nets} )
+  @ n++
+  echo "Creating $sdf entries for network: $n"
+  set rlist = `awk '{printf "%s ",$1}' t.NET${n}.${ID}`
+  echo "# Reference sites for $ncd network $n : $rlist " >> ${sdf}
+  set tlist = `grep ${n}Tie all_net_sel_ties.crd.${ID} | awk '{printf "%s ",$1}'`
+  echo "# Tie sites for $ncd network $n : $tlist " >> ${sdf}
+  foreach s (`cat net${n}.crd.${ID} | awk '{print tolower(substr($1,1,4))}'`)
+#   Check site is in station.info
+    set nsi = `grep -i "^ $s" $stinfo | wc`
+    if( $nsi[2] == 0 ) then
+       echo $s $ncd $n | awk '{printf(" %s_gps %s%1d  ftprnx\n",$1,$2,$3)}' >> ${sdf}
+    else
+       echo $s $ncd $n | awk '{printf(" %s_gps %s%1d  ftprnx xstinfo\n",$1,$2,$3)}' >> ${sdf}
+    endif
+    set nsi = `grep -i "^$s" $aprf | wc`
+    if( $nsi[2] == 0 ) then
+        grep -i $s $aprf >> new.apr.${ID}
+    endif
+  end
+end
+echo "Creating new.apr.${ID} .apr entries for all sites selected"
+
+#
+# Now remove all the temporary files
+\rm -f tmp.*.${ID} t.*.${ID} an.core.${ID} an.all.${ID} an.sec.${ID} an.unselected.${ID} sort.list.*  >&! /dev/null
+\rm net?.crd.${ID} avail_${ID} an.comb.${ID}
+

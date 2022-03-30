@@ -1,0 +1,503 @@
+#!/bin/csh -f   
+#
+#doc Plot l-file coordinates using GMT
+#doc
+#
+# Script to plot GAMIT stations from a GAMIT l-file using GMT
+# Written by K. Feigl, B. Oral, S. McClusky, and R. King.   Last modified by S. McClusky 961113.
+# Make work for 0 longitude Kurt 2005-APR-20
+#
+# One day, we should add feature to select stations
+# select stations from lfiles to plot
+#awk '("N25" < $4 && $4 < "N50") && (("E" == $7 && $8 < 20) || ("W" == $7 && $8 < 35)) {print $0}' ../tables/lfile. \
+#| sort -u >! lwmed.001
+
+if ( $#argv == 0 ) then
+echo " "
+echo "  Script to plot lfile coordinates using GMT" 
+echo "  "
+echo "  USAGE :    sh_plot_lfile   <options>. "
+echo "  "
+echo "  EXAMPLES:  " 
+echo "  sh_plot_lfile  -f lfile. " 
+echo "  " 
+echo "=+=+=+=+=+=+=+=+=+=+=+=+=+ OPTIONS +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+"
+echo " -f[file]         list    : lfile name  MUST have this."    
+echo "  " 
+echo " -dfile           file    : d-file containing list of sites to plot"    
+echo "  " 
+echo " -df              file    : file contains the names of unwanted sites. "
+echo " -delete_file     file    : file contains the names of unwanted sites. "
+echo "  "
+echo " -lat[latitude]   min max : vertical scale. If not issued it will be approx calculated."
+echo "  " 
+echo " -long[longitude] min max : horizontal scale.  If not issued it will be approx calculated."
+echo "  " 
+echo " -proj1            value   : Mercator projection. Give width of map in inches. Default is 6 inches"
+echo "  "            
+echo " -proj2            value value : Winkel triple projection, central meridian, minor half axis in inches  [default 0 2.0]"
+echo "  "            
+echo " -proj3            value value : Stereographic Equal Area, long centre, lat centre, radius (inches), latitude of radius  [default 0 90 4 60]"
+echo "  "            
+echo " -frame           value   : gmt border frame  ticks. [Default is  10 degrees].  " 
+echo "  " 
+echo " -anot            value   : gmt border label intervals. [Default is  20 degrees].  " 
+echo "  " 
+echo " -title           text    : Add a title to the top of the plot  " 
+echo "  " 
+echo " -portrait                : include this command if you want to make portrait plot"
+echo "  " 
+echo " -font           value    : font size of station names [Default is 7]  " 
+echo "  " 
+echo " -cal                     : Use this for california plots as faults/folds and better coastline will be plotted " 
+echo "  "  
+echo " -turk                    : Use this for turkey plots as faults/folds and better coastline will be plotted " 
+echo "  "  
+echo " -skip                    : skip making new plot files and plot old ones " 
+echo "  "  
+echo " -bold           file     : file containing names of sites to print in bold " 
+echo "  "  
+echo " -names          file     : file containing sites to print with names and symbols " 
+echo "  "  
+echo " -star       lat lon      : latitude and longitude of a red star to plot "
+echo "  " 
+echo " -color                   : make a color plot "
+echo "  " 
+echo " -coast_res               : coastline resolution (f,h,i,l,c) full,high,inter,low,crude [default=i] "
+echo "  " 
+echo " -min_area                : minimum area of features to be plotted km^2 [default = 200]"
+echo "  "  
+echo " -linear                  : DO not plot linear scale."
+echo " -linearxp                : Default is lower right corner. Linear distance scale longitude position"
+echo " -linearyp                : Default is lower right corner. Linear distance scale lattitude positio"
+echo " "
+echo "   Note:   If specialized maps are used (-cal or -turk options), the location of the maps on" 
+echo "           your system must be set as 'root_map'.  The default is '~/gg/maps' where 'gg' is "
+echo "           an alias in your home directory pointing to the level above 'gamit' and 'kf'."
+echo " "            
+exit
+
+exit
+else
+endif 
+#=#=#=#=#=#=#=#=#=#=# SET UP DEFAULTS #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+
+set root_map = ~/gg/maps
+
+set lfile       = "" 
+set dfile       = "" 
+set delete_file = "" 
+set bold_file   = "" 
+set name_file   = "" 
+set del         = "no"
+set delete      = ""
+set projection  = "mecator"
+set skip        = "no"
+set bld         = "no"
+set nms         = "no"
+set bold        = ""
+set names       = ""
+set latmin      =  0
+set latmax      =  0
+set longmin     =  0
+set longmax     =  0
+set starlat     = 0 
+set starlong    = 0 
+set frame       =  0 
+set anot        =  0  
+set FONT        =  7  
+set title       = " "
+#set PROJ        = ""
+set PROJ        = "-JM8i"
+set orient      = ""  
+set ADD         = ""
+set coast_res   = i
+set min_area    = 200
+set cal         = "no"
+set turk        = "no"
+set color       = "no"
+set linear   = yes
+set linearxp = ""
+set linearyp = ""
+#=#=#=#=#=#=#=#=#=#=# DECIPHER COMMAND LINE #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=
+while ($#argv > 0 )
+set input = ( $argv )
+switch($input[1])
+       case -a:
+       case -add:
+                set ADD        =  $input[2]"_"
+       breaksw
+       case -cal:          
+                set cal       =   "yes"  
+       breaksw
+       case -turk:          
+                set turk       =   "yes"  
+       breaksw
+       case -skip:          
+                set skip       =   "yes"  
+       breaksw
+       case -font:
+                set FONT        =  $input[2]
+       breaksw
+       case -anot:
+                set anot      =   $input[2]  
+		breaksw
+       case -frame:
+                set frame     =   $input[2]  
+		breaksw
+   	case -lat:
+		         set latmin    = $input[2] 
+		         set latmax    = $input[3] 
+		         shift input
+		         shift input
+       breaksw
+	    case -long:
+	         	set longmin    =  $input[2]
+		        set longmax    =  $input[3]  
+	         	shift input
+	         	shift input
+       breaksw
+   	case -star:
+		         set starlat   = $input[2] 
+		         set starlong  = $input[3] 
+		         shift input
+       breaksw
+	    case -proj1: 
+               set projection = "mecator"
+                   if ($#input >= 2) then
+#	         	set PROJ       =  "-Jm$input[2]i"
+	         	set PROJ       =  "-JM$input[2]i" 
+		         shift input
+                   else
+	         	set PROJ       =  "-JM6i"
+                   endif
+		breaksw
+	    case -proj2:
+               set projection = "winkel"
+	         	set PROJ       =  "-Jr$input[2]/$input[3]i"
+		breaksw
+	    case -proj3:
+               set projection = "stereo"
+	         	set PROJ       =  "-Js$input[2]/$input[3]/$input[4]/$input[5]i" 
+		breaksw
+ 	    case -portrait:
+	         	set orient      =  "-P"
+		breaksw
+       case -f:
+       case -files:
+		         set lfile   =   $input[2]  
+       breaksw
+       case -dfile:
+		         set dfile   =   $input[2]  
+       breaksw
+      	case -df:
+      	case -delete_file:
+                set del = "yes"
+		         set delete_file =  $input[2]
+		breaksw
+      	case -bold:
+                set bld = "yes"
+		         set bold_file =  $input[2]
+		breaksw
+      	case -color:
+                set color = "yes"
+		breaksw
+      	case -names:
+                set nms = "yes"
+		         set name_file =  $input[2]
+		breaksw
+   	case -linear:
+		         set  linear      = no
+		breaksw
+	    case -linearxp:
+		         set  linearxp      = $input[2]
+		breaksw
+	    case -linearyp:
+		         set linearyp       = $input[2]
+		breaksw
+
+      	case -coast_res:
+		         set coast_res =  $input[2]
+		breaksw
+      	case -min_area:
+		         set min_area =  $input[2]
+		breaksw
+        case -title:
+                set title   =   ( $title $input[2] )
+                shift input; shift input
+                while ( $#input > 0 &&   `echo  $input[1]  | cut -c1 ` != "-" )
+                        set inarg =  $input[1]
+                        if ( `echo  $inarg | cut -c1 ` != "-" ) then
+                                set title    =   ( $title $inarg )
+				 if ( $#input == 1 ) goto alldone
+                                shift input
+                        endif
+                end      
+       if ( $#input == 0 ) goto alldone
+endsw
+if ( $#argv > 0 ) shift argv
+end # while
+alldone:    
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+#gmt gmtdefaults -Du              >! gmt.conf
+# Use US units
+gmt gmtdefaults -Du             >! gmt.conf
+gmt gmtset GMT_COMPATIBILITY 5
+gmt gmtset FONT_LABEL 10p \
+           FONT_ANNOT_PRIMARY 10p \
+           FORMAT_GEO_MAP ddd:mm:ssF \
+           FONT_TITLE 20p \
+           PROJ_LENGTH_UNIT i \
+           MAP_FRAME_WIDTH 0.03p
+#          MAP_FRAME_WIDTH 0.0001i
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+set username = `whoami`
+echo "PROCESSING lfile" 
+set psfile = $ADD"lfile.ps"  
+echo $psfile     
+ln -s ~/gg/tables/gdetic.dat .
+if ($skip == "yes") goto skip
+\rm -r tmp.*
+#=#=#=#=#=#=#=#=#=#=# CONVERT SPHERICAL COORDS TO GEODETIC #=#=#=#=#=#=#=#=#=#=#=#=#=#    
+set outfile = tmp.geod 
+tform <<ENDD  >! tmp.tformout
+2
+2
+$lfile
+4
+3
+1
+$outfile
+wgs84
+3
+ENDD
+
+# handle case of lon > 180 AND repeated 4-char string as 8-char name
+#tail -n $outfile >! tmp.input
+cat $outfile | awk '{if ($3 > 180) print $1,$2,$3-360,$4; else print $0}' \
+| awk '{if (substr($1,1,4) == substr($1,5,4)) print substr($1,1,4),$2,$3,$4; else print $0}' >! tmp.input
+#=#=#=#=#=#=#=#=#=#=#=#=#  EXTRACT PLOT FILE INFORMATION  #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=# 
+# if a dfile is given plot only the files listed there
+if ( $dfile != "") then
+  if ( -e tmp.3 ) /bin/rm tmp.3
+  cat $dfile | tail -n +8 | cut -c2-5 >! tmp.dnames
+  foreach i ( `cat tmp.dnames` )
+    if ( -e tmp.3 ) then
+      grep -i $i tmp.input >> tmp.3
+    else
+      grep -i $i tmp.input >! tmp.3
+    endif
+  end
+/bin/mv tmp.3 tmp.input
+endif
+# check there if any sites not to plot!!!! 
+#
+if ( $delete_file != "")  set delete = ( $delete `cat $delete_file` ) 
+if ( $del != "no"  ) then 
+	   foreach i ( $delete )
+		grep -i -v  $i tmp.input  >!  tmp.1
+		/bin/mv  tmp.1 tmp.input
+	   end 
+	echo  deleted sites:  $delete 
+endif      
+# create station position and name plot files
+# 1                     2              3               4
+#YELL               62.48089499 -114.48069884      180.8425
+#STN                  latitude    longitude           ht      
+#
+# plot names at 45 degree angle to save space
+#awk ' {print $3,$2,$1}' tmp.input >! tmp.nam 
+awk ' {print $3,$2,$1}' tmp.input >! tmp.nam 
+# check there if any sites to not plot names!!!! 
+#
+if ( $name_file != "")  set names = ( $names `cat $name_file` ) 
+if ( $nms != "no"  ) then  
+      set first = 1
+	   foreach i ( $names )   
+        if ( $first == 1) then
+		   grep -i  $i tmp.nam    >!  tmp.select_nam  
+        else
+	   	   grep -i  $i tmp.nam    >>  tmp.select_nam 
+        endif   
+        @ first = $first + 1
+	   end 
+	   /bin/mv  tmp.select_nam tmp.nam
+	   echo  sites with names:  $names 
+endif      
+# check there if any sites to plot bold!!!! 
+#
+if ( $bold_file != "")  set bold = ( $bold `cat $bold_file` ) 
+if ( $bld != "no"  ) then  
+      set first = 1
+	   foreach i ( $bold )   
+        if ( $first == 1) then
+		   grep -i  $i tmp.input     >!  tmp.1  
+        else
+	   	   grep -i  $i tmp.input     >>  tmp.1 
+        endif   
+        @ first = $first + 1
+		 grep -i -v  $i tmp.input  >!  tmp.2
+	     /bin/mv  tmp.2 tmp.input
+	   end 
+	   /bin/mv  tmp.1 tmp.bold
+	   echo  bold sites:  $bold 
+endif      
+awk ' {print $3,$2}' tmp.input >! tmp.pos    
+if( $bold_file != "") then
+  awk ' {print $3,$2}' tmp.bold  >! tmp.perm
+endif 
+skip:
+#=#=#=#=#=#=#=#=#=#=#=#=# SET RANGES AND SCALES #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=# 
+if( $bold_file != "") then
+  cat tmp.input tmp.bold | awk '{print $3,$2}' | gmt gmtinfo -I0.1 >! tmp 
+else     
+  cat tmp.input | awk '{print $3,$2}' | gmt gmtinfo -I0.1 >! tmp 
+endif
+set r = `cat tmp | cut -c3- | awk -F"/" '{print ($3-0.2), ($4+0.2), ($1-0.2), ($2+0.5)}'` 
+set RANGE = "-R"$r[3]"/"$r[4]"/"$r[1]"/"$r[2]
+if ( $latmin != 0 ) set r[1] = $latmin          
+if ( $latmin != 0 ) set r[2] = $latmax          
+if ( $latmin != 0 ) set r[3] = $longmin         
+if ( $latmin != 0 ) set r[4] = $longmax         
+
+set RANGE = "-R"$r[3]"/"$r[4]"/"$r[1]"/"$r[2]
+
+if( $frame == 0 ) then
+  set yspread = `echo  $r[2]  $r[1] | awk '{ printf "%6d",  $1 - $2}'`
+  if ( $yspread <= 3 )   set yanot  = 0.5
+  if ( $yspread > 3 )   set yanot  = 1
+  if ( $yspread > 10 )  set yanot  = 2
+  if ( $yspread > 20 )  set yanot  = 5
+  if ( $yspread > 40 )  set yanot  = 10
+  if ( $yspread > 90 )  set yanot  = 10
+  if ( $yspread > 120)  set yanot  = 15
+  if ( $yspread > 160)  set yanot  = 20
+  if ( $yspread > 179)  set yanot  = 25
+  set  yframe = ` echo $yanot | awk '{print $1 / 2 }'`
+
+  set xspread = `echo  $r[4]  $r[3] | awk '{ printf "%6d",  $1 - $2}'`
+  if ( $xspread <= 3 )   set xanot  = 0.5
+  if ( $xspread > 3 )   set xanot  = 1
+  if ( $xspread > 10 )  set xanot  = 2
+  if ( $xspread > 20 )  set xanot  = 5
+  if ( $xspread > 40 )  set xanot  = 10
+  if ( $xspread > 90 )  set xanot  = 10
+  if ( $xspread > 180)  set xanot  = 20
+  if ( $xspread > 270)  set xanot  = 30
+  if ( $xspread > 359)  set xanot  = 30
+  set  xframe = ` echo $yanot | awk '{print $1 / 2 }'`  
+else 
+  set yanot = $anot
+  set yframe = $frame
+  set xanot = $anot
+  set xframe = $frame 
+endif 
+
+if ( $PROJ == "" ) then 
+   if ( "$orient" != "" ) then
+#     set PROJ = ` echo $r | awk '{print "-Jm"6.5/($4-$3) }'`
+      set PROJ = ` echo $r | awk '{print "-JM6.5"}'`
+   else
+#     set PROJ = ` echo $r | awk '{print "-Jm"9.0/($4-$3) }'`   
+      set PROJ = ` echo $r | awk '{print "-JM9.0"}'`
+   endif  
+   echo "Using a mercator projection: " $PROJ
+endif
+
+set SCALE = "-Bxa${xanot}f$xframe -Bya${yanot}f$yframe -BWeSn"
+if ( $projection == "winkel" ) then    
+  set SCALE = "-Bxa${xanot}g$xanot -Bya${yanot}g$yanot -BWeSn"  
+else if ( $projection == "stereo" ) then
+  set SCALE = "-Bxa${xanot}g$xanot -Bya${yanot}g$yanot -BWeSn"  
+endif   
+
+# Set the scale of the map according to its size
+if ( $linear != no ) then
+  set linearscale = 30      
+  if  ( `echo $RANGE | awk '{print $1}' | cut -c3-  | awk -F "/" '{printf"%3d \n", $2 - $1 }'` > 2  )  set linearscale = 50 
+  if  ( `echo $RANGE | awk '{print $1}' | cut -c3-  | awk -F "/" '{printf"%3d \n", $2 - $1 }'` > 5  )  set linearscale = 100 
+  if  ( `echo $RANGE | awk '{print $1}' | cut -c3-  | awk -F "/" '{printf"%3d \n", $2 - $1 }'` > 10 )  set linearscale = 200 
+  if  ( `echo $RANGE | awk '{print $1}' | cut -c3-  | awk -F "/" '{printf"%3d \n", $2 - $1 }'` > 20 )  set linearscale = 500 
+  if  ( `echo $RANGE | awk '{print $1}' | cut -c3-  | awk -F "/" '{printf"%3d \n", $2 - $1 }'` > 50 )  set linearscale = 1000 
+  if  ( `echo $RANGE | awk '{print $1}' | cut -c3-  | awk -F "/" '{printf"%3d \n", $2 - $1 }'` > 100 )  set linearscale = 2500 
+  if  ( `echo $RANGE | awk '{print $1}' | cut -c3-  | awk -F "/" '{printf"%3d \n", $2 - $1 }'` > 200 )  set linearscale = 5000 
+
+#get middle latitude for calculation of the linearscale 
+  set slat  = `echo $RANGE | awk '{print $1}' | cut -c3-  | awk -F "/" '{print ($3+(($4 - $3)/2.0)) }'`i
+endif       
+
+##=#=#=#=#=#=#=#=#=#=#=#=# MAKE THE GMT PLOTS #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+if ( $cal == "yes") then
+#### start california extras only
+# GMT2  psxy $root_map/calif_coast      $PROJ $RANGE $SCALE+t"$title"  -K -V $orient -W9p,0/0/255 -:  >! $psfile   
+  gmt pscoast $PROJ $RANGE $SCALE+t"$title" -S220/255/255 -G255/255/255 -N1 -K -V $orient -W1p,0/0/0  -D$coast_res -A$min_area  >! $psfile
+  gmt psxy $root_map/calif_coast      $PROJ $RANGE $SCALE               -O  -K -V $orient -W5p,0/0/255 -:  >> $psfile   
+  gmt psxy $root_map/calif_folds      $PROJ $RANGE $SCALE               -O  -K -V $orient -W1p,0/0/0,- -:  >> $psfile 
+  gmt psxy $root_map/calif_faults     $PROJ $RANGE $SCALE               -O  -K -V $orient             -:  >> $psfile 
+  gmt psxy $root_map/calif_sandreas   $PROJ $RANGE $SCALE               -O  -K -V $orient -W2p,0/0/0   -:  >> $psfile 
+  gmt psxy $root_map/calif_nwc_border $PROJ $RANGE $SCALE               -O  -K -V $orient -W2p,0/0/0   -:  >> $psfile 
+endif 
+
+if ( $turk == "yes") then
+#### start turkey extras only   
+  gmt psxy $root_map/turk_tectonic_fault1   $PROJ $RANGE $SCALE                    -K -V $orient -W1p,0/0/0  >! $psfile 
+  gmt psxy $root_map/turk_tectonic_fault2   $PROJ $RANGE $SCALE                -O  -K -V $orient -W1p,0/0/0  >> $psfile 
+  gmt psxy $root_map/turk_tectonic_fault3   $PROJ $RANGE $SCALE                -O  -K -V $orient -W1p,0/0/0  >> $psfile 
+  gmt psxy $root_map/turk_tectonic_thrust_L $PROJ $RANGE $SCALE                -O  -K -V $orient -W3p,0/0/0 -Sf0.50i/0.07i+l >> $psfile 
+  gmt psxy $root_map/turk_tectonic_thrust_R $PROJ $RANGE $SCALE                -O  -K -V $orient -W3p,0/0/0 -Sf0.50i/0.07i+r >> $psfile 
+##GMT2  pscoast                               $PROJ $RANGE $SCALE+t"$title"       -O  -K -V $orient -W5p,0/0/0 >> $psfile
+  gmt pscoast                               $PROJ $RANGE $SCALE+t"$title"    -N1 -O  -K -V $orient -W5p,0/0/0  -D$coast_res -A$min_area >> $psfile
+endif
+
+if ( $cal == "no" && $turk == "no" ) then   
+  if ( $color == yes ) then
+##GMT2    pscoast           $PROJ $RANGE $SCALE+t"$title" -S220/255/255 -G255/255/255 -Gp0.5/31 -K -V $orient -W1p,0/0/0 -D10   >! $psfile
+    gmt pscoast           $PROJ $RANGE $SCALE+t"$title" -S220/255/255 -G255/255/255 -Gp0.5/31 -N1 -K -V $orient -W1p,0/0/0  -D$coast_res -A$min_area  >! $psfile
+  else
+##GMT2    pscoast           $PROJ $RANGE $SCALE+t"$title"                                       -K -V $orient -W2p,0/0/0    >! $psfile
+    gmt pscoast           $PROJ $RANGE $SCALE+t"$title"                                     -N1 -K -V $orient -W2p,0/0/0  -D$coast_res -A$min_area  >! $psfile
+  endif
+endif 
+
+#plot linear scale
+  if ($linearxp != "" && $linearyp != "" ) then 
+    gmt psbasemap  $PROJ $RANGE $SCALE -Lf$linearxp/$linearyp/$slat/${linearscale}k -O -K -V $orient >> $psfile
+  else        
+    echo $slat $linearscale
+    gmt psbasemap  $PROJ $RANGE $SCALE -Lfx1.5i/1.5i/$slat/${linearscale}k -O -K -V $orient >> $psfile
+  endif
+endif 
+ 
+# Plot Position of a STAR
+if ( $starlat != 0 ) then
+  gmt psxy                                           $RANGE $PROJ   -Sa                     -O  -K -V $orient -G255/0/0  << END >> $psfile   
+  $starlong $starlat 0.175i
+END
+endif 
+ 
+if ( $color == yes ) then
+  gmt psxy tmp.pos        $PROJ $RANGE $SCALE -St0.09i  -G0/200/50  -O  -K -V $orient             >> $psfile
+  if ( $bold_file != "" ) then
+    gmt psxy tmp.perm     $PROJ $RANGE $SCALE -Sd0.08i  -G220/0/0   -O  -K -V $orient             >> $psfile 
+  endif
+else
+  echo "In here plotting positions"
+  gmt psxy tmp.pos        $PROJ $RANGE $SCALE -St0.08i              -O  -K -V $orient             >> $psfile
+  if ( $bold_file != "" ) then
+    gmt psxy tmp.perm     $PROJ $RANGE $SCALE -Sd0.08i -G0/0/0      -O  -K -V $orient             >> $psfile 
+  endif   
+endif
+gmt pstext tmp.nam      $PROJ $RANGE  -F+f${FONT}p+jBL+a45         -O     -V $orient -X0.05i      >> $psfile
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#  CLEANUP #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+cleanup: 
+echo "  "
+echo "Created  postscript file    :" $psfile
+echo "  "
+echo "To view  postript files    : gs" $psfile  
+echo "  "
+echo "Hardcopy   postript file  :  lpr -s "$psfile  
+
+/bin/rm tmp* *.tmp
+
+exit
+

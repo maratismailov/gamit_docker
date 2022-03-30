@@ -1,0 +1,18 @@
+COSI: VLBI simulation program
+  
+COSI: Copies a KalObs file to a file which can be used by the 
+      simulation programs.
+  
+RUNSTRING:
+  
+CI> COSI [Input KalObs file] [Output Simulation file] 
+  
+where:
+[Input KalObs file] is the name of a KalObs file.  This file is 
+      not chnaged.
+[Output Simulation Fil] is the output KalObs file which can be used 
+      by the simulation programs.  This file must be a new file.
+  
+Both file names must be given in the runstring. 
+  
+ 

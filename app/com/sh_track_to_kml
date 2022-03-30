@@ -1,0 +1,88 @@
+#!/bin/csh -f
+# Script to convert a track GEOD output file to kml format for display in Google Earth.
+#
+#
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "====================================================================================="
+  echo "sh_track_to_kml Usage:" 
+  echo "sh_track_to_kml -f <track GEOD file> -k <kml file> -offset <dlat> <dlng> <dhgt> -name <Path name>"
+  echo " "
+  echo "====================================================================================="
+  exit
+endif
+
+##################### DECIPHER COMMAND LINE #######################   
+set if = NONE
+set dlat = 0.0
+set dlng = 0.0
+set dhgt = 0.0
+
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+  case -f:
+# Input GEOD file (default kml name to root of this file)
+     set if =   $input[2]
+     set kml = $if:r
+     set ofile = ${kml}.kml  
+     set name = "Track Path"  
+     breaksw
+  case -k*:
+# Outout kml file
+     set ofile =   $input[2]
+     breaksw
+  case -of*:
+# Offset in lat, long and height to be applied
+     set dlat = $input[2]
+     set dlng = $input[3]
+     set dhgt = $input[4]
+     breaksw
+  case -n:
+#    Set name of path
+     set name = $input[2]
+ endsw
+  if ( $#argv > 0 ) shift argv
+end
+if( $if == NONE ) then
+  echo "sh_track_to_kml: -f input file required"
+  exit
+endif
+
+
+echo '<?xml version="1.0" encoding="UTF-8"?>' >! ${ofile}
+echo '<kml xmlns="http://www.opengis.net/kml/2.2">' >> ${ofile}
+echo "  <Document> " >> ${ofile}
+echo "    <name>$name</name>" >> ${ofile}
+echo "    <description>GPS Path</description>" >> ${ofile}
+echo '    <Style id="yellowLineGreenPoly">' >> ${ofile}
+echo "      <LineStyle>" >> ${ofile}
+echo "        <color>7fffffff</color>" >> ${ofile}
+echo "        <width>2</width>" >> ${ofile}
+echo "      </LineStyle>" >> ${ofile}
+echo "      <PolyStyle>" >> ${ofile}
+echo "        <color>7f00ff00</color>" >> ${ofile}
+echo "      </PolyStyle>" >> ${ofile}
+echo "    </Style>" >> ${ofile}
+echo "    <Placemark>" >> ${ofile}
+echo "      <name>Absolute</name>" >> ${ofile}
+echo "      <description>Transparent green wall with yellow outlines</description>" >> ${ofile}
+echo "      <styleUrl>#yellowLineGreenPoly</styleUrl>" >> ${ofile}
+echo "      <LineString>" >> ${ofile}
+echo "        <extrude>0</extrude>" >> ${ofile}
+echo "        <tessellate>0</tessellate>" >> ${ofile}
+echo "        <altitudeMode>absolute</altitudeMode>" >> ${ofile}
+echo "        <coordinates> " >> ${ofile}
+grep '^ '  $if | awk -v dlat=$dlat -v dlng=dlng -v dhgt=$dhgt '{if( NR-int(NR/1)*1 == 0 ) {printf("       %.8f,%.8f,%.3f \n",$5-360+dlng,$4+dlat,$6+dhgt)}}' >>  ${ofile}
+echo "        </coordinates>" >> ${ofile}
+echo "      </LineString>" >> ${ofile}
+echo "    </Placemark>" >> ${ofile}
+
+
+
+echo "  </Document>" >> ${ofile}
+echo "</kml>" >> ${ofile}
+
+echo Created ${ofile} from $if
+echo Offsets applied dLat $dlat '(deg);' dLng $dlng '(deg);' dH $dhgt '(m)'

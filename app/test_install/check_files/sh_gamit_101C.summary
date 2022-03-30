@@ -1,0 +1,32 @@
+ 
+Input options -expt eura -gnss C -s 2016 101 102 -pres ELEV -orbit codm -copt k p -dopts c ao
+ 
+Processing 2016 101 GPS week 1892 0 Using node: prey Started at: 18_06_03_07:58:58
+ 
+Processing directory: /net/chandler/data30/rwk/stdrel/test_install/2016/101C
+Disk Usage:  253909  Free  213245 Mbyte. Used 55%
+  
+Number of stations used 6 Total xfiles 10
+X-files below minxf (300KB) threshold:  bor1  djig  lamp  nico 
+Sites excluded by xsite command 
+  
+Postfit RMS rms, total and by satellite
+RMS  IT Site   All   06   07   08   09   10   11   12   14
+RMS  20 ALL    5.1   64   44   48   55   47   56   51   43
+Best and Worst two sites:
+RMS  20 MAS1   3.4    0    0    0    0    0    4    3    3
+RMS  20 KOUR   3.5    0    0    0    0    0    3    4    3
+RMS  20 VILL   5.6    0    0    5    6    5    6    6    5
+RMS  20 MAL2   6.5    9    5    0    8    5    8    6    4
+ 
+Double difference statistics
+ Prefit nrms:  0.24052E+01    Postfit nrms: 0.32097E+00
+ Prefit nrms:  0.24013E+01    Postfit nrms: 0.32180E+00
+ Prefit nrms:  0.24052E+01    Postfit nrms: 0.31758E+00
+ Prefit nrms:  0.24013E+01    Postfit nrms: 0.31953E+00
+ Number of double differences:   1668
+ 
+ Phase ambiguities (Total  WL-fixed   NL-fixed): 22 19 5  AUTCLN (Total Expected)  22 22
+ Phase ambiguities WL fixed  86.4% NL fixed  22.7% 
+ 
+Processing 2016 101 GPS week 1892 0 Using node: prey Finished at: 18_06_03_08:00:31

@@ -1,0 +1,63 @@
+#!/bin/csh -e 
+#
+#doc Converts fiducial tracking data from NGS ARGO (CIGNET) format to FICA format
+#doc
+
+if ($#argv != 2) then
+   echo ' '                                       
+   echo ' Run ARGO2FIC to convert fiducial tracking data '
+   echo '     from NGS ARGO (CIGNET) format to FICA format'
+   echo ' '
+   echo ' Enter as arguments input file prefix and CORE version number'
+   echo ' '
+   echo ' examples'                               
+   echo ' '                                       
+   echo '   sh_argo2fic moja404 4.1'
+   echo '   sh_argo2fic moja404 4.7'
+   echo '   sh_argo2fic moja404 4.8'
+   echo '   sh_argo2fic mojm404 1.49'
+   echo '   sh_argo2fic mojm525 1.61'
+   echo ' '                                       
+else 
+
+# delete the files leftover from last time.
+if (-e $1.inf) then 
+   echo '$1.inf exists, deleting it.' 
+   /bin/rm $1.inf
+endif
+
+set code4 = `echo $1 | cut -c1-4 `
+
+if (! -e $1.orb) then
+   echo 'Could not find $1.orb'
+   exit
+endif
+
+if (! -e $1.dat) then
+   echo   'Could not find $1.dat'                  
+   exit
+endif
+
+#~/gs/utils/argo2fic <<!
+argo2fic <<!
+$1.orb
+$1.dat
+$2
+!
+
+set files = $code4????.[0-9][0-9][0-9]
+
+while ($#files > 0)
+   set file = $files[1]
+   shift files
+   set year1 = `echo $file | cut -c8-  | cut -c1 `
+   set week  = `echo $file | cut -c5-  | cut -c1-3 `
+   set day   = `echo $file | cut -c10- | cut -c1-3 `
+   /bin/mv $code4$week$year1.$day $code4$year1.$day.fic
+end # while
+
+ls -l $code4*.fic
+
+endif
+
+

@@ -1,0 +1,186 @@
+#!/bin/csh -f
+#
+#doc Make a histogram of cumulative residuals from single-column file
+#doc
+#    
+if ( $#argv == 0  ) then
+echo "  "
+echo " Script to create a histogram of velocity residuals using a GLOBK prt file as input."  
+echo " " 
+echo "   The default is to plot the cumulative histogram of residuals and together "
+echo "   with the theoretical chi curve of probabilities for either the 1-d (E,N,H) "
+echo "   or 2-d (horizontal velocity magnitude) chi-square distribution "
+echo " "
+echo "    sh_velhist -f <file> -ps <psfile> -c <comp> -sig <minsig> <maxsig> -rat <maxrat> -vel <maxvel> "
+echo " " 
+echo "               -noabs -nocum -v <valtype> -noerase -box <lon1 lat1 lon2 lat2> "   
+echo " "
+echo "      file   : Input GLOBK prt, org or vel" 
+echo " "
+echo "      psfile : Name for output postscript file "
+echo " " 
+echo "      comp   : Component to extract < E N H or U > where H (default) is the horizontal magnitude "
+echo "  "                                                           
+echo "      minsig : Minimum sigma of the selected component to include (default 0)"
+echo "      maxsig : Maximum sigma of the selected component to include (default 10 mm/yr)"
+echo "  "
+echo "      maxrat : Maximum ratio (value/sigma) to include (default 3)" 
+echo "  "
+echo "      maxvel : Maximum absolute value of the residual velocity to include (default 10 mm/yr)" 
+echo "  "
+echo "      -noabs : Don't take the absolute value (E, N, U); default is absolute value "
+echo " "
+echo "      -nocum : Plot the actual (not cumulative) distribution (vertical axis is number, not percent"
+echo " "     
+echo "      valtype : Values to plot <value ratio or sigma> (default ratio)"   
+echo " "
+echo "      lon1 lat1 lon2 lat2 : coordinates of box within which sites are to be selected (default all sites) "  
+echo " "  
+echo "      -noerase: Do not remove the outhist, tmp.chivals, and vel2hist.rms files "  
+echo " "
+echo "      -scalesig: Scale the uncertainties by this factor (default 1.0)"
+echo " "  
+echo "  Requirements:  GMT and the gamit/utils programs vel2hist and chicurve"
+echo " "   
+exit
+endif
+ 
+## Set the defaults
+
+gmt gmtset GMT_COMPATIBILITY 5
+gmt gmtset PROJ_LENGTH_UNIT i
+
+set pshist = ""
+set cum = "yes"
+set absv = "absv"
+set valtype = "ratio"   
+set comp = "H"  
+set pshistfile = "velhist.ps"
+set minsig = 0
+set maxsig = 10  
+set maxrat = 3
+set maxvel = 10   
+set erase = "yes" 
+set scalesig = 1.
+set lon1 = 0
+set lat1 = -90
+set lon2 = 360
+set lat2 = 90
+
+echo 
+      
+## Decode the command line
+
+while ($#argv > 0 ) 
+set input = ( $argv ) 
+switch($input[1])
+	case -f:
+		set file  =  $input[2]
+		breaksw    
+	case -ps:
+		set pshistfile  =  $input[2].ps
+		breaksw
+	case -c:
+		set comp =  $input[2]
+		breaksw 
+   case -sig:
+       set minsig = $input[2]
+       set maxsig = $input[3]
+       breaksw      
+   case -v:
+       set valtype = $input[2]
+       breaksw   
+   case -vel:
+       set maxvel = $input[2]
+       breaksw    
+   case -rat:
+       set maxrat = $input[2]
+       breaksw
+   case -noabs:
+       set absv = "sign" 
+       breaksw
+   case -nocum:
+       set cum = "no" 
+       breaksw
+   case -noerase:
+       set erase = "no"  
+       breaksw   
+   case -scalesig:
+       set scalesig = $input[2]
+       breaksw               
+   case -box:
+       set lon1 = $input[2]
+       set lat1 = $input[3]
+       set lon2 = $input[4]
+       set lat2 = $input[5]
+endsw 
+shift argv 
+end
+     
+# Get single-column of values for pshistogram by extracting the right quantity from the vel file
+     
+echo file comp valtype $comp $valtype
+vel2hist $file outhist $comp $maxsig $maxvel $maxrat $absv $valtype $scalesig $minsig $lon1 $lat1 $lon2 $lat2 
+       
+if( $cum == "no" ) then
+                 
+  gmt pshistogram outhist -L -P -F -W0.2 -Jx1.i/.1i -P -K >! $pshistfile
+#         NOTE: for the non-cumulative case, we may need to add logic to chose the W and J values
+  
+
+else
+
+  gmt pshistogram outhist -Q -Z1 -L -F -W0.1 -Jx1.i/.05i -Bxf0.5 -Bya20f5 -P -R0/$maxrat/0/100 -K >! $pshistfile 
+#  add the theoretical chi curve
+  set numpts = 100
+  if( $comp == "H" ) then
+     set ndf = 2
+  else
+     set ndf = 1
+  endif          
+  chicurve $ndf $numpts >! tmp.chivals
+  gmt psxy tmp.chivals -R0/$maxrat/0/100 -Jx1.i/.05i -Bxf0.5 -Bya20f5 -V -O -P -K >>  $pshistfile    
+
+endif                                                                   
+
+# Add labels
+gmt pstext << ENDD -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -V -O -P -K >> $pshistfile
+4 5  Solution $file   
+ENDD
+gmt pstext << ENDD -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -V -O -P -K >> $pshistfile
+4 4.7  Value type:  $valtype  Component $comp  
+ENDD
+gmt pstext << ENDD -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -V -O -P -K >> $pshistfile
+4 4.4  Box  $lon1 $lat1 $lon2 $lat2  
+ENDD
+if ( -e vel2hist.wrms ) then  
+  cat vel2hist.wrms 
+  set text1 = ( `cat vel2hist.wrms` )  
+  gmt pstext << ENDD -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -V -O -P -K >> $pshistfile
+4 4.1  $text1
+ENDD
+endif   
+if ( -e vel2hist.nrms ) then  
+  cat vel2hist.nrms   
+  set text2 = ( `cat vel2hist.nrms` )  
+  gmt pstext << ENDD -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -V -O -P >> $pshistfile
+4 3.8  $text2
+ENDD
+endif
+
+
+# Erase the temporary files
+if( $erase == "yes" ) then
+ \rm outhist   
+if( -e tmp.chivals ) then
+  \rm tmp.chivals   
+endif
+ \rm vel2hist.wrms
+ \rm vel2hist.nrms
+endif
+
+echo " "
+echo " Created postscript file : " $pshistfile      
+echo " " 
+
+exit

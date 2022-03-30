@@ -1,0 +1,24 @@
+GETREL: Extracts velocities relative to specified site
+
+
+GETREL:  Program to extract site specific relative velocites
+ 
+This program will get the relative velocities of a group of sites
+and print the results in a format comparable to the standard NE
+velocity output from GLOBK.
+
+BRAT and VSUM options must specified in the output options.
+
+Runstring is:
+% getrel <site> <input file> <max_sigma>
+
+where <site>       is the name of the site the velocities are
+                   to be given relative to.
+      <input file> in the name of the file output from GLOUT or
+                   GLORG.  Output options with bits 2 and 4 on
+                   should be set (i.e., 20 + origin options).  
+                   With vers 4.0, brat and vsum can be used for
+                   print options (ie. prt_opt  brat vsum, see
+                   glorg and globk help).
+      <max_sigma>  is the size of the maximum sigma to be output.
+                   (mm/yr) (Default is to output all)

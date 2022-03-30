@@ -1,0 +1,274 @@
+#!/bin/csh -f
+#
+# ---------------------------------------------------------
+# Compute approximate a priori coordinates using the pseudoranges from a single or
+# pair of RINEX files.  Start with header values or zero, iterate three times with
+# svpos, and the optionally run svdiff.  Assembled by R. King and S. McClusky from 
+# scripts sh_svdiff (S. McClusky) and sh_svpos (Xu Yongjiang), with algorithm input
+# from Dang Yamin.  31 May 2000    
+#
+# Modified 13 October 2005 by M. Murray to allow extract RINEX header coordinates
+# instead of running svpos/svdiff if the nav file is omitted from the runstream.
+#
+# MOD TAH 200518: Forced RNX header coordinate extraction if RINEX 3 files which
+# svpos and svidff can't read.  Cleaned up indentation.  Remove spherical l-file output.
+# MOD MAF 20201105: Added back ability to output .apr-file directly from coordinates
+#   in RINEX header when no broadcast navigation file is given with the "-nav" option.
+# MOD TAH 20201211: Added source when From RX_Header output.
+# ---------------------------------------------------------------------------------
+#
+if ( $#argv == 0 ) then
+  echo "==================================================================================="
+  echo "Compute approx coordinates for a station from using RINEX pseudoranges"  
+  echo " " 
+  echo "   --uses svpos (single station) and optionally svdiff (two stations)"
+  echo " " 
+  echo "USAGE:  sh_rx2apr -site <site>  -nav <nav> -ref <ref> -apr <apr> -chi <val>"
+  echo "  "
+  echo "      Required: "
+  echo " " 
+  echo "        <site> full RINEX file name of unknown site (eg wuhn1510.99o)"
+  echo "  "
+  echo "      Optional:"
+  echo " "
+  echo "        <nav> full RINEX file name of navigation file (eg brdc1500.99n)"  
+  echo "  "
+  echo "        <ref> full RINEX file name of reference site (eg ../tracking/shao1500.99o)"
+  echo " "
+  echo "        <apr> globk .apr file containing  ref site coords (eg ../tables/itrf00.apr)"
+  echo "  "
+  echo "        <val> is the maximum chi^2 acceptable for good svpos solution. [DEFAULT 3] "
+  echo "  "
+  echo "EXAMPLES:  sh_rx2apr -site wuhn1510.99o (output rinex header coordinates)"
+  echo " " 
+  echo "           sh_rx2apr -site wuhn1510.99o -nav brdc1500.99n  (single site, svpos only)"
+  echo " " 
+  echo "           sh_rx2apr -site wuhn1510.99o -nav brdc1500.99n -ref shao1500.99o -apr ../tables/itrf00.apr "
+  echo "  "
+  echo "OUTPUT: GAMIT spherical L-file ( lfile.<site> ) and GLOBK .apr file ( <site>.apr )"
+  echo " "
+  echo "NOTE:  The <site> file must be in or linked within the current directory (no pathname allowed)"
+  echo "==============================================================================================="
+  exit
+endif 
+
+# Remove old files
+\rm  SVPOS.fatal SVDIFF.fatal >& /dev/null  
+      
+# Set defaults
+set ref  = ""
+set apr  = ""
+set nav  = ""
+set site = ""
+set ref_crd = ""
+set ref_vel = ""
+set ref_date = ""
+# iterations of svpos
+set pos_iter = 9
+# process noise for svpos (m**2 per epoch)
+set pos_pnoise = 0.0 
+# clock noise for svpos (m**2 per epoch)
+set pos_cnoise = 1.e6  
+# data noise for svpos (m)
+set pos_dnoise = 100.  
+set pos_outint = 9000
+# chi2 limit for svpos
+set pos_chimax = 3 
+# process noise for svdiff (m**2 per epoch)
+set diff_pnoise = 0.0    
+# clock noise for svpos (m**2 per epoch)
+set diff_cnoise = 1.e6  
+# data noise for svpos (m)
+set diff_dnoise = 10.0
+set diff_outint = 9000
+
+# Translate command line
+
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])    
+       case -site:
+          set site      =   $input[2]  
+          breaksw                             
+       case -nav:
+          set nav      =   $input[2]  
+          breaksw
+       case -ref:
+           set ref      =   $input[2]  
+           breaksw                             
+       case -apr:
+           set apr      =   $input[2]  
+          breaksw
+       case -chi:
+           set pos_chimax   =   $input[2]  
+          breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+
+
+# Initialize the variables
+# MOD TAH 200518: Use :t of file name in case directory is included/
+set sn = `echo $site:t | cut -c1-4`   
+# MOD MAF 20201105: Removed initial "head -n 30 $site" command and use grep with "-m 1" option instead
+set x = `grep -m 1 'APPROX POSITION XYZ' $site | awk '{printf"%.4f\n",$1}'`
+set y = `grep -m 1 'APPROX POSITION XYZ' $site | awk '{printf"%.4f\n",$2}'`
+set z = `grep -m 1 'APPROX POSITION XYZ' $site | awk '{printf"%.4f\n",$3}'` 
+set yr = `echo $site:t |cut -c10-11`
+set doy = `echo $site:t |cut -c5-7`
+set date = `doy $yr $doy |tail -n -1 | awk '{printf "%8.2f\n",$3}'`
+
+# MOD TAH 200929:Added time-tag for parallel runs.
+set ts = "`hostname`:${sn}.${doy}:`date +"%H%M%S"`"
+
+# MOD TAH 200518: Check the rinex version.
+set rxv = `head -1 $site | awk '{printf("%d",$1*100)}'`
+# MOD TAH 200929: Also check version of BRDC file
+if ( "$nav" != '' ) then  # MOD MAF 20201105: Only execute this block if there a nav-file is provided
+  set brv = `head -1 $nav | awk '{printf("%d",$1*100)}'`
+  if( $rxv >= 300 || $brv >= 300 ) then
+     if( $rxv >= 300 ) echo "Data file $site is rinex version 3.  Using header cooordinates"
+     if( $brv >= 300 ) echo "Navigation file $nav is rinex version 3.  Using header cooordinates"
+     set SN = `echo $sn | tr  'a-z' 'A-Z'`     
+     grep 'APPROX POSITION XYZ' ${site} | awk '{print SN "_GPS  ",$1,$2,$3,"   0.000 0.000 0.000 ",dy," ! From RX_Header rx2apr"}' dy=$date SN=$SN > ${sn}.apr
+     set nav = ""  
+  endif
+endif
+# Also check the reference site if it is being used.
+if( $ref != "" && $rxv < 300 ) then
+   set rxv = `head -1 $ref | awk '{printf("%d",$1*100)}'`
+   if( $rxv >= 300 ) then
+      echo "Reference file $ref is rinex version 3.  Using svpos coordinates"
+      set ref = ""  
+   endif 
+endif
+    
+if ( $nav != "" ) then
+   # Run svpos until chi2 is below the tolerance or the iteration limit is reached
+   set iter = 0
+   set chi = 10000
+   while  ( $chi > $pos_chimax )
+      if ( $iter > $pos_iter ) break
+      @ iter ++
+      echo -n " Running iteration $iter of svpos..."
+# MOD TAH 200929: Added >! to creat new
+      svpos $nav $site $pos_pnoise $pos_cnoise $pos_dnoise $x $y $z $pos_outint >! tmp.output.$ts
+      if ( -e 'SVPOS.fatal' ) then
+          echo "Failure in svpos:"
+          cat SVPOS.fatal
+          exit
+      endif
+      set x = `tail -n -2 tmp.output.$ts | head -n 1 |awk '{print $7}'`
+      set y = `tail -n -2 tmp.output.$ts | head -n 1 |awk '{print $11}'`
+      set z = `tail -n -2 tmp.output.$ts | head -n 1 |awk '{print $15}'`
+      set chif = `tail -n -1 tmp.output.$ts | awk '{printf"%8.1f\n",$4}'`
+      set chi  = `tail -n -1 tmp.output.$ts | awk '{printf"%d\n",$4}'`
+      echo "  >> Chisqr : $chif"
+   end 
+
+#  Output final svpos solution with errors.           
+   echo " "
+   echo -n "SVPOS ${site}: "
+   tail -n -2 tmp.output.$ts 
+endif
+
+# Run svdiff if requested
+# MOD TAH 200929: If the nav file name is blank, don't try svdiff (RX 3 file).
+if ( $ref != "" && $nav != "" ) then
+
+#   Extract reference site name from command line argument.  
+   set ref_site = `echo $ref | awk  -F/ '{print substr($NF,1,4)}'`
+   set new_site = `echo $site | awk  -F/ '{print substr($NF,1,4)}'`
+   echo " "
+   echo -n " Reference site : " $ref_site
+ 
+#  Extract reference site coordinate from .apr file.
+   if( $apr != "" ) then
+      set tmp_crd = `grep -i "^ *$ref_site" $apr | awk ' substr($0,1,1) == " " {print $2,$3,$4}'`
+      set ref_crd = `echo $tmp_crd | awk '{print $(NF-2), $(NF-1), $NF}'`  
+
+      set tmp_vel = `grep -i "^ *$ref_site" $apr | awk ' substr($0,1,1) == " " {print $5,$6,$7}'`
+      set ref_vel = `echo $tmp_vel | awk '{print $(NF-2), $(NF-1) ,$NF}'`
+
+      set tmp_date = `grep -i "^ *$ref_site" $apr | awk ' substr($0,1,1) == " " {print $8}'`
+      set ref_date = `echo $tmp_date | awk '{print $NF}'`
+   else
+      echo "No apr-file given for reference site coordinates"
+      set ref_crd = `echo ""`
+   endif 
+
+   if ( $#ref_crd == 0 ) then
+      echo " No reference coordinate for site $ref_site found in: $apr"
+      echo " Skip svdiff "
+      goto output
+   endif 
+
+#  Display reference site coordinates
+   echo "  $ref_crd "
+   echo " "
+   
+#  Extract date of observations.
+   set site_y = `echo $site |  awk  -F/ '{print substr($NF,10,2)}'`
+   set site_d = `echo $site |  awk  -F/ '{print substr($NF,5,3)}'`
+   set site_yr   = `doy $site_y $site_d | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+   set site_doy  = `doy $site_y $site_d | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'` 
+   set site_dyr = `doy $site_y $site_d | tail -n -1 | awk '{printf" %10.5f \n",$3}'`
+   echo -n " Year: " $site_yr
+   echo -n " DOY: " $site_doy
+   echo " Decimal year: " $site_dyr 
+   echo " "
+
+#   Run svdiff to compute coordinates relative to reference site.
+   echo " svdiff $nav $site $ref $diff_pnoise $diff_cnoise $diff_dnoise $ref_crd $diff_outint '' $x $y $z"
+   echo " "
+   echo " Running svdiff..."
+   svdiff $nav $site $ref $diff_pnoise $diff_cnoise $diff_dnoise $ref_crd $diff_outint '' $x $y $z >! tmp.output.$ts   
+   if ( -e 'SVPOS.fatal' ) then
+      echo "Failure in svdiff:"
+      cat SVDIFF.fatal
+      exit
+   endif
+   set x = `tail -n -2 tmp.output.$ts | head -n 1 |awk '{print $7}'`
+   set y = `tail -n -2 tmp.output.$ts | head -n 1 |awk '{print $11}'`
+   set z = `tail -n -2 tmp.output.$ts | head -n 1 |awk '{print $15}'`
+
+   echo " "
+   echo -n "SVDIFF ${site}: "
+   tail -n -2 tmp.output.$ts 
+
+endif 
+
+#  Output the coordinates
+output:
+   
+# Replace the following to avoid printf bug with Mandrake Linux and bash shell in Linux SuSE 6.3  
+# printf "%4s_GPS %15.4f%15.4f%15.4f%8.4f%8.4f%8.4f%8.2f \n" $sn $x $y $z "0.0000" "0.0000" "0.0000" $date > $sn.apr
+# tail -n -1 tmp.output >! tmp.lfile.xyz
+# echo "(a5,3f15.4)" >> tmp.lfile.xyz
+# printf "%4s %15.4f%15.4f%15.4f \n" $sn $x $y $z >> tmp.lfile.xyz
+# printf "%4s %15.4f%15.4f%15.4f \n" $sn $x $y $z >> tmp.lfile.xyz 
+
+# MOD TAH 200929: Only output if tmp.output.$ts 
+# MOD MAF 20201105: Or if no broadcast navigation file given
+if( -e tmp.output.$ts || "$nav" == '' ) then               
+   set SN = `echo $sn | tr  'a-z' 'A-Z'`     
+   echo "" $SN"_GPS" "  "$x"  " "  "$y"  " "  "$z"  " "0.0000" "0.0000" "0.0000" $date " ! From sh_rx2apr" > $sn.apr
+
+# MOD TAH 200518: Removed spherical l-file code because no longer needed.
+### Run tform to convert from cartesian to spherical coordinates (GAMIT lfile. format).
+##set outfile = "lfile."$sn       
+##tform <<ENDD  >! tmp.tformout
+##1
+##$sn.apr
+##4
+##2
+##2
+##$outfile
+##3
+##ENDD
+
+   echo " Output file: "  $sn.apr
+   echo ""
+   \rm tmp.output.$ts
+endif 
+

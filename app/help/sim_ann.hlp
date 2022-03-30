@@ -1,0 +1,22 @@
+
+SIM_ANN:  Makes list of distributed global sites using simulated annealing to select the sites
+          
+
+Runstring:
+sim_ann  <ref sites> <num sites> <max_iter> <apr_file> [avail list]
+
+where <ref sites> are a list of  names of reference sites to be included.
+                  These names are separated by :s e.g., algo_gps:sele_gps:jplm_gps
+      <num sites> number of sites to be selected 
+      <max_iter>  maximum number of iterations before stopping
+      <apr_file> is name of a globk apr file for site positions
+      [avail list] is a file containing names of available sites (usually
+                  generated from an ls of an archive data directory.)  Optional
+                  all sites in <apr_file> are considered if list not passed. 
+                  List is one name per line with at least one blank at the beginning
+                  of the lines.
+
+
+
+
+

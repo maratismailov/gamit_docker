@@ -1,0 +1,153 @@
+#!/bin/csh -f
+if ($#argv == 0) then
+   echo ' '
+   echo ' Create links in the gamit/bin directory for executables '
+   echo ' '
+   echo ' Useage:'
+   echo ' '
+   echo '   link_gamit_bin target_dir  '
+   echo ' '
+   echo '      where [target_dir] is the absolute path to the directory above /gamit'
+   echo ' '
+   echo ' Example:'
+   echo ' '
+   echo '   link_gamit_bin  ~/stdrel '
+   echo ' '
+   exit
+else
+
+#
+# Last modified by M. Floyd 200225 
+     
+# set the target working directory  
+set TARGETDIR = $1/gamit    
+   
+echo " "
+echo Remaking the links from ../bin to the executables
+echo " "
+
+cd $TARGETDIR/bin
+
+
+
+\rm -f  addvec        ; ln -s  ../utils/addvec .
+\rm -f  arc           ; ln -s  ../arc/arc .
+\rm -f  argo2rx       ; ln -s  ../utils/argo2rx .
+\rm -f  argo2fic      ; ln -s  ../utils/argo2fic .   
+\rm -f  argo2nav      ; ln -s  ../utils/argo2nav .  
+\rm -f  atmtide       ; ln -s  ../grdtab/atmtide .   
+\rm -f  atmtoasc      ; ln -s  ../grdtab/atmtoasc .
+\rm -f  atmfilt       ; ln -s  ../grdtab/atmfilt .
+\rm -f  atx2svnav     ; ln -s  ../utils/atx2svnav .
+\rm -f  autecl        ; ln -s  ../utils/autecl .
+\rm -f  bccheck       ; ln -s  ../orbits/bccheck .
+\rm -f  bctot         ; ln -s  ../orbits/bctot .
+\rm -f  bsx2dcbtab    ; ln -s  ../utils/bsx2dcbtab .  
+\rm -f  cfmrg         ; ln -s  ../cfmrg/cfmrg .
+\rm -f  cml           ; ln -s  ../utils/cml .     
+\rm -f  check_lfile   ; ln -s  ../utils/check_lfile .   
+\rm -f  check_siteid  ; ln -s  ../utils/check_siteid .   
+\rm -f  chicurve      ; ln -s  ../utils/chicurve .   
+\rm -f  confpol       ; ln -s  ../utils/confpol .   
+\rm -f  conveuler     ; ln -s  ../utils/conveuler .   
+\rm -f  conv_stnfo    ; ln -s  ../hi/conv_stnfo .
+\rm -f  convert_antpcv ; ln -s ../utils/convert_antpcv .
+\rm -f  convertc      ; ln -s  ../tform/convertc .
+\rm -f  countx        ; ln -s  ../utils/countx .
+\rm -f  crx2rnx       ; ln -s  ../utils/crx2rnx .
+\rm -f  ctox          ; ln -s  ../ctox/ctox .  
+\rm -f  cvedt         ; ln -s  ../utils/cvedt .
+\rm -f  cview         ; ln -s  ../clean/cview .     
+\rm -f  dafexpand     ; ln -s  ../grdtab/dafexpand . 
+\rm -f  daf2da        ; ln -s  ../grdtab/daf2da . 
+\rm -f  dafexpand     ; ln -s  ../grdtab/dafexpand . 
+#\rm -f  dblcln        ; ln -s  ../clean/dblcln . 
+\rm -f  dcbtab        ; ln -s  ../utils/dcbtab .
+\rm -f  dcbtab2       ; ln -s  ../utils/dcbtab2 .
+\rm -f  decyr_atm     ; ln -s  ../utils/decyr_atm .    
+\rm -f  emerge        ; ln -s  ../utils/emerge .  
+\rm -f  emntab        ; ln -s  ../utils/emntab .  
+\rm -f  erptab        ; ln -s  ../utils/erptab .              
+\rm -f  eulervel      ; ln -s  ../utils/eulervel .
+\rm -f  ficachop      ; ln -s  ../fica/ficachop .
+\rm -f  ficacomp      ; ln -s  ../fica/ficacomp .
+\rm -f  ficalabl      ; ln -s  ../fica/ficalabl .
+\rm -f  ficamerg      ; ln -s  ../fica/ficamerg .
+\rm -f  ficamove      ; ln -s  ../fica/ficamove .
+\rm -f  ficapull      ; ln -s  ../fica/ficapull .
+\rm -f  ficascan      ; ln -s  ../fica/ficascan .
+\rm -f  ficaslim      ; ln -s  ../fica/ficaslim .
+\rm -f  ficaspan      ; ln -s  ../fica/ficaspan .
+\rm -f  ficaweek      ; ln -s  ../fica/ficaweek . 
+\rm -f  fic2nav       ; ln -s  ../utils/fic2nav .
+#\rm -f  fic2rx        ; ln -s  ../makex/fic2rx .
+\rm -f  fic2rx        ; ln -s  ../fica/fic2rx .
+\rm -f  fixdrv        ; ln -s  ../fixdrv/fixdrv .
+\rm -f  read_sestbl   ; ln -s  ../fixdrv/read_sestbl .
+\rm -f  fixsst        ; ln -s  ../utils/fixsst .
+\rm -f  fixx          ; ln -s  ../utils/fixx .
+\rm -f  glbtol        ; ln -s  ../../kf/utils/gapr_to_l  glbtol
+\rm -f  gapr_to_l     ; ln -s  ../../kf/utils/gapr_to_l  . 
+\rm -f  gmt2vel       ; ln -s  ../utils/gmt2vel .   
+\rm -f  grdtab        ; ln -s  ../grdtab/grdtab .   
+\rm -f  interp_log_tab ; ln -s  ../utils/interp_log_tab .
+\rm -f  makej         ; ln -s  ../makex/makej .
+\rm -f  makek         ; ln -s  ../makex/makek .
+\rm -f  makex         ; ln -s  ../makex/makex .
+\rm -f  makexp        ; ln -s  ../makexp/makexp . 
+\rm -f  make_stnfo    ; ln -s  ../hi/make_stnfo .  
+\rm -f  make_stnfolist; ln -s  ../utils/make_stnfolist .  
+\rm -f  merge_rinex   ; ln -s  ../utils/merge_rinex .
+\rm -f  metutil       ; ln -s  ../utils/metutil . 
+\rm -f  nao2da        ; ln -s  ../grdtab/nao2da .  
+\rm -f  ne2azel       ; ln -s  ../utils/ne2azel .   
+#\rm -f  netsel        ; ln -s  ../utils/netsel .
+\rm -f  model         ; ln -s  ../model/model .
+\rm -f  ngstot        ; ln -s  ../orbits/ngstot . 
+\rm -f  orbdif        ; ln -s  ../orbits/orbdif .
+\rm -f  orbfit        ; ln -s  ../orbits/orbfit .
+\rm -f  plotk         ; ln -s  ../utils/plotk . 
+\rm -f  poly01        ; ln -s  ../utils/poly01 . 
+\rm -f  poly01r       ; ln -s  ../utils/poly01r .
+\rm -f  profile       ; ln -s  ../utils/profile .
+\rm -f  pull_bias     ; ln -s  ../utils/pull_bias .
+#\rm -f  rmbias        ; ln -s  ../clean/rmbias . 
+\rm -f  rnx2crx       ; ln -s  ../utils/rnx2crx .
+\rm -f  rxscan        ; ln -s  ../makex/rxscan . 
+\rm -f  rx2apr        ; ln -s  ../utils/rx2apr .
+\rm -f  scandd        ; ln -s  ../clean/scandd .
+\rm -f  showrms       ; ln -s  ../clean/showrms .
+#\rm -f  sincln        ; ln -s  ../clean/sincln .
+\rm -f  solve         ; ln -s  ../solve/solve .    
+\rm -f  stnfo_cont    ; ln -s  ../utils/stnfo_cont .
+\rm -f  svdlin        ; ln -s  ../utils/svdlin .
+\rm -f  svdsig        ; ln -s  ../utils/svdsig .
+\rm -f  toc2da        ; ln -s  ../grdtab/toc2da .
+\rm -f  tform         ; ln -s  ../tform/tform . 
+\rm -f  conv_xyz2geo  ; ln -s  ../tform/conv_xyz2geo .  
+\rm -f  tmerge        ; ln -s  ../orbits/tmerge .
+\rm -f  ttoasc        ; ln -s  ../orbits/ttoasc .
+\rm -f  ttog          ; ln -s  ../orbits/ttog .
+\rm -f  ttoics        ; ln -s  ../orbits/ttoics .
+\rm -f  ttongs        ; ln -s  ../orbits/ttongs . 
+\rm -f  ttot          ; ln -s  ../orbits/ttot .
+\rm -f  update_atmlg  ; ln -s  ../grdtab/update_atmlg .  
+\rm -f  update_vmfg   ; ln -s  ../grdtab/update_vmfg .  
+\rm -f  vexclude      ; ln -s  ../utils/vexclude .
+\rm -f  vector_stat   ; ln -s  ../utils/vector_stat .  
+\rm -f  vel2hist      ; ln -s  ../utils/vel2hist . 
+                        ln -sf ../utils/scan_rinex .
+\rm -f  vmfasc2bin    ; ln -s  ../grdtab/vmfasc2bin .
+\rm -f  vmftoasc      ; ln -s  ../grdtab/vmftoasc . 
+\rm -f  wbslfilt      ; ln -s  ../utils/wbslfilt .   
+\rm -f  xtorx         ; ln -s  ../makex/xtorx .  
+\rm -f  yawtab        ; ln -s  ../orbits/yawtab .
+\rm -f  ytoasc        ; ln -s  ../orbits/ytoasc .
+\rm -f  y2orbex       ; ln -s  ../orbits/y2orbex .
+
+echo Links made
+echo ' '
+
+endif
+
+

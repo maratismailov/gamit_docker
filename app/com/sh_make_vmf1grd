@@ -1,0 +1,149 @@
+#!/bin/csh -f
+
+# script to generate the VMF1 grid files from the data made available
+# by Johannes Boehm. I will use the same header-type layout as he
+# had for his VMF files.
+#
+# P. Tregoning
+# 10 October 2005
+                                                  
+if ( $#argv == 0 ) then
+  echo "Runstring: sh_make_vmf1grd -year YYYY [-download -update_crd_file]"
+  echo " "
+  echo "-year:  4-digit year for the file to be generated"
+  echo "-download: download vmf1 coefficient files up to the current day of year [default N]"
+  echo "-update_crd_file: get a new list of site coords for which vmf1 coefficients exist [default N]"
+  echo " "
+  echo "e.g. sh_make_vmf1grd -year 2006 -download -update_crd_file"
+  echo " "
+  echo "Output is written to file vmf1grd.YYYY  (and any existing file is overwritten)"
+  exit
+endif
+
+##################### SET UP DEFAULTS #############################   
+set year = `doy | tail -n -3 | head -n 1 | awk '{print substr($2,1,4)}'`
+set type = ""
+set upd_crd = "N"
+
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -y*: 
+      set year = $input[2]
+    breaksw
+    case -download:
+      set type = "U"      
+    breaksw
+    case -update_crd_file:
+      set upd_crd = "Y"
+    breaksw
+ endsw
+  if ( $#argv > 0 ) shift argv
+end
+
+set outfile = vmf1grd.$year
+
+if ($type == "U") then   
+
+# PT060224: loop through all days of year (up to the current doy if the
+#           requested year is the current year) and download using wget
+#           all the missing files
+  set current_year = `doy | tail -n -3 | head -n 1 | awk '{print substr($2,1,4)}'`
+  if ($current_year == $year) then
+    set maxday = `doy | tail -n -3 | head -n 1 | awk '{printf "%3.3d \n", $6 - 1 }'`
+  else
+    set maxday = 366
+  endif
+
+# now, loop through the days and get the missing files
+  set i = 001
+  while ($i <= $maxday ) 
+   if (! -e ${year}${i}.vmf1_g ) then
+     wget http://mars.hg.tuwien.ac.at/~ecmwf1/GPS/${year}/${year}${i}.vmf1_g 
+   else
+     echo File ${year}${i}.vmf1_g exists
+   endif
+   set i = `sh_increment $i`
+  end
+endif
+
+if ( $upd_crd == "Y") then
+# make sure the XYZ coordinate file is up to date with what is on the VMF1 website
+  \rm index.html ; wget http://mars.hg.tuwien.ac.at/~ecmwf1/
+  set nchar = `grep "GPS stations" index.html | awk '{print $3}' | wc -c | awk '{print $1 - 12}'`  
+  set file = `grep "GPS stations" index.html | awk '{print substr($3,7,'$nchar')}'`
+  echo $file
+  wget $file
+  set nchar = `echo $file | wc -c | awk '{print $1 - 39}'`
+  set file = `echo $file | awk '{print substr($0,40,'$nchar')}'`
+  echo $file
+  mv -f $file vmf1_gps.xyz
+endif
+
+set date = `date`
+set user = `whoami`
+echo "VMF1 Formatted for GAMIT. Version  1.0. Contactenated file generated " $date " by " $user >! $outfile
+echo "#"                                       >> $outfile
+echo "# IGS name      lat     lon   height"    >> $outfile
+echo "#"                                       >> $outfile
+
+# now, we need a full list of site coords. The format is:
+
+#
+# IGS name      lat     lon   height
+#
+# albh        48.39  236.51   32.00  
+# algo        45.96  281.93  202.00  
+
+# get the site list and coords from file vmf1_gps.inp
+set SITES = `cat vmf1_gps.xyz | grep -v "#" | grep -v "SITLIST" | awk '{print $1}'`
+
+# now, for each site, get the coords and write them to the output file 
+ln -s ~/gg/tables/gdetic.dat .
+
+foreach i ($SITES)
+  set site = `echo $i | tr {A-Z} {a-z}` 
+  set xyz = `grep $i vmf1_gps.xyz | awk '{print $2, $3, $4}'`
+tform << end_tform >! tform.out
+1
+
+$xyz
+4
+3
+1
+
+wgs84
+3
+end_tform
+
+  set coords = `tail -n -3 tform.out | head -n 1 | awk '{print $2, $1, $3}'`
+  echo $site $coords | awk '{printf "# %4s %12.2f %7.2f %7.2f \n", $1, $2, $3, $4}' 
+  echo $site $coords | awk '{printf "# %4s %12.2f %7.2f %7.2f \n", $1, $2, $3, $4}' >> $outfile
+end
+
+# now, end the header part
+echo "#                                               " >> $outfile
+echo "# Format:                                       " >> $outfile
+echo "# A4 5X F9.2 1X F11.8 1X F11.8 1X F7.4 1X F7.4 1X F6.1 1X F8.2 1X F8.2 1X F6.2 " >> $outfile
+echo "# IGS 4-letter name                             " >> $outfile
+echo "# mod. Julian date                              " >> $outfile
+echo "# hydr. coefficient ah                          " >> $outfile
+echo "# wet coefficient aw                            " >> $outfile
+echo "# hydrostatic zenith delay in m                 " >> $outfile
+echo "# wet zenith delay in m                         " >> $outfile
+echo "# Tmean (mean temp)                             " >> $outfile
+echo "# pressure (hPa)                                " >> $outfile
+echo "# temp (deg C)                                  " >> $outfile
+echo "# water vapour pressure (hPa)                   " >> $outfile
+echo "#                                               " >> $outfile
+
+
+# Finally, concatenate all the available files for this year into the output file
+foreach file (${year}???.vmf1_g )
+  echo $file
+  cat $file | tr {A-Z} {a-z} >> $outfile
+end
+
+

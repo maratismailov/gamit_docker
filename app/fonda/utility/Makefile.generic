@@ -1,0 +1,17 @@
+# Generic Makefile for SOLVEM
+# Created by M King 000328 from a makefile created
+# by D Dong; modified by R King and G Ferhat
+ 
+#LABELS: align_frame:align_frame:NONE:align_frame
+#LABELS: calc_bsl_azm:calc_bsl_azm:NONE:calc_bsl_azm
+#LABELS: compare_coor:compare_coor:NONE:compare_coor
+#LABELS: get_line:get_line:NONE:get_line
+#LABELS: get_scater:get_scater:NONE:get_scater
+#LABELS: get_v_rel:get_v_rel:NONE:get_v_rel
+#LABELS: net_update:net_update:NONE:net_update
+#LABELS: plot_line:plot_line:NONE:plot_line
+#LABELS: rem_model:rem_model:NONE:rem_model
+#LABELS: syn_bsl_rat:syn_bsl_rat:NONE:syn_bsl_rat
+
+#SHARELIB: ../com:foncom
+

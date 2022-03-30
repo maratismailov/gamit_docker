@@ -1,0 +1,26 @@
+=========================================================================
+*          << key word controlled driving file format >>                *
+* any non-blank character at first column means comment line            *
+* symbol ":" must exist in command lines as index pointor               *
+* symbol "*" represents default                                         *
+=========================================================================
+  task 1=simu,2=trans,3=extra,4=compre,5=merge:       translate 
+  network coordinate file(netfil):                    llamba.020  
+     network file format(netfmt):                     *
+     network file style(net_style):                   lfile
+  network file list(net_list):                        site_list
+  network coordinate system(comode):                  spher   
+* subnetwork option(net_opt):                          
+  output new network file(newnet):                    maked.coord
+  input data file list(in_list):                      sinex.list
+  site selection file(site_list):                     site_list  
+  input data format(infmt):                           *                       
+  input data file style(in_style):                    sinex
+  output data file(outfil):                           maked_sinex.obs
+  mapping file:                                       maked.map
+  reference frame:                                    WGS84
+  reference time and site number(rtime):              1991 1   500
+  dimension:                                          3
+  Velocity units: m/yr
+  end: 
+=========================================================================

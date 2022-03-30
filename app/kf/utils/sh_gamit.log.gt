@@ -1,0 +1,3 @@
+Sh_gamit Version 10.63 (2018/5/30)
+Input options -expt scal -d 2000 034 -netext f -orbit IGSF -copt   -dopt ao -noftp -remakex Y 
+No process.defaults file found at: /net/chandler/data30/rwk/active/kf/utils/tables/process.defaults --Stop

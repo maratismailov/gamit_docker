@@ -1,0 +1,11 @@
+#!/bin/csh -f
+
+# substitute of command 'colrm' on UCB unix system
+
+# by pfang@ucsd.edu june 95
+
+if ($#argv == 1) then
+	(echo $1; cat -) | awk 'NR == 1 {c1 = $1 - 1} NR > 1 {print substr($0,1,c1)}'
+else
+	(echo $1 $2; cat -) | awk 'NR == 1 {c1=$1-1;c2=$2} NR > 1 {print substr($0,1,c1) substr($0,c2,length($0)-c2+1)}'
+endif

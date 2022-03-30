@@ -1,0 +1,26 @@
+VEL2STAB: Extract stations from a GLOBK velocity and (optionally) position print file and form a
+          stab_site list for repeatabilities, and optionally an unweight list for hfupd
+     
+Usage:
+
+ vel2stab [file] [hvsig] [vvsig] [hpsig] [vpsig] -staball -uw -uwdup
+
+   Required:
+     file     Name of input GLOBK vel file from GLOBK (from sh_exglk or tsfit) 
+              Note: if positions also to be considered, append the position output of 
+              sh_exglk with its headers
+
+
+   Optional: 
+     hvsig        Max/min horizontal velocity sigma for stab/unweight (default 2 mm/yr)  
+     vvsig        Max/min vertical velocity sigma for stab/unweight (default 10 mm/yr)
+     hpsig        Max/min horizontal position sigma for stab/unweight (default 2 mm)
+     vpsig        Max/min vertical position sigma for stab/unweight   (default 10 mm)     
+     staball      Write @ with stab_site list (tsfit)
+     -uw          Create unweight commands for an hfupd edit file based on sigmas (default no)
+     -uwdup       Include in the unweight list any sites that duplicate a 4-character id (default no)  
+
+   Note: Use zero for hvsig and vvsig to skip velocities (position-only solution from glred/glorg)   
+         Use zero for hpsig and vpsig to skip position (velocity file from glorg or tsfit)
+
+      

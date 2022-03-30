@@ -1,0 +1,56 @@
+MTSINF: Merge new format station.info files
+
+MSTINF: Program to merge station.info files using a reference station.info
+        file and a list of other files to be merged, and/or to extract the header
+        information from a RINEX file.  Options exist (-u/-l) to limit the sites used 
+        from the reference station.info file.
+
+Runstring:
+% mstinf <options>
+
+where <options> are: 
+
+-f <file>  -- Reference station.info file with definitive information  
+
+-w <file>  -- Name of output merged station.info   
+
+(The above two options must be given.  If only these are given, then the output
+ station.info will be sorted by site names and date)
+
+-s <list of files> -- Names of station.info files to be merged with reference one    
+
+-r <file> -- Name of RINEX file whose header information is to be extracted
+
+-i <file> -- Name of IGS log file whose information is to be extracted 
+
+-c <file> -- Name of SINEX file whose information is to be extracted
+
+-o         -- if given will allow the file given with the -w option to overwrite an
+              existing file.  (Default is for the -w file to be a new file).  
+
+* Site Selection option: NOTE when the options below are used, all sites that
+* are needed and appear in the reference station.info must be included in the
+* lists.  If not, they will not appear in the merged station.info.  If neither
+* option is used, all sites will appear in merged station.info.    
+
+-u <list of names> -- Names of sites to be used from the reference station.info.
+              These sites will be ignored in the merged files if they are found
+              in the reference station.info
+-l < file>         -- File constaining the names of sites to be used (same as
+              -u option except input is in a file.  There is one name per line
+              in the file and comment lines have a non-blank character in the
+              first column   
+
+* Other options
+
+-c   Copy all comments from input station.info files
+
+-d   Replace finite-span entries with new values from RINEX if they are different
+
+-n   Replace open-ended entries with new values from RINEX if they are different 
+
+-t   Tolerance in seconds for deciding whether two start times are the same (default 120)
+
+-h   Height (m) above which RINEX values will be treated as slant heights
+
+ 

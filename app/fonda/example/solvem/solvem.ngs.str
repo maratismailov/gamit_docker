@@ -1,0 +1,8 @@
+ Strain rates estimated in whole network
+      LAT       LON      EPS1   EPS1SIG      EPS2   EPS2SIG   CW-SPIN   SPINSIG     THETA  THETASIG  TRIANGLE
+    (deg)     (deg)    (1/yr)    (1/yr)    (1/yr)    (1/yr)    (1/yr)    (1/yr)     (deg)     (deg)   corners
+   34.7223  239.6128  6.08E-08  5.72E-08 -1.81E-07  9.82E-08 -1.05E-07  7.06E-08   79.4271    9.1533 network
+                Eee (1/yr)     Ene (1/yr)     Enn (1/yr)
+     Value    -1.733346E-07  -4.370512E-08   5.265679E-08
+     gamma1 (1.d-6/yr) :  -2.259913E-01  +-   2.081134E-02
+     gamma2 (1.d-6/yr) :  -8.741023E-02  +-   5.066622E-03

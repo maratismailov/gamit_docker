@@ -1,0 +1,67 @@
+# Generic Makefile for kf/utils - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King  1 March 2013
+
+#SHARELIB: ../Khandlers:KalObs_hndl_lib  
+#SHARELIB: ../glinit:glinit_lib          
+#SHARELIB: ../globk:globk_lib 
+#SHARELIB: ../glfor:glfor_lib           
+#SHARELIB: ../gen_util:gen_util_lib
+#SHARELIB: ../../libraries/matrix:kinv_lib
+#SHARELIB: ../../gamit/lib:gamit_lib 
+#SHARELIB: ../../libraries/comlib:com_lib  
+
+#LABELS: apr_to_vel:apr_to_vel:NONE:apr_to_vel    
+#LABELS: block:block:NONE:block    
+#LABELS: corcom:corcom:NONE:corcom
+#LABELS: velrot:velrot:NONE:velrot
+#LABELS: merge_apr_vel:merge_apr_vel:NONE:merge_apr_vel
+#LABELS: merge_apr:merge_apr:NONE:merge_apr   
+#LABELS: disp2apr:disp2apr:NONE:disp2apr
+#LABELS: doy:doy:NONE:doy
+#LABELS: ndoy:ndoy:NONE:ndoy
+#LABELS: edit_ext:edit_ext:NONE:edit_ext  
+#LABELS: edit_apr:edit_apr:NONE:edit_apr
+#LABELS: edit_val:edit_val:NONE:edit_val     
+#LABELS: gapr_to_l:gapr_to_l:NONE:gapr_to_l
+#LABELS: genrelref:genrelref:NONE:genrelref
+#LABELS: gen_sng:gen_sng:NONE:gen_sng   
+#LABELS: gen_uselist:gen_uselist:NONE:gen_uselist
+#LABELS: gen_ssu:gen_ssu:gen_ssu_lib:gen_ssu
+#LABELS: getrel:getrel:NONE:getrel
+#LABELS: glbtog:glbtog:NONE:glbtog
+## LABELS: ke_anal:ke_anal:NONE:ke_anal
+## LABELS: kedit:kedit:NONE:kedit 
+## LABELS: match_db:match_db:NONE:match_db
+#LABELS: mit_to_iers:mit_to_iers:NONE:mit_to_iers
+#LABELS: plate:plate:NONE:plate
+#LABELS: cvframe:cvframe:NONE:cvframe
+#LABELS: ppb:ppb:NONE:ppb
+## LABELS: perm_etd:perm_etd:NONE:perm_etd
+#LABELS: poles:poles:NONE:poles    
+## LABELS: scale_apr:scale_apr:NONE:scale_apr 
+#LABELS: seasonal:seasonal:NONE:seasonal     
+#LABELS: swaph:swaph:NONE:swaph     
+#LABELS: unify_apr:unify_apr:NONE:unify_apr
+#LABELS: unify_svs:unify_svs:NONE:unify_svs
+#LABELS: velcom:velcom:NONE:velcom   
+#LABELS: global_sel:global_sel:NONE:global_sel   
+#LABELS: tgrep:tgrep:NONE:tgrep   
+#LABELS: netsel:netsel:NONE:netsel   
+#LABELS: phase_ext:phase_ext:NONE:phase_ext   
+#LABELS: cortran:cortran:NONE:cortran   
+#LABELS: stinf_to_rename:stinf_to_rename:NONE:stinf_to_rename   
+#LABELS: memtest:memtest:NONE:memtest   
+#LABELS: nutIAU2000:nutIAU2000:NONE:nutIAU2000   
+#LABELS: make_rms:make_rms:NONE:make_rms    
+#LABELS: glist2cmd:glist2cmd:NONE:glist2cmd
+#LABELS: vel2stab:vel2stab:NONE:vel2stab
+#LABELS: sortrms:sortrms:NONE:sortrms
+#LABELS: grw:grw:NONE:grw 
+#LABELS: lrw:lrw:NONE:lrw
+#LABELS: chi_to_rename:chi_to_rename:NONE:chi_to_rename                 
+#LABELS: fixstinf:fixstinf:NONE:fixstinf                
+#LABELS: break_to_rename:break_to_rename:NONE:break_to_rename                
+#LABELS: tdefnode2vel:tdefnode2vel:NONE:tdefnode2vel
+#LABELS: merge_renames:merge_renames:NONE:merge_renames
+
+#OBJ_gen_ssu_lib sd_comp

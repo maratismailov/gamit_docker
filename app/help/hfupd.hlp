@@ -1,0 +1,134 @@
+HFUPD: Updates GLOBK binary hfiles with new station.info information
+
+Program HFUPD updates the information in a hfile based on the
+options options.
+
+Runstring 
+% hfupd <options> <list of hfile names>
+
+The options for the program are:
+-s <sinex file/station.info>  -- Use the named sinex file or station.info
+                    file to check antenna type and eccentricities.  
+                    This program reads the complete station.info file
+                    so expect the program to stop for any errors 
+                    in station.info. When station.info is used antmod.dat 
+                    and rcvant.dat must be available, either in the local directory
+                    or $HOME/gg/tables.
+-e <edit file>   -- Edit the site/satellites based on list contained
+                    in <edit file>.  This option is the equivalent 
+                    to use_site -<name> is globk.  Sites may be
+                    restored later provided the a new hfile has not
+                    been generated with the edited h-file.  The renames
+                    are applied before checking the headers.  So when
+                    station.info is used, sites can be renames to end
+                    in _GPS which are the only ones checked when station.info
+                    is used.
+-i               -- Ignore the PS part of the rename site name and use the 
+                    last 2-characters of orginal site name (preserves EQ information)
+-f               -- Force rename for site with starttime or endtime in the 
+                    H-file interval when there is only one site name in Hfile 
+                    (normally with renames already applied, 2 names will appear).
+-rsnx            -- Report the contents of the sinex/station.info file given
+                    with the -s option
+-rec             -- Report receiver type and serial number differences
+-u               -- Update the hfile.  This option must be given 
+                    for the hfile to be updated.  The hfile is re-written
+                    in place so the changes are permanent.
+-d               -- Report only the differences between the hfile
+                    and sinex/station.info file headers. 
+-p <hf/pmu file> -- Apply the pole-tide correction.  The file will
+                    be marked as having the pole tide applied and
+                    so it will not be reapplied in globk.  If 
+                    -p hf used then the hfile values for pole position
+                    will used. The reccommended form is 
+                    -p <pmu file name> which will used pmu file values
+                    for pole positions.
+-h [list:]       -- Update headers only and not the solution vector.
+                    The [list:] includes a : separated list of 
+                    quanities to be updated.
+                    ant  -- Antenna information
+                    ptd  -- Mark file as having pole tide applied
+                            without actually applying the pole tide.
+                    These features are useful for correcting inconsistent
+                    information, especially from sinex files (rather
+                    then ascii hfiles which contain information
+                    consistent with the solution).  With the pole
+                    tide, the sinex file has no information to 
+                    indicate that it has been applied.  Analysis center
+                    reports must be relied upon for this information.
+
+EDIT FILE options:
+The following entries may be included in the edit file.  All entries 
+start with at least one blank character.  All options are optional
+except the site name (and rename site for rename command).
+ UNWEIGHT <NAME> <HF code> <Epoch range>
+ RESTORE  <NAME> <HF code> <Epoch range>
+ RENAME   <OLD NAME> <NEW NAME> <HF code> <Epoch range> 
+where <NAME> is the full name of the site
+      <HF code> is a character string that must appear in the hfile name
+             (16 characters max, optional, must not be all numeric)
+      <Epoch range> specified as start yr, mth, day, hr, min and 
+              end yr, mth, day, hr, min
+      <OLD NAME> is the old name of a site
+      <NEW NAME) is the new name of a site
+The edit file does not allow positions to be changed directly.  Such
+changes should be made through the appropriate sinex header antenna
+information. 
+
+OUTPUT:  
+The most useful information written to the screen comprises the antenna
+entries from the H-file and those from the reference station.info or SINEX
+file.  They are of two types.  The first reports discrepancies in the
+offsets between the L1 and L2 phase centers and the antenna referenc 
+point (ARP) (in GAMIT, from table antmod.dat):
+                
+MATE_GPS LDO  ANT    0. 96:183:00000 96:212:86280 AOAD/M_B            :----- 0.0000 0.0000 0.0780  0.0000 0.0000 0.0960
+MATE_GPS LDO  ANT  532. 96:191:00000 99:169:00000 AOAD/M_T            :----- 0.0000 0.0000 0.1100  0.0000 0.0000 0.1280
+Err: LDO  MATE Used AOAD/M_B         dL1  0.0000  0.0000  0.0780  dL2  0.0000  0.0000  0.0960  m
+Err: LDO  MATE Real AOAD/M_T         dL1  0.0000  0.0000  0.1100  dL2  0.0000  0.0000  0.1280  m
+MATE_GPS LDO  ECC    0. 96:191:00000  0:000:00000  0.0000  0.0000  0.1350
+MATE_GPS LDO  ECC  518. 96:191:00000  0:000:00000  0.0000  0.0000  0.1010
+Err: LDO  MATE Eccentricity: Used         0.0000  0.0000  0.1350 Real  0.0000  0.0000  0.1010  m
+
+In the first two lines the first entries are as followings;  station;  institution
+that created it the H-file ('Processing agency' in GAMIT sestbl.); 'ANT' to indicate 
+this is antenna information; the line number for the station.info or SINEX entry
+(dummy for the H-file); the start and stop times (YY:DOY:SECONDS) for the information;
+antenna type; offset (N E U) for L1 and L2 (m).  The second two lines repeat this
+information in shorter form but begin with the grep'able 'Err' to indicate that
+there is a potentially serious discrepancy.
+
+The second type of antenna report detects differences between the ARP and
+the monument:
+
+MATE_GPS LDO  ECC    0. 96:191:00000  0:000:00000  0.0000  0.0000  0.1350
+MATE_GPS LDO  ECC  518. 96:191:00000  0:000:00000  0.0000  0.0000  0.1010
+Err: LDO  MATE Eccentricity: Used         0.0000  0.0000  0.1350 Real  0.0000  0.0000  0.1010  m
+
+The third entry here is 'ECC' to indicate an eccentricity, followed by the line number
+in station.info ('518.'), the start/stop times and the offsets (N E U).  If the
+stop time is zero, it indicates that the entry was open-ended.
+
+If the H-file has not previously been updated, the start/stop times for both
+types of reports will reflect the start/stop times of the data.  If hfupd has
+been previously run on the H-file, however, the start/stop times will 
+reflect those of the station.info entries used to make the update. 
+
+A report of 'Nomatch' for a station, e.g.
+
+NoMatch   -2   16. YELL_GPS Yellowknife                    P
+
+indicates that hfupd had a problem.  If the error code (second entry)
+is -1, the station was not found in station.info; if -2, duplicates
+were detected.  In this case, no attempt will be made to compare the
+entries with the H-file, so you should be careful to remove duplicate
+entries before performing the update.
+
+A receiver diffence is reported as.  The first entry is the receiver 
+type and serial number in station.info or input SINEX file and the 
+Used values are the ones in the h-file being evaluated.
+STJO_G1B NMT  REC 13682. 17:273:00000  0:000:00000 TPS NET-G3A          618-0  Used JAVAD TRE_3N DELTA   02626
+
+
+
+

@@ -1,0 +1,143 @@
+VELROT: Rotates velocity fields into common frame
+
+VELROT: Program to combine velocity fields
+
+Usage:
+% velrot <sys1> <frame1> <sys2> <frame2> <outname> <out_frame> \
+         <link file> <height weight> <param_opt>
+where <sys1>    Globk velocity file for system 1
+      <frame1>  Reference frame for system 1
+      <sys2>    Glock velocity file for system 2.System 1 will
+                transformed in to System 2 (reference system)
+      <frame2>  Reference frame for system 2
+      <outname> Output file name containing the combined velocity
+                field
+      <out_frame> Reference frame for output system
+      <link file> File containing options for sites to be
+                  used in linking the velocity fields
+      <height weight> Weight to be given to the height
+                  velocity
+      <param_opt> Options for parameters to be estimated to
+                  transform the two fields.  They are:
+                  T - Translation
+                  R - Rotation
+                  S - Scale
+                  L - Local 2-parameter transformation 
+                      (should only be by itself)
+                  The option is specified as single string. 
+                  The default is TR)
+
+Program operation and output
+----------------------------
+The two input systems are transformed to the output frame 
+and, based on the options given in the link file, "common"
+stations are used to transform System 1 to best match System 
+2.  The options in the link file are (all lines start with at 
+least on blank.: 
+ names 
+       Link sites with the same names (default if the link file
+       is not given in the runstring).  
+ eq_dist  <distance (m)>
+       Finds all sites separated by less than the distance
+       given and uses these sites to align the frames.  Sites
+       can occur multiple times in these lists.  Normally,
+       this command is given first.
+ cp_dist  <distance (m)> 
+       For comparison/evaluation purposes, can be set so that 
+       all sites separated by less than this distance are 
+       marked in the output with a * at the end of the site 
+       name.  If option is not used, eq_dist is used.
+ av_dist  <distance (m)> 
+       Averages the velocities for sites separated by up to
+       this distance.  Sites are used in averages only once
+       and so far large values of av_dist (>1 km) the precise
+       sites used in the averages will depend on the order of
+       the sites.  Setting av_dist to 1 will average sites at
+       the same location.  (Feature added at Ver 1.01)
+ +-site_name +-site_name 
+       Lines of this type allow specific sites to be included
+       or excluded from the list of sites used in the 
+       alignment. Preceding a site name with a - will exclude
+       it from the list, a + or no symbol will cause it be
+       included.  If only one site name appears, then the
+       second site name is assumed to be the same. 
+       Nominally, the first name applies to system 1 sites, 
+       and the second name to system 2.  The comparison of
+       names is done with casefolded strings.
+Example link_file:
+* Example link file
+* Set the nominal separation of sites to be 1 km.
+  eq_dist 1000
+*
+* Exclude list
+* Any occurrence of g005_gps in the alignment sites from 
+* system 1 will be removed
+  -g005_gps
+* Any occurrence of c100_bas in system 1 alignment sites, and
+* newp_gps in system 2 aligment sites are removed
+  -c100_bas -newp_gps  
+
+* Include list
+* If jplm_gps occurs in both systems include in the alignment 
+* sites (note: in this file this will result in the site being 
+* used twice)
+  jplm_gps
+* If e200_bas and egan_gps occur in both files, add to the 
+* aligment list. (+ at beginning of name is not needed)
+  +e200_bas +egan_gps
+
+Height_weight - The weight of the height velocities to be 
+used in transforming between the systems can be specified 
+with this argument.  Default is height_weight = 1 (weight is 
+applied to velocity covariance matrix based on the sigmas in 
+the velocity files.  Setting the weight to 0 will cause the 
+height velocities not to be used at all in the alignment.
+
+Param_opt - Options for the parameters to be estimated in 
+transforming between the systems. If this argument is not 
+given the default TR parameters are used.  To have no 
+parameters estimated, use a values other then TRSL, e.g., X.
+
+Output
+------
+The output file first contains the statistics of the 
+alignment of the systems and the residuals of the sites used 
+in the alignment.  These residual lines start with the letter 
+A (for grepping).and contain the residual velocities at the 
+alignment sites (dN, dE, dU), the combined sigma of the pairs 
+of velocity estimates in the residuals (sN, sE, sU), and the 
+contributions of the transformations uncertainties at these 
+sites (sTN, sTE, sTU).
+
+The block of the output contains the velocities from System 1 
+given in the System 2 frame.  The sigmas given here include 
+the contribution from the uncertainty in the transformation 
+parameters.
+
+The final block gives the velocities of the sites in System 
+2. If a site name here matches exactly a name from System 1, 
+3. the entry has a - symbol in the first column (thus is 
+4. made a comment).
+
+In both outputs, sites in difference systems which are 
+separated by less than cp_dist will be marked with a * for 
+System 1 and a '+' for System 2 at the end of the site name.
+To see which sites will be used for alignment, the following 
+sequence can be used. 
+comb.list contains
+  cp_dist  10000
+Then
+% velrot sys1,vel nafd sys2.vel nuv-nnr sysout.vel pcfc comb.list
+% grep '*$' sysout.vel >! t1.vel
+% grep '+$' sysout.vel | awk '{print " "substr($0,2)}' >! t2.vel
+% sh_plotvel -f t1.vel -line 0 -f2 t2.vel -line2 0 -color -sitefont 10
+generates a plot with only the common sites on it.
+
+NOTE: It may be necessary to remove the '-' form the start of 
+the System 2 lines if the names site names match between the 
+two files.  We have done this above with the awk command.
+
+NOTE: See plate help for plate names and other features.
+
+
+

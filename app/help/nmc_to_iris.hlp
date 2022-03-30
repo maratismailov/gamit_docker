@@ -1,0 +1,19 @@
+NMC_TO_IRIS: Convert NMC AAM file to polar motion/UT1 excitation
+
+ Program to read the new format nmc AAM data into an
+ iris style format.
+
+ The runstring for the program is:
+ % nmc_to_iris [input file] [output file] [pmu file] w u/j
+
+ where [input file] is a raw NMC atmospheric angular momentum
+            file
+       [output file] is the output file with excitations in
+            " for direct comparison with excite_pmu results
+       [pmu_file] in an integrated excitation file
+       w is add the wind contribution to the excitation,
+       u is use the UK met office format (only 6 values
+            per line instead of 8) or j is for jma (only
+            3 values per line)
+
+

@@ -1,0 +1,142 @@
+#!/bin/csh -f
+#
+#doc Extracts information from the sites.defaults file.   
+#doc
+#
+#  Written by S. McClusky 
+#
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "=================================================================================="
+  echo "  "
+  echo " Sh_get_defaults " 
+  echo "  "
+  echo " Script to to extract information from the sites.defaults file" 
+  echo "  "
+  echo " Usage: sh_get_defaults -token <token> -expt <expt> -not -yr <yr> -doy <doy> -sd <sites.defaults>"
+  echo "  "
+  echo " Where: "
+  echo "  "                                                                           
+  echo " <token>  Is the name of the token used to extract site list"
+  echo " <expt>   Is the name of the current experiment"  
+  echo " -not     Returns the list of sites, NOT in the expt given, for a given token" 
+  echo " <yr>     Is the 4 char year"
+  echo " <doy>    Is the 3 char doy"
+  echo " <sites.defaults> location of the sites.defaults file. [Default set by the $procdir environment variable.]"
+  echo "  "
+  echo " Example: sh_get_defaults -token ftprnx -expt nepa"
+  echo " Example: sh_get_defaults -token ftprnx -expt nepa -not"
+  echo " Both -token and -expt are optional but not simulataneously"
+  echo "  "
+  echo "==================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+# Now set up defaults 
+set token = ''
+set expt = ''  
+set not = 'F'
+set doy = ''
+set yr = ''
+set sd = ''  
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -t*:
+        set token = $argv[2]
+        breaksw
+    case -e*:
+        set expt = $argv[2]
+        breaksw
+    case -n*:
+        set not = "T"
+        breaksw
+    case -yr:
+        set yr = $argv[2]
+        breaksw
+    case -doy:
+        set doy = $argv[2]
+        breaksw
+    case -sd:
+        set sd = $argv[2]
+        breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+#
+# Set the sites.default file to be the default or specified with year and day.
+if ( $sd != '' ) then
+  set infile = $sd
+else
+  set infile = ${procdir}/tables/sites.defaults
+  if ( -e ${infile}.${yr}.${doy} ) set infile = ${infile}.${yr}.${doy}  
+endif
+#if ( -e ${infile}.${yr}.${doy} ) set infile = ${infile}.${yr}.${doy}
+#echo "sites.defaults file used: " $infile >! s.d.name
+
+##################### GET THE JOB DONE ############################
+if ( $token == 'xsite') then
+  set list = ` grep ${token} ${infile} | grep " $expt " | awk ' substr($0,1,1) == " " {for (i=3; i<=NF; i++) if (substr($i,1,5) == "xsite") {print substr($1,1,4) ":" substr($i,7,17)}}'`
+else
+# MOD TAH 020816: If the token is blank, the just look for lines that start with a blank character
+  if( $token == ''  ) then
+      set list = `grep '^ ' ${infile} | grep " $expt " | awk '{if (substr($0,1,1) == " " && $1 == "all_sites") {print $1} else if (substr($0,1,1) == " " && $1 != "all_sites") {print substr($1,1,4)}}'`
+  else
+# MOD TAH 020816: If the expr name has not been passed, skip this pipe into grep
+      if( $expt == '' ) then
+          set list = ` grep ${token} ${infile} | awk '{if (substr($0,1,1) == " " && $1 == "all_sites") {print $1} else if (substr($0,1,1) == " " && $1 != "all_sites") {print substr($1,1,4)}}'`
+      else
+          set list = ` grep ${token} ${infile} | grep " $expt " | awk '{if (substr($0,1,1) == " " && $1 == "all_sites") {print $1} else if (substr($0,1,1) == " " && $1 != "all_sites") {print substr($1,1,4)}}'`
+      endif
+  endif
+
+  if ( $not == "T" ) then
+# NOTE: TAH 020816: There could be a problem here since we do not check that $expt is non-blank.
+    set ts = ${expt}.`hostname`:`date +"%H%M%S"`
+#    if ( -e tmp.not_list.${ts} ) \rm tmp.not_list.${ts}; touch tmp.not_list.${ts}
+# MOD TAH 020816: Check if token is passed
+    if( $token == '' ) then
+        set not_list = `grep '^ ' ${infile} | grep -v " $expt " | awk '{if (substr($0,1,1) == " " && $1 == "all_sites") {print $1} else if (substr($0,1,1) == " " && $1 != "all_sites") {print substr($1,1,4)}}'`
+    else
+        set not_list = ` grep ${token} ${infile} | grep -v " $expt " | awk '{if (substr($0,1,1) == " " && $1 == "all_sites") {print $1} else if (substr($0,1,1) == " " && $1 != "all_sites") {print substr($1,1,4)}}'`
+    endif
+    foreach i ($list)
+#     if ( -e tmp.not_list.${ts} ) \rm tmp.not_list.${ts}; touch tmp.not_list.${ts}
+      set tmplist = ''
+      foreach j ($not_list)
+#       if ( $i != $j ) echo $j >> tmp.not_list.${ts} 
+        if ( $i != $j ) set tmplist = ($tmplist $j)
+      end
+#     set not_list = `cat tmp.not_list.${ts} | awk '{print $1}'`
+      set not_list = `echo $tmplist`
+    end     
+#   set list = `cat tmp.not_list.${ts} | awk '{print $1}'`
+    set list = `echo $not_list`
+#   \rm -r tmp.not_list.${ts} >& /dev/null  
+  endif
+
+# Check if list should be set to all_sites
+  if ( $token != '' && $expt != '' ) then
+    foreach site ( $list )
+      if ( $site == "all_sites" ) then
+        set list = all_sites
+        echo $list
+        exit
+      endif
+    end
+  endif
+
+endif
+
+set num = `echo $list | wc | awk '{print $2}'`
+if ( $num > 0 ) then
+  echo $list
+else
+  echo ''
+endif
+
+exit

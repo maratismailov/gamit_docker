@@ -1,0 +1,128 @@
+#!/bin/csh -f
+
+#rm -f .[Gg][Mm][Tt]* >& /dev/null
+
+# Null input or help test
+if ( $#argv == 0 || "$argv" =~ '*-h*' ) then
+  cat << END && exit
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+  Program:     sh_plot_rinex
+  Written by:  Michael A Floyd (2011/10/21, MIT)
+               adapted from previous "plot.occupations.gmt" (2006/10/23, Oxford)
+  Last edited: Michael Floyd (2020/03/11, MIT)
+
+  Usage: sh_plot_rinex <list of RINEX files>
+
+  Description: sh_plot_rinex reads all time tags from any type of plain or
+               compressed (requires CRX2RNX) RINEX files and plots them.
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+END
+endif
+
+# Remove temporary files
+rm -f tmp.sites tmp.obs tmp.ti tmp.psxy tmp.ends tmp.pstext
+
+# List sites
+ls $argv | awk -F'/' '{print substr($NF,1,4)}' | sort -u | tr '[:lower:]' '[:upper:]' >! tmp.sites
+
+# Loop over RINEX files
+echo -n '=> Reading input files... '
+foreach rinex ( $argv )
+
+  set file = `basename $rinex | cut -c1-11`  # Base of RINEX file name
+  set site = `basename $rinex | cut -c1-4 | tr '[:lower:]' '[:upper:]'`  # Site ID
+  set i = `grep -n "$site" tmp.sites | cut -d':' -f1`  # Site index for y-axis position on plot
+
+  # Unzip and uncompress RINEX file
+  if ( "$rinex" =~ '*[Dd].[Bb][Zz]2' ) then  # bzip2'd Hatanaka-compressed file
+    bunzip2 -c $rinex | crx2rnx - >! tmp.obs
+  else if ( "$rinex" =~ '*[Oo].[Bb][Zz]2' ) then  # bzip2'd RINEX file
+    bunzip2 -c $rinex >! tmp.obs
+  else if ( "$rinex" =~ '*[Dd].Z' || "$rinex" =~ '*[Dd].gz' ) then  # gzip'd Hatanaka-compressed file
+    gunzip -c $rinex | crx2rnx - >! tmp.obs
+  else if ( "$rinex" =~ '*[Oo].Z' || "$rinex" =~ '*[Oo].gz' ) then  # gzip'd RINEX file
+    gunzip -c $rinex >! tmp.obs
+  else
+    cp -pf $rinex tmp.obs
+  endif
+
+  # Get all "YY MM DD hh mm ss" time tags and antenna height
+  grep '^ [ 0-9][0-9] [ 0-9][0-9] [ 0-9][0-9] [ 0-9][0-9] [ 0-9][0-9] [ 0-9][0-9]\.' tmp.obs |\
+   awk -v i=$i '{if ($1 >= 80) y=1900+$1; else y=2000+$1; \
+                 s=int($6+0.5); if (s == 60) {m=$5+1; s=0} else m=$5; \
+                 if (m == 60) {h=$4+1; m=0} else h=$4; \
+                 if (h == 24) {d=$3+1; h=0} else d=$3; \
+                 split("31 28 31 30 31 30 31 31 30 31 30 31",days); \
+                 if (y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)) days[2] = 29; \
+                 if (d > days[$2]) {o=$2+1; d=1} else o=$2; \
+                 if (o > 12) {y=y+1; o=1}; \
+                 printf("%4d-%02d-%02dT%02d:%02d:%02d %s\n",y,o,d,h,m,s,i)}' >! tmp.ti
+  set h = `awk '$0 ~ /DELTA/ {print $1}' tmp.obs`
+  rm -f tmp.obs
+
+  # Concatenate with previous files' time tags
+  cat tmp.ti >> tmp.psxy
+
+  # Write first and last time tags for plotting end points of file
+  head -1 tmp.ti >> tmp.ends
+  tail -1 tmp.ti >> tmp.ends
+
+  # Write first time tags and day boundaries to plot antenna height info
+  head -1 tmp.ti |\
+   awk -v file=$file -v h=$h '{print $1,$2,file" : "h" m"}' >> tmp.pstext
+  grep 'T00:00:00' tmp.ti |\
+   awk -v file=$file -v h=$h '{print $1,$2,file" : "h" m"}' >> tmp.pstext
+
+  rm -f tmp.ti
+
+end  # End loop over RINEX files
+echo 'done.'
+
+# Create GMT plot
+gmt gmtset GMT_COMPATIBILITY 5
+gmt gmtset MAP_TICK_LENGTH_PRIMARY=-0.2c MAP_ANNOT_OFFSET_PRIMARY 0.4c FORMAT_CLOCK_MAP hh:mm FONT_TITLE 18p FONT_LABEL 18p MAP_GRID_PEN_PRIMARY 0.25p,153
+set j = '-JX23cT/-15c'
+set n = `wc -l tmp.sites | awk '{print int(($1-1)/30)+1}'`  # Number of plots with maximum of 30 sites per plot
+set sites_per_plot = `wc -l tmp.sites | awk -v n=$n '{print int($1/n)}'`
+if ( $n == 1 ) then
+  foreach ymd ( `cut -c1-10 tmp.psxy | sort -u` )
+    set ps = "$ymd.ps"
+    set y = ( 0 `wc -l tmp.sites | awk '{print $1}'` )
+    set r = "-R${ymd}T00:00:00/${ymd}T23:59:59/$y[1].001/$y[2].999"
+    gmt psxy tmp.psxy $j $r -Ss2p -G0 -K >! $ps
+    gmt psxy tmp.ends $j $r -Sy5p -W2p -O -K >> $ps
+    gmt pstext tmp.pstext $j $r -F10p,1+jBL -Dj0.1c/0.1c -O -K >> $ps
+    awk -v ymd=$ymd '{printf("%sT00:00:00 %s MR %s\n%sT23:59:59 %s ML %s\n",ymd,NR,$1,ymd,NR,$1)}' tmp.sites |\
+     gmt pstext $j $r -F+f10p,1+j -Dj0.1c/0c -N -Bxa2Hf1Hg1H+l'UTC' -Byg1 -BneSw+t"$ymd" -O >> $ps
+  end
+else
+  foreach ymd ( `cut -c1-10 tmp.psxy | sort -u` )
+    set i = 1
+    while ( $i <= $n )
+      if ( $n >= 10 ) then  # Two-digit index if ten or more plots
+        set k = `printf '%02d' $i`
+      else
+        set k = $i
+      endif
+      set ps = "$ymd.$k.ps"
+      if ( $i == $n ) then  # Plot all remaining sites
+        set y = ( `wc -l tmp.sites | awk -v i=$i '{print 30*(i-1),$1}'` )
+      else  # Plot only $sites_per_plot sites
+        set y = ( `echo $i | awk '{print 30*($1-1),30*$1}'` )
+      endif
+      set r = "-R${ymd}T00:00:00/${ymd}T23:59:59/$y[1].001/$y[2].999"
+      gmt psxy tmp.psxy $j $r -Ss2p -G0 -K >! $ps
+      gmt psxy tmp.ends $j $r -Sy5p -W2p -O -K >> $ps
+      gmt pstext tmp.pstext $j $r -F+f10p,1+jBL -Dj0.1c/0.1c -O -K >> $ps
+      awk -v y1=$y[1] -v y2=$y[2] -v ymd=$ymd 'NR > y1 && NR <= y2 {printf("%sT00:00:00 %s MR %s\n%sT23:59:59 %s ML %s\n",ymd,NR,$1,ymd,NR,$1)}' tmp.sites |\
+       gmt pstext $j $r -F+f10p,1+j -Dj0.1c/0c -N -Bxa2Hf1Hg1H+l'UTC' -Byg1 -BneSw+t"$ymd ($k)" -O >> $ps
+      @ i++
+    end
+  end
+endif
+rm -f tmp.ends tmp.pstext tmp.psxy tmp.sites
+
+#rm -f .[Gg][Mm][Tt]* >& /dev/null
+

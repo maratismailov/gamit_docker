@@ -1,0 +1,20 @@
+# Generic Makefile for kf/globc (globk) - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King July 30, 1996
+  
+#LABELS: globk:globc:globc_lib:globk
+
+#SHARELIB: ../glsave:glsave_lib      
+#SHARELIB: ../glinit:glinit_lib
+#SHARELIB: ../glbak:glbak_lib
+#SHARELIB: ../glfor:glfor_lib
+#SHARELIB: ../glout:glout_lib
+#SHARELIB: ../glorg:glorg_lib
+#SHARELIB: ../globk:globk_lib
+#SHARELIB: ../Khandlers:KalObs_hndl_lib  
+#SHARELIB: ../gen_util:gen_util_lib
+#SHARELIB: ../../libraries/matrix:kinv_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+
+#OBJ_globc_lib run_subs
+
+

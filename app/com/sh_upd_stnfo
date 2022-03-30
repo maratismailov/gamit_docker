@@ -1,0 +1,431 @@
+#!/bin/csh -f
+#
+#doc Update station.info using header infomation from RINEX files
+#doc
+#
+# Modified  by rwk 2002/03/11 to use single program (mstinf2) for both updates and merges
+#   and to use the new station.info format   
+# Modified by rwk 2007/1/4 to fix bug: formerly would not update existing entries with 
+#   new information for the same span        
+# Modified by rwk 2008/10/21 to use new 'mstinf' for new-format files (replaces mstinf2; old-format
+#   files no longer supported so old 'mstinf' now obsolete.  Add reading of IGS log and SINEX files;
+#   fix nosort option; add all other mstinf options previously not in shell script.
+# Modified by rwk 2008/10/30 to restore (a revised) option to check values before adding new entries 
+# Modified by rwk 2009/04/14 to add option for writing out an apr file
+# Modifify by rwk 2009/12/30 to create a site list for extracting entries using the ftprnx token of sites.defaults
+#    and the files in the experiment rinex directory.
+# Modified by rwk 2010/1/13 to implement multiple IGS log files (as for RINEX)      
+# Modified by rwk 2010/4/2 to allow arbitrary names for input and output station.info files, and also
+#      full path names for RINEX, IGS log, and SINEX files.
+# Modified by tah 2011/10/19: Fixed file names in mstinf call with rinex files, added the -rxo option
+# Modified by rwk 2014/8/23: Add option to fill gaps in an IGS log by extending the previous stop time 
+# Modified by rwk 2014/8/26 to remove duplicate call for IGS logs
+
+
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "===================================================================================="
+  echo " Update station.info using header infomation from RINEX file " 
+  echo "                           and/or"
+  echo " Update station.info by merging and sorting entries from other station.info's"
+  echo "  "
+  echo " Usage: sh_upd_stnfo -ref <rsfile> -l <sitelist> -merge <sfiles> -files <rfiles> -i <ifiles> -x <snxfiles>  -xs <snxsite> "
+  echo "    -replace <replace_option> -rxo -nodup -w <outfile> -apr -nosort -c  -h <slant hgt> -t <dup_tol> "
+  echo " "          
+  echo "        <rsfile>  Reference station.info (defines output info and format). [default station.info]"
+  echo "               If not given and station.info does not exist, a new station.info file will be created with the format:" 
+  echo "*SITE  Station Name      Session Start      Session Stop       Ant Ht   HtCod  Ant N    Ant E    RcvCod  SwVer  AntCod" 
+  echo " "                     
+  echo "        <sitelist> file containing list of stations to be included from reference station.info "
+  echo "               If omitted, include all.  "   
+  echo "               If 'sd' create a list ('stnfolist') from the sites with the ftprnx token in sites.defaults"
+  echo "               if 'rnx' create a list from the files in the [experiment]/rinex directory "
+  echo "               if 'sdrnx' create a list from both sites.defaults and the rinex directory"
+  echo "                  -- for these option, you must run sh_upd_stnfo from the [experiment]/tables directory"
+  echo "               If another name, read this file (can be run from any directory).  "
+  echo "               The sitelist file is a single column of 4-character names in columns 2-5"
+  echo " "                
+  echo "        <rfiles> RINEX file(s) to be used to update station.info (full path and wildcard allowed)"
+  echo " "
+  echo "        <sfiles> station.info files to be merged with the reference file (values from merged files take precedence"
+  echo "  "    
+  echo "        <ifiles> IGS log file(s) to be used to update station.info (full path and wildcard allowed)"  
+  echo " "
+  echo "        <snxfiles>  SINEX files to be used to update station.info; see -xs (full path allowed)"
+  echo "        <snxsite>   site from SINEX file to be added; default is to add all sites"
+  echo " "                  
+  echo "        <replace_option>  Set value-checking for RINEX and single-site SINEX files:"
+  echo "            <diff> (default) add a new entry only if the values are different   "
+  echo "            <all>  add a new entry even if values are the same (may result duplicates) "
+  echo "            <none> check values but do not add the new entry (user should compare values) "  
+  echo "            <replace> Removes entries from station.info that are in the file to be merged (TAH 200205)"
+  echo " "
+  echo "        -rxo  make any new RINEX entries open-ended (may fail if existing later entries for site)"
+  echo " "
+  echo "        -nodup  do not write out duplicate or overridden entries (default is to write as comment)"
+  echo " "
+  echo "        <outfile> new station.info from a merge (default station.info.new, renamed to station.info) " 
+  echo " "
+  echo "        -apr   write an output apr file from the coordinates in the RINEX header, IGS log, or SINEX file"
+  echo " "
+  echo "        -nogaps  fill any gap from an IGS log file by extending the stop time of the last entry (warning: may be wrong)"
+  echo " "
+  echo "        -nosort option not to sort the output station.info (use only when confident of time order and no duplicates)"
+  echo " "             
+  echo "        -c  Copy all comments to the new station.info"
+  echo " " 
+  echo "        <slant hgt> antenna height (m) above which the height in the rinex will be"
+  echo "               as a slant height.  NOTE: Use with caution; not consistent with"
+  echo "               RINEX standard and is included only for non-standard RINEX files"
+  echo " "
+  echo "        <dup_tol>  Tolerance in seconds for deciding whether two entries are the same (default 120s)"
+  echo "  "
+  echo "        -now :  Stops replaced station.info lines being included as comments (TAH 200204)"
+  echo "        -debug: Turns on debug in mstinf for log files with encoding errors  (TAH 200204)"
+  echo "  "
+  echo " "                  
+  echo "    NOTES:  There are three modes: "
+  echo "             (1) Merge station.info files, one or more inputs, one output"
+  echo "                  sh_upd_stnfo -ref station.info.sopac -merge station.info.regional -l sitelist -w station.info.s3 "
+  echo "                    (default output is 'station.info.new') "   
+  echo "                     If the sdrnx option is used for the sitelist, must be run from [expt]/tables"   
+  echo "             (2) Incorporate information from a single RINEX file, IGS log file or SINEX file"
+  echo "                  sh_upd_stnfo -ref station.info -i drao.log -w station.info.drao "
+  echo "                    (default output is 'station.info.new')  "                                
+  echo "             (3) Add information from multiple RINEX or IGS log files  "
+  echo "                   sh_upd_stnfo -files *.99o "
+  echo "                 Continuous update of input file or specified output file.  Original input file save as "
+  echo "                 [input-file].orig for safety"
+  echo "  "      
+  echo "===================================================================================="
+  exit
+endif 
+      
+# Echo input options           
+echo "sh_upd_stnfo version 2020/02/05"
+echo "Input options ${argv[*]} "
+set input_opts = `echo "Input options ${argv[*]}"`
+
+##################### SET UP DEFAULTS #############################   
+# Setup necessary paths and filenames
+
+set rxfiles = ''
+set ref = ''    
+set igslogs = ''
+set sinex = '' 
+set snxsite = ''        
+set sitelist = '' 
+set replace = 'diff'     
+set nodup = ''
+set rxo = ''
+set snxsitecmd = ''
+set merge = ''
+set orbt = ''
+set unique = ''    
+set nosort = '' 
+set now = ''
+set debug = '' 
+set apr = ''                                                                                              
+set nogaps = ''
+set sitelistcmd = ''
+set comments = ''
+set slhgt  = '0.00'
+set outfile = 'station.info.new'
+set ref = 'station.info'
+set mailto = `whoami`
+set machine = `hostname`
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -f*:
+      set rxfiles  = (`echo $argv | cut -d- -f2`); shift rxfiles
+    breaksw 
+    case -m*:
+      set merge  = (`echo $argv | cut -d- -f2`); shift merge
+    breaksw 
+    case -ref:
+      set ref  = $input[2]  
+    breaksw 
+    case -i:   
+      set igslogs = (`echo $argv | cut -d- -f2`); shift igslogs
+    breaksw
+    case -x:
+      set sinex = $input[2]
+    breaksw     
+    case -xs:                                  
+      set snxsite = $input[2]
+      set snxsitecmd = "-xs $input[2]"
+    breaksw
+    case -repl*
+      set replace = $input[2]
+    breaksw     
+    case -nodup:
+      set nodup = "-no"
+    breaksw 
+    case -l:                              
+       set sitelist = $input[2]  
+       set sitelistcmd = "-l $sitelist" 
+    breaksw
+    case -co*:
+      set comments = '-c'
+    breaksw
+    case -nosort:
+      set nosort = "-ns"
+    breaksw     
+    case -apr:
+      set apr = "-apr"
+    breaksw   
+    case -nogaps:
+      set nogaps = "-nogaps"  
+    breaksw 
+    case -h
+       set slhgt = $input[2]
+    breaksw
+    case -w
+       set outfile = $input[2]
+    breaksw                       
+    case -rx*:
+       set rxo = '-rxo'
+    breaksw                       
+    case -now:
+       set now = '-now'
+    breaksw                       
+    case -deb*:
+       set debug = '-debug'
+    breaksw                       
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ############################     
+# Set timestamp hostname variable
+set ts = "`hostname`:`date +"%H%M%S"`"
+
+echo "EXECUTING sh_upd_stnfo"     
+
+if ( ! -e guess_rcvant.dat ) ln -s ~/gg/tables/guess_rcvant.dat .
+                         
+# Create station.info if it does not exist and a reference file is not input    
+if ( ! -e station.info && $ref == '' ) then
+  echo station.info does not exist. Creating a new. 
+  set ref = 'station.info' 
+#station.info doesn't exist (create an empty station.info with header)
+  echo "*          Gamit station.info"                >! station.info
+  echo "*"                                            >> station.info
+  echo "*          Generated by sh_update_stnfo: $ts" >> station.info
+  echo "*"                                            >> station.info
+  echo "*SITE  Station Name      Session Start      Session Stop       Ant Ht   HtCod  Ant N    Ant E    RcvCod  SwVer  AntCod" >> station.info
+  #echo "*SITE  Station Name      Session Start      Session Stop       Ant Ht   HtCod  Ant N    Ant E    Receiver Type         Vers                  SwVer  Receiver SN           Antenna Type     Antenna SN" >> station.info         
+endif
+
+# If not explicit output file, copy original station.info for safe keeping.
+if( $ref == 'station.info' ) then 
+# if ( ! -e station.info.orig ) then
+  echo "Saving original station.info to station.info.orig " 
+  \cp station.info station.info.orig
+# endif  
+endif
+   
+# Detect old-style station.info  (no longer supported)
+grep 'TRCK SITE' $ref >! tmp.stinfo
+set num = `wc tmp.stinfo` 
+if( $num[1] > 0 ) then  
+   echo "Old-style station.info no longer supported: use conv_stnfo to convert"
+   \rm tmp.stinfo
+   exit
+endif     
+            
+# See if a list of sites to include needs to be created from sites.defaults and/or the rinex directory 
+if( $sitelist == 'sd' || $sitelist == 'rnx' || $sitelist == 'sdrnx' ) then
+  touch tmp.sdlistfile 
+  touch tmp.rxlistfile
+  if( $sitelist == 'sd' || $sitelist == 'sdrnx' ) then
+     echo "Select sites to include from sites.defaults"
+     set sdlist = ` grep ftprnx sites.defaults | awk '{ if (substr($0,1,1) == " " && $1 != "all_sites") {print substr($1,1,4)}}'`  
+     \rm tmp.sdlistfile >& /dev/null
+     touch tmp.sdlistfile >& /dev/null
+     foreach site  ( `echo $sdlist` )   
+       echo $site >> tmp.sdlistfile
+     end                         
+  endif
+  if( $sitelist == 'rnx' || $sitelist == 'sdrnx' ) then                                                                
+     \rm tmp.rxlistfile >& /dev/null;  touch tmp.rxlistfile  >& /dev/null
+     ls -1 ../rinex/????????.??o >> tmp.rxlistfile
+     ls -1 ../rinex/????????.??o.gz >> tmp.rxlistfile 
+     ls -1 ../rinex/????????.??o.Z >> tmp.rxlistfile 
+  endif
+  make_stnfolist tmp.sdlistfile tmp.rxlistfile stnfolist
+  set sitelistcmd = '-l stnfolist' 
+  echo "Created stnfolist "       
+  \rm tmp.sdlistfile tmp.rxlistfile
+else if ( $sitelist != ' ' ) then
+  echo "Selecting from $ref entries with site list $sitelist " 
+endif
+                     
+# See if this is simply a shortening, with no additions
+if ( $merge[1] == '' && $igslogs[1] == '' && $sinex[1] == '' && $rxfiles[1] == '' && "$sitelistcmd" != '' ) then 
+   echo "Output file is $outfile"
+   echo "mstinf -f ${ref} -w ${outfile} $now $rxo -o $nosort $comments ${sitelistcmd} "
+   mstinf -f ${ref} -w ${outfile} $now $rxo -o $nosort $comments ${sitelistcmd} 
+endif                        
+
+# See if this is  a merge.
+if ( $merge[1] != '' ) then
+   echo "Updating $ref using information from $merge " 
+   echo "Output file is $outfile"
+# MOD TAH 200305: If replace option; remove updated stations from REF station.info first
+   if( $replace == 'replace' ) then
+      echo "Removing sites in merge files from reference station.info"
+      grep -h '^ ' $merge | awk '{print $1}' | sort -u | awk '{printf("%s ",$1)}' ; echo " "
+      set newsites = `grep -h '^ ' $merge | awk '{print $1}' | sort -u | awk '{if( NR==1 ) {printf("^ %s ",$1)} else {printf("|^ %s ",$1)}}'`
+      egrep -v "$newsites" $ref >! ${ref}.old
+      set replace = 'diff'
+      echo "mstinf -f ${ref}.old -w ${outfile} $now $rxo -s ${merge} -re $replace -o $nosort $comments ${sitelistcmd}" 
+      mstinf -f ${ref}.old -w ${outfile} $now $rxo -s ${merge} -re $replace -o $nosort $comments ${sitelistcmd} 
+   else
+# MOD TAH 200203: Passed NoWrite option to stop replaced lines being included in station.info
+#    as comments.
+     echo "mstinf -f ${ref} -w ${outfile} $now $rxo -s ${merge} -re $replace -o $nosort $comments ${sitelistcmd}" 
+     mstinf -f ${ref} -w ${outfile} $now $rxo -s ${merge} -re $replace -o $nosort $comments ${sitelistcmd} 
+   endif
+   echo "Output file is $outfile"
+endif
+
+# Add entries from a SINEX log file
+if ( $sinex != '' ) then    
+   if( $snxsitecmd == '' ) then
+     echo "Updating $ref for all sites in SINEX file $sinex "   
+   else
+     echo "Updating $ref for $snxsite in SINEX file $sinex "
+   endif     
+   echo "Output file is $outfile"
+   echo "mstinf -f ${ref} -w ${outfile} $rxo -x ${sinex} ${snxsitecmd} -re $replace $nodup -o  $nosort $apr  $comments ${sitelistcmd}"
+   mstinf -f ${ref} -w ${outfile} $rxo -x ${sinex} ${snxsitecmd} -re $replace $nodup -o  $nosort $apr  $comments ${sitelistcmd}
+endif
+           
+#   Loop over IGS files adding station.info entries as we go.
+  foreach file ( $igslogs )
+  
+    echo "Updating station.info using information from IGS log file $file " 
+# MOD TAH 200203: Passed NoWrite option to stop replaced lines being included in station.info
+# as comments.
+    echo "mstinf -f ${ref} -w ${outfile} $now $rxo -i $file -o  -re $replace $nodup $nosort $apr $nogaps $comments ${sitelistcmd} $debug"
+    mstinf -f ${ref} -w ${outfile} $now $rxo -i $file -o  -re $replace $nodup $nosort $apr $nogaps $comments ${sitelistcmd} $debug
+    if ( -e MSTINF.warning ) then
+      cat MSTINF.warning  >> MSTINF.problems  
+      cat MSTINF.warning >> GAMIT.warning
+      \rm -r MSTINF.warning 
+    endif   
+    if( -e MSTINF.fatal ) then
+      cat MSTINF.fatal >> MSTINF.problems
+      if( ! -e GAMIT.fatal ) then
+        cat MSTINF.fatal > GAMIT.fatal
+      else
+        cat MSTINF.fatal >> GAMIT.fatal
+      endif
+    endif
+#   Have a cup of coffee and let NFS complete any buffered writes.
+    sleep 3
+
+#   Move new station.info into place..
+#   See type of file (if it is a link then copy into link)
+    set lnk = `\ls -l station.info | awk '{print substr($0,1,1)}'`
+    if( $lnk == 'l' ) then
+      set lfname = `\ls -l station.info | awk '{print $NF}'`
+    else 
+      set lfname = "station.info"         
+    endif
+           
+#   Skip the rename to station.info if the output file is explictly specified 
+    if( $outfile == 'station.info.new' ) then 
+#     If upd_stnfo ran successfully this file should be longer than 3 lines    
+      if( -e station.info.new ) then 
+        set num = `wc station.info.new` 
+        if( $num[1] > 3 ) then
+          echo Updating $lfname 
+          \mv station.info.new $lfname
+#       Everything seems to have worked so now remove the original
+#      (This ensures that the next run will use the current station.info)
+          \rm station.info.orig >& /dev/null
+        else    
+          echo MSTINF failed, restoring original $lfname
+          \mv station.info.orig $lfname 
+        endif
+      else
+        echo MSTINF failed, restoring original $lfname
+        \mv station.info.orig $lfname 
+      endif  
+    endif 
+#   End of loop on IGS log files
+  end 
+
+# Add entries from RINEX files
+    
+if( $rxfiles[1] != '' ) then   
+#   Make sure the 'problems' file exists for concatenation
+  if( ! -e MSTINF.problems ) then
+     touch MSTINF.problems 
+  endif 
+         
+#   Loop over rinex files adding station.info entries as we go.
+  foreach file ( $rxfiles )
+  
+    echo "Updating station.info using information from RINEX file $file " 
+    echo "mstinf -f ${ref} -w ${outfile} $now $rxo -r $file -o  -re $replace $nodup $apr"
+    mstinf -f ${ref} -w ${outfile} $now $rxo -r $file -o  -re $replace $nodup $apr
+    if ( -e MSTINF.warning ) then
+      cat MSTINF.warning  >> MSTINF.problems  
+      cat MSTINF.warning >> GAMIT.warning
+      \rm -r MSTINF.warning 
+    endif   
+    if( -e MSTINF.fatal ) then
+      cat MSTINF.fatal >> MSTINF.problems
+      if( ! -e GAMIT.fatal ) then
+        cat MSTINF.fatal > GAMIT.fatal
+      else
+        cat MSTINF.fatal >> GAMIT.fatal
+      endif
+    endif
+#   Have a cup of coffee and let NFS complete any buffered writes.
+    sleep 3
+
+#   Move new station.info into place..
+#   See type of file (if it is a link then copy into link)
+    if( -e station.info  ) then 
+       set lnk = `\ls -l station.info | awk '{print substr($0,1,1)}'`
+       if( $lnk == 'l' ) then
+         set lfname = `\ls -l station.info | awk '{print $NF}'`
+       else 
+         set lfname = "station.info"         
+       endif
+    endif
+           
+#   Skip the rename to station.info if the output file is explictly specified 
+    if( $outfile == 'station.info.new' ) then 
+#     If upd_stnfo ran successfully this file should be longer than 3 lines    
+      if( -e station.info.new ) then 
+        set num = `wc station.info.new` 
+        if( $num[1] > 3 ) then
+          echo Updating $lfname 
+          \mv station.info.new $lfname
+#       Everything seems to have worked so now remove the original
+#      (This ensures that the next run will use the current station.info)
+          \rm station.info.orig >& /dev/null
+        else    
+          echo MSTINF failed, restoring original $lfname
+          \mv station.info.orig $lfname 
+        endif
+      else
+        echo MSTINF failed, restoring original $lfname
+        \mv station.info.orig $lfname 
+      endif  
+    endif 
+#   End of loop on RINEX files
+  end 
+endif
+
+# Thats it!!
+exit

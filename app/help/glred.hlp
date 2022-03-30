@@ -1,0 +1,57 @@
+GLRED: GLOBK program to analyze individual and groups of binary hfiles
+  
+GLRED -- GLobal parameter REDucing program
+  
+    This program will run GLOBK for a series of single global
+files which are given in input_list. This program allows single day
+processing and is useful for repeatabity runs with a fiducial 
+network fixed.  (It is much quicker than a globk run with Markov
+sites which is another method for doing repeatability.
+
+Version 4.0 enchancement: Allows files to be combined by adding
+a + sign at the ends of lines.  (Variance factor must be given in
+this case). An example is shown below.
+A * or # at the beginning of a line will cause the file to be
+ignored.
+  
+The runstring is very similar to GLOBK's runstring:     
+
+% glred <std out> <print file> <log file> <exper. list> <command file> <OPTION>
+
+where <std out> is a numerical value (if 6 is typed then output will be 
+                sent to current window, any other numerical value will 
+                send output to a file fort.nn)
+      <print file> is the name for the output print file with the
+                solution in it.   If the print file already exists, then 
+                the new solution will be appended to it.
+      <log file> is a log file which contains the running time for the
+                program and the pre-fit chi**2 value for each input
+                covariance matrix file.  If the log file already exists,
+                then the new solution will be appended to it.
+      <exper. list> is a list of covariance files to process.  (This 
+                list is most easily generated with re-direction of 
+                and ls command e.g., % ls ../gotex/g*.glc > gotex.gdl).
+                Any file name may be used but convention is to end it
+                with .gdl.
+      <command file> is a list of commands (see specific GLOBK
+                documentation file).  The command file controls the
+                options in the program.
+      <OPTION> string that can appear at the starts of command file lines
+               which will be executed.  (Normally these lines are ignored
+               since they do not start with a blank. (New Ver 5.08)
+
+  
+Example of experiment _list:
+----------------------------
+h9509211000_pgaa.glr  1.0 +
+h9509211000_stan.glr  1.0  
+h9509221000_pgaa.glr  1.0 +
+h9509221000_ltie.glr  0.5 +
+h9509221000_stan.glr  1.0  
+*h9509221000_badf.glr
+
+In this case, the first two global files would be used in the 
+first globk run.  Then the next three files would be used with
+the 'ltie' analysis variance-covarinance matrix multiplied by 0.5.
+The final file would be ignored and globk would not be run.
+ 

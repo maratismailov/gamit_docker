@@ -1,0 +1,214 @@
+      SUBROUTINE CLKPRM(KFILE,KFILE2,IT0,T00,UNITCD,ISTATS,EPOCH,RATE)
+C
+C Written by Rick Abbot, modified by Yehuda Bock
+C.....READ CLOCK LOG TABLES TO DETERMINE EPOCH AND RATE FOR A GIVEN STATION
+C
+C     CALLING PARAMETERS:
+C     KFILE              I  NAME OF CLOCK LOG FILE (FROM D-FILE)
+C     KFILE1             I  NAME OF CLOCK LOG FILE (FROM D-FILE + DAY NO.)
+C     IT0(1),(2),(3)     I  MONTH, DAY AND YEAR
+C     T00(1),(2),(3)     I  HOUR, MINUTE AND SECOND
+C     UNITCD             I  UNIT CODE OF INSTRUMENT AT SITE
+C     ISTATS             O  = 0, THEN CLOCK EPOCH, RATE IN TABLE
+C                             1, THEN CLOCK IS A MASTER
+C                             2, THEN NO CLOCK INFO IN TABLE
+C     EPOCH              O  EPOCH OFFSET IN SECONDS
+C     RATE               O  RATE OFFSET IN SECONDS PER SECOND
+
+      implicit none
+
+      LOGICAL OKAY,OKAY2
+
+      CHARACTER*1 UNITCD,UCODE(20)
+      CHARACTER*4 SCARR(20)
+      CHARACTER*16 FILNAM,KFILE,KFILE2
+      character*80 message
+
+      integer*4 iyr,imn,iday,idyoy1,idyoy2,ihr1,ihr2,imn1,imn2,it0
+     .        , julday,iref1a,iref1b,iref2a,iref2b,master,isrnum,isernm
+     .        , ipath,istats,i,j,k,ioerr
+
+      real*8    epoch,rate,epocha,ratea,slope,dayoy0,diff1,diff2
+     .        , fjdt0,fjdt1,fjdt2,t00,time1,time2
+
+      DIMENSION IT0(3),T00(3)
+      DIMENSION FJDT1(20),FJDT2(20)
+      DIMENSION IHR1(20),IMN1(20),IDYOY1(20)
+      DIMENSION IREF1A(20),IREF1B(20),DIFF1(20)
+      DIMENSION IHR2(20),IMN2(20),IDYOY2(20)
+      DIMENSION IREF2A(20),IREF2B(20),DIFF2(20)
+      DIMENSION ISERNM(20)
+
+C
+      EPOCH=0.D0
+      RATE=0.D0
+      ISTATS=2
+C
+C OPEN CLOCK LOG
+      INQUIRE(FILE=KFILE,EXIST=OKAY)
+      INQUIRE(FILE=KFILE2,EXIST=OKAY2)
+      IF(OKAY) THEN
+        FILNAM=KFILE
+      ELSE IF (OKAY2) THEN
+        FILNAM=KFILE2
+      ELSE
+        GO TO 999
+      END IF
+      OPEN (UNIT=20,FILE=FILNAM,STATUS='OLD',ERR=999)
+C
+      CALL DAYNUM(IT0(1),IT0(2),IT0(3),DAYOY0)
+      FJDT0 = JULDAY(IT0(1),IT0(2),IT0(3))
+      FJDT0 = FJDT0+(T00(1)+T00(2)/60.D0+T00(3)/3600.D0)/24.D0
+C
+C.....FIND THE WORD "END" TO INDICATE THE END OF THE INFO HEADER SECTION
+    1 READ (20,2,iostat=ioerr) (SCARR(I),I=1,20)
+    2 FORMAT (20A4)                             
+      if( ioerr.ne.0 ) call report_stat('FATAL','FIXDRV','clkprm',filnam
+     .  ,'Unexpected error or end on Macrometer-type K-file',ioerr)
+      IF (SCARR(1).EQ.'END ') GO TO 4
+      GO TO 1
+C
+C.....READ SERIAL NUMBER - UNIT CODE MATCHUPS
+    4 READ (20,2,iostat=ioerr) SCARR(1)   
+      if( ioerr.ne.0 ) call report_stat('FATAL','FIXDRV','clkprm',filnam
+     .  ,'Unexpected error or end on Macrometer-type K-file',ioerr)
+      J=1
+    5 READ (20,100,iostat=ioerr) SCARR(1),ISERNM(J),UCODE(J)
+  100 FORMAT (A4,1X,I3,11X,A1) 
+      if( ioerr.ne.0 ) call report_stat('FATAL','FIXDRV','clkprm',filnam
+     .  ,'Unexpected error or end on Macrometer-type K-file',ioerr)
+      IF (SCARR(1).EQ.'END ') GO TO 6
+      J=J+1
+      GO TO 5
+C
+C.....FOR THE INPUT UNIT CODE, FIND THE CORRECT SERIAL NUMBER
+    6 DO 7 I=1,J-1
+      IF (UNITCD.NE.UCODE(I)) GO TO 7
+      ISRNUM=ISERNM(I)
+CD     WRITE (6,55558) ISRNUM
+      GO TO 8
+    7 CONTINUE
+      STOP 'UNIT CODE CANNOT BE MATCHED TO A SERIAL NUMBER'
+C
+C.....READ TABLE ENTRIES
+    8 READ (20,500,iostat=ioerr)
+  500 FORMAT (/////)  
+      if( ioerr.ne.0 ) call report_stat('FATAL','FIXDRV','clkprm',filnam
+     .  ,'Unexpected error or end on Macrometer-type K-file',ioerr)
+      J=1
+   10 READ (20,1000,ERR=70,END=70)
+     $ IHR1(J),IMN1(J),IDYOY1(J),IREF1A(J),IREF1B(J),DIFF1(J),
+     $ IHR2(J),IMN2(J),IDYOY2(J),IREF2A(J),IREF2B(J),DIFF2(J)
+ 1000 FORMAT(I2,I2,3X,I3,3X,I3,5X,I3,4X,F5.1,4X,
+     $       I2,I2,3X,I3,3X,I3,5X,I3,4X,F5.1)
+CD      WRITE (6,2000)
+CD    $ IHR1(J),IMN1(J),IDYOY1(J),IREF1A(J),IREF1B(J),DIFF1(J),
+CD    $ IHR2(J),IMN2(J),IDYOY2(J),IREF2A(J),IREF2B(J),DIFF2(J)
+CD  2000 FORMAT(1X,I2,I2,3X,I3,3X,I3,5X,I3,4X,F5.1,4X,
+CD    $       I2,I2,3X,I3,3X,I3,5X,I3,4X,F5.1)
+C
+C.....STORE ALL VALUES THAT HAVE THE CORRECT TIME SPAN
+      IYR=IT0(3)
+      CALL MONDAY(IDYOY1(J),IMN,IDAY,IYR)
+      FJDT1(J) = JULDAY(IMN,IDAY,IYR)
+      FJDT1(J) = FJDT1(J)+(DBLE(IHR1(J))+DBLE(IMN1(J))/60.D0)/24.D0
+      IYR=IT0(3)
+      CALL MONDAY(IDYOY2(J),IMN,IDAY,IYR)
+      FJDT2(J) = JULDAY(IMN,IDAY,IYR)
+      FJDT2(J) = FJDT2(J)+(DBLE(IHR2(J))+DBLE(IMN2(J))/60.D0)/24.D0
+      IF (FJDT0.LT.FJDT1(J).OR.FJDT0.GT.FJDT2(J)) GO TO 10
+CD     WRITE (6,55555) FJDT0,FJDT1(J),FJDT2(J)
+CD 55555 FORMAT (1X,3(D22.15,1X))
+CD     WRITE (6,2000)
+CD    $ IHR1(J),IMN1(J),IDYOY1(J),IREF1A(J),IREF1B(J),DIFF1(J),
+CD    $ IHR2(J),IMN2(J),IDYOY2(J),IREF2A(J),IREF2B(J),DIFF2(J)
+      J=J+1
+      ISTATS=0
+      GO TO 10
+C
+C.....NOT WITHIN ANY TIME RANGE, RETURN WITH STATUS FLAG = 2
+   70 IF (ISTATS.NE.2) GO TO 75
+      GO TO 5000
+C
+   75 CONTINUE
+C.....NOW SORT OUT THE SERIAL NUMBERS
+C
+C.....MASTER SHOULD BE THE FIRST SERIAL NUMBER FOUND
+      MASTER=IREF1A(1)
+C
+C.....CHECK IF INSTRUMENT IS MASTER CLOCK, IF YES THEN SET ISTATS=1
+      IF (ISRNUM.NE.MASTER) GO TO 80
+      ISTATS=1
+      GO TO 5000
+C
+C.....NOT A MASTER, GET EPOCH AND RATE WRT MASTER
+C
+C.....FIRST SORT THROUGH TO MATCH THE DESIRED SERIAL NUMBER WITH THE BEFORE
+C.....REFERENCE B'S, IF NO MATCH THEN SET ISTATS=2
+   80 CONTINUE
+      IPATH=0
+      DO 90 I=1,J
+      K=I
+   90 IF (ISRNUM.EQ.IREF1B(K)) GO TO 95
+      ISTATS=2
+      GO TO 5000
+C
+C.....CHECK IF THE BEFORE REFERENCE A IS THE MASTER, IF SO THEN READY TO
+C.....GET THE EPOCH AND RATE
+   95 IF (IREF1A(K).EQ.MASTER) GO TO 110
+C
+C.....DESIRED SERIAL NUMBER NOT DIRECTLY SYNCHED AGINST MASTER, DETERMINE
+C.....THE PATH BACK TO THE MASTER
+      IPATH=1
+C
+C.....LINEAR INTERPOLATION FOR THE CLOCK RATE
+C
+C.....CHECK IF THE SERIAL NUMBERS OF REFERENCES A AND B OF AFTER ARE SWITCHED
+C.....FROM THOSE OF REFERENCES A AND B OF BEFORE
+C.....IF THEY ARE REVERSED THE SIGN OF THE AFTER DIFFERENCE
+  110 IF (IREF1A(K).EQ.IREF2A(K).AND.IREF1B(K).EQ.IREF2B(K)) GO TO 200
+      IF (IREF1A(K).EQ.IREF2B(K).AND.IREF1B(K).EQ.IREF2A(K)) GO TO 120
+      write(message,'(a,f5.0,a,4(i3,1x))')
+     .   ' Check clock table for day number ',dayoy0
+     .   ,' and serial numbers ',iref1a(k),iref1b(k),iref2a(k),iref2b(k)
+      call report_stat('FATAL','FIXDRV','clkprm',' ',message,0)
+  120 DIFF2(K)=-DIFF2(K)
+C
+  200 TIME1=FJDT2(K)-FJDT1(K)
+      TIME2=FJDT0-FJDT1(K)
+      SLOPE=(DIFF2(K)-DIFF1(K))/TIME1
+C     WRITE (6,55556) TIME1,TIME2,SLOPE
+CD 55556 FORMAT (1X,3(D22.15,1X))
+      EPOCHA=(DIFF1(K)+SLOPE*TIME2)*1.0D-06
+      RATEA=(DIFF2(K)-DIFF1(K))/TIME1/86400.D0*1.0D-06
+      RATE=RATE+RATEA
+      EPOCH=EPOCH+EPOCHA
+CD     WRITE (6,55557) T00,DAYOY0,EPOCHA,RATEA
+CD     WRITE (6,55557) T00,DAYOY0,EPOCH,RATE
+CD 55557   FORMAT (1X,6(D12.5,1X))
+      IF (IPATH.EQ.0) GO TO 5000
+      ISRNUM=IREF1A(K)
+C     WRITE (6,55557) T00,DAYOY0,EPOCH,RATE
+      GO TO 80
+C
+ 5000 CONTINUE
+C
+C.....REVERSE SIGN SINCE FOR EXAMPLE IF THE STATION CLOCK IS AHEAD OF THE
+C.....MASTER CLOCK, THEN IT SHOULD BE BROUGHT BACK TO THE MASTER
+      EPOCH = - EPOCH
+      RATE  = - RATE
+CD     WRITE (6,55558) ISRNUM,ISTATS,EPOCH,RATE
+CD 55558 FORMAT (//,1X,2I5,2X,2(D13.6,2X))
+      CLOSE (UNIT=20)
+C
+      IF(ISTATS.EQ.2)
+     .   call report_stat('FATAL','FIXDRV','clkprm',' '
+     .        ,'No clock information in clock log table',0)
+      GO TO 998
+C
+  999 CONTINUE
+      call report_stat('FATAL','FIXDRV','clkprm',' '
+     .               ,'Clock log table not found',0)
+  998 CONTINUE
+      RETURN
+      END

@@ -1,0 +1,436 @@
+#!/bin/csh -f
+#
+#doc Script to cleanup daily GAMIT solution directories
+#doc
+#
+# Last modified 2002/09/18 by R. King
+
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "==========================================================================================="
+  echo " Clean up daily GAMIT solutions directories. (Run from directory above day directories) " 
+  echo "  "
+  echo " Usage: sh_cleanup -d <yr days> -s <yr d1 d2> -expt <expt> -orbt <orbt> -nav <brdc> -dopt <dopts> -copt <copts>"
+  echo "                   -aopt <aopts> -dprefix <prefix> -dsuffix <suffix> -archpth <dir> "
+  echo "  "
+  echo " -d yr days, where days is a list of day directories to be cleaned e.g. 1997 153 156 178 "
+  echo " -s yr d1 d2, where d1 is start and d2 is stop day of directories to be cleaned e.g. 1997 153 178 "
+  echo "  "
+  echo "        <yr>  4 char year of observations. [Required] "
+  echo "        <days and d1, d2> are 3 char day of year of observations. [Required] " 
+  echo "        <expt> 4 char id of experiment. If not given, gotten from station.info  "
+  echo "        <orbt> 4 char id of orbit. If not given, gotten from station.info  " 
+  echo "        <brdc> 4 char id of navigation file. If not given, set to brdc  "
+  echo "        <dopts> types of files to be deleted from the day directory. "
+  echo "        <copts> types of files to be compressed in the day directory. "
+  echo "        <aopts> types of files to be archived under -archpth <dir>"
+  echo "        <dir> Directory where files are to be archived  "
+  echo "        <prefix> day directory prefix extension. " 
+  echo "        <suffix> day directory suffix extension. " 
+  echo "  " 
+  echo " Possible d-, c-, and a- opts: D, H, ao, ac, as, b, c, d, e, f, g, h, i, j, k, l, m, met, mkx, o, p, q, sh, t, x, ps, z, all"   
+  echo " "
+  echo "     Most of these are self-explanetary.  D is  DPH* (sky-map of phase residuals), H is the HISTORY file" 
+  echo "                                          mkx is the makex infor file"
+  echo "  " 
+  echo " Examples: sh_cleanup -d 1999 235 237 -copt h k x -dopt D ao c"
+  echo "           sh_cleanup -s 1999 235 245 -copt h q as  -dopt all -aopt H h as -archpath /data35/simon/scec_archive "
+  echo "  " 
+  echo " NOTE: Archive is created in the directory given by your -archive and -d/-s entries. "
+  echo "       Ie -archpth /data35/simon/emed98 -d 1999 235 --> /data35/simon/emed98/1999_235  " 
+  echo "  " 
+  echo "  "
+  echo "==========================================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS #############################   
+set expt = ''
+set orbt = ''  
+set nav = 'brdc'
+set year = ''
+set yr = ''
+set doy = ''
+set days = ''
+set dopts = ''
+set copts = ''
+set aopts = ''
+set dprefix = ''
+set dsuffix = ''
+set archivepth = ''
+set mailto = `whoami`
+set machine = `hostname`
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -d:
+      set year = $argv[2]
+      set days  = (`echo $argv[2-] | cut -d- -f1`); shift days 
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+      set yr = `sh_year -year $year`
+    breaksw
+    case -s:
+      set year = $argv[2]  
+     set yr = `sh_year -year $year`
+#      @ count = $argv[3]  
+      @ count = `echo "ibase=10; ${argv[3]}" | bc`
+      while ( $count <= $argv[4] )
+        set days = ( $days $count )
+#        @ count = $count + 1  
+        @ count = `echo "ibase=10; ${count} + 1" | bc`
+      end
+    breaksw
+    case -aop*:
+      set aopts =  (`echo $argv | cut -d- -f2`); shift aopts 
+    breaksw   
+    case -cop*:
+      set copts =  (`echo $argv | cut -d- -f2`); shift copts 
+    breaksw   
+    case -dop*:
+      set dopts =  (`echo $argv | cut -d- -f2`); shift dopts 
+    breaksw 
+    case -e*:
+      set expt = $input[2] 
+    breaksw 
+    case -dprefix*:
+      set dprefix =  (`echo $argv | cut -d- -f2`); shift dprefix 
+#      set dprefix = $input[2] 
+    breaksw 
+    case -dsuffix*:
+      set dsuffix =  (`echo $argv | cut -d- -f2`); shift dsuffix 
+#      set dsuffix = $input[2] 
+    breaksw 
+    case -netext:
+      set dsuffix =  (`echo $argv | cut -d- -f2`); shift dsuffix 
+    breaksw 
+    case -o*:
+      set orbt = $input[2] 
+    breaksw    
+    case -nav:
+      set nav = $input[2] 
+    breaksw 
+
+    case -arc*:
+      set archivepth  = $input[2]  
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ############################
+# Set timestamp hostname variable
+set ts = "`hostname`:`date +"%H%M%S"`"
+
+#Check required fields
+if ( ${year} == '' || ${days[1]} == '' ) then
+  echo "Required fields not complete:- yr: $year days: $days[1] --Stop "
+  exit
+endif   
+
+if ( $expt == '' ) then
+  set expt = `head -n 1 ./tables/station.info | awk '{print $1}'`
+endif
+
+if ( $orbt == '' ) then
+  set orbt = `head -n 1 ./tables/station.info | awk '{print $2}'`
+endif
+         
+# Say what you are doing. 
+if ( $copts[1] != '' ) then
+  echo "Compressing the following file types: $copts"
+  echo "Expt = $expt : Orbt = $orbt"
+endif
+
+if ( $aopts[1] != '' ) then
+  echo "Archiving the following file types: $aopts"
+  echo "Expt = $expt : Orbt = $orbt"
+endif
+
+if ( $dopts[1] != '' ) then
+  echo "Deleting the following file types: $dopts"       
+  echo "Expt = $expt : Orbt = $orbt"
+endif
+
+if ( $copts[1] == '' && $dopts[1] == '' && $aopts[1] == '' ) then
+  echo "No compress, delete, or archive options given. Doing nothing --Stop"
+  exit
+endif
+
+# Start the loop on days.
+foreach dxy ( ${days} )
+  set doy = `echo $dxy | awk '{printf "%03d\n",$1}'`
+
+# See if directory exists and clean if it does
+  if( -e ${dprefix}${doy}${dsuffix} ) then
+      echo "Cleaning ${dprefix}${doy}${dsuffix}"
+      pushd  ${dprefix}${doy}${dsuffix} >& /dev/null
+
+#     Compress requested files
+      foreach opt ( ${copts} ) 
+        echo 'Compressing files '$opt'* for day '$doy
+        if ( $opt == all ) then
+          gzip -f *                         >& /dev/null
+        else if ( $opt == D ) then
+          gzip -f DPH*                      >& /dev/null
+        else if ( $opt == H ) then
+          gzip -f HISTORY*                  >& /dev/null
+        else if ( $opt == ao ) then
+          gzip -f autcln.out                >& /dev/null
+        else if ( $opt == ac ) then
+          gzip -f autcln.cmd*               >& /dev/null
+        else if ( $opt == as ) then
+          gzip -f autcln.prefit.sum*        >& /dev/null
+          gzip -f autcln.post.sum*          >& /dev/null
+        else if ( $opt == b ) then
+          gzip -f b${expt}*                 >& /dev/null
+        else if ( $opt == c ) then
+          gzip -f c*.${doy}                 >& /dev/null
+        else if ( $opt == d ) then                     
+          gzip -f d${expt}*.${doy}          >& /dev/null
+        else if ( $opt == e ) then                     
+          gzip -f e${orbt}*.${doy}          >& /dev/null     
+        else if ( $opt == f ) then                     
+          gzip -f f${expt}*.${doy}          >& /dev/null
+        else if ( $opt == g ) then
+          gzip -f g${orbt}*.${doy}          >& /dev/null
+        else if ( $opt == h ) then                          
+          gzip -f h${expt}*.${yr[2]}${doy}  >& /dev/null
+        else if ( $opt == i ) then                          
+          gzip -f i${expt}*.${doy}          >& /dev/null
+        else if ( $opt == j ) then                          
+          gzip -f j${nav}*.${doy}          >& /dev/null
+        else if ( $opt == k ) then                          
+          gzip -f k*.${doy}                 >& /dev/null
+        else if ( $opt == l ) then                          
+          gzip -f l${expt}*.${doy}          >& /dev/null
+        else if ( $opt == m ) then
+          gzip -f m${expt}*.${doy}*         >& /dev/null 
+        else if ( $opt == met ) then
+          gzip -f met_????.$yr[2]$doy
+        else if ( $opt == mkx ) then
+          gzip -f ${expt}.makex.infor       >& /dev/null  
+        else if ( $opt == n ) then                          
+          gzip -f n${expt}*.${doy}          >& /dev/null
+        else if ( $opt == o ) then                          
+          gzip -f o${expt}*.${doy}          >& /dev/null
+        else if ( $opt == p ) then                          
+          gzip -f p*.${doy}                 >& /dev/null
+        else if ( $opt == q ) then                          
+          gzip -f q${expt}*.${doy}          >& /dev/null
+        else if ( $opt == sh ) then                          
+          gzip -f sh_*                       >& /dev/null
+        else if ( $opt == t ) then                          
+          gzip -f g${orbt}*.${doy}          >& /dev/null
+        else if ( $opt == x ) then
+          gzip -f x*.${doy}                 >& /dev/null
+        else if ( $opt == z ) then
+          gzip -f z*.${doy}                 >& /dev/null
+        else if ( $opt == ps ) then
+          gzip -f *.ps                      >& /dev/null
+        endif 
+      end
+
+#     Archive requested files
+
+      if ( $aopts[1] != '' ) then
+# Make the archive directory if it doesn't exist.
+        if ( ! -e ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} ) then
+          \mkdir -p ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix}
+        endif
+
+# If the archive still doesn't exits stop and abuse!!!.
+        if ( ! -e ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} ) then
+          echo "Can't find or make this archive. Check the archive path you gave: ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix}"
+          exit
+        endif
+      endif
+
+      foreach opt ( ${aopts} ) 
+        echo 'Archiving files '$opt'* for day '$doy 'to '${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} 
+        if ( $opt == all ) then
+          \cp *                            ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == D ) then
+          \cp DPH*                         ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == H ) then
+          \cp HISTORY*                     ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == ao ) then
+          \cp -f autcln.out*               ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == ac ) then
+          \cp -f autcln.cmd*               ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == as ) then
+          \cp -f autcln.prefit.sum*        ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+          \cp -f autcln.post.sum*          ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == b ) then
+          \cp -f b${expt}*                 ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == c ) then
+          \cp -f c*.${doy}*                ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == d ) then                     
+          \cp -f d${expt}*.${doy}*         ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == e ) then                     
+          \cp -f e${orbt}*.${doy}*         ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null    
+        else if ( $opt == f ) then                     
+          \cp -f f${expt}*.${doy}*         ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == g ) then
+          \cp -f g${orbt}*.${doy}*         ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == h ) then                          
+          \cp -f h${expt}*.${yr[2]}${doy}* ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == i ) then                          
+          \cp -f i${expt}*.${doy}*         ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == j ) then                          
+          \cp -f j${nav}*.${doy}*          ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == k ) then                          
+          \cp -f k*.${doy}*                ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == l ) then                          
+          \cp -f l${expt}*.${doy}*         ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == m ) then
+          \cp -f m${expt}*.${doy}*         ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null  
+        else if ( $opt == met ) then
+          \cp -f met_????.$yr[2]$doy       ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == mkx ) then
+          \cp -f ${expt}.makex.infor       ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == n ) then                          
+          \cp -f n${expt}*.${doy}*         ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == o ) then                          
+          \cp -f o${expt}*.${doy}*         ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == p ) then                          
+          \cp -f p*.${doy}*                ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == q ) then                          
+          \cp -f q${expt}*.${doy}*         ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == sh ) then                          
+          \cp -f sh_*                      ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == t ) then                          
+          \cp -f t${orbt}*.${doy}*         ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == x ) then
+          \cp -f x*.${doy}*                ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == z ) then
+          \cp -f z*.${doy}*                ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        else if ( $opt == ps ) then
+          \cp -f *.ps*                     ${archivepth}/${dprefix}${yr[1]}_${doy}${dsuffix} >& /dev/null
+        endif 
+      end
+
+# Delete requested files
+      foreach opt ( ${dopts} ) 
+        echo "Deleting files $opt for day $doy"
+        if ( $opt == all ) then
+          \rm -r *                      >& /dev/null
+        else if ( $opt == D ) then
+          \rm DPH*                      >& /dev/null
+        else if ( $opt == H ) then
+          \rm HISTORY*                  >& /dev/null
+        else if ( $opt == ao ) then
+          \rm -f autcln.out*            >& /dev/null
+        else if ( $opt == ac ) then
+          \rm -f autcln.cmd*            >& /dev/null
+        else if ( $opt == as ) then
+          \rm -f autcln.prefit.sum*     >& /dev/null
+          \rm -f autcln.post.sum*       >& /dev/null
+        else if ( $opt == b ) then                  
+          \rm b${expt}*                 >& /dev/null
+        else if ( $opt == c ) then                  
+          \rm c*.${doy}                 >& /dev/null
+          \rm c*.${doy}.Z               >& /dev/null
+        else if ( $opt == d ) then                  
+          \rm d${expt}*.${doy}          >& /dev/null
+          \rm d${expt}*.${doy}.Z        >& /dev/null   
+          \rm d${expt}*.${doy}.gz       >& /dev/null
+        else if ( $opt == e ) then                  
+          \rm e${orbt}*.${doy}          >& /dev/null
+          \rm e${orbt}*.${doy}.Z        >& /dev/null       
+          \rm e${orbt}*.${doy}.gz       >& /dev/null       
+        else if ( $opt == f ) then                  
+          \rm f${expt}*.${doy}          >& /dev/null
+          \rm f${expt}*.${doy}.Z        >& /dev/null     
+          \rm f${expt}*.${doy}gz        >& /dev/null
+        else if ( $opt == g ) then                  
+          \rm g${orbt}*.${doy}          >& /dev/null
+          \rm g${orbt}*.${doy}.Z        >& /dev/null    
+          \rm g${orbt}*.${doy}.gz       >& /dev/null
+        else if ( $opt == h ) then                  
+          \rm h${expt}*.${yr[2]}${doy}   >& /dev/null
+          \rm h${expt}*.${yr[2]}${doy}.Z >& /dev/null            
+          \rm h${expt}*.${yr[2]}${doy}.gz >& /dev/null
+        else if ( $opt == i ) then                  
+          \rm i${expt}*.${doy}          >& /dev/null
+          \rm i${expt}*.${doy}.Z        >& /dev/null            
+          \rm i${expt}*.${doy}.gz       >& /dev/null
+        else if ( $opt == j ) then                  
+          \rm j${nav}*.${doy}          >& /dev/null
+          \rm j${nav}*.${doy}.Z        >& /dev/null   
+          \rm j${nav}*.${doy}.gz       >& /dev/null
+        else if ( $opt == k ) then                  
+          \rm k*.${doy}                 >& /dev/null
+          \rm k*.${doy}.Z               >& /dev/null     
+          \rm k*.${doy}.gz              >& /dev/null
+        else if ( $opt == l ) then                  
+          \rm l${expt}*.${doy}          >& /dev/null
+          \rm l${expt}*.${doy}.Z        >& /dev/null       
+          \rm l${expt}*.${doy}.gz       >& /dev/null
+        else if ( $opt == m ) then                  
+          \rm m${expt}*.${doy}*          >& /dev/null
+          \rm m${expt}*.${doy}*.Z        >& /dev/null  
+          \rm m${expt}*.${doy}*.gz       >& /dev/null 
+        else if ( $opt == met ) then                  
+          \rm met_????.$yr[2]$doy       >& /dev/null
+          \rm met_????.$yr[2]$doy.Z        >& /dev/null        
+          \rm met_????.$yr[2]$doy.gz       >& /dev/null
+        else if ( $opt == mkx ) then                  
+          \rm ${expt}.makex.infor       >& /dev/null
+          \rm ${expt}.makex.infor.Z        >& /dev/null        
+          \rm ${expt}.makex.infor.gz       >& /dev/null
+        else if ( $opt == n ) then                  
+          \rm n${expt}*.${doy}          >& /dev/null
+          \rm n${expt}*.${doy}.Z         >& /dev/null    
+          \rm n${expt}*.${doy}.gz        >& /dev/null
+        else if ( $opt == o ) then                  
+          \rm o${expt}*.${doy}          >& /dev/null
+          \rm o${expt}*.${doy}.Z        >& /dev/null      
+          \rm o${expt}*.${doy}.gz       >& /dev/null
+        else if ( $opt == p ) then                  
+          \rm p*.${doy}                 >& /dev/null
+          \rm p*.${doy}.Z               >& /dev/null       
+          \rm p*.${doy}.gz              >& /dev/null
+        else if ( $opt == q ) then                  
+          \rm q${expt}*.${doy}          >& /dev/null
+          \rm q${expt}*.${doy}.Z        >& /dev/null      
+          \rm q${expt}*.${doy}.gz       >& /dev/null
+        else if ( $opt == sh ) then                  
+          \rm sh_*                      >& /dev/null
+        else if ( $opt == t ) then                  
+          \rm t${orbt}*.${doy}          >& /dev/null
+          \rm t${orbt}*.${doy}.Z        >& /dev/null       
+          \rm t${orbt}*.${doy}.gz       >& /dev/null
+        else if ( $opt == y ) then                  
+          \rm y${orbt}*.${doy}          >& /dev/null
+          \rm y${orbt}*.${doy}.Z        >& /dev/null  
+          \rm y${orbt}*.${doy}.gz       >& /dev/null
+       else if ( $opt == x ) then                  
+          \rm x*.${doy}                 >& /dev/null
+          \rm x*.${doy}.Z               >& /dev/null             
+          \rm x*.${doy}.gz              >& /dev/null 
+# rwk 081126: if removing x-files, remove the unused ones also   
+          \rm x*.${doy}.small           >& /dev/null       
+          \rm x*.${doy}.small.gz           >& /dev/null 
+       else if ( $opt == z ) then                  
+          \rm z*.${doy}                 >& /dev/null
+          \rm z*.${doy}.Z               >& /dev/null
+          \rm z*.${doy}.gz              >& /dev/null
+        else if ( $opt == ps ) then
+          \rm  *.ps                     >& /dev/null
+          \rm  *.ps.Z                   >& /dev/null               
+          \rm  *.ps.gz                  >& /dev/null
+        endif 
+      end
+
+#     Pop back up to main directory
+      popd >& /dev/null
+  endif 
+
+#end loop on days
+end
+
+# Thats it
+exit

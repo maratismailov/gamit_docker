@@ -1,0 +1,113 @@
+
+                                          MAKED
+>>============================================================================================<<
+functions:
+    1. simulating geodetic observation data based on specified deformation model.
+    2. transfer data from other formats to FONDA format.
+    3. extract subset of data from big data file
+    4. compress observations to quasi-observations
+    5. merge several small data files
+
+To run MAKED, just type: maked <driving file name>
+    If the name of driving file is missed, instruction will be given.
+
+Driving file is a keyword controlled style file. It has the following advantages:
+    * Most commands are readable.
+    * The order (raw) of command lines is flexible.
+    * The location (column) of input names and options is flexible.
+    * Besides the key word, you can add or omit any words in command part to 
+      strengthen your understanding.
+    Current MAKED performs 5 independent tasks:
+      1. simulate data.
+      2. transfer data from other format to FONDA format.
+      3. extract specified information from data file(unfinished yet).
+      4. compress data, for example, compress baseline length observables to 
+         baseline length and baseline length rate observable at a nominal epoch.
+      5. merge multiple different types of data files(unfinished yet).
+    Current MAKED accepts following apriori file styles:
+      1. GAMIT l-file.
+      2. GLOBK output.
+      3. FONDA output network coordinate file.
+      4. Blue Book site coordinate.
+      5. USGS statab file.
+      6. UCSD site coordinate file.
+      7. IPGP site coordinate file.
+    Current MAKED accepts following input data file styles:
+      1. GAMIT output o-file.
+      2. GLOBK output with subcovariance matrix.
+      3. FONDA (MAKED) output file.
+      4. Blue Book data.
+      5. USGS data.
+      6. UCSD data.
+      7. IPGP data.
+      8. GAMIT output h-file.
+      9. FONDA (SOLVEM) output h-file.
+      10. GLOBK output with full covariance matrix.
+    coordinate mode : (comode)
+      1. spherical coordinate (lat,lon,radius)
+      2. geodetic (ellipsoidal) coordinate (lat,lon,height)
+      3. Cartesian coordinate (x,y,z)
+      4. local topocentric coordinate (x(east),y(north),z(height))
+    MAKED deals with either single input file (infil) or multiple input files,
+      which names are listed in input file list (in_list).
+    In the case of simulating data, an input file including model specifications 
+      is needed.
+    Symbol "*" in driving file means default format.
+
+Commands of input data file (simulating case):
+    <velocity mode> <network mode>
+    <model parameter file name>      --- this line is needed only when vmode = 3
+    <number of experiments>
+       <year> <day of year> <number of groups>                                    --------+
+         <no. sites> <obs type> <error a term> <error b term> \__group loop |>exp. loop
+         <site index list ...>                                              /     --------+
+    <noise level>
+    <output mode>
+
+where
+    velocity mode : (vmode)
+        1. directly read geocentric velocity values
+        2. directly read geodetic velocity values
+        3. using model parameters (trainsition, rotation, gradient, ...)
+        4. using dislocation model
+        5. ......
+    observation type: (it) 
+        1. astrometric azimuth
+        2. horizontal angle
+        3. horizontal direction
+        4. baseline length
+        5. zenith height
+        6. leveling
+ 
+       11. astrometric azimuth rate
+       12. horizontal angle rate
+       13. horizontal direction rate
+       14. baseline length rate
+       15. zenith height rate
+       16. leveling rate
+
+       21. 3-D geocentric coordinate
+       22. 3-D geocentric velocity
+       23. 3-D geodetic coordinate
+       24. 3-D geodetic velocity
+       25. 3-D geocentric baseline vector
+       26. 3-D geocentric baseline rate vector
+       27. 3-D geodetic baseline vector
+       28. 3-D geodetic baseline rate vector
+
+Commands of model parameter file are:
+  <model group number>                    (group loop followed)
+    <number of sites>
+    <mopt(i),i=1,10>                     (mopt(4) to mopt(10) are for future use)
+    <site index list ...>
+    <V(x)> <V(y)>                                  -- if mopt(1)>0  (translation)
+    <origin x> <origin y> <omega>                  -- if mopt(2)>0  (rotation)
+    <origin x,y,Vx,Vy> <azimuth> <Vxx,Vxy,Vyx,Vyy> -- if mopt(3)>0  (gradient)
+
+Making your contributions to MAKED is welcomed (comment, modification, question,
+criticize, ...)
+
+                                            Danan Dong  92.10.08
+                                            e-mail: dong@freia.jpl.nasa.gov
+                                            (818)-393-1827
+

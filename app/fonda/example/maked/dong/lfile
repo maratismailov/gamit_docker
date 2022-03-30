@@ -1,0 +1,135 @@
+SV5:  (GLB663/1990.704 + TIES)-->CSR8902
+ALGO ALGORMA     N45 45 48.85444 W 78  4 16.92306 6367331.6723  noam 1990.704                                          
+AROT ARO TI41    N45 45 48.48992 W 78  4 16.92091 6367333.9254  noam 1990.704  Geod. Surv. Canada                      
+AREQ AREQ7907    S16 21 41.28841 W 71 29 35.25558 6378924.5011  soam 1990.704  gotex                                   
+BLAC BLAC7269    N33 29 11.18304 W115 43 11.33283 6372093.7366  noam 1990.704                                          
+CANB CANBN194    S35 12 58.05523 E148 58 42.84185 6371665.0544  aust 1990.704  gotex                                   
+DION DION7515    N37 53 30.92358 E 23 55 56.86225 6370555.7570  eura 1990.704  gotex                                   
+FTDV FTDVRM4     N30 28  3.27541 W103 56 49.12545 6374201.8968  noam 1990.704                                          
+FTOR FTOR7266    N36 29  8.23138 W121 46 23.78978 6370575.0095  pcfc 1990.704                                          
+GIYY GIYY7530    N31 33  1.97321 E 35  5 18.77555 6373037.1032  afrc 1990.704  gotex                                   
+HART HART7232    S25 44 20.13573 E 27 41  7.39810 6375503.3546  afrc 1990.704  gotex                                   
+HATC HATCNCMB    N40 37 36.45048 W121 28  8.65929 6370040.3821  noam 1990.704                                          
+HAYS HAYSOCP3    N42 25 51.70958 W 71 29 17.49788 6368467.6213  noam 1990.704                                          
+HOHE HOHE7600    N52 51 56.18289 E 10 28 35.21945 6364670.6391  eura 1990.704  gotex                                   
+JPL1 JPL1ARI1    N34  1 33.72352 W118 10 15.46185 6371859.3811  pcfc 1990.704                                          
+JPLM JPLMESA     N34  1 34.01553 W118 10 22.51900 6371892.2296                 From PGGA rinex file kurt 910322
+KOKE KOKEFRPA    N21 59 34.09447 W159 39 53.63139 6376291.9618  pcfc 1990.704  Cignet: 880400-91 July?
+KOKT KOKETRIM    N21 59 34.09447 W159 39 53.63139 6376291.9618  pcfc 1990.704  Cignet: 91July?-present kurt 910322
+MADR MADR1561    N40 14 19.98179 W  4 14 56.49818 6370027.8682  eura 1990.704  gotex                                   
+MOJA MOJATI41    N35  9  0.77633 W116 53 17.35832 6371929.5373  noam 1990.704  Cignet: 861111-880718                   
+MOJF MOJAFRPA    N35  9  0.77634 W116 53 17.35898 6371929.5566  noam 1990.704  Cignet: 880719-890616                   
+MOJM MOJAMMAC    N35  9  0.61434 W116 53 17.35654 6371929.3754  noam 1990.704  Cignet: 890205-Present                  
+MOJ1 MOJANCM1    N35  9  1.05789 W116 53 26.92243 6371920.3734  noam 1990.704                                          
+MONU MONU7274    N32 42 59.64721 W116 25 22.14413 6373706.5361  pcfc 1990.704                                          
+OCOT OCOT7270    N32 36 54.47395 W115 47 46.26889 6371865.3810  pcfc 1990.704                                          
+ONSA ONSATI41    N57 13 13.29543 E 11 55 31.84392 6363045.6065  eura 1990.704  Cignet: 871218-Present                  
+OVRO OVRO7114    N37  2 50.52750 W118 17 37.65984 6371527.9470  noam 1990.704                                          
+BPA3 OVROBPA3    N37  2 48.48321 W118 17  0.87082 6371531.5587  noam 1990.704                                          
+PEAR PEAR7254    N34 19 57.72487 W117 55 20.61759 6372202.3018  noam 1990.704                                          
+PENT PENTGPS     N49  7 56.29961 W119 37 29.94528 6366423.0460  noam 1990.704  gotex                                   
+PIN1 PIN1        N33 26  6.02952 W116 27 29.40204 6372880.0006  pcfc 1990.704  PGGA                                    
+PINY PINY7256    N33 25 55.56871 W116 27 31.70011 6372858.5177  pcfc 1990.704                                          
+PLAT PLAT7258    N39 59 35.65302 W104 43 34.84950 6370779.0524  noam 1990.704                                          
+PVER PVER7268    N33 33 58.44093 W118 24 12.79246 6371646.2314  pcfc 1990.704                                          
+RICH RICHFRPA    N25 27 51.80471 W 80 23  2.64287 6374148.2435  noam 1990.704  Cignet: 880209-890224                   
+RICM RICHMMAC    N25 27 50.81568 W 80 23  3.06472 6374151.2628  noam 1990.704  Cignet: 890205-Present                  
+RICT RICHTIMR    N25 27 51.80440 W 80 23  2.64287 6374144.5975  noam 1990.704                                          
+SIO1 SIO1        N32 41 33.36042 W117 15  8.42804 6371885.2669  pcfc 1990.704  PGGA                                    
+SNPA SNPA7255    N34 12 31.39966 W118 59 55.65861 6371539.2037  pcfc 1990.704                                          
+TROM TROMGPSM    N69 32 13.24806 E 18 56 17.96858 6359486.9106  eura 1990.704  Cignet: 871220-Present:not the Phase cen
+TSUK TSUKMMAC    N35 55 22.27333 E140  5 15.08828 6370823.9821  eura 1990.704  Cignet: 880710-Present                  
+VNDN VNDNRM1     N34 22 36.13012 W120 36 58.31950 6371284.4017  pcfc 1990.704                                          
+WSFD WESTTI41    N42 25 17.84623 W 71 29 36.02548 6368465.3674  noam 1990.704  Cignet: 861000-880727                   
+WSFF WESTFRPA    N42 25 17.84624 W 71 29 36.02548 6368465.3887  noam 1990.704  Cignet: 880805-890214                   
+WSFM WESTMMAC    N42 25 17.96317 W 71 29 35.97674 6368464.5018  noam 1990.704  Cignet: 890129-Present                  
+WETT WETTTI41    N48 57 14.99938 E 12 52 43.09445 6366610.8457  eura 1990.704  Cignet: 871112-890727                   
+WETM WETTMMAC    N48 57 14.63051 E 12 52 43.02608 6366607.0534  eura 1990.704  Cignet: 890523-Present                  
+YKNF YKNFTI41    N62 19  7.82586 W114 28  8.03255 6361532.6145  noam 1990.704  Cignet: 870100-890702                   
+YKNA YKNFTI4A    N62 19 22.43905 W114 28 50.51874 6361528.7418  noam 1990.704  Cignet: 890707-Present                  
+YUMA YUMA7894    N32 45 49.54723 W114 12 11.30072 6372090.1526  noam 1990.704                                          
+ZIMM ZIMMTI41    N46 41  6.25437 E  7 27 54.97496 6367745.7875  eura 1990.704  gotex (from Buetler)                    
+
+Non-VLBI sites propagated to 1990.704                                                              
+ALAM Alamo 1925  N34 37  6.09447 W120 15 24.37660 6371676.3074                 from .mes file (kf/901023)
+LIND Linda 1955  N34 46 45.74905 W120 17 58.80035 6371337.5538                 from .mes file (kf/901023)
+RUS1 Rustad RM1  N34 23 28.25739 W120 37 36.88806 6371470.3116                 from .mes file (kf/901023) 
+ALVA Alvado 1933 N34 37  6.15035 W120 15 24.45589 6371669.1019                 from .mes file (kf/901023) 
+AUST AUSTIN GPS  N30  8 39.47205 W 97 45 22.74360 6372915.4509  noam 1990.704  TREX 3 (MHM/881121)                     
+BLAN PIEDRAS BL  N35 28 56.87919 W121 17  4.04739 6370882.3308  pcfc 1990.704  SV4 (MHM/881016)                        
+BLHL BLAK HILL   N35 10 38.23638 W120 49 54.21658 6371181.9130  pcfc 1990.704  SV4 (MHM/881016)                        
+BOUC Boucher 2   N33  9 29.84360 W116 55  5.87319 6373376.9827  pcfc 1990.704  WGS84 Estimate (MHM/890124)             
+BRSH S.CLEMENTE  N33 13 49.36087 W118 24 17.46886 6372140.8497  pcfc 1990.704  TREX 3 (MHM/881121)                     
+CATO Castro 1898 N33 54 25.99694 W118 47  4.92196 6372399.9964  pcfc 1990.704  SV4 (MHM/881016)                        
+CENT S.CRUZ IS.  N33 49  0.04162 W119 45 10.51355 6371879.8462  pcfc 1990.704  SV4 (MHM/881016)                        
+CHAF CHAFFEE     N34  7 18.07590 W119 19 51.43419 6371691.8577  pcfc 1990.704  TREX 3 (MHM/881121)                     
+CHAR Charlie,HI  N21 23 29.50199 W157 59 43.71452 6375689.1756  pcfc 1990.704  SV4 (MHM/881016)                        
+CHUR CHURCHILL   N58 35 17.65792 W 94  5 18.08312 6362522.6897  noam 1990.704  TREX 3 (MHM/881121)                     
+COTR PT. MAGU    N33 56 30.10854 W119  9 14.38601 6371412.9844  pcfc 1990.704  SV4 (MHM/881016)                        
+CSTL Castle Mt   N35 45 22.86194 W120 20 21.84708 6372136.0357  noam 1990.704  SV4 (MHM/881016)                        
+DELT Delta Miss. N33 54 47.69885 W118  5 14.99321 6371556.9611  pcfc 1990.704  WGS84 Estimate (MHM/890123)             
+DEVL DEVILS PK   N33 51  3.14661 W119 47  3.86971 6372183.1375  pcfc 1990.704  TREX 3 (MHM/881121)                     
+ECHO Echo Rock   N34  2 46.66335 W118  3 14.39322 6373130.5541  pcfc 1990.704  WGS84 Estimate (MHM/890123)             
+ELMA El Monte AP N33 54 46.70036 W118  1 59.99321 6371547.0571  pcfc 1990.704  WGS84 Estimate (MHM/890123)             
+ELMO EL Monte A9 N33 51  6.86041 W118  5 42.69321 6371616.1947  pcfc 1990.704  WGS84 Estimate (MHM/890123)             
+FOR2 BRUSH       N36 24 20.77077 W121 46 22.10284 6370829.1651  pcfc 1990.704  QFTORB.148.NOATM (rwk/890103)           
+FIBR BUTTONWILL  N35 13  1.13882 W119 23 38.45773 6371056.1882  noam 1990.704  TREX 3 (MHM/881121)                     
+GAVI GAVIOTA     N34 19 20.63509 W120 11 55.65311 6372028.2554  pcfc 1990.704  TREX 3 (MHM/881121)                     
+GRAS Grassy      N34 33  2.14437 W120 24 50.63845 6371566.3775  pcfc 1990.704  SV4 (MHM/881016)                        
+HALK Haleakala   N20 34 50.50446 W156 15 21.75466 6378550.3967  pcfc 1990.704  SV4 (MHM/881016)                        
+HAPY Happy 1959  N34 10 44.17713 W118 50 56.40200 6372068.7324  pcfc 1990.704  SV4 (MHM/881016)                        
+HOPP Hopper 1941 N34 17 55.19084 W118 51 50.40203 6372701.9888  pcfc 1990.704  SV4 (MHM/881016)                        
+JURU Jurupa 3    N33 51 14.76106 W117 26 33.97030 6372120.0989  pcfc 1990.704  Estimate (MHM/891010)                   
+LACU LA CUMBRE   N34 18 54.10063 W119 42 50.01016 6372482.2599  pcfc 1990.704  TREX 3 (MHM/881121)                     
+LASE LA SE BASE  N33 36 54.48436 W117 56 32.28884 6371556.7173  pcfc 1990.704  K. Larson (890723)                      
+LOSP LOSP 1927   N34 42 48.20621 W120 36 22.27339 6371640.6385  pcfc 1990.704  SV4 (MHM/881016)                        
+LOVE Loma Verde  N34 18 59.77098 W118 40  4.80204 6372077.3407  pcfc 1990.704  SV4 (MHM/881016)                        
+MACA Cuyamaca Pk N32 46 16.75535 W116 36 34.99318 6373885.8246  pcfc 1990.704  WGS84 Estimate (MHM/890124)             
+MADC MADRE ECC   N34 53 41.49950 W120  4  1.66274 6372072.1334  pcfc 1990.704  SV4 (MHM/881016)                        
+MILL MILLER CADT N34 19 50.37360 W120 13 46.81107 6371397.2718  pcfc 1990.704  TREX 3 (MHM/881121)                     
+MOJ3 GOLDNCM3    N35  8 59.65877 W116 53 32.60225 6371921.2661  noam 1990.704  SV4 (MHM/881016)                        
+MOJE GOLDMOJA    N35  9  0.45887 W116 53 14.33383 6371928.8575  noam 1990.704  SV4 (MHM/881016)                        
+MULH Mulholland  N33 57  5.88259 W118 33 35.49499 6371919.2696  pcfc 1990.704  estimate (MHM/891010)                   
+NIGB S. Niguel   N33 20  7.00785 W117 43 59.16188 6371943.8270  pcfc 1990.704  SV4 (MHM/881016)                        
+NIGU S. Niguel   N33 20  7.00785 W117 43 59.16188 6371943.8270  pcfc 1990.704  SV4 (MHM/881016)                        
+OTAY Otay Mt.    N32 25 34.45173 W116 50 23.93334 6372963.3583  pcfc 1990.704  WGS84 Estimate (MHM/890123)             
+PARG Pt. ArguelloN34 22 31.36890 W120 36 53.96079 6371285.9779  pcfc 1990.704  Estimate (KLF/891029)                   
+PGC0 Pat Bay, BC N48 27 27.55388 W123 27  3.59965 6366130.7418  noam 1990.704  Nominal coordinates from PGC            
+PGC1 PGC Rogue   N48 27 27.51823 W123 27  2.70522 6366160.1769                 from RINEX file (KLF/910321)
+PICO Pico NCER   N34  9  5.91421 W118 36  4.56161 6372476.3625  pcfc 1990.704  Estimate (MHM/891010)                   
+POZE POZO ECC    N35  9 57.53650 W120 17 43.88980 6371789.1692  pcfc 1990.704  SV4 (MHM/881016)                        
+POZO POZO        N35  9 52.62546 W120 17 55.28724 6371748.5232  pcfc 1990.704  SV4 (MHM/881016)                        
+PTDU Pt. Dume 47 N33 49 19.24032 W118 47 59.99317 6371498.5350  pcfc 1990.704  WGS84 Estimate (MHM/890123)             
+ROKY Rocky Butte N35 28 59.86819 W121  3 34.60561 6371944.4277  pcfc 1990.704  SV4 (MHM/881016)                        
+SAFE S Fernando  N34  9  5.31804 W118 36  0.57045 6372510.9982  pcfc 1990.704  SV4 (MHM/881016)                        
+SBA2 S Barb I 2  N34 13 28.91688 W119 42 53.99316 6371488.8765  pcfc 1990.704  WGS84 Estimate (MHM/890123) not SBI2 (Vi
+SBIS S Barbara I N33 17 43.57367 W119  2 29.11959 6371857.8154  pcfc 1990.704  NAD27 Estimates (MHM/890107)            
+SBI2 S Barb. I 2 N33 17 43.29467 W119  2 28.64658 6371850.3418  pcfc 1990.704  NAD27 Estimates (MHM/890107)            
+SCLA Santa Clara N34  8 48.08108 W119  2 17.70559 6372067.0377  pcfc 1990.704  SV4 (MHM/881016)                        
+SCRE SCruz East  N33 52 35.11065 W119 33 52.98860 6371530.4240  pcfc 1990.704  TREX8 (mhm/890316)                      
+SCRW SCruz West  N33 53 41.34865 W119 55  4.77841 6371645.3860  pcfc 1990.704  TREX8 (mhm/890421)                      
+SIVP Sierra Vist N33 53 13.83453 W118  6 54.09321 6371555.9882  pcfc 1990.704  WGS84 Estimate (MHM/890123)             
+SJOS San Jose    N35  8  2.31886 W120 16 10.62412 6372170.0283  pcfc 1990.704  SV4 (MHM/881016)                        
+SJUA  San Juan   N33 44  8.57228 W117 44 17.47815 6372025.5450  pcfc 1990.704  Estimate (MHM/891010)                   
+SJU1 San Juan    N35 19 36.75024 W120 13  8.10854 6371466.5233  pcfc 1990.704  SV4 (MHM/881016)                        
+SLUI S. Luis Obi N35  5 47.72950 W120 33 38.79119 6371913.0975  pcfc 1990.704  WGS84 Estimate (MHM/890123)             
+SMIG San Miguel  N33 51 40.02826 W120 23  8.15311 6371731.0074  pcfc 1990.704  WGS72 Estimate (MHM/890124)             
+SNP2 S.Paula Pk  N34 15 27.76516 W119  0 26.00201 6372862.3416  pcfc 1990.704  SV4 (MHM/881016)                        
+SNTZ San Tuze 1  N33 51 51.22008 W117 53  1.26808 6371831.5225  pcfc 1990.704  K. Larson (890719)                      
+SOLE S. ROSA IS  N33 46 22.10597 W120  6 20.42262 6371949.0057  pcfc 1990.704  TREX 3 (MHM/881121)                     
+SOLI SOLIMAR     N34  7  9.85847 W119 20 33.66627 6371373.7987  pcfc 1990.704  TREX 3 (MHM/881121)                     
+SPED San Pedro   N33 34  7.41885 W118 20 10.85503 6371990.6181  pcfc 1990.704  K. Larson (890719)                      
+TEPT Tepusquet T N34 43 45.99240 W120 11 11.54615 6372125.2762  pcfc 1990.704  SV4 (MHM/881016)                        
+TEPW Tepusquet W N34 43 46.64345 W120 11 12.27963 6372125.8732  pcfc 1990.704  SV4 (MHM/881016)                        
+TWIN San Nichola N33  3 20.07352 W119 28 44.25650 6371952.2643  pcfc 1990.704  SV4 (MHM/881016)                        
+VICE Vincente    N33 33 52.10061 W118 24 36.00191 6371607.8743  pcfc 1990.704  SV4 (MHM/881016)                        
+VSLR VNDN7880    N34 22 35.01710 W120 36 59.16609 6371283.8189  pcfc 1990.704  SV4 (MHM/881016)                        
+WHIT WhittierD11 N33 44 12.19282 W118  4 18.72052 6371553.7419  pcfc 1990.704  K. Larson (890723)                      
+WORK Workman Hil N33 48 48.80818 W118  0 10.40500 6371879.4683  pcfc 1990.704  Estimate (MHM/891010)                   
+BLUF Bluff 1933  N32 45  5.12266 W118 31  6.74549 6372165.0901                 from .mes file
+7223 VLBI 7223   N34 22 35.46862 W120 36 59.11836 6371283.6885                 subtract CDP tie from VNDN (KLF/910321)
+VND2 7223 RM2    N34 22 34.56779 W120 36 58.82546 6371283.3550                 add CDP tie from 7223 (KLF/910321)
+
+
+
+

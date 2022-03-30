@@ -1,0 +1,24 @@
+# Generic Makefile for kf/svpos - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King August 1, 1996
+
+#LABELS: svpos:svpos:NONE:svpos  
+#LABELS: svdiff:svdiff:NONE:svdiff  
+#LABELS: svsp3:svsp3:NONE:svsp3   
+#LABELS: svpdiff:svpdiff:NONE:svpdiff
+#LABELS: svtrack:svtrack:NONE:svtrack
+#LABELS: svsnr:svsnr:NONE:svsnr
+#LABELS: fitsnr:fitsnr:NONE:fitsnr
+#LABELS: spcsnr:spcsnr:NONE:spcsnr
+#LABELS: simsnr:simsnr:NONE:simsnr
+#LABELS: fixms:fixms:NONE:fixms
+#LABELS: modear:modear:modear_lib:modear
+
+#SHARELIB: ../Khandlers:KalObs_hndl_lib  
+#SHARELIB: ../Ghandlers:cf_hndl_lib
+#SHARELIB: ../track:track_lib
+#SHARELIB: ../gen_util:gen_util_lib
+#SHARELIB: ../../libraries/matrix:kinv_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+         
+#OBJ_modear_lib  update_cfi   read_nav   preread_cf
+#OBJ_modear_lib  comp_clock   earth_to_inert   phase_mod 

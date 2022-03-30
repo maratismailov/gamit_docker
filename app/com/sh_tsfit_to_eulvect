@@ -1,0 +1,109 @@
+#!/bin/csh -f
+#
+#doc Get rinex files by day number from RINEX ftp archives
+#doc
+#
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "===================================================================="
+  echo " Create an eulvect input command file from tsfit output files " 
+  echo "  "
+  echo " Usage: sh_tsfit_to_eulvect -aprf <file> -platef <file>"
+  echo "  "
+  echo "       -aprf     apr file written by tsfit [Required]"
+  echo "       -platef   plate definition file  [Default plate.file]"
+  echo "  "      
+  echo " Plate file format: "
+  echo "  "      
+  echo " plate pname   4 char site ID's (line max 256 char)"             
+  echo " plate eurasia graz wtzr onsa vill zimm zeck artu kit3 gras gope joze kosg nril krtv mdvo nvsk irkt riga"      
+  echo "  "      
+  echo " Apr file format: "
+  echo " Site           X                Y            Z             vX          vY         vZ     Eopch   [required]    sX      sY       sZ      svX       svY       svZ       covarXY       covarXZ        covarYZ"
+  echo " ABPO_GPS  4097216.65585  4429119.03311 -2065771.33816   -0.01030    0.01517    0.01248 2009.3110  ! XYZ +-  0.00021  0.00022  0.00043  0.00027  0.00028  0.00054  0.00000004018  0.00000004598  0.00000004970"      
+  echo "  "      
+  echo " Examples: sh_tsfit_to_eulvect -aprf tsfit.apr -platef plate.file "
+  echo "  "
+  echo "===================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS ###########################  
+#
+# Setup necessary paths and filenames
+
+set aprf = ''
+set platef = 'plate.file'
+
+##################### DECIPHER COMMAND LINE ##################### 
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -a*:
+      set aprfile = $input[2]  
+    breaksw 
+    case -p*:
+       set platefile = $input[2] 
+    breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+
+##################### GET THE FILE BUILT #######################   
+set all_psites = ''
+
+set cnt = 1
+set nplates = `grep " plate " $platefile | awk '{ if (substr($0,1,1) == " ") {print $2}}' | sort | uniq | wc -l`
+set plates =  `awk '{ if (substr($0,1,1) == " ") {print toupper($2)}}'  $platefile | sort | uniq`
+
+echo "$aprfile Solution " >! eulvect.inp
+echo "Plates (a20 then free format) <--  the following lines are a priori values  " >> eulvect.inp
+
+foreach i ($plates)
+  echo $i | awk -v n=$cnt '{printf "%-20s %d  0.0    0.0    0.0 \n",$1,n}' >> eulvect.inp
+  @ cnt = $cnt + 1
+end
+echo "end" >> eulvect.inp
+
+set cnt = 1
+while ( $cnt <= $#plates )
+  set psites = `grep -i " plate " $platefile | awk -v p=${plates[${cnt}]} '{ if (substr($0,1,1) == " " && toupper($2) == p) {for (i=3; i<=NF; i++) {printf "%s \n", toupper($i)}}}'`
+  echo $psites
+  set all_psites = ($all_psites $psites)
+  
+  foreach i ($psites)
+#   ZONG_GPS  4070091.32057  2521417.36311  4200083.45620   -0.02582    0.01232    0.00119 2009.6877  ! XYZ +-  0.00047  0.00038  0.00050   0.00088  0.00072  0.00093
+    grep -i $i $aprfile | grep "! XYZ +- " | grep -v EXTENDED | awk -v n=${cnt} '{ if (substr($0,1,1) == " "){printf "%s   %d   %14.5f %14.5f %14.5f %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f %14.11f %14.11f %14.11f \n",$1,n,$2,$3,$4,$5,$6,$7,$15,$16,$17,$18,$19,$20}}' >> eulvect.inp
+  end
+  @ cnt = $cnt + 1  
+end
+
+grep "! XYZ +- " $aprfile | grep -v EXTENDED >! tmp.aprfile
+foreach i ($all_psites)
+  grep -i -v  $i tmp.aprfile >! tmp.apr
+  \mv tmp.apr tmp.aprfile
+end
+cat  tmp.aprfile | awk -v n=99 '{ if (substr($0,1,1) == " " &&  $15 != 9.99999 ){printf "%s   %d   %14.5f %14.5f %14.5f %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f %14.11f %14.11f %14.11f \n",$1,n,$2,$3,$4,$5,$6,$7,$15,$16,$17,$18,$19,$20}}' >> eulvect.inp
+
+echo "end" >> eulvect.inp
+
+echo "Written: eulvect.inp"
+
+exit    
+    
+# This is the eulvect input format...
+# Line 1:  Header line
+#c  Line 2:  Plates (a20 then free format) <--  the following lines are a priori values
+#c  Line 3:  "Plate Name"   "Plate Num"     "lat"  "long"    "omega"
+#c    .
+#c    .
+#c    .
+#c  Line X:  end
+#c           Site    Plate Num      X   Y    Z     Vx    Vy    Vz    Sx   Sy   Sz   Sxy   Sxz   Syz
+#c            .
+#c            .
+#c            .
+#c            .
+#c            end

@@ -1,0 +1,17 @@
+GAMIT_TO_IRIS: Converts GAMIT pole. and ut1. files to globk PMU format
+
+GAMIT_TO_IRIS: Program to convert GAMIT pole. and ut1. file to
+              standard IRIS format for use in SOLVK.
+
+Runstring:
+
+% gamit_to_iris <pole.> <ut1.> <iris_file>
+
+where <pole.> is the name of pole position file,
+      <ut1.>  is the name of ut1 file
+      <iris_file> is the name of the output IRIS format file (will
+              be appended to if it already exists.
+
+** WARNING ** Current version assumes that there are 6 pole position
+    pairs and 6 ut1 values per line.
+

@@ -1,0 +1,243 @@
+#!/bin/csh -f
+#
+#doc Extract different types of files from a .org or .prt file.
+#doc
+#
+# sh_exglk
+#
+# Purpose      Extract different types of files from a .org or .prt file.
+#
+# Required     .org or .prt file from globk/glorg. Some options in globk
+#              maybe need to set (see below)
+#
+# Output       files extracted
+#
+# sh_exglk -f <file> -vel <file> -pos <file> -apr <name>
+#
+#  -f   <file>     Name of input .org/.prt file
+#  -rmdup          Remove duplicate site names (sort -u used on estimates) 
+#  -rmnam          Remove duplicates based on 4-char names only 
+#  -vel <file>     Generates a standard globk velocity file (used in velview and
+#                  sh_plotvel).  Requires VSUM output option in prt_opt or org_opt
+#  -log <file>     Estimates of log function fits after earthquakes.  EQ_LOG option
+#                  must be used in the eq_file earthquake definition file.
+#  -pos <file>     Generates a standard globk velocity file but with position 
+#                  adjustments rather than velocities. Require PSUM output option.
+#  -apr <file>     Generates standard globk apriori coordinate file based on the 
+#                  uncorrelated position estimates in the globk output.  If EQ_LOG
+#                  option used in the eq_file, then EXTENDED apriori entries also
+#                  included.
+#  -gapr <file> <yr> <doy>   Extracts apriori coordinates for use in GAMIT.  This is needed becuase
+#                  GAMIT does not account for EXTENDED coordinate entries and so for
+#                  we need coordinates of data (standard GLOBK apriori files have coordinates
+#                  without the extened entries). <yr> and <doy> are optional and we used
+#                  extract specific date fron multiday/glbak solution.
+#  -utm <file>     Extracts UTM coordinates from output (UTM must be in output options)
+#  -geod <file>    Extracts GEOD coordinates from output (GEOD must ne in output options) 
+#  -svs <file>     Extract ephemeris in globk svs_file format
+#  -eq <EQ> <file> Extract earthquake co-seismic displacement for earthquake with
+#                  code <EQ> and puts results in <file>.  Requires PSUM and RNRP options
+#                  in output file. 
+#
+# by Tom Herring 11/06/2003/MOD 191221: Added gapr_file option,.
+#
+# MOD TAH 210507: Updated timetag to include $orgi root to avoid conflict in parallel
+#   run within 1 second of each other.
+#
+if ($#argv < 1) then
+        sed -e "1d" -e "/by Tom/q" -e "s/#//" $0
+        exit
+endif
+#
+# Set the defaults
+set vel_file = n
+set pos_file = n
+set apr_file = n
+set log_file = n
+set utm_file = n
+set geo_file = n
+set svs_file = n
+set eqc_file = n
+set gapr_file = n
+set rmdup    = N
+set rmnam    = N
+set gyr      = 0
+set gdoy     = 0
+#
+foreach a ($argv)
+  switch($a)
+    case -f:
+      set orgi = $argv[2]
+    breaksw
+    case -rmd*:
+      set rmdup = 'Y'
+    breaksw
+    case -rmn*:
+      set rmnam = 'Y'
+    breaksw
+    case -v*:
+       set vel_file = $argv[2]
+    breaksw
+    case -p*:
+        set pos_file = $argv[2]
+    breaksw
+    case -a*:
+        set apr_file = $argv[2]
+    breaksw
+    case -l*:
+        set log_file = $argv[2]
+    breaksw
+    case -u*:
+        set utm_file = $argv[2]
+    breaksw
+    case -ge*:
+        set geo_file = $argv[2]
+    breaksw
+    case -s*:
+        set svs_file = $argv[2]
+    breaksw
+    case -e*:
+        set eq_code  = $argv[2]
+        set eqc_file = $argv[3]
+    breaksw
+    case -ga*:
+        set gapr_file =  $argv[2]
+        # set gyr  = $argv[3]
+        if ( $#argv >= 3 ) then
+           set gyr = `echo $argv[3] | awk '{if (substr($1,1,1)=="-" ) {print "0"} else {print $1}}'`
+           set gdoy = $argv[4]
+        endif
+    breaksw
+  endsw
+shift
+end
+
+set root = $orgi:r
+
+# Now extract the different types of files
+if( $vel_file != n ) then
+    echo -n 'Creating '$vel_file
+    echo '* Velocity field from '$orgi' : RMDUP '$rmdup' RMNAM '$rmnam' : Date '`date` >! $vel_file
+    cat $HELP_DIR/vel.head >> $vel_file
+#   Extract velocities
+    if( $rmdup == 'Y' ) then
+        grep '^  [ 123]' $orgi | grep ' ...._....$' | awk '{if ( NF == 13 ) {print $0}}' | sort -r -u -k 1,12 >> $vel_file
+    else if ( $rmnam == 'Y' ) then
+        grep '^  [ 123]' $orgi | grep ' ...._....$' | awk '{if ( NF == 13 ) {print $0}}' |  awk '{gsub("_...","_GPS")} {print $0}' | sort -u -k 13.1,13.5 >> $vel_file
+    else
+        grep '^  [ 123]' $orgi | grep ' ...._....$' | awk '{if ( NF == 13 ) {print $0}}' >> $vel_file
+    endif
+    set num = `grep '^ ' $vel_file | wc` 
+    echo "  " $num[1] " entries saved" 
+endif
+if( $pos_file != n ) then
+    echo -n 'Creating '$pos_file
+    echo '* Position adjustments from '$orgi' : Date '`date` >! $pos_file
+    cat $HELP_DIR/pos.head >> $pos_file
+#   Extract posocities
+    grep '^  [ 123]' $orgi | grep ' ...._....$' | \
+        awk '{if ( NF == 10 ) {printf(" %9.5f %9.5f %8.2f %8.2f  %8.2f %8.2f  %8.2f %8.2f %6.3f %8.2f  %8.2f %8.2f %s\n",$1,$2,$3,$4,$3,$4,$5,$6,$7,$8,$8,$9,$10)}}' >> $pos_file
+    set num = `grep '^ ' $pos_file | wc` 
+    echo "  " $num[1] " entries saved" 
+endif
+# Aproiri file
+if( $apr_file != n ) then
+    echo -n 'Creating '$apr_file
+    echo '* Apriori coordinates file from '$orgi' : Date '`date` >! $apr_file
+# Extract the reference frame from soluton
+    grep ' Reference Frame        : ' $orgi | awk '{printf("+REFERENCE_FRAME %s\n",substr($0,27,16))}' >> $apr_file
+# MOD TAH 210507: Added $root to ts to keep name unique in parallel runs.
+    set ts = "${root}_`date +"%y_%m_%d_%H:%M:%S"`"
+    grep '^Apr. ' $orgi | awk '{printf("%8s  %s\n", $2, substr($0,5))}' >! t${ts}.apr
+# Extract any extended entries that we used in the run. 
+    grep '^ EXTENDED '  $orgi | awk '{printf("%8s  %s\n", $2,$0)}' >>  t${ts}.apr
+    sort t${ts}.apr | awk '{print substr($0,11)}' >> $apr_file
+ 
+    set numa = `grep '^ ' $apr_file | grep -v EXTENDED | wc -l` 
+    set nume = `grep '^ ' $apr_file | grep EXTENDED | wc -l` 
+    echo " $numa entries saved with $nume extended entries" 
+    \rm t${ts}.apr
+endif
+
+# GAMIT Apriori file (needed when EXTENDED entries are used; GAMIT can't handle them).
+if( $gapr_file != n ) then
+    echo -n 'Creating GAMIT ' $gapr_file
+    echo '* GAMIT Apriori coordinates file from '$orgi' : Date '`date` >! $gapr_file
+    echo '* These coordinates have the EXTENDED contributions added so no EXTENDED entries' >> $gapr_file
+# Extract the reference frame from soluton
+    grep ' Reference Frame        : ' $orgi | tail -1 | awk '{printf("+REFERENCE_FRAME %s\n",substr($0,27,16))}' >> $gapr_file
+# MOD TAH 210507: Added $root to ts to keep name unique in parallel runs.
+    set ts = "${root}_`date +"%y_%m_%d_%H:%M:%S"`"
+#   Get the positions from the PBO lines; velocities from the Int.  (Velocities not really needed
+#   since these are meent for use one day.
+    grep '^pbo. ' $orgi | awk '{printf(" %s %s\n",$2,substr($0,49,57))}' >! p${ts}.apr
+    grep '^Int. ' $orgi | awk '{printf(" %s %.5f %.5f %.5f\n", $2, $6,$7,$8)}' >! v${ts}.apr
+    paste '-d ' p${ts}.apr v${ts}.apr >! t{ts}.apr
+    if( $gyr != 0 ) then
+       set gmjd = `doy $gyr $gdoy | head -1 | awk '{printf("%.2f",$10+0.5)}'`
+    else 
+       set gmjd = 0
+    endif
+#   Now get the lines ww want
+    cat t{ts}.apr | awk -v gmjd=$gmjd '{if( gmjd==0 || (gmjd-$2)^2 < 0.1 ) {printf(" %s %14.5f %14.5f %14.5f %10.5f %10.5f %10.5f %10.4f \n",$1,$3,$4,$5,$7,$8,$9,($2-51544.0)/365.25+2000)}}' | sort >> $gapr_file
+    set numa = `grep '^ ' $gapr_file | wc -l`
+    echo " $numa entries saved" 
+    \rm [pvt]${ts}.apr
+endif
+
+if( $log_file != n ) then
+    echo -n 'Creating '$log_file
+    echo '* Postseismic log values from '$orgi' : Date '`date` >! $log_file
+    grep '^LOG' $orgi | awk '{print substr($0,4)}' >> $log_file
+    set num = `grep '^ ' $log_file | wc` 
+    echo "  " $num[1] " entries saved" 
+endif
+if( $utm_file != n ) then
+    echo -n 'Creating '$utm_file
+    echo '* UTM coordinates from '$orgi' : Date '`date` >! $utm_file
+    grep ' Reference Frame        : ' $orgi | awk '{printf("+REFERENCE_FRAME %s\n",substr($0,27,16))}' >> $utm_file
+    grep '^UTM' $orgi | awk '{print substr($0,4)}' >> $utm_file
+    set num = `grep '^ ' $utm_file | wc` 
+    echo "  " $num[1] " entries saved" 
+endif
+if( $geo_file != n ) then
+    echo -n 'Creating '$geo_file
+    echo '* Geodetic coordinates from '$orgi' : Date '`date` >! $geo_file
+    grep ' Reference Frame        : ' $orgi | awk '{printf("+REFERENCE_FRAME %s\n",substr($0,27,16))}' >> $geo_file
+    grep '^GEOD' $orgi | awk '{print substr($0,5)}' >> $geo_file
+    set num = `grep '^ ' $geo_file | wc` 
+    echo "  " $num[1] " entries saved" 
+endif
+if( $svs_file != n ) then
+    echo -n 'Creating '$svs_file
+    echo '* GPS Satellite ephemeris from '$orgi' : Date '`date` >! $svs_file
+    grep '^Eph' $orgi | awk '{print substr($0,6)}' >> $svs_file
+    set num = `grep '^ ' $svs_file | wc` 
+    echo "  " $num[1] " entries saved" 
+endif 
+if( $eqc_file != n ) then
+#
+    echo '* Coseismic displacements from '$orgi' for earthquake '$eq_code' :  Date '`date` >! $eqc_file
+    echo '*  Long      Lat       dE       dN        dE      dN       E +-     N +-           dH        dH      H +-  Site' >> $eqc_file
+    echo '*   deg      deg       mm       mm        mm      mm       mm       mm             mm        mm      mm ' >> $eqc_file   
+
+#   Extract the lines with the co-seismic displacements
+    # Edited by MAF (2014-11-20) to speed up reading and correct erroneous output when displacement field overflows
+    #set sites = `grep "km, Eq ${eq_code}" $orgi  | awk '{print substr($0,1,8)}'| sort -u`
+    #foreach s (`echo $sites`)
+    #    set ll = `grep $s $orgi | grep '^  [ 123][0-9][0-9]\.[0-9]' | head -n 1 | awk '{print $1,$2}'`
+    #    set off = `grep "km, Eq ${eq_code}" $orgi | grep $s | grep ' mm   ' | awk '{print $2,$4,$5,$7,$8,$10}'`  # Order here is dN, dE, dU
+    #    echo $ll $off $s | awk '{printf(" %9.5f %9.5f %8.2f %8.2f %8.2f %8.2f %8.2f %8.2f 0.001 %8.2f %8.2f %8.2f %s \n",$1,$2, $5,$3,$5,$3,$6,$4,$7,$7,$8,$9)}' >> $eqc_file
+    #end
+    grep " mm .* Eq $eq_code" $orgi | awk '{print substr($0,1,8),substr($0,18,8),substr($0,30,6),substr($0,36,8),substr($0,48,6),substr($0,54,8),substr($0,66,6)}' | sort >! temp.d$eq_code  # Site,dn,sigdn,de,sigde,du,sigdu
+    grep "^ .*_.$eq_code" $orgi | awk '{if ($0 ~ /^ / && $NF ~ /_/ && NF == 10) print substr($NF,1,8),$1,$2}' | sort >! temp.ll
+    join temp.ll temp.d$eq_code | awk '{printf " %9.5f %9.5f %8.2f %8.2f %8.2f %8.2f %8.2f %8.2f 0.001 %8.2f %8.2f %8.2f %s \n",$2,$3,$6,$4,$6,$4,$7,$5,$8,$8,$9,$1}' >> $eqc_file && rm -f temp.ll temp.d$eq_code
+    # END: Edit by MAF (2014-11-20)
+    set num = `grep '^ ' $eqc_file | wc` 
+    echo "  " $num[1] " entries saved" 
+endif
+     
+
+
+   
+    

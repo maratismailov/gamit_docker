@@ -1,0 +1,8 @@
+SMOOTH: Smooths time series data
+
+      Program to smooth a time series with sigmas 
+      Runstring:
+      CI> smooth <in_file> <x_col> <sig_col> <num_headers>
+              <out_file> <YY MM DD HH MM start> <YY MM DD HH MM SS stop>
+              <delta_t> <units> <fwhm>
+ 

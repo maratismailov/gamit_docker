@@ -1,0 +1,115 @@
+#!/bin/csh -f
+#
+#doc Get an sp3 file from SOPAC 
+#doc                                               
+#
+# R. King 180501 
+
+# Help if no arguments passed
+if( $#argv == 0 ) then
+  echo "====================================================================================="
+  echo " Get an sp3 final or rapid file from SOPAC  (no ultra-rapid, no long file names) " 
+  echo "  "                        
+  echo " Usage: sh_sopac -orbt <orbt> -yr <yr> -doy <doy> "
+  echo "  "
+  echo " Where: <orbt> 4-character orbit product (e.g. 'igsf')"
+  echo "        <yr> 4 char year of nav data requested  "
+  echo "        <doy> 3 char day of year of nav data requested   " 
+  echo "" 
+  echo "====================================================================================="
+  exit
+endif
+
+# Decode the command line
+
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -orbt:
+      set orbt = $input[2] 
+    breaksw
+    case -yr:
+      set year = $input[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+      set yr = `sh_year -year $year`
+    breaksw 
+    case -doy:
+      set doy = `echo $input[2] | awk '{printf" %03d \n", $1}'`
+    breaksw 
+ endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+ 
+echo "Getting requested orbit files from SOPAC"
+
+# Set timestamp hostname variable
+set ts = "`hostname`:`date +"%H%M%S"`"
+
+#Check required fields
+if ( ${year} == '' || ${doy} == '' ) then
+  echo "Required fields not complete:- yr: $year doy: $doy --Stop "
+  exit
+endif 
+                        
+# Test which program to use for download
+if ( `uname -s` == 'Darwin' ) then  # Mac
+  if ( -e `which curl` ) then  # curl exists
+    set prog = 'curl -# -L -R -O'
+  else if ( -e `which wget` ) then  # wget exists
+    set prog = 'wget -nv -N'
+  else  # Neither curl nor wget available
+    echo 'Neither wget nor curl available to download EOP tables. Exiting...' &&
+     exit 1
+  endif
+else
+  if ( -e `which wget` ) then  # wget exists
+    set prog = 'wget -nv -N'
+  else if ( -e `which curl` ) then  # curl exists
+    set prog = 'curl -# -L -R -O'
+  else  # Neither wget nor curl available
+    echo 'Neither wget nor curl available to download EOP tables. Exiting...' &&
+     exit 1
+  endif
+endif
+                                                                    
+# Construct the file name: SOPAC has IGS, EMR, GFZ, JPL, MIT, and SIO products, all 
+# with conventional lowercase short names with extent sp3.Z
+
+# Get the 3-character sp3 ID and 1-character latency  
+#  if finals, use the 3-character AC name 
+set pre = `echo $orbt | cut -c 4`
+if ( $pre == 'f' ) then
+  set prod = `echo $orbt | cut -c 1-3`   
+else
+  set prod = `echo $orbt | cut -c 1-2,4`
+endif
+        
+# Set the GPS week and day-of-week
+set gpsw = `doy ${yr[1]} ${doy} | tail -n -2 | head -n 1 | awk '{printf "%04d \n", $3}'`
+set gpsd = `doy ${yr[1]} ${doy} | tail -n -2 | head -n 1 | awk '{printf "%1d  \n", substr($7,1,1)}'`
+
+# Set the file name 
+set sfname = $prod$gpsw$gpsd.sp3      
+set wfname = $prod$gpsw$gpsd.sp3.Z
+         
+# Set the directory 
+set sdir = products/$gpsw
+
+# Get the file and uncompress it.  SIO rapids (but not IGS rapids are uncompressed if recent)
+echo "Download command:"                                                                     
+if( $prod == sir ) then 
+  echo "$prog ftp://garner.ucsd.edu/$sdir/$sfname"
+  $prog ftp://garner.ucsd.edu/$sdir/$sfname
+else
+  echo "$prog ftp://garner.ucsd.edu/$sdir/$wfname"
+  $prog ftp://garner.ucsd.edu/$sdir/$wfname
+  sh_uncompress $wfname  
+endif 
+
+# MOD TAH 180531" Added DOWNLOADED line
+set ufname = $wfname:r
+if( -e $ufname ) echo "DOWNLOADED $ufname"
+
+exit
+

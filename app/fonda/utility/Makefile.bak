@@ -1,0 +1,73 @@
+# machine independent makefile for utilities
+# 
+# usage:  make (uncomment macro definition lines before making)
+#              (note the LIB line is local environment dependent)
+#
+# by R. King June 23, 1994
+#
+
+#uncomment the line below for optimization version
+all: align_frame calc_bsl_azm compare_coor get_line get_scater get_v_rel net_update plot_line rem_model syn_bsl_rat  
+
+# uncomment the following lines for hp-optimized compilation   
+#FFLAGS = +O3 +U77 -K
+#CFLAGS = +O3
+#FTN = fort77
+#CC = cc
+#OPTLIB = util3.a
+#LIB = ../com/foncom.a
+
+# uncomment the following lines for hp-debugged compilation
+#FFLAGS = -g +U77 -K
+#CFLAGS = -g 
+#FTN = fort77
+#CC = cc
+#OPTLIB = utild.a
+#LIB = ../com/foncom.a
+
+# uncomment the following lines for sun-optimized compilation
+FFLAGS = -O3
+FTN = f77
+OPTLIB = util3.a
+LIB = ../com/foncom.a
+
+# uncomment the following lines for sun-debugged compilation
+#FFLAGS = -g -C
+#FTN = f77
+#OPTLIB = utild.a
+#LIB = ../com/foncom.a
+all: align_frame calc_bsl_azm compare_coor get_line get_scater get_v_rel net_update plot_line rem_model syn_bsl_rat
+
+align_frame: align_frame.o $(LIB)
+	$(FTN) $(FFLAGS) align_frame.o $(LIB) -o align_frame
+
+calc_bsl_azm: calc_bsl_azm.o $(LIB)
+	$(FTN) $(FFLAGS) calc_bsl_azm.o $(LIB) -o calc_bsl_azm
+
+compare_coor: compare_coor.o $(LIB)
+	$(FTN) $(FFLAGS) compare_coor.o $(LIB) -o compare_coor
+
+get_line: get_line.o $(LIB)
+	$(FTN) $(FFLAGS) get_line.o $(LIB) -o get_line
+
+get_scater: get_scater.o $(LIB)
+	$(FTN) $(FFLAGS) get_scater.o $(LIB) -o get_scater
+
+get_v_rel: get_v_rel.o $(LIB)
+	$(FTN) $(FFLAGS) get_v_rel.o $(LIB) -o get_v_rel
+                                           
+net_update: net_update.o 
+	$(FTN) $(FFLAGS) net_update.o $(LIB) -o net_update
+
+plot_line: plot_line.o $(LIB)
+	$(FTN) $(FFLAGS) plot_line.o $(LIB) -o plot_line
+
+rem_model: rem_model.o $(LIB)
+	$(FTN) $(FFLAGS) rem_model.o $(LIB) -o rem_model
+
+syn_bsl_rat: syn_bsl_rat.o $(LIB)
+	$(FTN) $(FFLAGS) syn_bsl_rat.o $(LIB)  -o syn_bsl_rat
+
+.f.o:
+	$(FTN) -c $(FFLAGS) $<
+

@@ -1,0 +1,226 @@
+#!/bin/bash
+
+version='2021/11/29'
+
+# Redirect standard error to /dev/null
+#exec 2>/dev/null
+
+# Null input test
+if [ $# -eq 0 ]; then
+  cat << END && exit 1
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+  Program:     $(basename $0)
+  Written by:  Michael Floyd (2013/03/19, MIT)
+  Last edited: Michael Floyd ($version, MIT)
+
+  Usage: $(basename $0) -f <apr-file(s)> [options]
+
+  Options:
+
+    -c               : Output ECEF Cartesian (X,Y,Z) coordinates [default]
+
+    -e <expt>        : Experiment code to be read from sites.defaults file (only
+                       valid with -s option)
+
+    -g               : Output geodetic (longitude,latitude,elevation)
+
+    -o <OTL file(s)> : Existing ocean tidal loading list file(s) against which
+                       to test if sites already have a BLQ record; if this
+                       option is used, an output otl_$(basename $0).list file will
+                       be created from the OTL list file(s) given here (in
+                       preferential order from first to last if more than one
+                       file given), and other sites will be output as usual to a
+                       file in a format ready to submit to 
+
+    -s <file>        : sites.defaults file defining sites to be included from
+                       input apr-file
+
+  Description: $(basename $0) reads a GAMIT/GLOBK-style a priori coordinates file
+               and formats one entry per four-character site ID for input to the
+               ocean tide loading service at
+               http://holt.oso.chalmers.se/loading/#select, whose output is
+               compatible with GAMIT's otl.list format. Optionally providing a
+               sites.defaults file will write only those sites specified in the
+               sites.defaults file. Additionally, specifying an experiment code
+               will write only those sites listed as part of that experiment in
+               the sites.defaults file.
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+END
+fi
+
+# Program defaults
+flags='cefgos'                   # Command option flags
+tmp='/tmp'
+out_type=0                       # Output ECEF Cartesian (X,Y,Z) coordinates
+sd=()                            # No sites.defaults file(s) defining sites to be included
+expt=()                          # No experiment code for sites.defaults file(s)
+otl=()                           # No OTL file(s) to be searched for existing BLQ records
+wgs84=( 6378137 298.257223563 )  # Major radius and inverse flattening of WGS84 ellipsoid
+tol='10000'                      # Tolerance defining whether or not two sites are the same when comparing to existing otl.list file (m); same as gamit/grdtab/get_otl_list.f
+
+# Parse command line arguments
+while [ $# -gt 0 ]; do
+
+  case $1 in
+
+    -c )  # Output ECEF Cartesian (X,Y,Z) coordinates [default]
+      out_type=0
+      ;;
+
+    -e )  # Experiment code (requires -s option)
+      shift  # Remove option flag from argv
+      expt=( $(awk -v FS=" -[$flags]" '{print $1}' <<< " $*") )
+      ;;
+
+    -f )  # Input apr-file
+      shift  # Remove option flag from argv
+      apr=( $(awk -v FS=" -[$flags]" '{print $1}' <<< " $*") )
+      ;;
+
+    -g )  # Output geodetic (longitude,latitude,elevation) coordinates
+      out_type=1
+      ;;
+
+    -o )  # Existing OTL file(s)
+      shift  # Remove option flag from argv
+      otl=( $(awk -v FS=" -[$flags]" '{print $1}' <<< " $*") )
+      ;;
+
+    -s )  # sites.defaults file
+      shift  # Remove option flag from argv
+      sd=( $(awk -v FS=" -[$flags]" '{print $1}' <<< " $*") )
+      ;;
+
+  esac
+
+  shift
+
+done
+
+# Test for incompatible input arguments
+if [ ${#expt[*]} -gt 0 -a ${#sd[@]} -eq 0 ]; then
+  cat << END && exit 1
+! Error ! Cannot specify experiment code(s) (-e option) without
+          sites.defaults file(s) (-s option). Exiting...
+END
+fi
+
+# Loop over input apr-files
+for file in ${apr[@]}; do
+
+  # Reverse order of file and remove any entries from the IGS cumulative solution
+  # to get the latest estimate of a site's coordinates
+  # (from http://www.pement.org/awk/awk1line.txt)
+  awk 'BEGIN {i = 0}; {apr[i++] = $0}; END {for (j = i-1; j >= 0;) print apr[j--]}' ${apr[*]} |
+   grep '^ ' |
+   grep -v 'EXTENDED' >| $tmp/$(basename $file)
+   #grep -v -E 'EXTENDED|IGS[0-9][0-9]P[0-5][0-9]' >| $tmp/$(basename $file)
+
+  # Write temporary ocean tide loading input file
+  out="$(basename $apr .apr).otl"
+  if [ $out_type -eq 1 ]; then  # Write geodetic coordinates
+
+    #awk '{print $2,$3,$4,$1}' $tmp/$(basename $apr) |
+    # gmt mapproject -E -I |
+    # awk '{printf "%-24s %16s%16s%16s\n",substr($4,1,4),$1,$2,$3}' |
+    # sort -k 1.1b,1.4b -u >| $tmp/$out
+    # #awk '{printf "%-24s %16s%16s",substr($4,1,4),$1,$2; if ($3 < 0) printf "%16s\n",0; else printf "%16s\n",$3}' >| $tmp/$out
+    # N.B. Conversion of geocentric to geodetic coordinates follows one iteration of Bowring's (1985) algorithm:
+    # Bowring, B. R. (1985), The accuracy of geodetic latitude and height equations, Survey Review, 28, 202-206, doi:10.1179/sre.1985.28.218.202.
+    awk -v a=${wgs84[0]} -v invf=${wgs84[1]} 'BEGIN {pi=4*atan2(1,1); f=1/invf; b=a*(1-f); e1=f*(2-f); e2=e1/(1-e1)}; {p=sqrt($2^2+$3^2); r=sqrt(p^2+$4^2); tanu=(1-f)*($4/p)*(1+e2*b/r); cos2u=1/(1+tanu^2); cos3u=cos2u*sqrt(cos2u); sinu=tanu*sqrt(cos2u); sin2u=1-cos2u; sin3u=sin2u*sinu; tanlat=($4+e2*b*sin3u)/(p-e1*a*cos3u); cos2lat=1/(1+tanlat^2); sinlat=tanlat*sqrt(cos2lat); lon=atan2($3,$2)*180/pi; lat=atan2(tanlat,1)*180/pi; h=p*sqrt(cos2lat)+$4*sinlat-a*sqrt(1-e1*sinlat^2); printf "%-24s %16.10f%16.11f%16.10f\n",substr($1,1,4),lon,lat,h}' $tmp/$(basename $apr) |
+     sort -k 1.1b,1.4b -u >| $tmp/$out
+
+  else  # Write ECEF Cartesian coordinates [default]
+
+    awk '{printf "%-24s %16s%16s%16s\n",substr($1,1,4),$2,$3,$4}' $tmp/$(basename $apr) |
+     sort -k 1.1b,1.4b -u >| $tmp/$out
+
+  fi
+
+  # Edit ocean tide loading input file according to sites.defaults file(s) and experiment(s) specified
+  if [ ${#sd[@]} -gt 0 -a ${#expt[*]} -gt 0 ]; then  # sites.defaults file(s) and experiment(s) specified
+
+    sites=()
+    for ex in ${expt[*]}; do
+      sites=( ${sites[*]} $(grep -h "^ *[^ ]* $ex " ${sd[@]} | grep -v 'all_sites' | awk '{print substr($1,1,4)}' | tr '[:lower:]' '[:upper:]') )
+    done
+    tr ' ' '\n' <<< ${sites[*]} |
+     sort -k 1.1b,1.4b -u |
+     join -v 1 $tmp/$out - |
+     awk '{printf "%-24s %16s%16s%16s\n",$1,$2,$3,$4}' >| $out
+    rm -f $tmp/$out
+
+  elif [ ${#sd[@]} -gt 0 ]; then  # sites.defaults file(s) specified
+
+    grep -h '^ ' ${sd[@]} |
+     awk '{print substr($1,1,4)}' |
+     tr '[:lower:]' '[:upper:]' |
+     sort -k 1.1b,1.4b -u |
+     join -v 1 $tmp/$out - |
+     awk '{printf "%-24s %16s%16s%16s\n",$1,$2,$3,$4}' >| $out
+    rm -f $tmp/$out
+
+  else  # No sites.defaults file(s) specified [default]
+
+    mv -f $tmp/$out $out
+
+  fi
+
+  # Edit ocean tide loading input file according to existing otl.list file(s)
+  if [ ${#otl[@]} -gt 0 ]; then
+    head -n 1 ${otl[0]} >| $tmp/otl_$(basename $0).list
+    rm -f $tmp/$out
+    for file in ${otl[@]}; do
+      grep -h '^$$ *.....* RADI *TANG *lon/lat' $file |
+       awk -v a=${wgs84[0]} -v invf=${wgs84[1]} 'BEGIN {pi=4*atan2(1,1); f=1/invf}; {lon=substr($0,47,10); lat=substr($0,57,10); h=substr($0,67); N=a/sqrt(1-f*(2-f)*sin(lat*pi/180)^2); printf "%-24s %16.5f%16.5f%16.5f\n",substr($2,1,4),(N+h)*cos(lat*pi/180)*cos(lon*pi/180),(N+h)*cos(lat*pi/180)*sin(lon*pi/180),((1-f)^2*N+h)*sin(lat*pi/180)}' |
+       sort -k 1.1b,1.4b -u >| $tmp/$(basename ${file%.*}).otl
+      if [ $out_type -eq 1 ]; then  # Geodetic coordinates
+        existing_sites=( $(join $out $tmp/$(basename ${file%.*}).otl | awk -v a=${wgs84[0]} -v invf=${wgs84[1]} -v tol=$tol 'BEGIN {pi=4*atan2(1,1); f=1/invf}; {if (sqrt(($2-$5)^2+($3-$6)^2+($4-$7)^2) <= tol) print $1}') )
+      else  # ECEF Cartesian coordinates [default]
+        existing_sites=( $(join $out $tmp/$(basename ${file%.*}).otl | awk -v tol=$tol '{if (sqrt(($2-$5)^2+($3-$6)^2+($4-$7)^2) <= tol) print $1}') )
+      fi
+      if [ ${#existing_sites[*]} -gt 0 ]; then
+        awk '/^\$\$/,/^\$\$ *END *HEADER/ {if ($0 ~ /^\$\$ *END *HEADER/) {print; exit} else print}' $file >> $tmp/otl_$(basename $0).list
+        grep -B 1 -A 9 -E "$(tr ' ' '|' <<< ${existing_sites[*]} | sed 's/^/^ */; s/|/$|^ */g; s/$/$/')" $file |
+         sed '/--/d' >> $tmp/otl_$(basename $0).list
+        grep -v -E "$(tr ' ' '|' <<< ${existing_sites[*]})" $out >| $tmp/$out
+        mv -f $tmp/$out $out
+      fi
+      rm -f $tmp/$(basename ${file%.*}).otl
+    done
+    mv -f $tmp/otl_$(basename $0).list otl_$(basename $0).list
+    cat << END
+Created otl_$(basename $0).list for sites in $(tr ' ' ',' <<< ${apr[@]})
+from $(tr ' ' ',' <<< ${otl[@]})
+END
+  fi
+
+  # Split final ocean tide loading input file?
+  if [ $(wc -l $out | awk '{print $1}') -gt 100 ]; then
+
+    split -a 3 -l 100 $out
+    for file in x[a-z][a-z][a-z]; do
+      mv -f $file $(awk -v out=$out 'BEGIN {split("a b c d e f g h i j k l m n o p q r s t u v w x y z",letters)}; {for (i=1; i<=length(letters); i++) {if (substr($1,4,1) == letters[i]) c=i; if (substr($1,3,1) == letters[i]) b=i; if (substr($1,2,1) == letters[i]) a=i}; printf "%s.%03d",out,26**2*(a-1)+26*(b-1)+c}' <<< $file) && rm -f $file
+    done
+    cat << END
+Paste the contents of $out.* into the web form at
+http://holt.oso.chalmers.se/loading/#select
+END
+
+  elif [ -s "$out" ]; then
+
+    cat << END
+Paste the contents of $out into the web form at
+http://holt.oso.chalmers.se/loading/#select
+END
+
+  else
+
+    rm -f $out
+
+  fi
+
+done  # END: Loop over input apr-files
+

@@ -1,0 +1,39 @@
+TSSUM: Generate time series files
+
+Usages:
+tssum <dir> <prod_id> <-R/A/C>[K] <list of .org files>
+
+where <dir>  -- directory to put the time series in.  This directory
+ will be checked for existing files and these will be appended to
+      <prod_id> is product id with form: pbo.final_frame.  Characters
+             5:9 will used for time series type (normally rapid or final)
+      <-R> causes exisiting time series files to be ignored (required if none exist)
+      <-C> will keep exising entries but recompute the reference position
+      <-A> caused new files to append/or replace existing entries.
+      Adding K will keep lines that read with errors i.e., -CK will recompute
+           reference position and keep existing entries even if there are errors
+           reading the line in the input .pos files. Normally K option would not 
+           be used.
+      <list of .org files> glred/globk org files with output option PBOP
+ output option set.
+
+PROD_ID can be any string but the form below will be interpretted by other ts-series
+programs.
+Recommended PROD_ID types (used in PBO):
+Format <cen>.<series>_<frame>+<type>
+<cen>     - Center 3 characters (bsl cwu pbo mit) or special product
+            code e.g., aug for Augustine Volcano, aku for Akutan volcano
+<series>  - Orbit series: final or rapid (5-characters)
+<frame>   - Frame type: loose, frame, itr05 (5-characters)  
+<type>    - Optional type.  If not given series name is used.  Additional
+            type put in the final series is supplemental run (suppl).
+
+Stsndard PROD_ID
+pbo.rapid_frame
+pbo.final_frame
+pbo.final_frame+suppl
+
+MOD TAH 130325: Additional descriptive headers added to the start of the .pos
+    file Verion 1.1.0 
+
+ 

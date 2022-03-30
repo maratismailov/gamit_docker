@@ -1,0 +1,33 @@
+# Generic Makefile for solve - see documentation at libraries/comlib/Makefile.generic
+# Last changed by McClusky/King  8 July 2009
+
+FFLAGS = +O3 +U77 -K    #hp
+FFLAGS = -O3 -Nl100     #sun
+FFLAGS = -O3 -Nl100     #sol
+FFLAGS = -O3 -Wuninitialized -Wunused -Wno-globals -fno-f2c -ffast-math #g77  
+FFLAGS = -O3 -Wuninitialized -Wunused -fno-f2c -ffast-math -m64 #gftn  
+FFLAGS = -O  -Vaxlib -zero -72 -w95 -w90 -cm #ifc
+FFLAGS = -O3 -Vaxlib -zero -u -72 -w95 -w90 -cm -assume byterecl -static -X #intel
+
+#LABELS: solve:solve:solve_lib:solve
+ 
+#SHARELIB: ../lib:gamit_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+ 
+#OBJ_solve_lib abnew	add1	add2 	add2i	addwgt  addwgtb apply	atmcon 	atmdif	atm_grad_part	atmstr	atpa 
+#OBJ_solve_lib	atpdal	avgload avgvar 	baslin 	bcheck	bdeci	bexpec 
+#OBJ_solve_lib	bfwork	biset	bisopt 	bnew	bnew1	bsort 	bstat	check_adjust  copy1d	copy1i 
+#OBJ_solve_lib	covbln	covst1	covst2 	cpmat2	csort 	dbadst	dbar	dbcnt 
+#OBJ_solve_lib	dbias	dcheck	degfrm 	degred	delcon	distnc 	dopt	dot	double  dxyz_to_neu
+#OBJ_solve_lib	eptime	filld	fillj 	elem 	filobs	filomc	filpar 	fnddbi	formn1	formn2 
+#OBJ_solve_lib	fxbias	getcda	gethed	getslt  get_bias_scale  get_eop_apr	get_err_apr	get_grad_apr get_narrowlane
+#OBJ_solve_lib get_sat_apr	get_sit_apr	get_solve_cut	get_zen_apr	get_widelane	glohed	gpgt gradout gtpgx  
+#OBJ_solve_lib	kepxyz 	keywrd	lcloos	lcnorm 	live	loos12	lrgint 	lsqdo1	lsqerr	
+#OBJ_solve_lib	lsqint	lsqio 	lsqprt	lsquar	lweop	lc_solution lc_soln12  lwgrad 	lwsat	lwstat	lwzen 	matprt	 
+#OBJ_solve_lib	nbias	nbias1 	nbiasp	nbiasr	newfil 	nm2131	nm2233	nm32 
+#OBJ_solve_lib	nmu11	normd 	nrmsc2	nrmscl	nu23 	oline	opera	opera2 	pclock	pgrad pseuwl	
+#OBJ_solve_lib pzenth qhead1 	qhead2	qhead3	qhead4 	raddeg	remenu 	read_bfl	read_bfl_sess  read_biases
+#OBJ_solve_lib	reodrd	round_bias resolve_wl rmjunk	set_para solve1	solve2	solve3 	solvlc	sort1i	sort4i 
+#OBJ_solve_lib	sortbl	sphxyz	stack 	sversn	tapdrv 	trans	transx	updat3 	update	upi	upl 
+#OBJ_solve_lib	uporb	uselss 	wbias   weop	wgrad	wl_fixed wlmode 	write_soln wsat wstat	wzen	xyzkep 
+#OBJ_solve_lib	zenout zero1d 	zero1i	zero2d	zero2i 

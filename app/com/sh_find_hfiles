@@ -1,0 +1,189 @@
+#!/bin/csh -f 
+#
+#doc Find h-files using paths given and link them to the current directory 
+#doc
+#
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "===================================================================================="
+  echo " Find h-files using paths given and link them to the current directory "
+  echo " "
+  echo " Usage: sh_find_hfiles <options> "
+  echo "  "
+  echo " Where the following are some of the options avaiable: " 
+  echo "  "
+  echo " -d <yr day> : yr and day are days to be searched e.g. 1997 153. Required " 
+  echo " -type <ascii/binary/combined> : type of h-files to find [Default: ascii]"
+  echo "    for this purpose, 'combined ' is defined as lower-case extent, and "
+  echo "    'binary' as lowercase extent, so, e.g. PBO combined files are considered 'binary'"
+  echo " -net <name> : list of unique parts of h-file names to search for. Required."  
+  echo " -hpth <path> : top directory name to search under [Default .]."
+  echo "  "
+  echo "  Example: sh_find_hfiles -d 1999 125 -type combined -net SIO -hpth /data26/tah/SIO_GLX"
+  echo "           sh_find_hfiles -d 2000 100 -type asci -net igs1 igs2 eura -hpth ./ascih_2000"
+  echo "           sh_find_hfiles -d 1999 250 -type binary -net tubi -hpth ./binh_2000"
+  echo "===================================================================================="
+  exit
+endif
+
+##################### SET UP DEFAULTS #############################   
+set type = 'ascii'
+set netlist  = 'ALL' 
+set hpth = '.'
+set yr = ''
+set year = ''
+set doy = ''  
+set hseries = ''
+
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+     case -d*:
+        set year = $argv[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+        set yr = `sh_year -year $year`
+        set doy = $argv[3]
+        set jd   = `doy $yr[1] $doy | tail -n -3 | head -n 1 | awk '{print $8}'` 
+        set mjd  = `doy $jd | tail -n -3 | head -n 1 | awk '{printf "%6d \n", $10}'`
+        set doy  = `doy $jd | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`  
+        set caldate = `doy $mjd | tail -n -3 | head -n 1 | awk '{printf "%s%s%s \n", substr($0,8,2), substr($0,11,2),substr($0,14,2)}'`
+        set gpsw = `doy ${yr[1]} ${doy} | tail -n -2 | head -n 1 | awk '{printf "%04d \n", $3}'`
+        set gpsd = `doy ${yr[1]} ${doy} | tail -n -2 | head -n 1 | awk '{printf "%1d  \n", substr($7,1,1)}'`                                
+     breaksw
+     case -t*:
+        set type = $argv[2]
+     breaksw   
+     case -n*:
+       set netlist = (`echo $argv | cut -d- -f2`); shift netlist
+     breaksw
+     case -hpth:
+       set hpth = (`echo $argv | cut -d- -f2`); shift hpth
+     breaksw   
+     case -hseries:
+       set hseries = (`echo $argv | cut -d- -f2`); shift hseries
+     breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv 
+end
+
+##################### GET THE JOB DONE ############################
+#Check required fields
+if( $year == '' || $doy == '' ) then
+   echo " sh_find_hfiles required fields not complete:- yr: $year doy: $doy "
+   exit
+endif
+
+set ts = "`hostname`:`date +"%H%M%S"`"
+
+# Tell user what is happening
+if( $type == 'ascii' ) then
+    echo 'Searching for ascii h-files under: '$hpth
+endif
+if( $type == 'binary' ) then
+    echo 'Searching for binary h-files under: '$hpth
+endif
+if( $type == 'combined' ) then
+    echo 'Searching for combined h-files under: '$hpth
+endif
+
+#------------------------------------------------------------------------
+# Start with ASCII and see what we find.
+set lhp = `echo $hpth | wc`
+if( $type == 'ascii' && $lhp[3] > 0 ) then
+   
+# Loop on netlist entries 
+   if ( -e tmp.1.$ts ) \rm tmp.1.$ts; touch tmp.1.$ts
+   if ( -e tmp.2.$ts ) \rm tmp.2.$ts; touch tmp.2.$ts
+   foreach net ( $netlist )
+     find     $hpth -name "h${net}?.${yr[2]}${doy}*" -print  >> tmp.1.$ts     
+     find . -type l -name "h${net}?.${yr[2]}${doy}*" -print  >> tmp.2.$ts
+   end
+
+# Remove existing links
+   awk '{print "\\rm -f "$1}' tmp.2.$ts >! tmp.rm.$ts
+   csh tmp.rm.$ts  >&! /dev/null
+
+# Make new links
+   cat tmp.1.$ts | awk -F/ '{print "ln -s "$0,$NF}' >! tmp.lnk.$ts
+
+   echo 'Making the following ascii h-file links'
+   cat tmp.lnk.$ts
+   csh tmp.lnk.$ts >&! /dev/null
+
+#  Now clean up and remove temporary files:
+   \rm tmp.1.$ts tmp.2.$ts tmp.rm.$ts tmp.lnk.$ts
+
+endif
+
+#----------------------------------------------------------------------
+# Now search for BINARY files.      
+set lhp = `echo $hpth | wc`
+if( $type == 'binary' && $lhp[3] > 0 ) then
+   
+# Loop on netlist entries 
+   if ( -e tmp.1.$ts ) \rm tmp.1.$ts; touch tmp.1.$ts
+   if ( -e tmp.2.$ts ) \rm tmp.2.$ts; touch tmp.2.$ts
+    echo " hpth netlist $hpth $netlist "
+   foreach net ( $netlist )
+     find     $hpth -name "h${caldate}????_${net}*.gl?" -print  >> tmp.1.$ts     
+     find . -type l -name "h${caldate}????_${net}*.gl?" -print  >> tmp.2.$ts  
+     find     $hpth -name "${net}${gpsw}${gpsd}.${hseries}.glb" -print  >> tmp.1.$ts   
+     find . -type l -name "${net}${gpsw}${gpsd}.${hseries}.glb" -print  >> tmp.2.$ts  
+   end
+
+# Remove existing links
+   awk '{print "\\rm -f "$1}' tmp.2.$ts >! tmp.rm.$ts
+   csh tmp.rm.$ts  >&! /dev/null
+
+# Make new links
+   cat tmp.1.$ts | awk -F/ '{print "ln -s "$0,$NF}' >! tmp.lnk.$ts
+
+   echo 'Making the following binary h-file links'
+   cat tmp.lnk.$ts
+   csh tmp.lnk.$ts >&! /dev/null
+
+#  Now clean up and remove temporary files:
+   \rm tmp.1.$ts tmp.2.$ts tmp.rm.$ts tmp.lnk.$ts
+
+endif
+
+#----------------------------------------------------------------------
+# Now search for COMBINED files.      
+set lhp = `echo $hpth | wc`
+if( $type == 'combined' && $lhp[3] > 0 ) then
+   
+# Loop on netlist entries 
+   if ( -e tmp.1.$ts ) \rm tmp.1.$ts; touch tmp.1.$ts
+   if ( -e tmp.2.$ts ) \rm tmp.2.$ts; touch tmp.2.$ts  
+   foreach net ( $netlist )
+     if ( $net != 'ALL' ) then
+       find     $hpth -name "H${caldate}_${net}.GLX" -print  >> tmp.1.$ts     
+       find     $hpth -name "H${yr[2]}${doy}_${net}.GLX" -print  >> tmp.1.$ts     
+       find . -type l -name "H${caldate}_${net}.GLX" -print  >> tmp.2.$ts
+     else
+       find     $hpth -name "H${caldate}_???.GLX" -print  >> tmp.1.$ts     
+       find     $hpth -name "H${yr[2]}${doy}_???.GLX" -print  >> tmp.1.$ts     
+       find . -type l -name "H${caldate}_???.GLX" -print  >> tmp.2.$ts
+     endif
+   end
+# Remove existing links
+   awk '{print "\\rm -f "$1}' tmp.2.$ts >! tmp.rm.$ts
+   csh tmp.rm.$ts  >&! /dev/null
+
+# Make new links
+   cat tmp.1.$ts | awk -F/ '{print "ln -s "$0,$NF}' >! tmp.lnk.$ts
+
+   echo 'Making the following combined h-file links'
+   cat tmp.lnk.$ts
+   csh tmp.lnk.$ts >&! /dev/null
+
+#  Now clean up and remove temporary files:
+   \rm tmp.1.$ts tmp.2.$ts tmp.rm.$ts tmp.lnk.$ts
+
+endif
+                
+# Thats all
+exit

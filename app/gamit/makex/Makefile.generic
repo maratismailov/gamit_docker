@@ -1,0 +1,47 @@
+# Generic Makefile for makex - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King  17 December 2015
+ 
+#LABELS: makex:makex:makex_lib:makex
+#LABELS: makej:makej:makej_lib:makej
+#LABELS: makek:makek:makek_lib:makek
+#LABELS: rxscan:rxscan:rxscan_lib:rxscan
+#LABELS: xtorx:xtorx:xtorx_lib:xtorx 
+
+#SHARELIB: ../lib:gamit_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+ 
+#OBJ_makex_lib closem getnav  get_rxfiles getsp3 inqf inscen isgood mversn openf
+#OBJ_makex_lib rbatch rcoord rhead set_dcb_flag settim settyp stnclk tagchk
+#OBJ_makex_lib unpad wclock wxhead 
+
+#OBJ_makej_lib jreadc avgclk allanv clkfit get_navclk rate_est j_from_c j_from_nav j_from_sp3
+#OBJ_makej_lib mversn pickfns 
+
+#OBJ_makek_lib closem getnav getpr rcoord stnclk stncrd 
+#OBJ_makek_lib wclock mversn
+       
+#OBJ_rxscan_lib  mversn 
+
+#OBJ_fic2rx_lib blk1001 blk101 blk1101 blk1201 blk1301 blk1080 blk1180
+#OBJ_fic2rx_lib blk1280 blk1380 blk401 blk6 blk670 blk70 blk80 blk9
+#OBJ_fic2rx_lib dofica mversn rficahd   
+
+#OBJ_xtorx_lib  mversn scanx settyp
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

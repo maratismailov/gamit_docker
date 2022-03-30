@@ -1,0 +1,5 @@
+1                           {ngp
+7                           {site number
+0 0 1 0 0 0 0 0 0 0         {translation, rotation, gradient, ...
+1 4 5 6 7 8 9               {site id
+239.55 35.55 0.0 0.0 -40.0 0.0 0.0 0.0 -0.060

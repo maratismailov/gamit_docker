@@ -1,0 +1,24 @@
+=========================================================================
+*          << key word controlled driving file format >>                *
+* any non-blank character at first column means comment line            *
+* symbol ":" must exist in command lines as index pointor               *
+* symbol "*" represents default                                         *
+=========================================================================
+  task 1=simu,2=trans,3=extra,4=compre,5=merge:       translate 
+  network coordinate file(netfil):                    llamba.020  
+     network file format(netfmt):                     *
+     network file style(net_style):                   lfile
+  network coordinate system(comode):                  spher   
+  output new network file(newnet):                    maked_gps.coord
+  input data file(infil):                             in_hfiles           
+  site selection file(site_list):                     maked_gps.sites
+  input data format(infmt):                           *                       
+  input data file style(in_style):                    hfile
+  output data file(outfil):                           maked_gps.obs
+  mapping file:                                       maked_gps.map
+  reference frame:                                    WGS84
+  reference time and site number(rtime):              1991 1   500
+* dimension:                                          3
+  Velocity units: m/yr
+  end: 
+=========================================================================

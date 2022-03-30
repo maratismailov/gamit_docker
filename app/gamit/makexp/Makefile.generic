@@ -1,0 +1,9 @@
+# Generic Makefile for cfmrg - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King August 4, 1999 
+
+#LABELS: makexp:makexp:makexp_lib:makexp
+
+#SHARELIB: ../lib:gamit_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+  
+#OBJ_makexp_lib checke

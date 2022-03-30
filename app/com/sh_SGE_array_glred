@@ -1,0 +1,139 @@
+#!/bin/csh
+#
+#doc Setup and run SGE array batch job for glred.
+#doc
+#
+# Last modified 2010/10/28 by S. McClusky
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "==========================================================================================="
+  echo " Setup and run SGE batch files for glred on remote host" 
+  echo " "
+  echo "   Usage: sh_SGE_array_glred -f <command file> -q <queue name> -nodes <node_att> -sleep <time>"
+  echo "                       -mail -mailto <user> -mailhost <machine>"
+  echo " "           
+  echo "   Executed from the working directory"
+  echo " "
+  echo "   Optional commands:" 
+  echo " "     
+  echo "     <command file> Command file containing glred command line run strings "
+  echo "                    First column is comment, glred command lines must start in col 2)"
+  echo "     <queue name>   SGE queue to submit jobs to [Default: one]"
+  echo "     <node_att>     Node attributes [Default 1:gigabit]"
+  echo "     <time>         Seconds to sleep between launching jobs to the cluster queue [Default 3]"
+  echo "     <user>         User to send mail to when job is complete [Default whoami]"
+  echo "     <machine>      Host machine to forward mailto"
+  echo "      -no_qsub      Setup batch files but do not submit them to the SGE queue."
+  echo "      -mail         Have SGE mail you when submitted jobs complete."
+  echo " "      
+  echo "   Example: sh_SGE_array_glred -f sh_glred.cmd -q one"      
+  echo " "      
+  echo "==========================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+set file = ''
+set queue = 'darwin'
+set nodes = ''
+set mailto = `whoami`
+set machine = `chandler.mit.edu`
+set sleep = 3
+set qsub =  'Y'
+set mail = 'N'
+##################### DECIPHER COMMAND LINE #######################
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -f*:
+      set file  = $input[2]  
+    breaksw 
+        case -q*:
+      set queue  = $input[2]  
+    breaksw 
+    case -nod*:
+      set nodes  = $input[2]  
+    breaksw 
+    case -sl*:
+      set sleep = $input[2]  
+    breaksw 
+    case -no_qsub:
+      set qsub  = 'N'  
+    breaksw 
+    case -mail:
+      set mail  = 'Y'  
+    breaksw 
+    case -mailt*:
+      set mailto  = $input[2]  
+    breaksw 
+    case -mailh*:
+      set machine  = $input[2]  
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ############################         
+
+echo "CREATING job array batch file - glred_batch.SGE"
+echo "execute using command: qsub glred_batch.SGE"
+
+# Check all required info given.
+if ( ${file} == '' ) then
+  echo "Not all required fields given -- file: $file --Stop"
+  exit
+endif
+
+# Setup the SGE array job batch files to the specified queue. 
+  set j = ` cat $file | awk 'substr($0,1,1) == " " {print $0}' | wc -l `
+  cat $file | awk 'substr($0,1,1) == " " {print $0}' >! ${file}.input
+    
+  echo 1 | awk '{print "#\!/bin/csh"}' >! glred_batch.SGE
+  echo "set file = ${file}.input" >> glred_batch.SGE
+  echo 'set ts = "`date +"%y_%m_%d_%H_%M_%S"`"' >> glred_batch.SGE
+  echo 'set j = ` cat $file | awk '"'"'substr($0,1,1) == " " {print $0}'"'"' | wc -l `' >> glred_batch.SGE
+  echo "# " >> glred_batch.SGE
+  echo "#$ -t 1-$j " >> glred_batch.SGE
+  echo "# " >> glred_batch.SGE
+  echo "#$ -S /bin/csh " >> glred_batch.SGE
+  echo "# " >>  glred_batch.SGE
+  echo "#$ -cwd " >> glred_batch.SGE
+  if ( ${mail} == 'Y' ) then
+    echo "# " >>  glred_batch.SGE
+    echo "#$ -M ${mailto}@${machine} " >> glred_batch.SGE
+    echo "# " >> glred_batch.SGE
+    echo "#$ -m e " >> glred_batch.SGE
+  endif
+  echo "# " >>  glred_batch.SGE
+  echo '#$ -N glred_batch.SGE'  >> glred_batch.SGE
+  echo '# ' >> glred_batch.SGE
+  echo "#$ -q $queue " >> glred_batch.SGE
+  echo "# " >> glred_batch.SGE
+  echo "#$ -j y  " >> glred_batch.SGE
+  echo "# " >> glred_batch.SGE
+  echo '#$ -o sh_glred.SGE.out' >> glred_batch.SGE
+  echo "# " >> glred_batch.SGE
+  echo '#$ -e sh_glred.SGE.err' >> glred_batch.SGE
+  echo "# " >> glred_batch.SGE
+  echo "# ------------------------------------------------------------ " >> glred_batch.SGE
+  echo "# Log interesting information and the executing command " >> glred_batch.SGE
+  echo '# ' >> glred_batch.SGE
+  echo 'echo "-------------------" >! sh_glred.out.${ts}.$SGE_TASK_ID' >> glred_batch.SGE
+  echo 'echo "This is a $ENVIRONMENT job" >> sh_glred.out.${ts}.$SGE_TASK_ID' >> glred_batch.SGE
+  echo 'echo "This job was submitted to the queue: $QUEUE" >> sh_glred.out.${ts}.$SGE_TASK_ID' >> glred_batch.SGE
+  echo 'echo "The job id is: $JOB_ID" >> sh_glred.out.${ts}.$SGE_TASK_ID' >> glred_batch.SGE
+  echo 'echo "-------------------" >> sh_glred.out.${ts}.$SGE_TASK_ID' >> glred_batch.SGE
+  echo 'echo "The master node of this job is: $SGE_O_HOST" >> sh_glred.out.${ts}.$SGE_TASK_ID' >> glred_batch.SGE
+  echo 'echo "This job is using the following $NHOSTS node(s): $HOSTNAME" >> sh_glred.out.${ts}.$SGE_TASK_ID' >> glred_batch.SGE
+  echo 'echo "The SGE working directory is $SGE_O_WORKDIR" >> sh_glred.out.${ts}.$SGE_TASK_ID' >> glred_batch.SGE
+  echo '# ------------------------------------------------------------ >> sh_glred.out.${ts}.$SGE_TASK_ID' >> glred_batch.SGE
+  echo ' ' >> glred_batch.SGE
+  echo 'set cmd = `head -n $SGE_TASK_ID ${file} | tail -n -1`' >> glred_batch.SGE
+  echo ' ' >> glred_batch.SGE
+# Get to the remote processing scratch area and execute the job
+  echo 'cd $SGE_O_WORKDIR ' >> glred_batch.SGE
+  echo ' ' >> glred_batch.SGE
+  echo 'date | awk '"'"'{print "Started processing at :", $0}'"'"' >> sh_glred.out.${ts}.$SGE_TASK_ID' >> glred_batch.SGE
+  echo 'time $cmd >> sh_glred.out.${ts}.$SGE_TASK_ID' >> glred_batch.SGE
+  echo 'date | awk '"'"'{print "Ended processing at :", $0}'"'"' >> sh_glred.out.${ts}.$SGE_TASK_ID' >> glred_batch.SGE
+exit

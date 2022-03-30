@@ -1,0 +1,69 @@
+# Generic Makefile for utils - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King  21 September 2017  
+#  Temporarily added testephred rwk 180111 
+#  Temporarily added testnut  rwk 180327
+
+# CFLAGS override needed because crx2rnx/rnx2crx require ANSI on HP
+CFLAGS = -g -Aa    #hp
+CFLAGS = -G        #ibm
+
+#LABELS: addvec:addvec:NONE:addvec  
+#LABELS: argo2rx:argo2rx:NONE:argo2rx  
+#LABELS: argo2fic:argo2fic:NONE:argo2fic
+#LABELS: argo2nav:argo2nav:NONE:argo2nav 
+#LABELS: atx2svnav:atx2svnav:NONE:atx2svnav 
+#LABELS: autecl:autecl:NONE:autecl                
+#LABELS: bsx2dcbtab:bsx2dcbtab:NONE:bsx2dcbtab 
+#LABELS: check_lfile:check_lfile:NONE:check_lfile      
+#LABELS: check_siteid:check_siteid:NONE:check_siteid
+#LABELS: chicurve:chicurve:NONE:chicurve
+#LABELS: cml:cml:NONE:cml
+#LABELS: confpol:confpol:NONE:confpol   
+#LABELS: convert_antpcv:convert_antpcv:NONE:convert_antpcv   
+#LABELS: conveuler:conveuler:conveuler_lib:conveuler   
+#LABELS: convert_jplybias:convert_jplybias:NONE:convert_jplybias 
+#LABELS: countx:countx:NONE:countx   
+#LABELS: crx2rnx:crx2rnx:NONE:crx2rnx
+#LABELS: rnx2crx:rnx2crx:NONE:rnx2crx   
+#LABELS: cvedt:cvedt:NONE:cvedt         
+#LABELS: dcbtab:dcbtab:NONE:dcbtab 
+#LABELS: dcbtab2:dcbtab2:NONE:dcbtab2 
+#LABELS: decyr_atm:decyr_atm:NONE:decyr_atm  
+#LABELS: emerge:emerge:NONE:emerge  
+#LABELS: emntab:emntab:NONE:emntab   
+#LABELS: erptab:erptab:NONE:erptab 
+#LABELS: eulervel:eulervel:eulervel_lib:eulervel   
+#LABELS: fic2nav:fic2nav:NONE:fic2nav 
+#LABELS: fixsst:fixsst:NONE:fixsst 
+#LABELS: fixssi:fixssi:NONE:fixssi 
+#LABELS: fixx:fixx:NONE:fixx              
+#LABELS: gmt2vel:gmt2vel:NONE:gmt2vel   
+#LABELS: interp_log_tab:interp_log_tab:NONE:interp_log_tab   
+#LABELS: make_stnfolist:make_stnfolist:NONE:make_stnfolist
+#LABELS: merge_rinex:merge_rinex:NONE:merge_rinex  
+#LABELS: metutil:metutil:metutil_lib:metutil   
+#LABELS: ne2azel:ne2azel:NONE:ne2azel   
+#LABELS: poly01:poly01:NONE:poly01  
+#LABELS: poly01r:poly01r:NONE:poly01r  
+#LABELS: plotk:plotk:NONE:plotk 
+#LABELS: profile:profile:NONE:profile
+#LABELS: pull_bias:pull_bias:NONE:pull_bias   
+#LABELS: rx2apr:rx2apr:NONE:rx2apr
+#LABELS: scan_rinex:scan_rinex:NONE:scan_rinex
+#LABELS: stnfo_cont:stnfo_cont:NONE:stnfo_cont 
+#LABELS: svdlin:svdlin:NONE:svdlin   
+#LABELS: svdsig:svdsig:NONE:svdsig  
+#LABELS: vector_stat:vector_stat:NONE:vector_stat     
+#LABELS: vel2hist:vel2hist:NONE:vel2hist  
+#LABELS: vexclude:vexclude:vexclude_lib:vexclude
+#LABELS: wbslfilt:wbslfilt:NONE:wbslfilt   
+#LABELS: testephred:testephred:NONE:testephred 
+#LABELS: testnut:testnut:NONE:testnut
+#SHARELIB: ../lib:gamit_lib
+#SHARELIB: ../../libraries/comlib:com_lib  
+#SHARELIB: ../../libraries/matrix:kinv_lib  
+#OBJ_vexclude_lib read_q change_excl uversn
+#OBJ_metutil_lib uversn geoc_to_geod    
+#OBJ_conveuler_lib xyzpole velpole    
+#OBJ_eulervel_lib xyzpole velpole    
+

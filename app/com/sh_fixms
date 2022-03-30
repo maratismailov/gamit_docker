@@ -1,0 +1,125 @@
+#!/bin/csh -f              
+#
+#doc Fix RINEX files that contain micro sec jumps in phase and range observations
+#doc
+#
+# Written by Simon McClusky  December 1997
+######################## INSTRUCTIONS #############################
+if ( $#argv == 0 ) then
+  echo "======================================================================================="
+  echo "Fix RINEX files that contain micro sec jumps in phase and range observations"
+  echo "  "
+  echo "USAGE:  sh_fixms -site <site> -nav <nav> -apr <apr> -obs <obs>"
+  echo "  "
+  echo "        <sites> list of rinex files to be fixed (eg berk2470.96o)"
+  echo "  "
+  echo "        <nav> root of rinex navigation file name (eg ./tracking/auto)"
+  echo "  "
+  echo "        <apr> globk .apr file containing site coords (eg ../tables/itrf94.apr) [Default use rinex header]"
+  echo "  "
+  echo "        <obs> observables to be fixed: RANGE just fix p-ranges [DEFAULT]"
+  echo "                                       PHASE fix p-ranges and phases "
+  echo "  "
+  echo "        <delete> do not save the orginal rinex files with names *.orig [DEFAULT is to save originals]"
+  echo "  "
+  echo "EXAMPLE: sh_fixms -site berk2471.96o -nav ./tracking/auto -apr ../tables/sites.apr -obs PHASE" 
+  echo "  "
+  echo "OUTPUT: OLD rinex file renamed with ext .orig & FIXED rinex file with original name"
+  echo "======================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+set apr  = " "
+set nav  = " "
+set site = " "
+set delete = "no"
+set obs  = "RANGE"
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+	case -site:
+                set site    =   ( $site $input[2] )
+                shift input; shift input
+                while ( $#input > 0 &&   `echo  $input[1]  | cut -c1` != "-" )
+                        set inarg =  $input[1]
+                        if ( `echo  $inarg | cut -c1` != "-" ) then
+                                set site   =   ( $site $inarg )
+				                 if ( $#input == 1 ) goto alldone
+                                shift input
+                        endif
+                end
+       if ( $#input == 0 ) goto alldone
+       breaksw 
+       case -apr:
+                set apr      =   $input[2]  
+		breaksw 
+       case -nav:
+                set nav      =   $input[2]  
+		breaksw 
+       case -obs:
+                set obs      =   $input[2]  
+		breaksw 
+       case -delete:
+                set delete      =  yes  
+		breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+######################## GET THE JOB DONE #########################
+#
+# Extract site name from command line argument.  
+echo "rinex files to be adjusted: " $site
+foreach i (`echo $site`)  
+  set line = `echo $i | awk  -F/ '{print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}'`
+  foreach j (echo $line)
+    set site_site = `echo $j | awk '{print substr($1,1,4)}'` 
+    set site_doy  = `echo $j | awk '{print substr($1,5,3)}'` 
+    set site_yr   = `echo $j | awk '{print substr($1,10,2)}'` 
+  end 
+  echo "Site to be fixed : " $site_site 
+  echo "DOY : " $site_doy 
+  echo "YR : " $site_yr 
+#
+# Make rinex navigation file name
+   set nav_file = $nav$site_doy"0."$site_yr"n" 
+#
+# Extract site coordinate from .apr file if requested.  
+  set site_crd = ' '
+  if ( $apr != " " ) then
+    set site_crd = `grep -i $site_site $apr | awk '{print $2,$3,$4}'`
+    echo "Site coordinates used: " $site_crd 
+  endif  
+#
+# Run fixms to remove msec jumps.
+  if ( $obs == "RANGE" ) then
+    echo "fixms $nav_file $i ' ' $site_crd"
+    echo "Working. Please wait....."
+#    fixms $nav_file $i '' $site_crd >! $site_site.$site_doy.fixms
+    fixms $nav_file $i '' $site_crd >! /dev/null
+  else
+    echo "fixms $nav_file $i PHASE $site_crd" 
+    echo "Working. Please wait....."
+#    fixms $nav_file $i PHASE $site_crd >! $site_site.$site_doy.fixms
+    fixms $nav_file $i PHASE $site_crd >! /dev/null
+  endif 
+#
+# Move names around 
+  if ( $delete == "yes" ) then  
+    \rm $i
+  else
+    \mv $i $i.orig 
+  endif
+    \mv $i.fix $i
+#
+# End. Print list of files created.  
+  if ( $delete == "yes" ) then
+    echo " Old RINEX file removed "
+    echo " Fixed file: " $i
+  else  
+    echo " Old file: " $i.orig  
+    echo " Fixed file: " $i
+  endif     
+end
+############################### FINISHED ##########################

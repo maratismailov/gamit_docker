@@ -1,0 +1,131 @@
+#!/bin/csh -f 
+#
+#doc Create a gamit n-file from the autcln.sum.postfit file
+#doc
+#
+######################## INSTRUCTIONS #############################
+if ( $#argv == 0 ) then
+  echo "=================================================================================="
+  echo "  Create a gamit n-file from the autcln.sum.postfit file"
+  echo "  "
+  echo "  USAGE : sh_sigelv -acmd <afile> -nfile <nfile> -average -qfile <qfile>"
+  echo "  "
+  echo "          <afile> Autcln command file name. [autcln.cmd] "
+  echo "          <nfile> Name of the n-file to be created. Later read by solve. " 
+  echo "                  N-file name should be of the form (n)(expt)(s).(doy)"
+  echo "                  expt = experiment name, s = session letter, doy = day of year" 
+  echo "                  Eg: nigs1c.275 . N-file name used by solve after postfit autcln." 
+  echo "          <qfile> Name of the q-file searched for sites having large adj/const values." 
+  echo "          -noelv option turns off site reweighting (N-file still needed for LC_AUTCLN)"
+  echo "          -sv  option turns on reweighting by satellite (as well as station)"
+  echo "          -average option sets the statistics based on the 25-point average"
+  echo "                  value RMS scatters "
+  echo "  "
+  echo "  Example : sh_sigelv -acmd autcln.cmd.postfit -nfile nigs1c.278"
+  echo "  "
+  echo "=================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+set acmd    = "autcln.cmd.postfit"
+set apsum    = "autcln.sum.postfit"
+set nfname = ""
+set qfname = ""
+set expt  = ""
+set doy  = ""           
+set stnnoise = "Y"
+set svnoise = ""
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -a:
+    case -ac:
+    case -acmd:
+      set acmd  = $input[2]  
+    breaksw 
+    case -n:
+    case -nfile:
+      set nfname = $input[2]  
+    breaksw  
+    case -q:
+    case -qfile:
+      set qfname = $input[2]  
+    breaksw  
+    case -noelv
+      set stnnoise = 'N'   
+    breaksw
+    case -sv:
+      set svnoise = 'Y'  
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ######################
+# Generate the n-file name (not needed since n-file name is input now)
+#set nfname = `echo $expt $doy | awk '{print "n"substr($1,1,4)"c."$2}'`
+#echo $nfname
+
+# Write n-file header
+#set rdate = `date`
+set rdate = `date '+%Y-%m-%dT%H:%M:%S%z'`
+echo "# N-file created by sh_sigelv on" $rdate >! ${nfname}
+
+if ( $qfname != "" ) then 
+   grep "GCR APTOL" $qfname | awk '{print $3}' | uniq >! tmp.aptol
+   if ( `cat tmp.aptol | wc -l` > 0 ) then
+      echo " set apriori constraints:" >> ${nfname}
+      foreach i(`cat tmp.aptol`)
+         echo "    tight_apr_coord:  $i   10.000   10.000   10.000" >> ${nfname}
+      end
+      echo " exit set:" >> ${nfname}
+   endif
+  \rm -r tmp.aptol >&! /dev/null 
+endif
+
+echo " set session_1 options:" >> ${nfname}  
+if( $stnnoise == 'Y' || $svnoise == 'Y' ) then
+  echo "    error model:" >> ${nfname}
+endif
+  
+# Extract the autcln.postfit.summary file name from the autcln.cmd.post file.
+# The last uncommented summary file name in the .cmd file found is the file to be used
+set aptmp = `grep "summary" $acmd | awk ' substr($0,1,1) == " "  { print $NF}'`
+set apsum = `echo $aptmp | awk '{print $NF}'`
+
+# Get the station dependent errors and add to the n-file (Note: requires /usr/xpg4/bin/awk == nawk)
+if( $stnnoise == 'Y' ) then    
+  grep ATELV $apsum | tail -n +2 | awk '{ if (substr($3,1,1) >= 0 && substr($3,1,1) <= 9 && ($3+$4) <= 50 ) printf "    stn_error: %s elevation %6.2f %6.2f\n",$2,$3*1.7,$4*1.7; \
+    else printf "    stn_error: %s elevation %6.2f %6.2f\n",$2,50.0*1.7,0.0}' >> ${nfname}  
+endif
+  
+
+# Get the satellite noise model
+#set apsum = "autcln.post.sum"
+set svrms = `grep '^RMS  .. ALL' $apsum | awk '{print substr($0,19)}'`
+set svavg = `grep '^RMS  .. ALL' $apsum | awk '{print $4*10}'`
+set svprn = `grep '^RMS  .. Site' $apsum | awk '{print substr($0,19)}'`
+#
+# MOD 030317: Added satellite noise code
+# Now see which satellites we need to add noise to  
+if( $svnoise == 'Y' ) then
+  set cnt = 0
+  foreach sv (`echo $svprn`)
+     @ cnt = $cnt + 1
+     echo $svavg $svrms[$cnt] $sv | \
+        awk '{if( $2 > $1*1.1) {printf("    sat_error: PN%2.2d %8.2f \n",$3,sqrt($2^2-$1^2))}}' >> ${nfname}
+  end 
+endif
+#
+# MOD TAH 040706: if LC_AUTCLN has been specified in sestbl. then extract
+# autcln selected bias parameters
+set lc_mode = `grep '^Choice of Observable' sestbl. | head -n 1 | awk '{print toupper(substr($5,1,6))}'`
+if( $lc_mode == 'LC_AUT' ) then
+    grep ACBIAS $apsum | awk '{print substr($0,7)}' >> ${nfname}
+endif
+
+
+# Thats all
+exit
+

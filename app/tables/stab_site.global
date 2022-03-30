@@ -1,0 +1,39 @@
+* Global stabilization list for ITRF05
+*  last changed by rwk 080409
+
+ stab_site clear
+
+* North America and boundaries
+ stab_site kely stjo brmu_gps sch2 thu1 algo_6ps rcm6 nlib chur
+ stab_site dubo flin mdo1 pie1 yell 
+            
+* South America
+ stab_site areq_gps kour sant braz 
+ stab_site -areq -kour -braz   
+
+* Eurasia-stab
+ stab_site yakt irkt kstu nril artu zwen mets kiru bor1 
+ stab_site graz pots wtzr onsa_2ps nyal kosg brus vill sele   
+#  Not in ITRF
+ stab_site vlad
+
+* East Asia 
+ stab_site shao xian wuhn kunm urum tskb usud daej taej suwn  iisc 
+ stab_site kit3 pol2 taiw tait  
+ stab_site -wuhn -taiw -taej -urum -kunm 
+
+* Pacific  
+ stab_site thti kokb chat kwj1 marc truk 
+         
+* Africa
+ stab_site hark hrao mas1  
+ stab_site hart 
+ stab_site -hart -harb -hark -hrao
+
+* Australia/NZ
+ stab_site auck tidb_gps pert_gps yar1_gps hob2_gps                                        
+
+* Antarctica
+ stab_site mcm4
+ stab_site maw1 ohig dav1 
+

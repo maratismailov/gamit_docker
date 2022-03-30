@@ -1,0 +1,125 @@
+#!/bin/csh -f
+
+# Script to install incremental updates to GAMIT and GLOBK, starting from a compressed tarfile
+# R. King  28 February 2001, based on install_software (see history)
+
+##################### SET UP DEFAULTS #############################   
+set mypath = `pwd`
+set compiler = ''
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -c:
+      set compiler = $argv[2]  
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ############################
+
+echo " "
+echo Updated GAMIT and GLOBK source, shell scripts, tables, and templates to be installed into $mypath  
+echo " "         
+echo "The compressed tarfile will be removed after extraction of the "
+echo "directories, but except for that, the script may be stopped and"
+echo "rerun safely from any point.  Tarfile to be uncompressed:" 
+echo " "  
+set files = `ls incremental*.Z *.gz incremental*.tar`
+echo "    $files"
+echo " "    
+echo "Continue ? (y/n)"
+set ans = $<
+if ( $ans == '' ) set ans = 'y'
+if ( $ans == 'n' ) exit
+
+# List the contents of the updates files before overwriting the existing directories
+echo " "
+echo "Listing of the updates to be installed: "
+echo " "
+foreach f ($files)
+   if ( -e $f ) then 
+     if ( $f:e == 'Z' ) then
+       zcat $f | tar -tvf -  
+     else if ( $f:e == 'gz' ) then
+       gunzip -c $f | tar -tvf -
+     else if ( $f:e == 'tar' ) then
+       tar -tvf $f
+     else
+       echo "Unknown file type $f NOT listed"
+     endif 
+   endif
+end  
+echo " "
+echo "Do you want to install these changes into " $mypath " (y/n) ?"
+set ans = $<
+if ( $ans != 'y' && $ans != 'yes' ) then
+  echo " " 
+  echo "Install terminated"
+  exit
+endif
+echo " "
+echo ".. uncompressing and extracting the directories:"
+echo " "  
+foreach f ($files)
+   if ( -e $f ) then 
+     if ( $f:e == 'Z' ) then
+       zcat $f | tar -xvf -  
+     else if ( $f:e == 'gz' ) then
+       gunzip -c $f | tar -xvf -
+     else if ( $f:e == 'tar' ) then
+       tar -xvf $f
+     else
+       echo "Unknown file type $f NOT extracted"
+     endif 
+     \rm -f $f 
+   endif
+end 
+
+# RWK 141014: Remove this question since by-passing a complete remake of source and 
+#             Makefiles could on occasion mask a problem, and recompiling does not 
+#             take all that long.  Moreover, the question was used only for /gamit 
+#             and /libraries, not /kf.
+# Ask if a complete remake is desired or only a recompilation of the changed modules
+# echo "Do you want to remake everything from scratch (all) or only the changed modules (new)?"
+# set ans = $<
+# if ( $ans == 'all' ) then
+#   set refresh = 'y'
+# else
+#   set refresh = 'n' 
+# endif     
+ set refresh = 'y' 
+# end RWK 141014
+
+if ( $refresh == 'y' ) then
+  echo " "        
+  echo "  .. removing any existing Makefiles or archive files from libraries directories"
+  rmfresh -p $mypath -d libraries -M -ao   
+  echo " "
+  echo "  .. removing any existing Makefiles or archive files from gamit directories"
+  rmfresh -p $mypath -d gamit -M  -ao
+endif
+
+echo " "
+echo "  .. making libraries and gamit"
+make_gamit $mypath $compiler 
+if( $status != 0 ) then
+  echo "Failure in make_gamit -- install_software terminated" 
+  exit  
+endif
+
+echo " "
+echo "  .. removing any existing Makefiles or archive files from kf directories"
+rmfresh -p $mypath -d  kf -M -ao
+echo " "
+echo "  .. making globk modules in kf directories"
+make_globk $mypath  $compiler
+if( $status != 0 ) then
+  echo "Failure in make_globk -- install_software terminated"   
+  exit
+endif
+ 
+
+endif

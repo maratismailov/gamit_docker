@@ -1,0 +1,51 @@
+#!/bin/csh  
+#
+#doc Gets GAMIT normalized rms's from a list id q-files
+#doc
+#
+if ( $#argv  == 0  ) then
+echo " gets Normalized rms          run in day/shop dir"
+echo " "
+echo " sh_nrms ../*/q1* "
+echo " "
+echo " sh_nrms ../2??/q1trka.??? "
+echo " "
+echo "  M. Burc Oral  (617)  253-2471         oral@gps.mit.edu             Thu Mar 24 17:55:40 EST 1994"
+exit
+endif
+
+echo "                                                                                            tight--> loose "
+echo "+++++++++++++++++++       Biases free/fixed       Loose Constraints(free/fixed)   reduction%(free)  reduction%(free)  "
+
+foreach i (  `/bin/ls $argv ` ) 
+#set day1 = `echo  $i | wc | awk '{print $3 }'  `
+#@ day1 =  $day1 - 4
+#set day = 	 `echo  $i  | cut -c$day1"-"`
+set day = `echo $i | awk -F/ '{print $(NF)}'`
+
+#check whether it is in  old/new format
+	set line = ( `grep Prefit    $i `) 
+#	echo $line
+	set format = old
+	if ( $line[1] == Prefit ) set format = new
+
+	if ( $format == old ) then 
+#Normalized rms =  0.31681E+00   (Prefit =  0.60186E+02 )
+#	set nrms =  (`	grep Prefit   $i | cut -c17- | cut -c1-14,16- `   )
+	set nrms =  (`	grep Prefit   $i | awk '{print $4}'` )
+	else if ( $format == new ) then 
+#Prefit nrms:  0.63434E+03    Postfit nrms: 0.22330E+00
+	set nrms =  ( `	grep Prefit   $i  | awk '{print $6}'` )
+	endif
+if ( $#nrms  == 8  ) then	
+	set reduction = `echo $nrms | awk '{printf"%10d   %10d\n", 100*( $2- $6)/$2+0.05, 100*( $4- $8)/$8+0.05 }'`
+	echo  "Normalized rms " $day   " " $nrms "              "$reduction[1]"            "$reduction[2]
+else 
+	echo  "Normalized rms " $day   " " $nrms 
+
+endif
+
+end
+
+
+

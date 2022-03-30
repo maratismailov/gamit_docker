@@ -1,0 +1,69 @@
+Copyright (c) Massachusetts Institute of Technology,1986. All rights reserved.
+C
+      SUBROUTINE DEGFRM(DINN,STRING)
+C
+C DO SOME CONVERSIONS FOR LSDO OUTPUT
+C CONVERT PRE AND POST FROM RADIANS TO DEGS,MIN,SEC
+C CONVERT ADJ AND SIG TO DEGREES
+
+      implicit none
+         
+      integer ideg,min,i
+
+      CHARACTER*1 MFLAG,NULL
+      CHARACTER*2 BUF2
+      CHARACTER*3 BUF3
+      CHARACTER*11 BUF11
+      CHARACTER*20 STRING
+
+      real*8 OUT(3),din,dinn
+
+      DATA NULL/'0'/
+C
+C
+CD     WRITE(7,2345) DINN
+C
+      MFLAG=' '
+C
+      DIN=DINN
+C
+      IF(DIN.GE.0) GO TO 10
+      MFLAG='-'
+      DIN=-DIN
+C
+10    CONTINUE
+C
+C SO THAT EVEN DEGREES DON'T ROUND DOWN
+      DIN=DIN + 5.D-14
+C
+CD     WRITE(7,2345) DIN
+C
+      CALL RADDEG(DIN,OUT)
+C
+CD     WRITE(7,2345) OUT
+CD2345 FORMAT(3D30.15)
+C
+      IDEG=IDINT(OUT(1))
+      MIN=IDINT(OUT(2))
+C
+      WRITE(UNIT=BUF3,FMT='(I3)') IDEG
+      READ(UNIT=BUF3,FMT='(A3)') STRING(2:4)
+      STRING(5:5)=':'
+      WRITE(UNIT=BUF2,FMT='(I2)') MIN
+      READ(UNIT=BUF2,FMT='(A2)') STRING(6:7)
+      STRING(8:8)=':'
+      WRITE(UNIT=BUF11,FMT='(F11.8)') OUT(3)
+      READ(UNIT=BUF11,FMT='(A11)') STRING(9:19)
+      STRING(20:20)=NULL
+C      ENCODE(20,23,STRING) IDEG,MIN,OUT(3),NULL
+C23    FORMAT(1X,I3,':',I2,':',F11.8,A1)
+C
+      DO 20 I=1,20
+      IF(STRING(I:I).EQ.' ') STRING(I:I)='0'
+   20 CONTINUE
+C      CALL TRANSL(STRING,STRING,'0',' ')
+      STRING(1:1)=MFLAG
+      STRING(20:20)=' '
+C
+      RETURN
+      END

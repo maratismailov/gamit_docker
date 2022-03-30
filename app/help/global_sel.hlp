@@ -1,0 +1,33 @@
+GLOBAL_SEL:  Makes network selections from list of distributed global sites
+
+GLOBAL_SEL:  Makes list of distributed global sites
+
+Runstring:
+global_sel  <ref sites> <num sites> <apr_file> [avail list]
+
+where <ref sites> are a list of  names of reference sites to be included.
+                  These names are separated by :s e.g., algo_gps:sele_gps:jplm_gps
+                  Including # separator will generate outputs for multiple networks.
+      <num sites> (a) If positive: the number of sites to be selected in each nework.
+                  (b) If negative: the number of number of networks into which all the
+                      sites in the apr_file will be distibuted. Avail list is not used
+                      in case (b) i.e., data are assumed to be available.
+      <apr_file> is name of a globk apr file for site positions
+      [avail list] is a file containing names of available sites (usually
+                  generated from an ls of an archive data directory.)  Optional
+                  all sites in <apr_file> are considered if list not passed. 
+                  List is one name per line with at least one blank at the beginning
+                  of the lines.
+
+EXAMPLE <rer sites> list:
+ALGO_GPS:KOUR_GPS:ONSA_GPS#KOKB_GPS:MATE_GPS#CHUR_GPS:CRO1_GPS:NYAL_GPS:TWTF_GPS#GOL2_GPS:NIST_GPS:PIE1_GPS:WSRT_GPS
+would generate 4 four networks with seed sites:
+Net 1 ALGO_GPS:KOUR_GPS:ONSA_GPS
+Net 2 KOKB_GPS:MATE_GPS
+Net 3 CHUR_GPS:CRO1_GPS:NYAL_GPS:TWTF_GPS
+Net 4 GOL2_GPS:NIST_GPS:PIE1_GPS:WSRT_GPS
+Eaxh network would be efilled to <num sites> from the [avail list]
+
+
+
+

@@ -1,0 +1,13 @@
+GSFC_TO_IRIS: Convert GSFC formatted PMU files to GLOBK PMU format
+
+GSFC_TO_IRIS
+
+ This program will read a GSFC eop format file and convert
+ it to NGS format iris format for use in update_pmu.
+ The runstring for the program is:
+
+ % gsfc_to_iris [input file] [output file]
+
+ where input is GSFC formated file, and
+       output is IRIS formatted which can be read by update_pmu
+*

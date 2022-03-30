@@ -1,0 +1,18 @@
+* Now sort by time within each SVN
+
+      istrt = 1
+      iend = n         
+      svnlast = svn(1)
+      do i=2,n 
+        print *,'MAIN i svn svnlast ',i,svn(i),svnlast    
+        if( svn(i).ne.svnlast ) then
+          iend = i - 1         
+          print *,'istrt iend ',istrt,iend
+          call sort_times(istrt,iend,svn,prn,antbody,start,stop)  
+          istrt=i
+          svnlast = svn(i)                
+          print *,'istrt svnlast ',istrt,svnlast 
+        endif
+      enddo
+
+

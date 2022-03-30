@@ -1,0 +1,474 @@
+#!/bin/csh -f 
+#
+#doc Plot receiver clocks found in k-files 
+#doc
+#
+# M.Burc Oral
+# M.Burc Oral : no path dependency/no template June 17, 1992
+# M.Burc Oral : added linear fit plot-- dashed lines 
+# M.Burc Oral : added GMT : plotk_gmt GMT version Tue Jul  6 15:16:46 EDT 1993
+# M.Burc Oral : nicer prints Wed Nov 17 16:24:42 EST 1993
+# K. Feigl to work on system with GMT compiled -SI (centimeters, not inches!) Mar 97   
+# R. King/S McClusky : Allow to work with null blank lines; revise displayed documentation; 
+#                comment on 'both' option. May 97
+
+if ($#argv == 0 ) then
+echo " "
+echo "GMT version! Requires GMT (netcdf/gmt/ghostscript) "
+echo "  "  
+echo " Calculate clock parameters from   k-file(s) "
+echo "  " 
+echo "    -- REQUIRES  x-files " 
+echo "  " 
+echo " Usage      :  sh_plotk -res -obs -model -jump -njump -polyj <order> -polynj <order> -files <kfile(s)>"
+echo " Where      :  -res   = plot residual clock [DEFAULT] "
+echo "            :  -obs   = plot observed clock  "
+echo "            :  -model = plot model clock  "
+echo "            :  Both -obs and -model can be plotted on the same page " 
+echo "  " 
+echo "            :  -jump  = plot with jumps removed from estimates [DEFAULT] "
+echo "            :  -njump = plot without jumps removed from estimates " 
+echo "            :  Both -jump and -njump can be plotted on the same page "  
+echo "  " 
+echo "            :  -polyj  <order> of polynomial to be estimated for clock with jumps [DEFAULT c] "
+echo "            :  -polynj <order> of polynomial to be estimated for clock without jumps [DEFAULT l]"
+echo "            :  Specify the order of polynomials... linear, quadratic or cubic (l,q,c or 1,2,3)" 
+echo "  " 
+echo "            :  -files  <kfile(s) list of kfiles to be plotted "
+echo "  "
+echo " Examples   : sh_plotk -res -jump -njump -polyj c -polynj l -files kkata2.140 "
+echo "            : sh_plotk -model -obs -jump -njump -polyj 3 -polynj 1 -files kkata2.140 "
+echo "            : sh_plotk -obs -files kkata2.140   "
+echo "  "
+echo " Statistics :   cat CLOCKS "
+echo "  "
+echo " Max resid. :   cat CLOCKS | grep max  "
+echo "  "
+echo " creates       plotk.site.ps postcript files  "
+exit
+endif
+##################### Set up the input option defaults  ####################
+#  res (y/n), obs (y/n), model (y/n)... [DEF res = y]
+# [if (res = y) then (obs and model = n)] [if (obs and/or model = y) then (res =n) ]
+set res   = "y"
+set obs   = "n"
+set model = "n"
+# njump can be; y/n... [DEF njump =  n]
+set njump  = "n"
+# jump can be;  y/n... [DEF jump =  y]
+set jump   = "y"
+# polyj can be; l(linear), q(quadratic), c(cubic)... [DEF ployj =  c]
+set polyj  = "c"
+# polynj can be; l(linear), q(quadratic), c(cubic)... [DEF ploynj =  l]
+set polynj = "l"
+set files = ""
+##################### Decipher the command line ############################ 
+while ($#argv > 0 ) 
+set input = ( $argv ) 
+switch($input[1])
+	case -r:
+	case -res:
+		set res        =  "y"
+		breaksw
+	case -o:
+	case -obs:
+		set obs       =  "y"
+		breaksw
+	case -m:
+	case -mod:
+	case -model:
+		set model       =  "y"
+		breaksw
+	case -nj:
+	case -njump:
+		set njump      =  "y"
+		breaksw
+	case -j:
+	case -jump:
+		set jump       =  "y"
+		breaksw
+	case -pj:
+	case -polyj:
+		set polyj        =  `echo $input[2] | cut -c1 ` 
+       if ( $polyj == 1 ) set polyj = "l"
+       if ( $polyj == 2 ) set polyj = "q"
+       if ( $polyj == 3 ) set polyj = "c"
+		breaksw
+	case -pnj:
+	case -polynj:
+		set polynj        =  `echo $input[2] | cut -c1 `
+       if ( $polynj == 1 ) set polynj = "l"
+       if ( $polynj == 2 ) set polynj = "q"
+       if ( $polynj == 3 ) set polynj = "c"
+		breaksw
+	case -f: 
+	case -file: 
+	case -files:
+       set files  = (`echo $input | cut -d- -f2`); shift files 
+       breaksw 
+shift input
+endsw 
+shift argv 
+end
+alldone:  
+
+# scaling/title  information   Reconfigure defaults 
+gmt gmtdefaults -Du              >! gmt.conf 
+gmt gmtset GMT_COMPATIBILITY 5
+gmt gmtset FONT_LABEL 10p
+gmt gmtset FONT_ANNOT_PRIMARY 10p
+# the following are necessary if your GMT is compiled -SI (default units are cm) 
+gmt gmtset PROJ_LENGTH_UNIT i
+gmt gmtset FORMAT_GEO_MAP +ddd:mm:ss
+gmt gmtset MAP_TICK_LENGTH_PRIMARY 0.03i
+gmt gmtset MAP_TICK_PEN_PRIMARY 1p
+gmt gmtset MAP_FRAME_WIDTH 0.02i
+gmt gmtset MAP_ANNOT_OFFSET_PRIMARY 0.05i
+gmt gmtset MAP_ORIGIN_X 1i
+gmt gmtset MAP_ORIGIN_Y 1i 
+gmt gmtset PS_MEDIA letter 
+# the following is important to avoid a known bug!
+gmt gmtset DOTS_PR_INCH 300
+
+# Make a few checks to ensure inputs are OK...
+
+if ( res == "y" && ( obs == "y" || model == "y" ) )  then
+ echo "only allowed to plot (residuals) or (model and/or obs)"
+ set model = "n"
+ set obs   = "n"
+endif
+
+set  N = 0  
+
+# loop over all files
+echo " ---------- REVEIVER CLOCK INFORMATION -----------" >! CLOCKS
+
+while ( $#files > 0 )
+   set file = $files[1]
+   shift files
+
+#set psfile
+@ N = $N + 1
+set site = `echo $file | awk '{print substr($1,2,4)}'`
+echo $site 
+set psfile = plotk.$site.ps
+
+# estimate polynomial coefficients
+
+plotk << [ >! $file.clk
+$file
+$polynj
+$polyj
+Y
+y
+[
+
+# get clock parameters 
+cat  $file.clk | grep "allen variance:"   >> CLOCKS
+cat  $file.clk | grep "Clock parameters"  >> CLOCKS
+cat  $file.clk | grep "no jumps"          >> CLOCKS
+cat  $file.clk | grep "epoch"             >> CLOCKS
+cat  $file.clk | grep "rate"              >> CLOCKS
+cat  $file.clk | grep "accel"             >> CLOCKS
+cat  $file.clk | grep "cubic"             >> CLOCKS
+cat  $file.clk | grep "condition"         >> CLOCKS
+cat  $file.clk | grep "jumps      :"      >> CLOCKS
+cat  $file.clk | grep "synched N"         >> CLOCKS
+cat  $file.clk | grep " res "             >> CLOCKS
+cat  $file.clk | grep " RMS "             >> CLOCKS
+
+#get plotting variables 
+#cat $file.clk | cut -c1-64 | egrep -v '[a-z]' | egrep -v '^ $' | egrep -v '^$' >! $file.plot   
+cat $file.clk | egrep -v '[a-z]' | egrep -v '^ $' | egrep -v '^$' | awk 'NF != 0 {print $0}' >! $file.plot   
+ 
+echo $file
+
+\rm -rf tmpr.clock  tmpm.clock  tmpo.clock  tmp.clock
+
+if ( $jump == y && $njump == n ) then
+  if ( $res == y ) then
+    echo "GAMIT k-file jump residuals" >! tmp.title
+    cat  $file.plot | awk '{print $1,$7}' >! tmpr.clock
+    cat tmpr.clock >! tmp.clock
+  endif
+  if ( $obs == y ) then
+    echo "GAMIT k-file " >! tmp.title 
+    cat  $file.plot | awk '{print $1,$3}' >! tmpo.clock
+    cat  tmpo.clock >! tmp.clock
+  endif
+  if ( $model == y ) then
+    if ( $obs == y ) then
+      echo "GAMIT k-file " >! tmp.title 
+      cat  $file.plot | awk '{print $1,$6}' >! tmpm.clock
+      cat tmpm.clock >> tmp.clock
+    else
+      echo "GAMIT k-file " >! tmp.title 
+      cat  $file.plot | awk '{print $1,$3}' >! tmpm.clock
+      cat tmpm.clock >! tmp.clock  
+    endif
+  endif
+  set RANGE = `gmt gmtinfo  tmp.clock -I100/50`
+# set r = ( `echo $RANGE | cut -c3- | awk '{FS="/"} {print $1*.9,$2*1.1,$3*.9,$4*1.1}' ` )
+  set r = ( `echo $RANGE | cut -c3- | awk  -F/ '{print $1*.9,$2*1.1,$3*.9,$4*1.1}' ` )
+  echo $r
+  set rx = `echo $r |  awk ' {print 5/ ($2-$1) }'`i 
+  set ry = `echo $r |  awk ' {print 6/ ($4-$3) }'`i 
+  set bx = `echo $r |  awk ' {print ($2-$1)/5 }'` 
+  set by = `echo $r |  awk ' {print ($4-$3)/5 }'`
+  if ( $bx <= 200 ) then
+    set xframe = 50
+    set xanot  = 100
+  else if ( $bx < 2000 ) then
+    set xframe = 500
+    set xanot  = 1000
+  else if ( $bx < 20000 ) then
+    set xframe = 5000
+    set xanot  = 10000
+  else
+    set xframe = 10000
+    set xanot  = 50000
+  endif
+  if ( $by <= 100 ) then
+    set yframe = 5
+    set yanot  = 10
+  else if ( $by < 1000 ) then
+    set yframe = 50
+    set yanot  = 100
+  else if ( $by < 10000 ) then
+    set yframe = 500
+    set yanot  = 1000
+  else if ( $by < 100000 ) then
+    set yframe = 5000
+    set yanot  = 10000
+  else
+    set yframe = 10000
+    set yanot  = 50000
+  endif
+  set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4]
+  if ( $res == y ) then
+    set SCALE = `echo $xanot $xframe $yanot $yframe | awk '{print "-Bxa"$1"f"$2"+l'Time_sec' -Bya"$3"f"$4"+l'Residual_fit_micro_secs' -BWESN"}'` 
+    gmt psxy tmpr.clock -h0 $RANGE  -Jx$rx/$ry  $SCALE  -W3p,255/0/0 -K  -P >! $psfile
+  endif 
+  if ( $obs == y ) then
+    set SCALE = `echo $xanot $xframe $yanot $yframe | awk '{print "-Bxa"$1"f"$2"+l'Time_sec' -Bya"$3"f"$4"+l'micro_secs' -BWESN"}'` 
+    gmt psxy tmpo.clock -h0 $RANGE  -Jx$rx/$ry  $SCALE -W7p  -K  -P >! $psfile  
+  endif
+  if ( $model == y ) then
+    if ( $obs == y ) then
+      set SCALE = `echo $xanot $xframe $yanot $yframe | awk '{print "-Bxa"$1"f"$2"+l'Time_sec' -Bya"$3"f"$4"+l'micro_secs' -BWESN"}'` 
+      gmt psxy tmpm.clock -h0 $RANGE  -Jx$rx/$ry  $SCALE -W3p,255/0/0  -K  -P  -O  >> $psfile 
+    else
+      set SCALE = `echo $xanot $xframe $yanot $yframe | awk '{print "-Bxa"$1"f"$2"+l'Time_sec' -Bya"$3"f"$4"+l'micro_secs' -BWESN"}'` 
+      gmt psxy tmpm.clock -h0 $RANGE  -Jx$rx/$ry  $SCALE -W3p,255/0/0  -K  -P  >! $psfile 
+    endif 
+  endif
+endif
+
+\rm -rf tmpr.clock  tmpm.clock  tmpo.clock  tmp.clock
+
+if ( $jump == n && $njump == y ) then
+  if ( $res == y ) then
+    echo "GAMIT k-file No jump residuals" >! tmp.title
+    cat  $file.plot | awk '{print $1,$5}' >! tmpr.clock
+    cat tmpr.clock >! tmp.clock
+  endif
+  if ( $obs == y ) then
+    echo "GAMIT k-file " >! tmp.title 
+    cat  $file.plot | awk '{print $1,$3}' >! tmpo.clock
+    cat  tmpo.clock >! tmp.clock
+  endif
+  if ( $model == y ) then
+    if ( $obs == y ) then
+      echo "GAMIT k-file " >! tmp.title 
+      cat  $file.plot | awk '{print $1,$4}' >! tmpm.clock
+      cat tmpm.clock >> tmp.clock
+    else
+      echo "GAMIT k-file " >! tmp.title 
+      cat  $file.plot | awk '{print $1,$4}' >! tmpm.clock
+      cat tmpm.clock >! tmp.clock
+    endif
+  endif
+  set RANGE = `gmt gmtinfo  tmp.clock -I100/50`
+# set r = ( `echo $RANGE | cut -c3- | awk '{FS="/"} {print $1*.9,$2*1.1,$3*.9,$4*1.1}' ` )
+  set r = ( `echo $RANGE | cut -c3- | awk -F/ '{print $1*.9,$2*1.1,$3*.9,$4*1.1}' ` )
+  set rx = `echo $r |  awk ' {print 5/ ($2-$1) }'` 
+  set ry = `echo $r |  awk ' {print 6/ ($4-$3) }'` 
+  set bx = `echo $r |  awk ' {print ($2-$1)/5 }'` 
+  set by = `echo $r |  awk ' {print ($4-$3)/5 }'` 
+  if ( $bx <= 200 ) then
+    set xframe = 50
+    set xanot  = 100
+  else if ( $bx < 2000 ) then
+    set xframe = 500
+    set xanot  = 1000
+  else if ( $bx < 20000 ) then
+    set xframe = 5000
+    set xanot  = 10000
+  else
+    set xframe = 10000
+    set xanot  = 50000
+  endif
+  if ( $by <= 100 ) then
+    set yframe = 5
+    set yanot  = 10
+  else if ( $by < 1000 ) then
+    set yframe = 50
+    set yanot  = 100
+  else if ( $by < 10000 ) then
+    set yframe = 500
+    set yanot  = 1000
+  else if ( $by < 100000 ) then
+    set yframe = 5000
+    set yanot  = 10000
+  else
+    set yframe = 10000
+    set yanot  = 50000
+  endif
+  set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4]
+  if ( $res == y ) then
+    set SCALE = `echo $xanot $xframe $yanot $yframe | awk '{print "-Bxa"$1"f"$2"+l'Time_sec' -Bya"$3"f"$4"+l'Residual_fit_micro_secs' -BWESN"}'` 
+    gmt psxy tmpr.clock -h0 $RANGE  -Jx$rx/$ry  $SCALE  -W3p,0/0/255 -K  -P >! $psfile
+  endif 
+  if ( $obs == y ) then
+    set SCALE = `echo $xanot $xframe $yanot $yframe | awk '{print "-Bxa"$1"f"$2"+l'Time_sec' -Bya"$3"f"$4"+l'micro_secs' -BWESN"}'` 
+    gmt psxy tmpo.clock -h0 $RANGE  -Jx$rx/$ry  $SCALE -W7p  -K  -P >! $psfile  
+  endif
+  if ( $model == y ) then
+    if ( $obs == y ) then
+      set SCALE = `echo $xanot $xframe $yanot $yframe | awk '{print "-Bxa"$1"f"$2"+l'Time_sec' -Bya"$3"f"$4"+l'micro_secs' -BWESN"}'` 
+      gmt psxy tmpm.clock -h0 $RANGE  -Jx$rx/$ry  $SCALE -W3p,0/0/255  -K  -P  -O  >> $psfile 
+    else
+      set SCALE = `echo $xanot $xframe $yanot $yframe | awk '{print "-Bxa"$1"f"$2"+l'Time_sec' -Bya"$3"f"$4"+l'micro_secs' -BWESN"}'` 
+      gmt psxy tmpm.clock -h0 $RANGE  -Jx$rx/$ry  $SCALE -W3p,0/0/255  -K  -P  >! $psfile 
+    endif 
+  endif
+endif
+
+\rm -rf tmpr.clock tmpr1.clock tmpm.clock tmpm1.clock tmpo.clock tmp.clock
+
+if ( $jump == y && $njump == y ) then
+  if ( $res == y ) then
+    echo "GAMIT k-file Jump and No Jump residuals" >! tmp.title
+    cat  $file.plot | awk '{print $1,$5}' >! tmpr.clock
+    cat  $file.plot | awk '{print $1,$7}' >! tmpr1.clock
+    cat tmpr.clock tmpr1.clock >! tmp.clock
+  endif
+  if ( $obs == y ) then
+    echo "GAMIT k-file " >! tmp.title 
+    cat  $file.plot | awk '{print $1,$3}'     >! tmpo.clock
+    cat tmpo.clock >! tmp.clock
+  endif
+  if ( $model == y ) then
+    if ( $obs == y ) then
+      echo "GAMIT k-file " >! tmp.title 
+      cat  $file.plot | awk '{print $1,$4}' >! tmpm.clock
+      cat  $file.plot | awk '{print $1,$6}' >! tmpm1.clock
+      cat tmpm.clock tmpm1.clock >> tmp.clock
+    else
+      echo "GAMIT k-file " >! tmp.title 
+      cat  $file.plot | awk '{print $1,$4}' >! tmpm.clock
+      cat  $file.plot | awk '{print $1,$6}' >! tmpm1.clock
+      cat tmpm.clock tmpm1.clock >! tmp.clock
+    endif
+  endif
+  set RANGE = `gmt gmtinfo  tmp.clock   -I100/50`
+# set r = ( `echo $RANGE | cut -c3- | awk '{FS="/"} {print $1*.9,$2*1.1,$3*1.1,$4*1.1}' ` )  
+  set r = ( `echo $RANGE | cut -c3- | awk -F/ '{print $1*.9,$2*1.1,$3*1.1,$4*1.1}' ` )  
+  set rx = `echo $r |  awk ' {print 5/ ($2-$1) }'` 
+  set ry = `echo $r |  awk ' {print 6/ ($4-$3) }'` 
+  set bx = `echo $r |  awk ' {print ($2-$1)/5 }'` 
+  set by = `echo $r |  awk ' {print ($4-$3)/5 }'` 
+  if ( $bx <= 200 ) then
+    set xframe = 50
+    set xanot  = 100
+  else if ( $bx < 2000 ) then
+    set xframe = 500
+    set xanot  = 1000
+  else if ( $bx < 20000) then
+    set xframe = 5000
+    set xanot  = 10000
+  else
+    set xframe = 10000
+    set xanot  = 50000
+  endif
+  if ( $by <= 100 ) then
+    set yframe = 5
+    set yanot  = 10
+  else if ( $by < 1000 ) then
+    set yframe = 50
+    set yanot  = 100
+  else if ( $by < 10000 ) then
+    set yframe = 500
+    set yanot  = 1000
+  else if ( $by < 100000 ) then
+    set yframe = 5000
+    set yanot  = 10000
+  else
+    set yframe = 10000
+    set yanot  = 50000
+  endif
+  set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4]
+
+  if ( $res == y ) then
+    set SCALE = `echo $xanot $xframe $yanot $yframe | awk '{print "-Bxa"$1"f"$2"+l'Time_sec' -Bya"$3"f"$4"+l'Residual_fit_micro_secs' -BWESN"}'` 
+    gmt psxy tmpr.clock  -h0 $RANGE  -Jx$rx/$ry  $SCALE  -W3p,0/0/255 -K  -P     >! $psfile
+    gmt psxy tmpr1.clock -h0 $RANGE  -Jx$rx/$ry  $SCALE  -W3p,255/0/0 -K  -P  -O >> $psfile
+  endif 
+  if ( $obs == y ) then
+    set SCALE = `echo $xanot $xframe $yanot $yframe | awk '{print "-Bxa"$1"f"$2"+l'Time_sec' -Bya"$3"f"$4"+l'micro_secs' -BWESN"}'` 
+    gmt psxy tmpo.clock -h0 $RANGE  -Jx$rx/$ry  $SCALE -W7p  -K  -P >! $psfile  
+  endif
+  if ( $model == y ) then
+    if ( $obs == y ) then
+      set SCALE = `echo $xanot $xframe $yanot $yframe | awk '{print "-Bxa"$1"f"$2"+l'Time_sec' -Bya"$3"f"$4"+l'micro_secs' -BWESN"}'` 
+      gmt psxy tmpm.clock  -h0 $RANGE  -Jx$rx/$ry  $SCALE -W3p,0/0/255  -K  -P  -O  >> $psfile 
+      gmt psxy tmpm1.clock -h0 $RANGE  -Jx$rx/$ry  $SCALE -W3p,255/0/0  -K  -P  -O  >> $psfile 
+    else
+      set SCALE = `echo $xanot $xframe $yanot $yframe | awk '{print "-Bxa"$1"f"$2"+l'Time_sec' -Bya"$3"f"$4"+l'micro_secs' -BWESN"}'` 
+      gmt psxy tmpm.clock  -h0 $RANGE  -Jx$rx/$ry  $SCALE -W3p,0/0/255  -K  -P     >! $psfile 
+      gmt psxy tmpm1.clock -h0 $RANGE  -Jx$rx/$ry  $SCALE -W3p,255/0/0  -K  -P -O  >> $psfile 
+    endif 
+  endif
+endif
+
+# make a temporary file for the data
+# 9 blank lines for 
+## Use this line for GMT 2.0 ## pstext <<!  -R0/1/0/1 -Jx1i/1i -F+f12p+jTL -P -O  >> $psfile
+gmt pstext <<alldone  -R0/1/0/1 -Jx1i/1i -F+f12p+jTL -P -O -N  >> $psfile
+0.0 9.4 `cat   $file.clk | grep "allen variance:"   `
+0.0 9.2 `cat   $file.clk | grep "Clock parameters"  ` 
+0.0 9.0 `cat   $file.clk | grep "epoch"             `
+0.0 8.8 `cat   $file.clk | grep "rate"              `
+0.0 8.6 `cat   $file.clk | grep "accel"             `
+0.0 8.4 `cat   $file.clk | grep "cubic"             `
+0.0 8.2 `cat   $file.clk | grep "condition"         `
+0.0 8.0 `cat   $file.clk | grep "jumps      :"      `
+0.0 7.8 `cat   $file.clk | grep "synched N"         `
+0.0 7.6 `cat   $file.clk | grep " max res "         `
+0.0 7.4 `cat   $file.clk | grep " rms res "         `
+0.0 7.2 `cat   tmp.title | grep "GAMIT"             `
+0.0 7.0 RED jump, BLUE no jump
+alldone
+
+#start a new frame 
+end # while
+
+#********end  of plotk run 
+
+cat CLOCKS | grep max   
+echo "                                                                 "
+echo " Statistics :  cat CLOCKS                                     	"
+echo "                                                                 "
+echo " Max resid. :  cat CLOCKS | grep max                          	"
+echo "                                                                 "
+if ( $N == 1  ) echo " To see     :   gs plotk.$site.ps		     	"
+if ( $N > 1   ) echo " To see     :   gs plotk.*.ps	            	"
+echo "                                                                 "
+if ( $N == 1  ) echo " To print   :   lpr plotk.$site.ps            	"
+if ( $N > 1   ) echo " To print   :   lpr plotk.*.ps                   "
+echo "                                                                 "
+                  
+#postscript viewer  
+#gs  plotk.*.ps
+
+

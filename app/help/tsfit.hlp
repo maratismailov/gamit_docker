@@ -1,0 +1,158 @@
+program tsfit
+
+Program to fit PBO generated times series using a globk 
+eathquake file input and other optional parameters (such as 
+periodic signals).
+
+Usage:
+tsfit <command file> <summary file> <list of files/file containing list>
+where <command file> is command file that contains parameters to
+                     be estimated and option globk eq file.  If the
+                     name NONE is used, just linear rates will be
+                     fit.  If the name MEAN is used, just mean values
+                     will be estimated (same as MEAN_ONLY in command file) 
+                     When NONE or MEAN is used no individual .det files
+                     are created (see DETROOT command).
+MOD TAH 160223: When MEAN option is used, adding _RES after MEAN will
+                     generate summmary file with residual estimates.  This
+                     feature is used tscomp generated files with DIFF option.
+                     CAUTION: Do not use a command file name that starts
+                     with MEAN
+      <summary file> output summary file that contains statistics
+                     and estimated parameters
+      <list of files/file containing list> is either a list of tssum
+                     files to process or a file containing a list
+                     of files.
+
+MOD TAH 141205: Added Kalman filter estimator (KFILT command)
+MOD TAH 150107: Added OUT_POSF command to output mean difference from 
+                reference position in globk vel file format.
+Current default is NRMS=1 if less than 10-degrees of freedom (minnum command)
+
+TSFIT commands: @ is not part of command and represents at least
+one space at start of line.
+
+@ EQ_FILE <File Name>
+Name of standard globk earthquake file.  Command can be issued
+multiple times.  The file can contain eq_exp commands
+which are not part of standard globk earthquake file.
+
+@ PERIODIC <Period (days)> [Apriori Sigma]
+Estimates Cosine and Sine terms with Period.  Apriori sigma can be
+used as an apriori constraint (sigma not implemented yet)
+
+@ MEAN_ONLY
+@ MEAN_RES
+This will set tsfit to estimate a mean offset and no linear trend 
+through the data
+MOD TAH 160223: MEAN_RES is used,  MEAN will generate summmary
+file with residual estimates.  This feature is used tscomp
+generated files with DIFF option.
+
+@ SITES <Pattern of using site>
+Not yet implemented: Use selected files in input list
+
+@ USE_CONSTRAINTS
+Sets use of apriori constraints (not yet implemented).
+
+@ REP_EDITS <rename file>
+Set to report edits to stdout.  Edit lines start with R. The 
+rename file if given will contain globk rename to _XPS lines
+
+@ REP_CONSTRAINTS
+Set to report constraints being applied (not implemented)
+
+@ AV_RES <days>
+Generate residuals averaged over <days> duration (not implemented)
+
+@ REAL_SIGMA
+Apply the tsview/ensum realistic sigma algorithm to generate sigmas
+that account for temporal correlations in the data.
+
+@ DETROOT <det_root>
+String to be used at the start of the site dependent parameter 
+estimate files.  Each site generates its own file.  If the DETROOT 
+is set to NONE (full string, in upper case) then no parameter estimate
+by site will be output.
+
+@ VELFILE <vel file name>
+Name of the output file containing velocity estimates in the standard
+globk velocity file format.
+
+@ NSIGMA <nsigma limit>
+Edit time series based on a n-sigma condition.
+
+@ MAX_SIGMA <Sig N> <Sig E> <Sig U> meters
+Allows limit to be set on sigma of data included in the solutions.  
+Default values are 0.1 in all three coordinates.
+
+@ TIME_RANGE <Start Date> <End Date>
+Allows time range of data to be processed to be specified.  Dates
+are Year Mon Day Hr Min.  End date optional.
+
+@ OUT_APRF <file name> 
+Specifies name of a globk apriori coordinate file to be generated from
+the fits.
+
+@ OUT_EQROOT <root for Earthquake files> <out days>
+Specifies the root part of the name for earthquake estimates outputs.
+The outputs are in globk .vel file format and so can be used with
+sh_plotvel and velview.  The outputs are coseismic offset and log and
+exponential coefficient estimates.  
+If the <out days> argument is included the total post-seismic motion is
+computed that many days after each of the earthquakes.  If exponemtial 
+and log terms are estimated for the same event (same eq_def code) then 
+they are summed and correlations accounted for in computing the sigmas
+of the total motion.  Output file format is .vel file format.
+
+@ OUT_PBOV <file name>
+Specifies name of a PBO-format velocity file to be generated from the
+fits.  These files contain accurate position and velocity estimates.
+
+@ OUT_POSF <file name>
+Output the adjusment to the Reference Positions in the PBO pos files in
+the format of a GLOBK vel file.  Provides a summary of mean offsets when
+time series files are differenced with tscomp.
+
+@ RESROOT <res_root>
+String prepended to the site dependent output residual 
+files.  Each site generates its own file.  If the RESROOT 
+is set to NONE (full string, in upper case) then no residual files
+will be output.
+
+@ RESXCL <parameter list>
+List of parameter adujstments NOT to be applied in the calculation of
+time series residuals. Time series statistics are still calculated 
+using all parameter estimates. Acceptable parameter names are:
+(offset, rate, periodic, break, earthquake, log, exp, drate) 
+
+@ MINNUM <Minimum number of values to rescale sigma> <min Real-sigma>
+Sets the number of degrees of freedom needed to have the NRMS of the
+fit re-scale the sigmas on the parameter estimates (default 10) and
+minimum number of data for realistic sigma algorithm (default 30)
+
+@ MAX_PARSIG <Max periodic sigma (mm)> <Max postseismic sigma (mm)> <Ht scale> <Max Chi>
+Maximum sigma periodic parameter estimates,postseismic log, and 
+exponential parameters can have before the parameters are removed from 
+the estimated parameters. (Useful when outputing apriori coordinate files
+so high correlation between parameters does not generate large sigma
+results). <Ht scale> is the scale factor for the height sigma relative to 
+north and east. 
+<Max Chi> - Maximum ratio of estimate/sigma to allow it to be removed. 
+(Defaults 5.0 mm, 2.0 mm, 3.0 (hgt), 3.0 (chi)
+
+@ Command added 141205.
+@ KFILT <RW/FOGM/WN> <Min RW Variance mm^2/yr>
+Uses a Kalman filter estimator with the process noise values based
+on the output of the FOGMEX (Real_Sigma) model.  The options are 
+RW for random walk (same as GLOBK); FOGM to use a First-order-Gauss-
+Markov process with the correlation time based on the FOGMEX estimate; 
+WN for "white noise" in the sense that process noise is set to zero and
+should generate a result similar to the standard weighted least squares
+estimate. The process noise is same as that used in sh_gen_stats based
+on the FOGMEX estimate of the velocity sigma (The RW process noise is 
+the velocity variance divided by the total duration of data used to estimate
+the velocity.  The <Min RW Variance> (mm^2/yr) is the minimum noise  
+variance used in the same way as in sh_gen_stats.  
+The defaults are RW 0.05 and are used if just the KFILT command is given.
+

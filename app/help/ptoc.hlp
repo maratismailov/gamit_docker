@@ -1,0 +1,29 @@
+PTOC: Program Table of Contents 
+
+PTOC -- Program Table of Contents 
+  
+      This program will read a series of source files and find
+all of the module names in them (programs, subroutines, 
+functions and block datas.  These modules are then
+alphabetized and an order table of contents is produced giving
+module name, type, line number in source file and name of 
+source file.
+  
+To run this program use:
+CI> PTOC,output_file_name, input_1, input_2, .... 
+   or 
+CI> PTOC,output_file_name, tr input_list_name 
+  
+where input_1, input_2 ... are the names of the input file, 
+      input_list_name  is the name of a file contain list of
+              files to be used
+      output_file_name is the name of the output file (to be
+              printed with 75 lines per page. 
+  
+      Upto 100 source files can currently be included with 1250 modules 
+included in these files.  The program can be run either on CI or FMGR 
+files.  The program is set to an output of 75 lines per page. (To be
+used with the LASER program running to a LaserJet+ (HP2686A) in 
+line printer font.) 
+  
+ 

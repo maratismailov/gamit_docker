@@ -1,0 +1,98 @@
+BLOCK: Analyses structure of computer programs
+  
+ Function 
+ -------- 
+  
+    Program BLOCK will scan  Fortran source files and produce an ASCII
+ plotting file suitable for program PLOT. 
+  
+    The end result is a subroutine hierachy diagram for the Fortran code. 
+  
+ Running the program
+ -------------------
+  
+    To run the program enter :
+  
+      BLOCK input_filename, output_filename, {,depth} {,length} 
+  
+    where : 
+  
+        input_filename  - is the full file name (up to 63 characters) of the
+                          file containing the names of all the source modules 
+                          involved. 
+  
+        output_filename - is the full filename (up to 63 characters) of the 
+                          plot file produced. 
+  
+        depth           - is the maximum depth to which subroutines are nested. 
+                          (default is the number needed for the source
+                           code specified). 
+  
+                          RESTRICTION.
+                          Depth should not be set less than the depth required
+                          by the subroutine calls (or unpredictable 
+                          results will occur when PLOT is run). 
+  
+        length          - is the maximum number of of calling routines
+                          (default is the number needed for the source
+                           code specified). 
+  
+ Example
+ -------
+  
+  
+   < .................. Depth .................>
+  
+  _____     ______    ______                              /\
+  |   | ... |    | .. |    |                               .
+  -----     ------    ------                               .
+    .          .                                           .
+    .          .      ______     _____    ______           .
+    .          ...... |    | ....|   | ...|    |           .
+    .                 ---.--     -----    ------           .
+    .                    .                                 L
+    .                    .       _____    ______           e
+    .                    ....... |   | ...|    |           n
+    .                            -----    ------           g
+    .                                                      t
+    .       _____     _____                                h
+    ....... |   | ... |   |                                .
+            -----     -----                                .
+              .                                            .
+              .       _____      _____    _____            .
+              ........|   |..... |   |....|   |            .
+                      -----      -----    -----           \/
+  
+  
+ Restrictions 
+ ------------ 
+    The program will work on programs with up to 250 subroutines
+ and 500 calls to these subroutines.
+  
+  
+Running the plotting program
+----------------------------
+    The file created by program BLOCK is later plotted using program PLOT.
+  
+    Program PLOT is a generalised plotting package and has its own help 
+ file. However to plot the output from the program BLOCK enter :
+  
+     PLOT ,output_filename ,lu_graphics 
+  
+ where :
+        output_filename  - is the name of the plot command file created by
+                           BLOCK. 
+  
+        lu_graphics      - is the logical unit of the graphics device for 
+                           output. This may be a graphics terminal, printer,
+                           or plotter.
+  
+                           BLOCK currently produces commands to cause page
+                           eject and paper feed on the 7551 plotter (lu 26).
+                           This will also work on the printer and graphics
+                           terminals. 
+                           It is not clear what effect this function will 
+                           have on the 7585 plotter but it will possibly
+                           cause overwriting if more than one page is 
+                           required.
+ 

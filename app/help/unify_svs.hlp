@@ -1,0 +1,27 @@
+UNIFY_SVS: Unifies orbital elements in GLOBK svs file
+
+PROGRAM UNIFY_SVS
+ 
+  The program will read an svs file which has first been sorted by
+  time and then by prn (i.e., sort svs | sort +4) and will make
+  the entries consistent in the sense that all orbital elements at
+  same IC time will be made the same.
+
+  Runstring:
+% unify_svs in.svs out.svs
+where in.svs is an input ephemeris file and ou
+      out.svs is the output file.  This output should then be sorted
+              by time agiain.  out.svs must be a new file.
+
+EXAMPLE OF USAGE:
+
+#
+# Shell script to make all the orbital elements at the
+# same IC be the same.
+ sort svs_kaz9293_rg.apr | sort +4 -5 >! t.svs
+\rm tu.svs
+ unify_svs t.svs tu.svs
+ sort tu.svs >! svs_kaz9293_rg.unf
+\rm t.svs tu.svs
+#
+

@@ -1,0 +1,223 @@
+#!/bin/csh -f
+
+if ($#argv < 3 ) then
+   echo ' '
+   echo ' Link source codes (Fortran and C) and include (.h) files' between
+   echo ' two GAMIT/GLOBK directories -- may be executed from any directory'     
+   echo ' '
+   echo "Usage:  link_source -d  [dirpath] -l [linkpath] -m [module] -M"
+   echo ' ' 
+   echo "  Required:  dirpath   absolute path for directory you are constructing;"
+   echo "                       e.g., /data16/rwk/active_hp/gamit"
+   echo "                       (full path must exist)" 
+   echo " "
+   echo "             linkpath  absolute path for directory pointed to by links;"
+   echo "                       e.g., /data13/rwk/active/gamit"
+   echo " "
+   echo "  Optional:  module    subdirectory under dirpath/linkpath containing "
+   echo "                       the source code (e.g., model);  if omitted, use "
+   echo "                       the pre-set lists for libraries, gamit, and kf" 
+   echo " "
+   echo "             -M        Copy over /libraries/Makefile.config "
+   echo " "
+   echo "  Notes:  1. The gamit /include files are copied rather than linked, so that "
+   echo "             installation with 'redim' will alter the dimensions in the local,"
+   echo "             not the linked directory."
+   echo "  "
+   echo "          2. The kf directories linked at present are only those used by "
+   echo "             the GLOBK modules, not those used only by SOLVK."
+   echo " " 
+   exit
+#         R. King 13 August 1996.   Last changed by R. King 140826
+else
+ 
+# set defaults  
+set dirpath = ""
+set linkpath = ""
+set modname = "" 
+set config = "no"
+
+# sort out user options
+foreach a ($argv)
+switch($a)
+	case -d:
+		set dirpath = $argv[2]
+		breaksw
+	case -l:
+		set linkpath = $argv[2]
+		breaksw
+	case -m:
+		set modname = $argv[2]
+		breaksw    
+   case -M:
+       set config = "yes"
+       breaksw
+endsw
+shift
+end
+   
+echo " "         
+echo "New directory path: $dirpath  (all existing source or links will be removed)"  
+echo " "
+echo Source of links: $linkpath
+echo " "
+echo "Continue? (y/n)"  
+set ans = $<
+if ( $ans == '' ) set ans = 'y'
+if ( $ans == 'n' ) exit
+echo " "
+
+# Test for existence of paths   
+if (! -d $dirpath) then
+    echo "Directory path $dirpath not found. QUIT"
+    exit
+endif  
+if (! -d $linkpath ) then
+    echo "Link path $linkpath not found.  QUIT"
+    exit
+endif
+    
+# See if libraries, kf, or gamit and set the module directories 
+set dirname = $dirpath:t     
+if( $modname != "" ) then
+  set dirs = $modname 
+else               
+  set dirs = " "
+  if ( $dirname == 'libraries' ) then  
+     set dirs = ($dirs comlib)
+     set dirs = ($dirs matrix)    
+     set dirs = ($dirs includes)
+
+  else if ( $dirname == 'gamit' ) then
+     set dirs = ($dirs arc) 
+     set dirs = ($dirs cfmrg)
+     set dirs = ($dirs clean)
+     set dirs = ($dirs ctox)
+     set dirs = ($dirs fica)
+     set dirs = ($dirs fixdrv)  
+     set dirs = ($dirs grdtab)
+     set dirs = ($dirs hi)   
+     set dirs = ($dirs includes)
+     set dirs = ($dirs lib) 
+     set dirs = ($dirs makex)
+     set dirs = ($dirs makexp)
+     set dirs = ($dirs model)
+     set dirs = ($dirs orbits)
+     set dirs = ($dirs solve)
+     set dirs = ($dirs tform)
+     set dirs = ($dirs utils)
+  else if ( $dirname == 'kf' ) then
+     set dirs = ($dirs gen_util)
+#     set dirs = ($dirs solvk_lib)
+     set dirs = ($dirs Khandlers)
+     set dirs = ($dirs Ghandlers)
+     set dirs = ($dirs globk)
+     set dirs = ($dirs glfor)
+     set dirs = ($dirs glinit)
+     set dirs = ($dirs glist)
+     set dirs = ($dirs glout)
+     set dirs = ($dirs glbak)
+     set dirs = ($dirs glorg)
+     set dirs = ($dirs glsave)
+     set dirs = ($dirs globc)
+     set dirs = ($dirs glred)
+     set dirs = ($dirs htoglb)   
+     set dirs = ($dirs includes)
+     set dirs = ($dirs ctogobs)
+     set dirs = ($dirs extract)
+     set dirs = ($dirs blsum)
+     set dirs = ($dirs utils)
+     set dirs = ($dirs svpos) 
+     set dirs = ($dirs update_pmu)
+     set dirs = ($dirs plot)
+     set dirs = ($dirs track)
+  else
+     echo "Directory name ( = $dirname ) not libraries, kf, or gamit. QUIT"
+     exit
+  endif
+endif                            
+            
+# Loop over all modules
+  
+while ($#dirs > 0 ) 
+   set dir = $dirs[1] 
+   shift dirs 
+#  go to the link directory to get the list  
+   cd $linkpath/$dir
+   set source = `ls *.f *.f90 *.c *.h Makefile.generic`    
+#  go to the target directory to copy includes or set the links   
+   cd $dirpath
+   if ( ! -e $dir ) then
+     mkdir $dir
+   endif
+   cd $dir 
+   if ( $dirname == 'gamit' && $dir == 'includes' ) then
+      \cp $linkpath/$dir/*.h ./
+      echo "GAMIT include files in $linkpath/$dir copied to $dirpath/$dir"  
+   else   
+      echo "Fortran, C, include, and Makefile.generic linked in $dir"
+      foreach f ($source)  
+         \rm -f $f 
+         ln -s $linkpath/$dir/$f .
+      end     
+      if ( $dirname == 'gamit' && $dir == 'clean' ) then
+        \rm -f cview_icon
+        ln -s $linkpath/$dir/cview_icon .   
+        echo "cview_icon linked in $dir"
+      endif
+
+#     must also do the subdirectories for kf/plot
+# MOD TAH 960812: Included x1000.icon in ls's below
+      if ( $dirname == 'kf' && $dir == 'plot' ) then   
+        cd $linkpath/plot/x1000 
+        echo "Fortran, C, include, x1000.icon and Makefile.generic linked in plot/x1000"
+        set source = `ls *.f *.c *.h x1000.icon Makefile.generic`    
+        cd $dirpath/plot
+        if ( ! -e 'x1000' ) then
+          mkdir x1000
+        endif
+        cd x1000
+        foreach f ($source)
+          \rm -f $f 
+          ln -s $linkpath/plot/x1000/$f .
+        end                              
+        cd $linkpath/plot/g1000    
+        echo "Fortran, C, include, x1000.icon and Makefile.generic linked in plot/g1000"
+        set source = `ls *.f *.c *.h Makefile.generic`
+        echo $source
+        cd $dirpath/plot
+        if( ! -e 'g1000' ) then
+          mkdir g1000
+        endif
+        cd g1000
+        foreach f ($source)
+          \rm -f $f 
+          ln -s $linkpath/plot/g1000/$f .
+        end   
+      endif
+   endif
+end   
+
+# Link in Makefile.config, copying the master to libraries if requested
+
+if ( $dirname == 'libraries' ) then
+  if ( $config == "yes" ) then 
+     \cp $linkpath/Makefile.config $dirpath/Makefile.config 
+  endif    
+else
+  cd $dirpath
+  ln -s ../libraries/Makefile.config .
+endif                   
+
+     
+# Create the /bin directories for make_gamit and make_globk if they do not exist
+
+if( $dirname == 'gamit' || $dirname == 'kf' ) then        
+  cd $dirpath
+  if ( ! -e bin ) then
+    mkdir bin
+  endif
+endif
+
+# end if for no arguments
+endif

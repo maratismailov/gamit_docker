@@ -1,0 +1,33 @@
+GLSAVE: Save GLOBK binary hfiles from solution
+
+
+Program GLSAVE:  Creates combined binary hfile from globk run
+
+Runstring:
+% glsave [option] <com file> [out global name] [description] <sol_file name>
+
+where [option]   is an optional -M to force glsave to write a binary
+                 hfile referenced to the center epoch of the combined
+                 data; or -N to force output to the conventional end
+                 epoch.  The default behavior is determined by the MIDP
+                 option in either the prt or org options in the globk
+                 command file.  If option is used it must be either -M or -N.
+                 Normally, no argument is needed.
+      <com file> is the globk common file name (given in
+                 the com_file command.
+      [out global name] is an optional output file name.
+                 (Usually given with the out_glb command).
+                  If no out_glb was specified in the globk
+                  command file, directly running glsave allows
+                  one to be written.
+      [description] optional description for the solution.
+                 (Usaully given with the descript command)
+                  If the description has blanks then it must
+                  be enclosed in single quotes (e.g., 'Week 819 run')
+     <sol_file name> Optional name of the solution file to use in
+                  generating the binary hfile.  Feature used when
+                  the out_sol command in used in glorg to write
+                  out a new solution file after constraints and
+                  stabilization have been applied.         
+
+

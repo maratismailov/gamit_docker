@@ -1,0 +1,89 @@
+      subroutine ieee 
+c     IEEE floating point error handler
+
+#include <f77/f77_floatingpoint.h>
+	
+      integer ieeer
+      sigfpe_handler_type 
+     .  ieee_underf
+     ., ieee_overf
+     ., ieee_inexact
+     ., ieee_invalid
+     ., ieee_division
+      external
+     .  ieee_underf
+     ., ieee_overf
+     ., ieee_inexact
+     ., ieee_invalid
+     ., ieee_division
+ 
+      ieeer = ieee_handler('set','overflow', ieee_overf)
+      if (ieeer .ne. 0) print *,'IEEE 1'
+      ieeer = ieee_handler('set','underflow',ieee_underf)
+      if (ieeer .ne. 0) print *,'IEEE 2'
+c     This one seems extremely flakey
+c     ieeer = ieee_handler('set','inexact',  ieee_inexact)
+c     if (ieeer .ne. 0) print *,'IEEE 3'
+      ieeer = ieee_handler('set','invalid',  ieee_invalid)
+      if (ieeer .ne. 0) print *,'IEEE 4'
+      ieeer = ieee_handler('set','division', ieee_division)
+      if (ieeer .ne. 0) print *,'IEEE 5'
+
+      return
+      end
+
+      integer function ieee_underf (sig, code, sigcontext)
+      integer sig, code, sigcontext(5),icode
+
+      call ieee_dump(sig,code,sigcontext,
+     .'Floating point underflow.')
+      end
+
+      integer function ieee_overf (sig, code, sigcontext)
+      integer sig, code, sigcontext(5),icode
+
+      call ieee_dump(sig,code,sigcontext,
+     .'Floating point overflow.')
+      end
+
+      integer function ieee_inexact (sig, code, sigcontext)
+      integer sig, code, sigcontext(5),icode
+
+      call ieee_dump(sig,code,sigcontext,
+     .'Inexact operand.')
+      end
+
+      integer function ieee_invalid (sig, code, sigcontext)
+      integer sig, code, sigcontext(5),icode
+
+      call ieee_dump(sig,code,sigcontext,
+     .'Invalid operand.')
+      end
+
+      integer function ieee_division (sig, code, sigcontext)
+      integer sig, code, sigcontext(5),icode
+
+      call ieee_dump(sig,code,sigcontext,
+     .'Floating point divide by zero.')
+      end
+
+      subroutine ieee_dump (sig,code,sigcontext,message)
+      integer sig, code, sigcontext(5),icode           
+      character*(*) message
+
+      icode = loc(code)
+      print 100,icode,sigcontext(4)
+  100 format  ('IEEE floating point code (hex) ',z8,' at PC ',z8)
+      print 200,(sigcontext(i),i=1,5)
+  200 format ('Context: ',5(z8.8,1x))
+
+      print *,'IEEE: ',message
+      print *,'IEEE: Please wait while I dump core....'
+      call abort
+      end
+
+
+
+
+
+

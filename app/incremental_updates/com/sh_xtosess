@@ -1,0 +1,67 @@
+#!/bin/csh -f
+#
+#doc Make session.info from x-file
+#doc
+#
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 || ` echo $1 | cut -c2-` == 'help' ) then
+  echo "=================================================================================="
+  echo "  "
+  echo " sh_xtosess is a script to make a session.info file from an x-file " 
+  echo "  "
+  echo " Usage: sh_xtosess -xfile <xfile>" 
+  echo "  "                                                                            
+  echo " Where: "
+  echo "  "
+  echo " xfile  is the name of an x-file to use to extract session.info [Required] "
+  echo "  "                                                                           
+  echo " Example: sh_xtosess -xfile xalgo0.305 "
+  echo "  "
+  echo "==================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+set year = ''
+set yr = ''
+set xfile = ''
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -xfile:
+        set xfile = $argv[2]
+        breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ############################
+# Get the number of epochs from the x-file
+set n = `grep -n "EPOCHS" $xfile | awk -F":" '{print $1}'`
+set epochs = `head -n $n $xfile | tail -n -1 | awk '{print $1}'`
+
+# Get the list of PRN's from the x-file
+#set prn_list = `grep CHANNEL $xfile | awk '{printf "%02d ", $4}'`
+set prn_list = `grep CHANNEL $xfile | awk '{printf "%02d ",substr($0,19,2)}'`  # Updated by MAF (2020-04-30) to accommodate constellation prefix (G, R, E, C, etc.)
+
+# Extract other session.info from x-file 
+set n = `grep -n "YR DAY HR MN SECS   INTERVAL(SECS)" $xfile | awk -F":" '{print $1}'`
+@ n = $n + 1    
+set year = `head -n $n $xfile | tail -n -1 | awk '{print $1}'`
+set yr = `sh_year -year $year`
+set sesinfo = `head -n $n $xfile | tail -n -1 | awk -v e=$epochs -v y=$yr[1] '{print y, $2, $8, $6, e, $3, $4}'`
+
+# Write out the session.info
+echo "# Session.info : free format, non-blank first column is comment" >! session.info.fromx
+echo "#Year Day  Sess#  Interval  #Epochs  Start hr/min  Satellites"  >> session.info.fromx
+(echo $prn_list; echo $sesinfo) | awk 'NR == 1 {split($0,prns); n = NF} \
+NR > 1 {printf " %4d %3d   %2d       %3d    %5d     %2d %2d    ",$1,$2,$3,$4,$5,$6,$7; \
+for (i=1;i<=n;i++) printf "%3d",prns[i]; printf "\n"}' >> session.info.fromx
+
+if ( -e session.info ) \mv -f session.info session.info.saved 
+\mv session.info.fromx session.info
+
+exit      
+ 

@@ -1,0 +1,171 @@
+TSCON: Convert timeseries from Reason/JPL/SIO XYZ files and SCEC CSV format
+       to PBO time series format and optionally re-realize the reference 
+       frame used to generate the time series
+ 
+Usages:
+tscon <dir> <prod_id> <cmd file> <XYZ/PBO files/file with list>
+ 
+where <dir>  -- directory to put the time series in. 
+      <prod_id> is product id with form: jpl.final_frame.  Characters
+             5:9 will used for time series type (normally rapid or final)
+             +RESET (exact) appended to product_id will force a reset of the
+             reference coordinates (Added TAH 141123)
+             NONE as a product ID will stop out of time sseries (useful 
+             when parameters from the frame fitting are of intersest (170721)
+      <cmd file> -- Command file to allow frame realization: Optional
+             use ' ' if no command file.  Setting -S=<value> will scale
+             the sigmas by that factor.  Default is -S=1.0
+             Commands are:
+               eq_file <file name>  (maybe issued mutliple times)
+               apr_file <apriori coordinate file> (may be issued multiple times)
+               stab_site <list of stablization sites> (multiple times)
+               pos_org <xtran> <ytran> <ztran> <xrot> <yrot> <zrot> <scale>
+               stab_ite [# iterations] [Site Relative weight] [n-sigma]
+               stab_min [dHsig min pos] [dNEsig min pos]
+               cnd_hgtv [Height variance] [Sigma ratio]
+               time_range [Start YY,MM,DD,HR,MIN] [End YY,MM,DD,HR,MIN]
+
+      <list XYZ files>  XYZ files/.csv files/.pos files OR
+      name of file ending with .lst which constains a list of files to be
+               processed.  # and * in column 1 taken to be comments.
+      When JPL xyz files are used; JPL (case sensitive) should be used as first file name
+      When new Measures XYZ file are used (with correlations) MEA should be used
+         as first name (JPL and MEA options can be interspersed in the list 
+         of files to change format.  Does not work if .lst file is used)
+
+Input timeseries file types:
+-- The XYZ files are assumed to Reason/SIO XYZ files with names of the form 
+aaaaRaw.xyz where aaaa is the four character site code
+-- The .csv files are comma separated files of the PBO flavor or SCEC version
+The files have a reference postions and dN dE and dU values and sigmas. (The
+SCEC flavor has North and East reversed and no sigmas
+--  The txyz2 format from the UNR timeseries files.  See 
+http://geodesy.unr.edu/gps_timeseries/README_txyz2.txt.  NA12 frame files can
+be obtained from http://geodesy.unr.edu/gps_timeseries/txyz/NA12/XXXX.NA12.txyz2
+-- The .pos files are standard PBO time series positions files.
+-- Files with names such as xxxx.xyz will be interpretted as USGS format files 
+   unless JPL or MEA appears first in the list of files (MEA is the Measures xyz
+   format).
+-- http://sopac-ftp.ucsd.edu/pub/timeseries/measures location of Measures combined
+   time series (no jpl or sopac individual series are avaiable). Typical URL:
+   http://sopac-ftp.ucsd.edu/pub/timeseries/measures/rawXyzTimeSeries.Measures_Combination.20150101.tar.gz
+-- GipsyX gdcat files with name of form: P802.gdcat (Added 200805)
+
+
+PROD_ID types valid in PBO:
+Format <cen>.<series>_<frame>+<type>
+<cen>     - Center 3 characters (jpl/sio) or special product
+            code e.g., aug for Augustine Volcano, aku for Akutan volcano
+<series>  - Orbit series: final or rapid
+<frame>   - Frame type: 5-character string with frame name 
+            (e.g. frame, snf01, igs05)
+<type>    - Optional type.  If not given series name is used.  Additional
+            type put in the final series is supplemental run (suppl).
+ 
+Standard PROD_ID
+sio.final_igs05
+
+tsview expect the file names to follow this basic format ie., 
+3-chars.5-chars_frame (the frame name string is needed).
+
+MOD TAH 130325: Additional descriptive headers added to the start of the .pos
+    file Verion 1.1.0 
+MOD TAH 141123: Added +RESET to product ID
+MOD TAH 150106: Added new Measures format from http://sopac-ftp.ucsd.edu/pub/timeseries/measures.
+                File names of form aaaa.xyz (same name style as USGS and JPL which
+                each have their own formats).  
+                Added adding scale back into UNR/JPL time series (frame must be correctly
+                assigned).  USGS probably used JPL nnr x-file scale.
+
+
+TSCON COMMANDS.  These commands are similar to GLORG
+---------------------------------------------------- 
+@ is at least one blank.
+
+@EQ_FILE <file name>  (maybe issued mutliple times)
+Standard eq-file for globk with earthquake definitions and site renames
+for breaks and for deleting data (_XPS and _XCL).  Command may be 
+issued multple times (this feature will be added to globk soon).  
+
+@APR_FILE <apriori coordinate file> (may be issued multiple times)
+Standard globk aproiri coordinates file with EXTENDED lines.  As in
+globk may be given multiple times.  Adding -PER (case sensitive) to
+the aproriori coordinate file result in the periodic terms not being 
+used in the frame realization. 
+
+@STAB_SITE <list of stablization sites> (multiple times)
+List of sites to be used in the stabilization.  4-character codes only
+can be used and these will match all forms of a station name.  The 
+restriction form may also be used although it is not quite as flexibile
+as in glorg.  The form
+  stab_site  +NAME  R <start Y M D H M> <end Y M D H M>
+will use the site name only during the time between start and stop.
+The form
+  stab_site  -NAME  R <start Y M D H M> <end Y M D H M>
+will use the site at all times except between start and stop. 
+(In glorg, this form may be used multiple times for one site and the
+multiple use feature is not possible in tscon.
+
+@POS_ORG <xtran> <ytran> <ztran> <xrot> <yrot> <zrot> <scale> <xcm> <ycm> <zcm> 
+Specfies the parameters to be estimated (same as glorg).
+MOD TAH 170720: Added <xcm> <ycm> <zcm> for center of mass shifts
+dur to degree 1 loading (See Eq 6, Blewitt, Lavalee, Clarke et al.,
+"A New Global Model of Earth Deformation: Seasonal cycle detected",
+Science, 294, 5550, pp 2342-2345, 2001.
+
+@STAB_ITE [# iterations] [Site Relative weight] [n-sigma]
+Specified number of iteration possible and the n-sigma editing condition
+to be used to determine if a site should be deleted from the 
+stabilization list. Site relative weight is not used (in glorg, it sets
+the ratio of constant to site dependent weight and since the sigmas
+are already known here, this parameter is not meaniful).
+
+@STAB_MIN [dHsig min pos] [dNEsig min pos]
+Sets the minimum sigmas to be used in deciding if a site's sigma are
+too large to be included in the stabilization (see cnd_hgtv below)
+
+@CND_HGTV [Height variance] [Sigma ratio]
+Sets the height variance relative to horizontal variances in estimating
+the transformation parameters.  When the height variance is set large,
+loading effects on height will have little effect on the determination
+of the transformation parameters.  Since this variance fractor is applied
+to the Up sigma, it should be about 10 times smaller than the glorg value
+for constistent results (glorg uses a unit-matrix for the initial NEU 
+covariance matrix).
+
+@OUT_ORG <file name>
+MOD TAH 170720: Output file name with transformation parameters based on
+the pos_org options.
+
+@TIME_RANGE [Start YY,MM,DD,HR,MIN] [End YY,MM,DD,HR,MIN]
+Allows the time range of data to be specified.  The new time series have
+only this duration of data in them. NOTE: These times need to match the
+central epochs of the timeseries entries with a few minutes.  For normal
+processing, this meass the HR and MIN are 12 00.
+
+New commands 2018/03/05
+-----------------------
+@FIX_UNR <Station.info/N> <antmod.dat>
+Fix the east error in the UNR time series using station,info and antmod.dat
+file.  Default is to use ~/gg/tables/station.info and ~/gg/tables/antmod.dat
+but user can optionally use different fles.  *If antmod.dat file specified
+station.info name must all be given. N can bse used to stop correction being
+applied (only needed if command used twice).  Code assumes that the same
+meta data was used in processing as is recorded in station.info
+
+@REP_SCALE <scale file>
+Command will restore the scale changes removed in the GIPSY x-files.  The
+shell script sh_get_x-files can create the <scale file> from UNR NA12 and 
+JPL nnr x-files.  The script can be used to update the files as time goes on
+(i.e., the if scale file exists, new x-files from the end of the file to the
+current date will downloaded and the scale estimates saved in the scale 
+file. Example <scale file>:
+head UNR_NA12.scale
+# X-file scale created for center UNR, frame NA12
+# Created Fri Mar  2 00:17:35 EST 2018
+# x-files stored in UNR_x-files
+#   MJD          SCALE          SCALE +-
+ 50086.50      0.7715E-09     0.2039E-09 
+ 50087.50      0.9176E-09     0.2175E-09 
+ 50088.50      1.0770E-09     0.2058E-09 
+-----------------------

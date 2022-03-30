@@ -1,0 +1,47 @@
+
+c  Determine the type of ephemeris, open it, and the read values into storage             
+                      
+c     file name currently hardwired
+      nbodyf = 'nbody' 
+      open(unit=lun,file=nbodyf,iostat=ioerr)
+      if(ioerr.ne.0 ) call report_stat('FATAL',prog_name,'lib/ephred'
+     .    ,nbodyf,'Error opening planetary ephemeris file type',ioerr)
+      inquire(file=nbodyf,exist=lexist,form=cform,access=cassess
+     .     ,iostat=ioerr) 
+      if(ioerr.ne.0 ) call report_stat('FATAL',prog_name,'lib/ephred'
+     .   ,nbodyf,'Error inquiring type of planetary ephemeris file type'
+     .   ,ioerr)
+      print *,'lexist cform cassess ',lexist,cform,cassess
+      if(.not.lexist)  call report_stat('FATAL',prog_name,'lib/ephred'
+     . ,'nbody','Ephemeris file does not exist ',0)
+      close(lun)
+      if(cform(1:9).eq.'FORMATTED') then
+        etype = 'PEPa' 
+      elseif(cform(1:11).eq.'UNFORMATTED'.and.
+     .     cassess(1:10).eq.'SEQUENTIAL' ) then 
+        etype = 'PEPb'                                                                      
+      elseif( cform(1:11).eq.'UNFORMATTED'.and.
+     .    cassess(1:6).eq.'DIRECT' ) then  
+        etype = 'JPL ' 
+      else       
+        call report_stat('FATAL',prog_name,'lib/ephred','nbody'
+     ,     ,'Cannot identify planetary ephemeris file type',0)
+      endif
+
+--------------------------------------------------------------------------
+
+prey:PNW <1180>: more nbody
+JPL Planetary Ephemeris DE405/LE405                                                 Start Epoch: JED
+=  2451536.5 1999 DEC 24 00:00:00                                   Final Epoch: JED=  2469808.5 205
+0 JAN 02 00:00:00                                   DENUM LENUM TDATEFTDATEBCENTERCLIGHTAU    EMRAT 
+GM1   GM2   GMB   GM4   GM5   GM6   GM7   GM8   GM9   GMS   RAD1  RAD2  RAD4  JDEPOCX1    Y1    Z1  
+  XD1   YD1   ZD1   X2    Y2    Z2    XD2   YD2   ZD2   XB    YB    ZB    XDB   YDB   ZDB   X4    Y4
+    Z4    XD4   YD4   ZD4   X5    Y5    Z5    XD5   YD5   ZD5   X6    Y6    Z6    XD6   YD6   ZD6   
+X7    Y7    Z7    XD7   YD7   ZD7   X8    Y8    Z8    XD8   YD8   ZD8   X9    Y9    Z9    XD9   YD9 
+  ZD9   XM    YM    ZM    XDM   YDM   ZDM   XS    YS    ZS    XDS   YDS   ZDS   BETA  GAMMA J2SUN GD
+OT  MA0001MA0002MA0004MAD1  MAD2  MAD3  RE    ASUN  PHI   THT   PSI   OMEGAXOMEGAYOMEGAZAM    J2M   
+J3M   J4M   C22M  C31M  C32M  C33M  S31M  S32M  S33M  C41M  C42M  C43M  C44M  S41M  S42M  S43M  S44M
+  LBET  LGAM  K2M   TAUM  AE    J2E   J3E   J4E   K2E0  K2E1  K2E2  TAUE0 TAUE1 TAUE2 DROTEXDROTEYGM
+AST1GMAST2GMAST3KVC   IFAC  PHIC  THTC  PSIC  OMGCX OMGCY OMGCZ PSIDOTMGMIS ROTEX ROTEY             
+
+      ... binary characters

@@ -1,0 +1,20 @@
+LEAP SECOND TABLE    Last updated by MAF 5 July 2021 based on IERS Bulletin C 61 (https://hpiers.obspm.fr/iers/bul/bulc/bulletinc.62)
+(1X,I7)                      2459761 30 June 2022
+ 2445151.0                   ! 30 JUN 1982 LEAP SEC INCREMENT
+ 2445516.0                   ! 30 JUN 1983 LEAP SEC INCREMENT
+ 2446247.0                   ! 30 JUN 1985 LEAP SEC INCREMENT
+ 2447161.0                   ! 31 DEC 1987 LEAP SEC INCREMENT
+ 2447892.0                   ! 31 DEC 1989 LEAP SEC INCREMENT
+ 2448257.0                   ! 31 DEC 1990 LEAP SEC INCREMENT
+ 2448804.0                   ! 30 JUN 1992 LEAP SEC INCREMENT
+ 2449169.0                   ! 30 JUN 1993 LEAP SEC INCREMENT
+ 2449534.0                   ! 30 JUN 1994 LEAP SEC INCREMENT
+ 2450083.0                   ! 31 DEC 1995 LEAP SEC INCREMENT
+ 2450630.0                   ! 30 JUN 1997 LEAP SEC INCREMENT
+ 2451179.0                   ! 31 DEC 1998 LEAP SEC INCREMENT
+ 2453736.0                   ! 31 DEC 2005 LEAP SEC INCREMENT
+ 2454832.0                   ! 31 DEC 2008 LEAP SEC INCREMENT
+ 2456109.0                   ! 30 JUN 2012 LEAP SEC INCREMENT
+ 2457204.0                   ! 30 JUN 2015 LEAP SEC INCREMENT
+ 2457754.0                   ! 31 DEC 2016 LEAP SEC INCREMENT
+ 2459761.0                   ! LIMIT OF TABLE ( 30 June 2022 )

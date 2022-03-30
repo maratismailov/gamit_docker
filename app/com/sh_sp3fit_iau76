@@ -1,0 +1,736 @@
+#!/bin/csh -f
+#
+#doc Create GAMIT g/tfile with partials from SP3 orbit file
+#doc
+#
+# sh_sp3fit
+#
+#
+# Purpose      Obtain GAMIT g/tfile with partials from SP3 orbit file
+#
+# Input        Automatic:   sp3 filename, session.info, station.info 
+#              Interactive: sp3 filename, project name, date, models
+#
+# Note: If a session.info file is available in the current directory, the last record 
+#       in the session.info file is used to set the year and doy used for the g- and t-file.
+#
+# Output       G-file and (optionally) t-file fit to input SP3 file
+#              Summary of adjustments (sp3fit.fit) and rms values (sp3fit.rms)
+#        
+# Run string for normal processing (models read from sestbl.)
+
+# sh_sp3fit   -f sp3files -gnss [gnss-code] [-o orbit-name] [-d year doy]  [-setarcyaw]  [-t] [-u] [-m tol]  [-eop_ser ser] [-eop_pth pth]
+#                                                      
+# Additional arguments to override sestbl. models:
+#
+#      [-i inertial frame] [-r radmod] [-e eradmod] [-a antradmod]  [-setarcyaw]
+
+# Additional arguments for debug and testing force models:
+#
+#      [-srp_param srpprm]  [-param_trot] [-param_irot]  [-param_trans] [-x]
+      
+#   -f    sp3 file names (up to 3 allowed) 
+#   -gnss-code  G R C E I J  default G 
+#   -o    4-char name for g/t-files; default taken from first 3 chars of input .sp3 file plus decade (ie igs9) if not given.
+#   -d    year and day--of-year (yyyy ddd); default = extracted from session.info, (if it exists),
+#         or the input .sp3 file if not given.  If two entries (yyyy ddd1 ddd2), then the fit
+#         extends from 0h on ddd1 through 24h on ddd2 (assume multiple sp3 files input)
+#         mark the start      
+#   -setarcyaw   Run arc, then run yawtab then repeat the arc run, to allow ertorb to have correct satellite attitude; default no
+#   -t    integrate estimated initial conditions (g-file) to get new t-file; 
+#            default is to skip, deferring ARC to GAMIT batch run 
+#   -u    exclude satellites with orbit accuracy exponents = 0, which denotes unknown accuracy
+#   -m    max misfit tolerance in meters before a satellite is removed from orbit fit.
+#   -i    inertial reference system for t-file; default = sestbl entry or J2000 IAU76 
+#   -g    gravity field for t-file; default = sestbl entry or EGM08     
+#   -r    solar radiation-pressure model; default = sestbl entry or ECOM1
+#   -e    earth radiation-pressure model; default = sestbl entry or NONE 
+#   -a    antenna thrust model; default = sestbl entry or NONE
+#   -eop_ser ut1/pole series [default usno]   
+#   -eop_pth  path for u1/pole files [default gg/tables] 
+#   -x    do not clean up temporary files (useful for debug) 
+#   -srp_param <srpprm>  Options for SRP parameterization (radiation model must be one of ECOM1, ECOM2, ECOMC (default) UCLR1, UCLR2)
+#     ecomc (default): Estimate D Y B Y1 B1 D2 D4 parameters (model must be ECOMC)
+#     all1pr: Estimate D Y B D1 Y1 B1 (model ECOM1 or ECOMC); corresponds to old 'BERNE' default 
+#     ecom1 : Estimate D Y B Y1 B1 (model ECOM1 or ECOMC); best parameterization GPS Block IIF
+#     ecom2 : Estimate D Y B B1 D2 D4 (model ECOM2 or ECOMC); best parameterization for most SVs 
+#     allpr : Estimate D Y B D1 Y1 B1 D2 D4 (model ECOMC or ECOM2)
+#     nopr  : Estimate only D Y B 
+#   -param_trot Estimate X and Y components of a terrestrail rotation (default)
+#   -param_irot Estimate 3 interial rotatiosn (default is no)  If set will turn of trot 
+#   -param_trans Estimate translation 
+#   
+# To exclude satellites from the orbfit estimation. Create a file called svs_exclude.dat
+# This file is free format and has the format, yr, doy, sv.  
+# (Eg.  1994 033 16 ) - to exclude prn 16 from 1994 doy 033.
+# An example svs_exclude.dat file containing unmodelable IGS satellites is given in ~/gg/tables
+#
+# by Peng Fang (pfang@ucsd.edu), Mar 96. Last modified by S. McClusky December 2004 to exclude SVs misfit editing
+# Edited by EJP July 2011 to add longer orbit integration and antenna thrust and earth radiation modelling
+# Edited EJP 5 Aug to add 1 to exit statuses and specify location of arc
+# Edited EJP 23 March 2012 to change the location of the arc version to the verson controlled one.
+# Mod RWK 150206: Add gnss option              
+# Mod RWK 160517: Add translation option 
+# Mod RWK 170911: Fix logic in selecting once-per-rev parameters to be estimated; add help 
+# Mod RWK 190430: Change parameterization settings to incorporate ECOM2 and combined ECOM1/ECOM2. 
+# Mod TAH 190611: Changed precedence on sestbl. so that local file is tested first.
+             
+# display comments if no arguments    
+
+if ($#argv < 1) then
+        sed -e "1d" -e "/by Peng/q" -e "s/#//" $0
+        exit
+endif
+
+# set file names
+set stnfo = station.info
+set sesfo = session.info 
+# MOD TAH 190611: Test to see if sestbl. is local ordinary file or link.
+if ( -f sestbl. ) then
+     echo "sh_sp3fit: Using sestbl. found in" `pwd`
+     set sestbl = "Y"
+else if ( -f ../tables/sestbl. ) then
+    \rm sestbl.
+     echo "sh_sp3fit: linking sestbl. to ../tables/" 
+    ln -s ../tables/sestbl. sestbl.
+    set sestbl = "Y"
+else
+    echo "sh_sp3fit - can't find sestbl."
+    set sestbl = "N"
+endif
+
+# initialize variables
+set sp3files = ""        
+set gnss = "G"
+set orbt = ""
+set doy1 = ""
+set yr = ""
+set year = ""
+set inert_ref = ""
+set radmod = ""   
+set gravity = ""   
+# MOD TAH 190622: Changed defaults to be consistent with 10.71 defaults
+# NOTE: If defaults changed here, they should also be changed in code (well below)
+#       that test's strings after sestbl. may have been read.
+#       Better approach would be to set empty strings here and used code below to
+#       set default.
+set gravdeg = "12"
+set etidedeg = "4"
+set otidedeg = "12"
+set lbody = "0"
+
+set newt = "no"
+set no_unkn = "no"
+set userdoyy = "no"
+set slines = 0
+set tsp3files = ""
+set max_fit_tol = 0
+set clean = "Y"
+set eran="N"
+set anttr="N"
+set eradmod = 'NONE'
+set antradmod = 'NONE '
+# MOD TAH 190622: See default to allpr (this will be all1pr for BERNE)
+set srpprm = "allpr"
+set trot = "Y"  
+set irot = "N"
+set trans = "N"
+set orblen = 24
+set setarcyaw = "N"
+set precession = ""      
+set eop_ser = "usno"                   
+set eop_pth = ""
+    
+# read orbit name from station.info
+if( -e $stnfo ) then  
+#  Detect whether new or old-style station.info  
+  grep 'TRCK SITE' station.info >! tmp.stinfo
+  set num = `wc tmp.stinfo` 
+  if( $num[1] > 0 ) then 
+     set stnfotype = 'old'  
+  else
+     set stnfotype = 'new'
+  endif     
+  if( $stnfotype == 'old' ) then
+    set orbt = `head -n 1 station.info`; shift orbt  
+  else   
+    set orbit = ""
+  endif
+endif 
+
+# read session date from session.info                                            
+if( -e $sesfo && ! -z $sesfo ) then
+   set slines = `cat session.info | wc -l`
+#   set ydoy = `head -n 3 session.info | tail -n -1`  
+   if ( $year != '' && $doy1 != '' ) then
+     set year = `head -n 3 $sesfo | tail -n -1 | awk ' $1 >= 1 && $1 <= 2100 && $2 >= 1 && $2 <= 366 {printf "%4d ", $1}'` 
+     set doy1  = `head -n 3 $sesfo | tail -n -1 | awk ' $1 >= 1 && $1 <= 2100 && $2 >= 1 && $2 <= 366 {printf "%03d ", $2}'`
+     set doy2 = $doy1
+     set yr = `sh_year -year $year`
+   else
+# session.info invalid format (neglect it!!!)
+     set slines = 0
+   endif
+endif
+#echo $yr $doy1
+# read the models from the sestbl. 
+# echo "sestbl $sestbl "
+if ( $sestbl != "N" ) then
+  set inert_ref = `read_sestbl 'inertial frame' 5`
+  set gravity = `read_sestbl 'reference system' 5`
+  set radmod = `read_sestbl 'radiation model' 5`
+# MOD TAH 190616: If ECOMC radiation model, change the sprrm to allpr
+  if( $radmod == 'ECOMC' ) then
+     echo "Setting srpprm = $srpprm for ECOMC"
+     set srpprm = 'allpr'
+  endif 
+  set eradmod   = `read_sestbl 'earth radiation model' 5`                                                           
+  set antradmod = `read_sestbl 'antenna thrust model' 5` 
+  set gravdeg   = `read_sestbl 'arc gravdeg' 2` 
+  set etidedeg  = `read_sestbl 'arc etidedeg' 2`  
+  set otidedeg  = `read_sestbl 'arc otidedeg' 2` 
+# MOD TAH 190622: Added getting lbody from sestbl.
+  set lbody     = `read_sestbl 'arc planets' 2` 
+
+else
+  echo "sh_sp3fit: no sestbl. found"
+endif                                                   
+      
+# override with user input options 
+foreach a ($argv)
+switch($a)
+  case -f:
+###     set sp3file = $argv[2]  
+      set sp3files = (`echo $argv | cut -d- -f2`); shift sp3files
+     breaksw
+  case -o:
+     set orbt = $argv[2]
+     breaksw
+   case -d: 
+     set userdoyy = "yes" 
+#    Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+     set yr = `sh_year -year $argv[2]`  
+     set days  = (`echo $argv[2-] | cut -d- -f1`); shift days 
+     set doy1 = $days[1]
+     if( $#days > 1 ) then
+        set doy2 = $days[2]
+     else
+        set doy2 = $doy1  
+     endif  
+     breaksw            
+   case -gnss
+     set gnss = $argv[2]
+     breaksw 
+   case -i:
+#     set inert_ref =  ( $argv[2] $argv[3] )
+# set as just J2000 as automatically assign IAU76 to J2000 and 2 arguments messes up if statement later.
+     set inert_ref =  ( $argv[2] )
+     breaksw   
+   case -g:
+     set gravity =  $argv[2] 
+     breaksw
+   case -e:                                                                                                                                          
+     set eradmod =  $argv[2] 
+     breaksw
+   case -a:
+     set antradmod =  $argv[2] 
+     breaksw
+   case -r:
+     set radmod = $argv[2]
+     set radmod = `echo $radmod | tr '[a-z]' '[A-Z]'`
+    breaksw 
+   case -t:
+     set newt = "yes"
+     breaksw
+   case -u:
+     set no_unkn = "yes"
+     breaksw
+   case -m:
+     set max_fit_tol = $argv[2]
+     breaksw 
+   case -x:
+     set clean = 'N'
+     breaksw
+   case -anttr:
+     set anttr = 'Y'
+     breaksw 
+   case -eran:
+     set eran = 'Y'
+     breaksw
+   case -srp_param:  
+     set srpprm = $argv[2]  
+     breaksw
+   case -param_trot:
+     set trot = 'Y'
+     breaksw 
+   case -param_irot:
+     set irot = 'Y' 
+     set trot = 'N'   
+     breaksw 
+   case -param_trans:
+     set trans = 'Y'
+     breaksw 
+# want to fit to a central day, but integrate the orbit for longer
+   case -arclen30:
+     set orblen = 30
+     breaksw
+   case -arclen72:
+     set orblen = 72
+     breaksw
+   case -setarcyaw:
+     set setarcyaw = 'Y'
+     echo "setarcyaw yes"
+     breaksw        
+   case -eop_ser
+     set eop_ser = $argv[2] 
+     breaksw 
+   case -eop_pth
+     set eop_pth = $argv[2] 
+     breaksw 
+endsw
+shift
+end            
+
+# Check SRP_param argument
+ if ( ! (($srpprm == 'ecomc') || ($srpprm == all1pr) || ($srpprm == allopr) || ($srpprm == ecom1) || ($srpprm == ecom2) || ($srpprm == allpr) || ($srpprm == nopr) ) ) then
+  echo "Unknown SRP_param argument $srpprm in sh_sp3fit. Exiting.."
+  exit 1
+endif
+
+#echo "srpprm" $srpprm
+#echo $path
+#echo "gravity" $gravity 
+
+# set defaults if parameters not in tables or input 
+if ( $userdoyy == "no" && $slines == 0 ) then
+  set mjd = ` head -n 2 $sp3files[1] | tail -n -1 | awk '{print $5+$6}'`
+  set doy1 = ` doy $mjd | head -n 1 | awk '{printf"%03d \n", $6}'`
+  set doy2 = $doy1
+  set year = ` doy $mjd | head -n 1 | awk '{printf" %04d \n", $2}'`
+  set yr = `sh_year -year $year`
+endif
+  #####   Different orbit integration lengths (NB, ARC adds about 3hrs on the beginning and end of all lengths)
+#  echo $yr[1] $doy1
+if ( $orblen == 24 ) then
+  set doymin = $doy1
+  set doyplus = $doy2
+#  echo "doy1,doy2" ,$doy1,$doy2
+else if ( $orblen == 30 || $orblen == 72 ) then
+  set mjd1 = `doy $yr[1] $doy1 | head -n1 | awk '{printf" %04d \n", $10}'`
+  echo $mjd1
+  set mjdmin = `  echo $mjd1-1 | bc `
+  set mjdplus = ` echo $mjd1+1 | bc `
+  echo $mjdmin $mjdplus
+  # Year
+  set yearmin = ` doy $mjdmin | head -n 1 | awk '{printf" %04d \n", $2}' `
+  set yearplus = ` doy $mjdplus | head -n 1 | awk '{printf" %04d \n", $2}' `    
+  # Start and end day of year
+  set doymin = `doy $mjdmin | head -n1 | awk '{printf" %03d \n", $6}'`
+  set doyplus = `doy $mjdplus | head -n1 | awk '{printf" %03d \n", $6}'`
+  echo $doymin $doyplus
+else
+  echo "Unknown orblen - sh_sp3fit exit"
+  exit 1
+endif
+
+echo "sh_sp3fit: Generating fitted g-file for: $orbt $yr[1] $doy1"
+
+if( $sp3files[1] == "" ) then 
+   echo " "
+   echo "No sp3 files input--stop"
+   exit 1
+endif
+if( $orbt == "" ) then 
+   set orbt = `echo $sp3files[1] $yr[2] | awk '{print substr($1,1,3) substr($2,1,1)}'`
+   echo " "
+   echo "Orbit name not given, set to: $orbt "
+endif  
+# MOD RWK 180427: Use the 4th character of the orbit type to identify the GNSS  
+set gnsslc = `echo $gnss | tr '[A-Z]' '[a-z]'`
+set orbtm = `echo $orbt $gnsslc | awk '{print substr($1,1,3) substr($2,1,1)}'`  
+if( $gnss == 'G' ) then
+  set gnssname = 'GPS'
+else if ( $gnss == 'R' ) then
+ set gnssname = 'Glonass'
+else if ( $gnss == 'C' ) then
+  set gnssname = 'Beidou'
+else if ( $gnss == 'E' ) then
+  set gnssname = 'Galileo'
+else 
+  set gnssname = 'GPS'
+endif 
+echo "sh_sp3fit: gfile and sp3fit files for" $orbt "renamed to " $orbtm " for " $gnssname 
+if( $doy1 == "" ) then  
+    echo "Cannot read date from input .sp3 file --stop"
+    exit
+endif
+if( $inert_ref[1] == "" ) then 
+    echo "Inertial frame and precession not input, set = J2000"
+    set inert_ref = "J2000"
+endif 
+if ( $inert_ref[1] == "J2000" ) then
+    set precession = "IAU76"
+endif
+if( $gravity == "" ) then 
+    echo "Gravity field not input set = EGM08"
+    set gravity = EGM08
+endif       
+if( $radmod == "" ) then  
+    echo "Radiation-pressure mode not input, set = BERNE"
+    set radmod = BERNE  
+endif
+if( $eradmod == "" ) then  
+   echo "Earth radiation-pressure mode not input, set = NONE "
+    set eradmod = 'NONE'  
+endif
+if( $antradmod == "" ) then  
+   echo "Antenna thrust mode not input, set = NONE "
+   set antradmod = 'NONE '  
+endif     
+if( $gravdeg == "" ) then
+   echo "Gravity field degree not input, set = 12 "
+   set gravdeg = 12
+endif
+if( $etidedeg == "" ) then
+   echo "Earth tide degree not input, set = 4 "
+   set etidedeg = 4
+endif
+if( $otidedeg == "" ) then
+   echo "Ocean tide degree not input, set = 12 "
+   set otidedeg = 12 
+endif 
+
+# MDO TAH 190622: Added check (maybe needed if nor ARC planets term in sestbl.
+# (Same reason we need to re-set defaults for gravdeg etc above).
+if( $lbody == "" ) then
+   echo "Planetary forces (lbody) not input, set = 0"
+   set lbody = 0
+endif
+
+# Set timestamp ID variable
+
+set ID = "${yr[1]}_${doy1}_`date +"%H%M%S"`" 
+
+# remove previous t-files and status files
+\rm -f t$orbt$yr[3].$doy1
+\rm -f t$sp3files[1] 
+\rm -f GAMIT.status GAMIT.warning GAMIT.fatal 
+\rm -f NGSTOT.status NGSTOT.warning NGSTOT.fatal
+\rm -f ORBFIT.status ORBFIT.warning ORBFIT.fatal
+
+# Make links to necessary tables files to run sh_sp3fit..
+##TEMPORARY: skip this to keep local svnav.dat
+links.arc J2000 ${yr[1]} ${eop_ser} >& /dev/null
+if ( $eop_pth != '' ) then
+  \rm pole. ut1.
+  ln -s ${eop_pth}/pole.${eop_ser} pole.
+  ln -s ${eop_pth}/ut1.${eop_ser} ut1.
+endif
+
+# run NGSTOT to convert the sp3 files to t-files
+foreach spfil ( `echo $sp3files` )
+ ngstot $spfil t$spfil $gnss
+ set tsp3files = ( $tsp3files t$spfil )
+end
+if ( -e "NGSTOT.fatal" ) then
+   echo "NGSTOT.fatal exists, stop in sh_sp3fit"
+   exit
+endif
+       
+# choose the reference epoch to use (1st if 1 or 2; 2nd if 3)
+if ( $#sp3files == 3 ) then
+  set refgfile = g$sp3files[2]  
+  set doyref = `echo $doy1 | awk '{printf" %d \n", ($1 + 1)}'`
+else
+  set refgfile = g$sp3files[1]    
+  set doyref = $doy1
+endif
+#  Pad with zeros for g-file name
+set  doyref = `echo $doyref | awk '{printf("%3.3d",$1)}'`  
+#if ( $doyref < 100 && $doyref > 9 ) then
+#   set doyref = 0$doyref
+#else if ( $doy1 < 10 ) then
+#   set doyref = 00$doyref 
+#endif
+
+# create the ARC input file and run the initial ARC
+# set up bit for anttr and eran
+##   Binary-code options for debug prinout (hidden in cols 14-16 of afname line  
+##      Bit #  Value
+##        1     1   print at all epochs
+##        2     2   print only during eclipses
+##        3     4   shadowing values 
+##        4     8   print sun, moon, satellite positions
+##        5    16   radiation-pressure quantities 
+##        6    32   **switch on earth radiation quantities**
+##        7    64   print SRP quantities 
+##        8   128   ** switch on antenna thrust **
+##        9   256   print earth radiation and antenna thrust quantities
+##       10   512   arcyaw
+#  set bit = 0    # for no debug
+#  set bit = 1    # for limited debug
+# set bit = 65    # 1 + 64 for printing out earth radiation debug
+ set bit = 0 
+#  echo $bit
+  if ( $anttr == 'Y' )  set bit = `echo $bit "+128" | bc`
+#  echo $bit
+  if ( $eran == 'Y' ) set bit = `echo $bit "+32" | bc`
+#  echo $bit
+
+# If using UCLR1 SRP model, set the second two radcon parameters to 1
+if ($radmod == 'UCLR1' || $radmod == 'UCLR2') then
+    sed s/0.00000000000000D+00/0.10000000000000D+01/   $refgfile >! $refgfile.tmp$$
+    mv $refgfile.tmp$$ $refgfile 
+endif
+#echo "orblen" $orblen
+#Setup the integration length
+if ( $orblen == 24 ) then
+   set starttime =   " 0  0   .00000"
+   set endtime =     "23 58   .00000"
+   set yearmin = $yr[1]
+   set yearplus = $yr[1]
+else if ( $orblen == 30 ) then
+   set starttime =   "18  0   .00000"
+   set endtime =     " 6  0   .00000"
+else if ($orblen == 72 ) then
+   set starttime =   " 0  0   .00000"
+   set endtime =     "23 58   .00000"
+else
+   echo "Unknown orbit integration length"
+   exit
+endif
+
+#echo "$yearmin $doymin $starttime" 
+#echo "$yearplus $doyplus $endtime" 
+
+# Output to the ARC input file
+echo "sh_sp3fit: Creating initial ARC input file "
+# grep PRN $refgfile >! arc.inp.$ID
+grep '^[GREC][ 0-9][ 0-9] ' $refgfile >! arc.inp.$ID
+echo "END" >> arc.inp.$ID        
+# MOD RWK 180723: Use printf instead of echo to get the models right-justified  
+# MOD TAH 190622: Added lbody to lines below
+printf "%s %5s %-5s  %s %5s %5s %-5s %-5s %2d %2d %2d %2d" "sh_sp3fit: ARC models: : " $gravity $radmod  "900.0   75.0    GPST  INERTIAL     " $inert_ref $precession $eradmod $antradmod $gravdeg  $etidedeg $otidedeg $lbody
+printf "%5s %-5s  %s %5s %5s %-5s %-5s %2d %2d %2d %2d\n" $gravity $radmod  "900.0   75.0    GPST  INERTIAL     " $inert_ref $precession $eradmod $antradmod $gravdeg  $etidedeg $otidedeg $lbody >> arc.inp.$ID
+echo "arcout.$doy1   $bit" >> arc.inp.$ID
+echo "$refgfile" >> arc.inp.$ID
+echo "" >> arc.inp.$ID
+#echo "$yr[1] $doy1  0  0   .00000" >> arc.inp.$ID
+echo "$yearmin $doymin $starttime" >> arc.inp.$ID
+#echo "$yr[1] $doy2 23 58   .00000" >> arc.inp.$ID
+echo "$yearplus $doyplus $endtime" >> arc.inp.$ID
+echo "Y" >> arc.inp.$ID
+echo "t${yr[2]}${doy1}.tmp" >> arc.inp.$ID                       
+# Run arc
+#/home/users/nejp5/gitsandbox/testinggamit/ejp_gamit-10.40/gamit/arc/arc < arc.inp.$ID
+arc < arc.inp.$ID
+if ( -e "GAMIT.fatal" ) then
+   echo "GAMIT.fatal exists, stop in sh_sp3fit"
+   exit 1                         
+endif
+#echo "t${yr[2]}${doy1}.tmp"
+set tmptfilename = `ls t*.tmp`
+#echo $tmptfilename
+#set yfilename = "y${orbt}${yr[3]}.${doy1}"
+set yfilename = `echo $refgfile | awk '{print "y" substr($1,2,12)}'`
+#echo $yfilename
+set ytablename = "y${orbt}t.${doy1}"
+#echo $ytablename
+#exit #debug - exit after arc
+
+# If want to run with actual rather than nominal yaw, run yawtab to generate a yaw file, then rerunarc.
+# MOD TAH 196022: Cleaned up indenting so that code is clear.
+if ( $setarcyaw == 'Y' ) then 
+    #  Calling sequence:  yawtab <in-yfile> <in-tfile> <out-yfile> <tab_interval>
+    yawtab $yfilename   $tmptfilename   $ytablename       30
+    #exit #debug - exit after yawtab
+    
+    #Create the arc input file again, but this time switch on yaw in the debug bit
+    mv t${yr[2]}${doy1}.tmp t${yr[2]}${doy1}.tmp1   #debug
+    set bit = `echo $bit "+512" | bc`
+#   echo "sh_sp3fit bit"$bit
+#   Output to the ARC input file
+#   grep PRN $refgfile >! arc2.inp.$ID
+    grep '^[GREC][ 0-9][ 0-9] ' $refgfile >! arc.inp.$ID
+    echo "END" >> arc2.inp.$ID
+
+#  MDD TAH 190622: Commented out lines below and replaced with correct format (lines seem to do the same thing?)
+#   if (`echo $eradmod | cut -c1-4 ` == 'NONE' ) then 
+#      echo "$gravity $radmod  900.0   75.00   GPST  INERTIAL     $inert_ref  $precession ${eradmod} $antradmod $gravdeg $space $etidedeg $otidedeg $space  " >> arc2.inp.$ID
+#      echo "ARC models: $gravity $radmod  900.0   75.00   GPST  INERTIAL     $inert_ref  $precession ${eradmod} $antradmod $gravdeg $space $etidedeg $otidedeg $space " >> arc2.inp.$ID
+#   else 
+#      echo "$gravity $radmod  900.0   75.00   GPST  INERTIAL     $inert_ref  $precession ${eradmod} $antradmod $gravdeg $space $etidedeg $otidedeg $space " >> arc2.inp.$ID
+#      echo "ARC models: $gravity $radmod  900.0   75.00   GPST  INERTIAL     $inert_ref  $precession ${eradmod} $antradmod $gravdeg $space $etidedeg $otidedeg $space " >> arc2.inp.$ID
+#   endif
+#  MOD TAH 190622: New printf code from above
+    printf "%s %5s %-5s  %s %5s %5s %-5s %-5s %2d %2d %2d %2d" "sh_sp3fit: ARC models: : " $gravity $radmod  "900.0   75.0    GPST  INERTIAL     " $inert_ref $precession $eradmod $antradmod $gravdeg  $etidedeg $otidedeg $lbody
+    printf "%5s %-5s  %s %5s %5s %-5s %-5s %2d %2d %2d %2d\n" $gravity $radmod  "900.0   75.0    GPST  INERTIAL     " $inert_ref $precession $eradmod $antradmod $gravdeg  $etidedeg $otidedeg $lbody >> arc.inp.$ID
+
+   echo "arcout.$doy1   $bit" >> arc2.inp.$ID
+   echo "$refgfile" >> arc2.inp.$ID
+   echo "" >> arc2.inp.$ID
+   #echo "$yr[1] $doy1  0  0   .00000" >> arc2.inp.$ID
+   echo "$yearmin $doymin $starttime" >> arc2.inp.$ID
+   #echo "$yr[1] $doy2 23 58   .00000" >> arc2.inp.$ID
+   echo "$yearplus $doyplus $endtime" >> arc2.inp.$ID
+   echo "Y" >> arc2.inp.$ID
+   echo "t${yr[2]}${doy1}.tmp" >> arc2.inp.$ID
+   arc < arc2.inp.$ID
+#  exit #debug - exit after arc 2   
+endif
+
+   
+# Check if there is a satellite exclude file with entries from this day
+# MOD RWK 190226 for listing of the form 'Ann' (e.g. G11)
+set exclude_sv = "" 
+set exclude_sv_d2 = ""
+set exclude_sv_d3 = ""                                      
+if ( -e svs_exclude.dat ) then
+ set exclude_sv = `cat svs_exclude.dat | grep $yr[1] | grep " $doy1 " | awk '{for (i=3; i<=NF; i++) printf $i}'`  
+# If a multiday fit, check the 2nd and 3rd days as well   
+  if ( $#sp3files == 2 ) then  
+    set doychk2 = `echo $doy1 | awk '{printf" %d \n", ($1 + 1)}'`
+    set exclude_sv_d2 = `cat svs_exclude.dat | grep $yr[1] | grep " $doychk2 " | awk '{for (i=3; i<=NF; i++) printf $i}'`  
+  endif
+  if ( $#sp3files == 3 ) then   
+    set doychk3 = `echo $doy1 | awk '{printf" %d \n", ($1 + 1)}'`
+    set exclude_sv_d3 = `cat svs_exclude.dat | grep $yr[1] | grep " $doychk3 " | awk '{for (i=3; i<=NF; i++) printf $i}'`  
+  endif 
+endif
+
+# Exclude unknown accuracy satellites
+# MOD MAF/RWK 190226 for listing of the form 'Ann' (e.g. G11) 
+set unknown_acc = ""                                       
+if ( $no_unkn == "yes" ) then  
+  set prns = ( `grep '^+ ' $sp3files[1] | awk '{print substr($0,10)}' | sed 's/\([GCEIJR]\)/ \1/g'` )
+  set accu = ( `grep '^++' $sp3files[1] | awk '{if (NR <= 5) print substr($0,10)}'` )
+  set unknown_acc = ( `echo $prns $accu | awk -v nsat=$#prns '{for (i = 1; i <= nsat; i++) if ($(nsat+i) = 0 && $i != 0) print $i}'` )
+  if ( $#unknown_acc >= 1 ) echo "sh_sp3fit: PRN $unknown_acc excluded from g-file because accuracy unknown."
+endif
+
+set exclude_all = `echo $exclude_sv $exclude_sv_d2 $exclude_sv_d3 $unknown_acc | awk '{for (i=1; i<=NF; i++) printf " %s",$i}' | sort -u`
+    
+# create the ORBFIT control file for the first 8 parameters common to all fits
+if( $trans == 'Y' ) then
+  echo " trans:  1 1 1" >! orbfit.cmd.$ID
+else
+  echo " trans:  0 0 0" >! orbfit.cmd.$ID              
+endif                  
+if( $irot == 'Y' ) then 
+  echo " i_rot:  1 1 1" >> orbfit.cmd.$ID         
+else
+  echo " i_rot:  0 0 0" >> orbfit.cmd.$ID              
+endif
+if( $trot == 'Y' ) then 
+  echo " t_rot:  1 1 0" >> orbfit.cmd.$ID              
+else  
+  echo " t_rot:  0 0 0" >> orbfit.cmd.$ID 
+endif
+  echo " scale:  0 " >> orbfit.cmd.$ID                
+  echo " pos:    1 1 1" >> orbfit.cmd.$ID              
+  echo " vel:    1 1 1" >> orbfit.cmd.$ID              
+# create the ORBFIT control for radiation pressure parameters
+if ( $radmod == "ECOM1" || $radmod == "BERNE" || $radmod == "UCLR1" || $radmod == "UCLR2") then
+     if ( $srpprm == "all1pr" || $srpprm == "allopr" || $srpprm == "allpr" ) then
+        # estimate all 6 once per rev SRP parameters
+        echo " srad:   1 1 1 1 1 1 1 1 1 0 0 0 0 " >> orbfit.cmd.$ID
+     else if ( $srpprm == "noopr" ) then
+        # want no opr params estimated
+        echo " srad:   1 1 1 0 0 0 0 0 0 0 0 0 0 " >> orbfit.cmd.$ID     
+     else if ( $srpprm == "ecom1" ) then
+        # estimate the optimal set of once-per-rev parameters
+        echo " srad:   1 1 1 0 0 0 0 1 1 0 0 0 0 " >> orbfit.cmd.$ID   
+    endif
+else if ( $radmod == "ECOM2" || $radmod == "ECOMC" ) then 
+    if ( $srpprm == "all1pr" || $srpprm == "allopr" ) then
+        # estimate all 6 once per rev SRP parameters
+        echo " srad:   1 1 1 1 1 1 1 1 1 0 0 0 0 " >> orbfit.cmd.$ID
+    else if ( $srpprm == "noopr" ) then
+        # want no opr params estimated
+        echo " srad:   1 1 1 0 0 0 0 0 0 0 0 0 0 " >> orbfit.cmd.$ID     
+    else if ( $srpprm == "ecom1" ) then
+       # estimate the optimal set of once-per-rev parameters
+        echo " srad:   1 1 1 0 0 1 1 1 1 0 0 0 0 " >> orbfit.cmd.$ID   
+    else if ( $srpprm == "ecom2" ) then
+       # estimate the B1 D2 and D4 
+        echo " srad:   1 1 1 0 0 0 0 1 1 1 1 1 1 " >> orbfit.cmd.$ID   
+    else if ( $srpprm == "allpr" ) then
+       # estimate all once-per-rev and direct twice- and 4-per-rev parameters
+        echo " srad:   1 1 1 1 1 1 1 1 1 1 1 1 1 " >> orbfit.cmd.$ID   
+    else if ( $srpprm == "ecomc" ) then 
+      # estimate the optimal set of once-per-rev, twice-per-rev, and four-per-rev parameters
+# MOD TAH 180615: Turn on full model since most users just want to fit IGS orbit and
+#       keep parameters constained,
+#       echo " srad:   1 1 1 0 0 1 1 1 1 1 1 1 1 " >> orbfit.cmd.$ID 
+        echo " srad:   1 1 1 1 1 1 1 1 1 1 1 1 1 " >> orbfit.cmd.$ID 
+    else
+        # something wrong
+        echo "Error in ORBFIT parameter setting"
+    endif
+endif
+
+echo " exclude: $exclude_all" >> orbfit.cmd.$ID
+echo " max_fit_tol: $max_fit_tol" >> orbfit.cmd.$ID
+
+# Now do the fit                                             
+orbfit orbfit.cmd.$ID sp3fit_${orbtm}${yr[3]}${doyref} 0 t${yr[2]}${doy1}.tmp $tsp3files
+#echo "sh_sp3fit: orbfit.cmd.$ID sp3fit_${orbtm}${yr[3]}${doyref} 0 t${yr[2]}${doy1}.tmp $tsp3files"
+#"e.g. orbfit.cmd.2007_271_133202 sp3fit_tstb7271 0 t07271.tmp tigs14465.sp3"
+
+
+# old format:
+# orbfit tfile.tmp t${sp3files[1]} sp3fit_${orbt}${yr[3]}${doy}.rms 0
+if ( -e "ORBFIT.fatal" ) then
+   echo "ORBFIT aborted, stop in sh_sp3fit"
+   exit
+endif
+\mv g${yr[2]}${doy1}.tmp.fit g${orbtm}${yr[3]}.${doyref} 
+\mv svs_${yr[2]}${doy1}.tmp_fit.apr svs_${orbtm}${yr[2]}.${doyref}
+#\rm tfile.tmp tmp.F* >! /dev/null
+
+# create a postfit t-file if requested   
+if ( $newt == "yes" ) then
+#  remake the arc.input file with the new g-file name (we want the real name for the headers)
+  echo $bit 
+#  grep PRN g${orbtm}${yr[3]}.${doyref} >! arc.inp.$ID
+# RWK 161114: Select GPS SVs that have new names (need to modify this for other GNSS)
+#   grep G g${orbtm}${yr[3]}.${doyref}  | grep -v generated | grep -v GPST >! arc.inp.$ID
+  grep '^[GREC][ 0-9][ 0-9] ' g${orbtm}${yr[3]}.${doyref} | grep -v generated | grep -v GPST >! arc.inp.$ID
+  echo "END" >> arc.inp.$ID
+  	if (`echo $eradmod | cut -c1-4 ` == 'NONE' ) then 
+      echo "$gravity $radmod  900.0   75.00   GPST  INERTIAL     $inert_ref  $precession ${eradmod}  $antradmod $gravdeg $space $etidedeg $otidedeg $space " >> arc.inp.$ID
+    else 
+      echo "$gravity $radmod  900.0   75.00   GPST  INERTIAL     $inert_ref  $precession ${eradmod} $antradmod $gravdeg $space $etidedeg $otidedeg $space " >> arc.inp.$ID
+    endif
+  echo "arcout.$doyref   $bit" >> arc.inp.$ID
+  echo "g${orbtm}${yr[3]}.${doyref}" >> arc.inp.$ID
+  echo "" >> arc.inp.$ID
+  #echo "$yr[1] $doy1  0  0   .00000" >> arc.inp.$ID
+  echo "$yearmin $doymin $starttime" >> arc.inp.$ID
+  #echo "$yr[1] $doy2 23 58   .00000" >> arc.inp.$ID
+  echo "$yearplus $doyplus $endtime" >> arc.inp.$ID
+  echo "Y" >> arc.inp.$ID
+  echo "t${orbtm}${yr[3]}.${doyref}" >> arc.inp.$ID
+#  /home/users/nejp5/gitsandbox/testinggamit/ejp_gamit-10.40/gamit/arc/arc < arc.inp.$ID
+  arc < arc.inp.$ID
+  if ( -e "GAMIT.fatal" ) then
+     echo "ARC aborted in integrating post-fit t-file, stop in sh_sp3fit"
+     exit                           
+  endif
+endif
+
+
+# See if we will clean up temporal files
+#set clean = 'N' #EJP debug
+#echo "sh_sp3fit not deleting files: EJP debug"
+if( $clean == 'Y' ) then
+  \rm arcout.${doyref} orbfit.cmd.$ID  t${yr[2]}${doy1}.tmp
+  \rm arc.inp.$ID g$sp3files[1] y$sp3files[1] tmp_*
+  set ttfs = `echo $sp3files[1] | awk '{printf("t%s?.sp3",substr($1,1,7))}'`
+  set nttfs = `echo $ttfs | wc -w`
+  if( $nttfs == 2 ) then
+     \rm $ttfs
+  endif
+endif
+
+exit

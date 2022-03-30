@@ -1,0 +1,121 @@
+#!/bin/csh -f
+
+# Script to get raw data and put it in the raw directory
+#
+if ( $#argv < 4 ) then
+## Usage: find.raw yr doy gpsw gpsd
+## where yr is the two digit year
+##       doy is day of year
+##       gpsw is gps week number
+##       gpsd is gps day number
+##
+   grep '^## ' $0 | awk '{print substr($0,3)}' 
+   exit
+endif
+
+# Setup necessary paths and filenames
+source ${contdir}/defaults.
+
+# Set timestamp hostname variable
+set ts = "`hostname`:`date +"%H%M%S"`"
+
+cd ${rawd} 
+
+#
+# Set raw directory to only place with 1998 data.
+set yr   = $1
+set doy  = $2
+set gpsw = $3
+set gpsd = $4
+
+# See if the files already exist
+echo List >! tmp.1.$ts
+
+# Get sites included in the list (rawlst) to be retrieved
+foreach site ( `echo $rawlst` )
+   set lsite = `echo $site | nawk '{print tolower($1)}'`
+   set f1=B${site}A${yr}.${doy} 
+   set f2=B${site}A${yr}.${doy}.Z 
+   set f3=B${site}A${yr}.${doy}.gz
+   set f4=b${lsite}a${yr}.${doy} 
+   set f5=b${lsite}a${yr}.${doy}.Z 
+   set f6=b${lsite}a${yr}.${doy}.gz
+   if ( ! -e $f1 &&  ! -e $f2 &&  ! -e $f3 &&  ! -e $f4 &&  ! -e $f5 &&  ! -e $f6 ) then
+      echo 'mget B'${site}'?'${yr}'.'${doy}'.*' >> tmp.1.$ts
+      echo 'mget E'${site}'?'${yr}'.'${doy}'.*' >> tmp.1.$ts
+      echo 'mget S'${site}'?'${yr}'.'${doy}'.*' >> tmp.1.$ts
+   endif
+end
+     
+set num = `wc tmp.1.$ts`
+if ( $num[1] > 1 ) then
+
+
+#   Need to get files; set up the ftp
+    echo "user ${rawuser} ${rawpass}" >! tmp.get.$ts
+
+# This is a hardwire that needs to be fixed!!!
+    echo 'cd '${rawarchive}'/19'${yr}'/'${doy} >> tmp.get.$ts
+    tail -n +2 tmp.1.$ts >> tmp.get.$ts
+    echo 'quit' >> tmp.get.$ts
+
+    set log = `date '+findraw_%y%m%d:%H%M.log'` 
+    cat tmp.get.$ts >! $log
+    echo ' ' >> $log    
+    echo '--------------------' >> $log
+        
+# MOD TAH 980520: Repeat the get.
+    set cnt = 5
+    while ( $cnt ) 
+       @ cnt = $cnt - 1
+       ftp -i -v -n ${ftpraw} < tmp.get.$ts | grep -v '^220' >! tmp.log.$ts
+       cat tmp.log.$ts >> $log
+       
+#      See if seems OK
+       grep 'Not connected' tmp.log.$ts >! tmp.test.$ts
+       set chk = `wc tmp.test.$ts`
+       if( $chk[1] == 0 ) then
+          set cnt = 0
+       else
+          sleep 600
+      endif
+    end
+
+endif
+    
+# Now uncompress or unzip the raw files if they exist
+foreach site ( `echo $rawlst` )
+  set lsite = `echo $site | nawk '{print tolower($1)}'`
+  if ( ! -z B${site}A${yr}.${doy}.Z || ! -z B${site}A${yr}.${doy}.gz ) then
+    if (  -e B${site}A${yr}.${doy}.Z  ) then
+      gunzip -f B${site}?${yr}.${doy}.Z 
+      gunzip -f E${site}?${yr}.${doy}.Z 
+      gunzip -f S${site}?${yr}.${doy}.Z 
+    else if ( -e B${site}A${yr}.${doy}.gz ) then
+      gunzip B${site}?${yr}.${doy}.gz
+      gunzip E${site}?${yr}.${doy}.gz
+      gunzip S${site}?${yr}.${doy}.gz
+    endif
+  else
+    \rm -r  B${site}?${yr}.${doy}.* E${site}?${yr}.${doy}.* S${site}?${yr}.${doy}.*
+  endif
+  if ( ! -z b${lsite}a${yr}.${doy}.Z || ! -z b${lsite}a${yr}.${doy}.gz  ) then
+    if (  -e b${lsite}a${yr}.${doy}.Z  ) then
+      gunzip -f b${lsite}?${yr}.${doy}.Z 
+      gunzip -f e${lsite}?${yr}.${doy}.Z 
+      gunzip -f s${lsite}?${yr}.${doy}.Z 
+    else if ( -e b${lsite}a${yr}.${doy}.gz ) then
+      gunzip b${lsite}?${yr}.${doy}.gz
+      gunzip e${lsite}?${yr}.${doy}.gz
+      gunzip s${lsite}?${yr}.${doy}.gz
+    endif
+  else
+    \rm -r  b${lsite}?${yr}.${doy}.* e${lsite}?${yr}.${doy}.* s${lsite}?${yr}.${doy}.*
+  endif
+end
+
+# Tidy up a bit...     
+\rm tmp.1.$ts tmp.get.$ts tmp.test.$ts tmp.log.$ts  >& /dev/null
+
+# Thats all.
+exit

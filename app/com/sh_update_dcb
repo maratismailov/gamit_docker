@@ -1,0 +1,103 @@
+#!/bin/csh -f
+#
+#doc Get monthly DCB values from AIUB and add to dcb.dat
+#doc 
+#
+# Script to get the monthly DCB values from AIUB using script sh_get_COD_gnssdcb. 
+# The file is named P1C1yymm_RINEX.DCB.  Then # run gamit/utils/dcbtab2 to add 
+# these values to dcb.dat.  The updated file is created as dcb.dat.new, which must 
+# be renamed before use, manually or by the cron cron.dcb in ~rwk. 
+# 
+#     
+# Written by R King 12 Oct 2004
+# Updated by R. King 3 Aug 2015 to update dcb.dat.gnss
+# Updated by R. King 8 Sep 2016 to get the GPS-only files from a different AIUB 
+#  directory, now done as part of sh_get_COD_gnssdcb. 
+# Updated by R. King 22 March 2017 to get only the GNSS-compatiable files.
+
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "===================================================================================="
+  echo " Get monthly DCB values from AIUB and update tables/dcb.dat "
+  echo "  "
+  echo " Usage: sh_update_dcb -o <Y/N> "
+  echo "  "
+  echo "        <Y/N>  Yes or No to overwrite an existing AIUB monthly files  [Required] " 
+  echo "        if N, add extent old to existing monthly files " 
+  echo " "
+  echo " Creates dcb.dat.new (must rename before using) "
+  echo "  "
+  echo "===================================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS #############################   
+set o  = 'Y'
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -o:
+      set overwrite  = $input[2]  
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+
+##################### READ THE FTP_ADDRESSES TEMPLATE  ############################   
+#  (Currently this used only for the GPS-only  P1C1.DCB file; the GNSS version is
+#   downloaded from an explicit address in sh_get_COD_gnss.)
+#    
+set ftp_info = `sh_get_ftp_info -archive aiub -type dcb`  
+
+while ($#ftp_info > 0 )
+  set input = ( $ftp_info )
+  switch($input[1])
+    case -ftpsite:
+      set ftpsite  = $input[2]  
+    breaksw 
+    case -ftplogin:
+      set ftplogin  = (`echo $ftp_info | cut -d- -f2`); shift ftplogin 
+    breaksw 
+    case -ftpdir:
+      set ftpdir  = $input[2]  
+    breaksw 
+    case -ftpcmd:
+      set ftpcmd  = (`echo $ftp_info | cut -d% -f2`); shift ftpcmd  
+    breaksw 
+  endsw
+  if ( $#ftp_info > 0 ) shift ftp_info
+end
+
+#################### Download both of the monthly files s ###################################
+                     
+# Gets the file for the month prior to the current month (meant to be executed on or
+# after the 3rd day of the month.  
+
+sh_get_COD_gnssdcb       
+
+# P1C1yymm_RINEX.DCB -> p1c1.dcb
+
+############# Add the new values to the dcb.dat file  #########################
+
+if ( $o == "N" ) then  
+ \mv p1c1.dcb p1c1.dcb.old
+endif
+# remove the old dcb.dat.new to avoid confusion
+\rm dcb.dat.new         
+if ( -e svnav.dat && `readlink svnav.dat` =~ '*igs_metadata.snx' ) then
+  cat << END && exit 1
+! Error ! This script should not be run from a directory where svnav.dat is
+          linked to igs_metadata.snx, e.g. ~/gg/tables/. Exiting...
+END
+else if ( ! -e svnav.dat ) then
+  #ln -s -f ~/gg/tables/svnav.dat .
+  ln -s -f ~/gg/tables/svnav.dat.allgnss svnav.dat
+endif
+dcbtab2 dcb.dat p1c1.dcb 
+# output is dcb.dat.new 
+
+exit

@@ -1,0 +1,67 @@
+#!/bin/csh -f
+# csh script to run the install_test
+
+# GAMIT processing for 2018
+cd 2018
+sh_setup -yr 2018 -update all
+cd tables
+sh_upd_stnfo -l sd ; \mv station.info.new station.info
+cd ../
+echo "Running sh_gamit for 2018"
+sh_gamit -expt eura -gnss G -s 2018 095 097 -pres ELEV -orbit igsf -copt k p -dopts c ao >&! sh_gamit_2018G.log
+sh_gamit -expt eura -gnss R -s 2018 095 097 -jclock sp3 -pres ELEV -orbit codm -copt x k p -dopts c ao >&! sh_gamit_2018R.log
+sh_gamit -expt eura -gnss E -s 2018 095 097 -pres ELEV -orbit codm -copt k p -dopts c ao >&! sh_gamit_2018E.log
+sh_gamit -expt eura -gnss C -s 2018 095 097 -pres ELEV -orbit codm -copt k p -dopts c ao >&! sh_gamit_2018C.log
+# GLOBK time series and combination for 2018
+echo "Running sh_glred for 2018"
+sh_glred -cmd
+sh_glred -s 2018 095 2018 097 -expt eura -netext G R E C -opt R H G T >&! sh_glred.log
+sh_glred -s 2018 095 2018 097 -expt eura -netext G R E C -ncomb 3 -globk_cmd_prefix COMB -opt G >&! sh_glred_comb.log
+
+# GAMIT processing for 2016
+cd ../2016
+sh_setup -yr 2016 -update all
+cd tables
+sh_upd_stnfo -l sd ; \mv station.info.new station.info
+cd ../
+echo "Running sh_gamit for 2016"
+sh_gamit -expt eura -gnss G -s 2016 101 102 -pres ELEV -orbit igsf -copt k p -dopts c ao >&! sh_gamit_2016G.log
+sh_gamit -expt eura -gnss R -s 2016 101 102 -jclock sp3 -pres ELEV -orbit codm -copt x k p -dopts c ao >&! sh_gamit_2016R.log
+sh_gamit -expt eura -gnss E -s 2016 101 102 -pres ELEV -orbit codm -copt k p -dopts c ao >&! sh_gamit_2016E.log
+sh_gamit -expt eura -gnss C -s 2016 101 102 -pres ELEV -orbit codm -copt k p -dopts c ao >&! sh_gamit_2016C.log
+# GLOBK time series and combination for 2016
+echo "Running sh_glred for 2016"
+sh_glred -cmd
+sh_glred -s 2016 101 2016 102 -expt eura -netext G R E C -opt H G T >&! sh_glred_2016.log
+sh_glred -s 2016 101 2016 102 -expt eura -netext G R E C -ncomb 2 -globk_cmd_prefix COMB -opt G >&! sh_glred_comb.log
+
+# GAMIT processing for 2014
+cd ../2014
+sh_setup -yr 2014 -update all
+cd tables
+sh_upd_stnfo -l sd ; \mv station.info.new station.info
+cd ../
+echo "Running sh_gamit for 2014"
+sh_gamit -expt eura -gnss G -s 2014 113 114 -pres ELEV -orbit igsf -copt k p -dopts c ao >&! sh_gamit_2014G.log
+sh_gamit -expt eura -gnss R -s 2014 113 114 -jclock sp3 -pres ELEV -orbit codm -copt k p -dopts c ao >&! sh_gamit_2014R.log
+# GLOBK time series and combination for 2014
+echo "Running sh_glred for 2014"
+sh_glred -cmd
+sh_glred -s 2014 113 2014 114 -expt eura -netext G R -opt H G T >&! sh_glred_2014.log
+sh_glred -s 2014 113 2014 114 -expt eura -netext G R -ncomb 2 -globk_cmd_prefix COMB -opt G >&! sh_glred_comb.log
+
+# Multi-year time series and velocity
+cd ../
+mkdir vsoln
+cd vsoln
+echo "Running GLOBK for mult-year time series and velocities"
+\cp ~/gg/tables/globk.cmd ./; \cp ~/gg/tables/glorg.cmd ./
+ls ../????/gsoln/H*GLX >! eura.gdl
+\rm globk_replong.org globk_replong.log
+glred 6 globk_replong.prt globk_replong.log eura.gdl globk.cmd >&! glred.out
+tssum . mit.final_igs14 -R globk_replong.org
+sh_plot_pos -f *.pos -r -t NONE -u -t1 2014-001 -t2 2018-180
+\rm globk_vel.org globk_vel.log
+globk 6 globk_vel.prt globk_vel.log eura.gdl globk.cmd VEL >&! globk.out
+sh_plotvel -ps euratest -f globk_vel.org -R-60/50/-5/55 -factor 0.5 -arrow_value 10 -page L
+

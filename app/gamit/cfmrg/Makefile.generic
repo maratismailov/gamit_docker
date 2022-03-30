@@ -1,0 +1,9 @@
+# Generic Makefile for cfmrg - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King  3 May 2019 
+#
+#LABELS: cfmrg:cfmrg:cfmrg_lib:cfmrg
+
+#SHARELIB: ../lib:gamit_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+        
+#OBJ_cfmrg_lib aprior check_limits cversn fills1 fills2 getcfs queryb queryp

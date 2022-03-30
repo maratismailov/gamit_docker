@@ -1,0 +1,31 @@
+#!/bin/csh -f
+#
+# Script to summary statistics of orbit fits
+#
+# List of .rms files from orbfit or orbdiff are arguments
+if( $#argv == 0 ) then
+   echo "sh_orbstat: Usage"
+   echo "sh_orbstat <lsit of .rms files>"
+   echo "Script generates MEAN, Median and max/min values"
+   exit
+endif
+
+echo "Orbit statistics from $argv"
+grep "PRN   Total" $argv | head -1 
+grep 'MEAN' $argv
+set nmedian = `grep -h '^ ' $argv | wc | awk '{printf("%d",$1/2+1)}'`
+echo "MEDIAN"
+if( $#argv == 1 ) then
+   set sc = 2
+else
+   set sc = 3
+endif
+grep '^ ' $argv | sort -n -k $sc | head -$nmedian | tail -1
+echo "MINUMUM"
+grep '^ ' $argv | sort -n -k $sc | head -5
+echo "MAXIMUM"
+grep '^ ' $argv | sort -n -k $sc | tail -5
+echo " "
+
+
+

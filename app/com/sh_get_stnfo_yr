@@ -1,0 +1,48 @@
+#!/bin/csh  
+#   
+#doc Extract entries for one year from a SOPAC-format station.info file.
+#doc   
+#
+# Duncan Agnew  IGPP-SIO/UCSD  dagnew@ucsd.edu
+# Last modified by 2012/1/9 by R. King
+#
+if( $#argv == 0 ) then
+  echo " "
+  echo " Extract entries for a single year from a SOPAC-format station.info file"
+  echo " "  
+  echo " Usage:  sh_get_stnfo_yr -f [in-file] -w [out-file] -y [year] "
+  echo " " 
+  echo "   All entries required (for safety) "
+  exit
+endif  
+#
+# Set defaults to blanks (for safety)
+set infile = ''
+set outfile = ''
+set year = ''    
+# Get the command-line arguments   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -f*:
+      set infile  = $input[2]
+    breaksw 
+    case -w*:
+      set outfile = $input[2]
+    breaksw 
+    case -y*:
+      set yrwant  = $input[2]  
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+# case $# in
+# 1) 
+#
+# Make station.info file for the year
+#                          
+ echo "* "  $infile "reduced to entries for" $yrwant "using sh_get_stnfo_yr" >! $outfile
+ grep '*SITE' $infile  >> $outfile         
+ cat $infile | grep '^ ' | awk -v yrwant=$yrwant '{  if( substr($0,26,4)==yrwant || substr($0,45,4)==yrwant || ( substr($0,26,4)<yrwant && substr($0,45,4)> yrwant) )  { print $0}  }' >> $outfile
+

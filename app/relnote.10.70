@@ -1,0 +1,206 @@
+Release Notes for GAMIT/GLOBK 10.7
+
+Last updated 13 June 2018
+                                                              
+-------------------------------------------------------------------
+
+Release 10.7 consolidates incremental updates made since release 
+10.61 of April 2017 and completes the modifications to GAMIT allowing
+for separate processing of GPS, Beidou, Galileo, and now Glonass.
+                                                         
+sh_get_rinex will download RINEX 3 files from CDDIS or UNAVCO, 
+renaming them to RINEX 2 conventions. The orbit specification in 
+sh_gamit and sh_get_orbits is now a 4-character code (e.g. igsf, 
+comf, ..) rather than using the separate 'center' and 'pre' inputs 
+(though these will still work). See the help for sh_gamit or 
+sh_get_orbits for the list of supported codes.  Navigation files for 
+dates after GPS Week 1624 will always those from MGEX brdm[DDD]0.([yy]p 
+(identical to brdc for GPS), then renamed to  brdm[DDD]0.[YY]n. If a 
+system other than GPS is requested, the sp3 files are downloaded 
+from the CDDIS MGEX directory and renamed if necessary to the conven-
+tional short form [orb][WWWWD].sp3.  For the g-files, sh_gamit replaces 
+the orbit-precision 5th character by the lower-case GNSS code so that 
+multiple g-files can  exist in the /gfiles directory.  If '-gnss' is 
+specified in the sh_gamit command line the day directories will 
+automatically use a letter extent (G, R, C, E); otherwise GPS is assumed 
+and the day directory will be the usual 3-digit number unless -netext is 
+specified in the command line.  To combine for each day the h-files 
+from each GNSS, run sh_glred with, e.g., '-netext G R C E'.  
+                                     
+Since ftp is increasingly unavailable on new operating systems, we're
+migrating to a download scheme that uses curl for MacOS and wget for 
+other operating systems.  We need to know if users require the use 
+of the programs ftp or ncftp.
+
+The first line in the d-file and the MODEL batch file is changed, 
+replacing the obsolete session number and static/kinematic code
+with the  GNSS code .  These files will not be compatible between
+10.7 and earlier versions.
+
+ARC and MODEL can now read a multi-year planetary ephemeris file and
+use a subroutine to get nutations, so the use of the single-year 
+soltab., luntab., and nutabl. files is no longer necessary.  For now
+they will still be linked but the new scheme will be automatically
+used if the 'nbody' file is present.  It is always linked into the
+[expt]/tables and day directories, so you control this by linking
+either nbody740.2020.asc or JPL.DE200 to nbody in gg/tables.  Our
+tests have shown that with nbody740.2020 (the original source for soltab. 
+and luntab.) the processing results are virtually identical to using 
+the yearly files.  We have thus far found no improvement (or degradation) 
+when using DE200.  Beginning in 2019, we will no longer provide the yearly 
+files.  
+      
+The code in ARC is significantly changed to allow for 3rd and 4th degree
+solid-Earth tides, ocean tides, perturbations by Venus and Jupiter, a
+newer value for C20, and time-variable C30 and C40, but thus far
+these changes seem to offer no improvement, at least for single-day
+processing.  There are new entries in the sestbl. to set the highest
+degree harmonics for static gravity, solid-Earth tides, and ocean tides,
+currently set to 12 2 0, the effective values for previous releases.
+The area-to-mass ratios for Glonass, Beidou, and Galileo have been changed 
+so that the estimated coefficient for the direct force is close to unity.
+        
+YAWTAB is now coded for all GNSS but not thoroughly tested for for a 
+broad range of eclipse conditions.
+        
+The GLOBK suite is updated to support GNSS with a new satellite naming 
+scheme. For GPS the default is to retain the PRN_<pn><sv> form where 
+pn is 2-digit PRN, <sv> is 2-digit satellite vehicle number.  The new 
+scheme is <sys><sv3>_<pn> where sys is G--GPS, R-Glonass, E-Galileo, 
+C-Beidou and the sv number has 3-digits.  The "use_prnn N" command will 
+invoke using the new scheme for all satellites.  GNSS h-files are 
+automatically detected and no special changes to command files are needed.  
+HTOGLB generates binary H-files with new naming scheme.
+
+GLOBK suite has had various dimensions increased for GNSS and network sizes.  
+The tssum/tscon/tsfit programs take 7 Gb of memory to run UNR stations.  
+Change max_ent in kf/blsum/tssum.h to go back to the earlier size.
+      
+TRACK is updated for GNSS processing. There is a new command tr_gnss <RGEC> 
+to select which GNSS and combination of GNSS to process.  The RM_CSLIP 
+algorithm and modified and has meaning of some of the arguments changed
+(see the help file). In this version, ambiguity resolution for GLONASS can 
+be problematic and not recommended.  Use the FLOAT_TYPE command to set the 
+sigma limits to zero.  This version of track can only process up to RINEX
+version 2.11.  RINEX 3 capability will be added soon.
+
+-------------------------------------------------------------------------
+                                     
+Other changes for 10.7:
+ 
+New utility program 'stnfo_cont' to enforce continuity in station.info 
+entries when made from sparse individual RINEX headers.
+            
+sh_sp3fit (orbfit) now provides explicit control over the parameters
+to be estimated.
+   
+Fix the labeling and # parameters for the ECOM2 (BERN2) radiation pressure
+model in the c-file.
+                                                         
+Add the tide wave names to the model line of the p-file.
+
+Allow more tham 99 zenith delays per site (total number fo all sites
+still limited to 2500).
+                       
+Use the h-file rather than the q-file names as the basis of the tmp
+files in SOLVE to avoid ambiguity across years.
+
+In MODEL, add the tidal wave names to the OTL model in the p-file.
+
+Add the sp3 file name to the calling arguments for sh_makexp in order to
+get this into the makex command file; fix mltiple bugs in makex for Glonass 
+and Galileo. 
+
+sh_eq_model: Script to model (using simplexfd) single fault earthquakes 
+using coseismic   offsets in .vel format.  Needs a simplex base file 
+(see help).  Uses programs in new   gg/kf/displace directory.
+
+sh_makeeqdef: Rewritten in bash and updated to allow different schemes for 
+calculating radius of influence of earthquakes (new -r option). Default radius 
+and all other options are backwards compatible with the original version. 
+
+unimake: Updated to handle C main programs and include file " " strings;
+Added stripping of parentheses to "osver" variable to account for more 
+recent changes to Cygwin OS release ID. 
+
+sh_network_sel: Added additional documentation about file formats
+
+sh_glred: Corrected transformation of h-file list from absolute to relative
+paths in the case that the path is not the default glbf/; added "-nsigma" 
+option and verified logic for interaction with "-tsfit_cmd" option recently 
+added on 2017-06-22 (and "-detrend" option). 
+
+sh_merge_rinex: Remove the sampling interval and maximum obs options 
+since they don't seem to work.
+                             
+sh_get_COD_gnssdcb:  Change ftp address for AIUB.
+
+sh_plotk: Removed deprecated "DOTS_PR_INCH" environment variable for GMT 5.
+                                
+sortv:  Fix arguments for 'sort' on four lines. 
+
+sh_gamit: Skip the test for existence of an sp3file if the orbit type is broadcast. 
+
+plotorb_sh: Copied original script to com_preGMT5/ and updated syntax of script in com/
+    for GMT 5' renamed to sh_plotorb.
+                                            
+sh_tshist: Increased precision of output to %.2f and added pos_res option to be
+           consistent with com_preGMT5 version. 
+ 
+sh_tfyear: Edited grep/awk command to avoid problems when there is a space in the 
+command status time tag.
+
+sh_plot_track: Changes for GMT5. 
+
+sh_rename_rinex3: Corrected definition of RINEX 2 conventional file name not to translate
+directory name, only site ID. 
+                     
+sh_get_hfiles/sh_get_ion/sh_get_met/sh_get_orbits/sh_get_rinex/sh_get_stinfo: Added trap
+to use ncftp when "ftp" client is actually "gftp", which interacts with the server
+differently to legacy "ftp" and is tricky to use for non-interactive sessions. 
+
+sh_cats, sh_hector:  Added an output rename file (.xcl) to exclude points that fail any 
+maximum   sigma criteria. 
+                             
+sh_sigelv: Added explicit format (ISO 8601) to $rdate variable to avoid complications
+arising from locales with non-Latin characters.
+              
+sh_plot: Updated the -B option so that multiple values can be used to be consistent
+with GMT5 multiple -B options. 
+
+sh_strain: Mods for GMT5.  
+                               
+sh_apr2otl: New script which converts a GAMIT/GLOBK .apr-file to the format necessary for 
+input to the ocean tide loading service at http://holt.oso.chalmers.se/loading/index.html#select, 
+whose output is in the format of the GAMIT otl.list file. Our recommendation is to select "Yes" 
+to the question "Do you want to correct your loading values for the motion?" when using this 
+web service. 
+
+sh_crx2rnx: Fixed erroneous addition of -c (standard output) option to gzip when not piping 
+file to subsequent command, and added gzip, bzip2 and xz decompression commands for non-
+Hatanaka-compressed files; corrected RINEX o-file extent for which to use xz. 
+    
+sh_get_x-files: New script that downloads GIPSY x-files and extracts the scale change
+estimates so that they can be re-applied when tscon converts UNR and JPL time-series files 
+to PBO format.  
+
+sh_get_ion: Changed 'uncompress' to 'sh_uncompress'.  
+
+sh_get_rinex: Changed '*' to '[0-9]' to avoid getting hourly [a-z] files;  add download of 
+30S or 15S Rinex3 files. 
+
+make_globk: Check status of track make and terminate if failed.   
+                                                    
+sh_plot_pos: Corrected typo in if-statement on line 604 that parses -n option and missing 
+"$tmp/" for temp.excl.[enu] files on line 1615. 
+
+svsp3 updated for GNSS processing with new command line options.  This program will replace
+svdiff and svpos in the future.  Currently rinex 2.11 but will be upgraded to rinex 3.
+
+
+           
+                                                                    
+
+
+
+

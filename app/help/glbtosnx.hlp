@@ -1,0 +1,45 @@
+GLBTOSNX: Converts GLOBK binary hfiles to SINEX format
+
+PROGRAM: glbtosnx
+     
+This program will read Globk ver 1.0 and greater binary
+hfiles and write out sinex files.
+
+Runstring is:
+% glbtosnx <dir> [-h] [-s] <comments file> <input binary hfile> <output file name>
+
+where <dir> is the directory to write files to (use . for current 
+            directory.
+      [-h] may be insterted before the comments file name to list just
+            the sinex header records.
+      [-s] Option which translates PT code directly into 8-character name i.e.,
+           PT 001 -> _1PS, 002 ->  _2PS, 010 ->  _APS 011 -> BPS. If the OCC code 
+           is not A, then PS is changed to <Occ>S, etc;  If name is non-unique, 
+           it is incremented until unique      
+      [-V=<Variance m^2>] Set maximum variance on position estimates for the
+               site to be included in SINEX file. Defauly -V=20.0 (Added 210112)
+      <comments files> file containing comments for SINEX file.  If not
+            name is given (i.e., ' ' is used) then a default name head.snx
+            will be tried.  If this file is not in local directory then
+            the $HELP_DIR directory will be tried.  
+            If there are no files available no comments will
+            be written to the sinex file.  (The file will still be valid).
+Ver 2.06 130331: Added + construction in file name for secondary file for 
+            comments, i.e.,  head.snx+head.pbo will read +SNX/-SNX comments 
+            from head.pbo in current directory (+head.pbo will use head.snx as
+            default in either local directory or ~/gg/help
+      <input binary hfile> input binary file.
+      <output file name> output file name or root.  If nothing
+            specifed then name will <owner><gps week><gps day of week>.snx
+            if one character given <gps day of week> is replaced with
+            character.
+            In full name: #### will be replaced by <gps week><gps day of week>
+            and ### will be replaced by <gps week>.
+Ver 2.07 180401: GNSS compatability output added.
+Ver 2.08 210112: Added -V=Var option. 
+
+Format of comments file is similar to the SINEX itself.  An example is
+given in head.snx in the $(HELP_DIR) directory.  The one addition to the
+sinex format is the addition of entries to allow the DOMES numbers to
+be defined.  These are also given the head.snx file.
+

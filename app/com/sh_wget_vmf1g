@@ -1,0 +1,137 @@
+#!/bin/csh -f
+#
+#doc Get daily VMF1 grid files from TU Vienna
+#doc 
+#
+# Script to get daily VMF1 grid files from TU Vienna
+# Uses wget and creates www.aiub.unibe.ch/ionosphere/p1c1.dcb locally,
+# then runs gamit/utils/dcbtab to add this file to dcb.dat
+# Written by R King 12 Oct 2004
+
+# The current directory structure is   
+#   http://mars.hg.tuwien.ac.at/~ecmwf1/GRID/${year}/
+# containing tarfiles for the year:
+# ah2007.tar.Z 
+# aw2007.tar.Z 
+# zh2007.tar.Z 
+# zw2007.tar.Z 
+#  and for individual days
+# ah07004.h00  ah07004.h06  ah07004.h12  ah07004.h18
+# aw07004.h00  aw07004.h06  aw07004.h12  aw07004.h18
+# zh07004.h00  zh07004.h06  zh07004.h12  zh07004.h18
+# zw07004.h00  zw07004.h06  zw07004.h12  zw07004.h18
+
+
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "===================================================================================="
+  echo " Get daily VMF1 grid files from TU Vienna  "
+  echo "  "
+  echo " Usage: sh_wget_vmf1g -yr <yr> -doy <doy> -ndays <num>  "
+  echo "  "
+  echo "===================================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS #############################   
+set year = ''
+set yr = ''
+set doy = ''
+set log = ''
+set numd = 1      
+set archive = 'vienna'
+set wgetoptions = ''
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -n:
+    case -nday:
+    case -ndays:
+      set numd = $input[2] 
+    breaksw 
+    case -y*:
+      set year = $input[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+      set yr = `sh_year -year $year`
+    breaksw 
+    case -d:
+    case -doy:
+      set doy = $input[2]  
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+   
+
+#  Read the address and directory information from gg/tables/ftp_info
+
+set ftp_info = `sh_get_ftp_info -archive $archive -type vmf1`  
+while ($#ftp_info > 0 )
+  set input = ( $ftp_info )
+  switch($input[1])
+    case -ftpsite:
+      set ftpsite  = $input[2]  
+    breaksw 
+    case -ftplogin:
+      set ftplogin  = (`echo $ftp_info | cut -d- -f2`); shift ftplogin 
+    breaksw 
+    case -ftpdir:
+      set ftpdir  = $input[2]  
+    breaksw 
+    case -ftpcmd:
+      set ftpcmd  = (`echo $ftp_info | cut -d% -f2`); shift ftpcmd  
+    breaksw 
+    case -wgetsite:			
+      set wgetsite  = $input[2]  
+    breaksw 							
+    case -wlogin:						
+      set wlogin  = (`echo $ftp_info | cut -d- -f2`); shift wlogin 	
+    breaksw 								
+  endsw
+  if ( $#ftp_info > 0 ) shift ftp_info
+end
+
+echo DEBUG $ftpdir    
+echo DEBUG $wgetsite
+  
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+set yr = `sh_year -year $year`
+
+# Get a list of available files from the archive for this day
+    set directory = `echo $ftpdir | sed -e s/"YYYY"/$yr[1]/g | sed -e s/"YY"/$yr[2]/g `	
+    echo "directory = `echo $ftpdir | sed -e s/"YYYY"/$yr[1]/g | sed -e s/"YY"/$yr[2]/g `"
+    set wgetoptions = ($wgetoptions -nr -i -)								
+    set directory = ($wgetsite$directory/)								
+    echo $directory 
+   set wgetoptions = ($wgetoptions -v -N)	 
+
+# Loop through the days and get the requested files    
+
+#  @ sday = ${doy} - 1
+@ sday = `echo "ibase=10; ${doy} - 1" | bc`
+#  @ count = $numd
+@ count = `echo "ibase=10; ${numd}" | bc`
+
+while ( $count )
+  set sday = `echo $sday |  awk '{printf "%03d \n", $1+1}'`
+  @ count = $count - 1
+  wget ${directory}ah${yr[2]}${sday}.h00   
+  wget ${directory}ah${yr[2]}${sday}.h06
+  wget ${directory}ah${yr[2]}${sday}.h12   
+  wget ${directory}ah${yr[2]}${sday}.h18   
+  wget ${directory}aw${yr[2]}${sday}.h00   
+  wget ${directory}aw${yr[2]}${sday}.h06  
+  wget ${directory}aw${yr[2]}${sday}.h12   
+  wget ${directory}aw${yr[2]}${sday}.h18   
+  wget ${directory}zh${yr[2]}${sday}.h00   
+  wget ${directory}zh${yr[2]}${sday}.h06   
+  wget ${directory}zh${yr[2]}${sday}.h12   
+  wget ${directory}zh${yr[2]}${sday}.h18   
+  end
+endif
+
+exit

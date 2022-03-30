@@ -1,0 +1,67 @@
+#!/bin/csh -f
+#
+#doc Extract use_site list from glist output, based on # of obs and obs span.
+#doc
+#
+# sh_glist_to_uselist
+#
+# Purpose      Extract use_site list from glist output, based on # of obs and obs span
+#
+# Output       use_site exclude list excluding sites not fitting specified criteria
+#
+# sh_glist_to_uselist -f <file> -min_obs <num> -min_span <yrs> -method <AND/OR>
+#
+# All options are:
+#  -f <file>         Name of input glist file
+#  -min_obs <num>    Minimum number of observations for a particular site to be used
+#  -min_span <yrs>   Minimum time span of observations for a site to be used (years)
+#  -method  <AND/OR> Choose AND or OR for using above #obs and span selection creiteria [default AND]
+#
+# Note if either selection criteria is not specified then it is not used in the selection process.
+#
+# Example: sh_glist_to_uselist -f emed_all.glist -min_obs 100 -min_span 2.0
+#          
+# by  S. McClusky 15/10/2008
+# end doc
+
+if ($#argv < 1) then
+        sed -e "1d" -e "/end doc/q" -e "s/#//" $0
+        exit
+endif
+# Set Defaults
+set file = ''
+set min_obs = 0
+set min_span = 0
+set method = 'AND'
+#
+foreach a ($argv)
+  switch($a)
+    case -f*:
+      set file = $argv[2]
+    breaksw
+    case -me*:
+      set method = $argv[2]
+    breaksw
+    case -min_o*:
+      set min_obs = $argv[2]
+    breaksw
+    case -min_s*:
+       set min_span = $argv[2]
+    breaksw
+#    case -arch*
+#       set archive = $argv[2]
+#       set archive =  (`echo $argv | cut -d- -f2`); shift archive 
+#    breaksw
+ endsw
+shift
+end
+echo "# Exclude sites with < $min_obs observations and a data span < $min_span years" 
+echo " use_site clear"
+echo " use_site all "
+if ( $method == "AND" ) then 
+  grep P$ $file | awk -v mo=$min_obs -v ms=$min_span '$4 < mo && $7 < ms {print " use_site -"$8, "    !    # obs = ",$4," Span = ",$7," Period = ",$5,"-",$6}'
+else
+  grep P$ $file | awk -v mo=$min_obs -v ms=$min_span '$4 < mo || $7 < ms {print " use_site -"$8, "    !    # obs = ",$4," Span = ",$7," Period = ",$5,"-",$6}'
+endif
+
+exit

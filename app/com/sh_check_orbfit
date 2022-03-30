@@ -1,0 +1,135 @@
+#!/bin/csh -f
+#
+#doc Check orbfit.rms file to ensure session.info contains only well fitted satellites
+#doc
+# 
+# By simon@chandler.mit.edu   96/11/07
+######################## INSTRUCTIONS #############################
+if ( $#argv == 0 ) then
+  echo "=========================================================================================="
+  echo " Check orbfit.rms file to ensure session.info contains only well fitted satellites"
+  echo "  "
+  echo "  USAGE :    sh_check_orbfit  -sess <doy> -tol <rms> -file <name> "
+  echo "  "
+  echo "          <doy> is the 3 char doy of the session to check"         
+  echo "  "
+  echo "          <rms> largest orbfit rms misfit allowed [default 0.1m] "         
+  echo "  "
+  echo "          <name> name of the orbfit.rms file to check against session.info"         
+  echo "  "
+  echo "  Examples :  " sh_check_orbfit -sess 281 -tol 0.2 -file rms___.tmp
+  echo "=========================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+set sess   = 0
+set tol = 0.1
+set file  = ""
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+       case -s:
+	    case -sess:
+                set sess       =  $input[2]
+       breaksw 
+       case -t:
+	    case -tol:
+                set tol     =   $input[2]
+       breaksw
+       case -f:
+	    case -file:
+                set file      =   $input[2]
+       breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ########################### 
+echo " "
+echo "sh_check_orbfit: Removing any PRN's from session.info that are misfit in: "$file
+echo "                 Will also add PRN's with good fit to the session.info file"      
+echo " "      
+
+if (! -e $file) then
+	echo missing input file: $file QUIT
+	exit
+endif
+if (! -e session.info) then
+	echo missing session.info file QUIT
+	exit
+endif
+if ( $sess == 0 ) then
+	echo missing session (-sess) specifier QUIT
+	exit
+endif
+
+##Extract list of satellites found in session.info
+set s_prn = ` cat session.info | awk '$2 == sn {printf "%s",substr($0,34)}' sn=$sess `  
+##Extract list of satellites found in the orbfit.rms file
+set o_prn = ` cat $file | tail -n +7 | awk ' $1 > 0 && $1 < 50  {print $1}' `
+##Extract list of satellites found in the orbfit.rms file which have good fits
+set g_prn = ` cat $file | tail -n +7 | awk ' $1 > 0 && $1 < 50 && $2 < tol {print $1}' tol=$tol `
+
+##PRN`s in the session.info file
+echo $s_prn | nawk '{split($0,prns); n = NF} \
+{for (i=1;i<=n;i++) {printf "%3d\n", prns[i]}}' > tmp.sprn
+##Good fit PRN`s in the orbit file
+echo $g_prn | nawk '{split($0,prns); n = NF} \
+{for (i=1;i<=n;i++) {printf "%3d\n", prns[i]}}' > tmp.gprn
+##PRNS's in session.info which have good fit in the orbit file
+set common_prn = `comm -12 tmp.sprn tmp.gprn`
+echo $common_prn | nawk '{split($0,prns); n = NF} \
+{for (i=1;i<=n;i++) {printf "%3d\n", prns[i]}}' > tmp.comm
+##PRN's removed from session.info because bad rms fit or missing from orbit file
+set r_prn = `comm -3 tmp.sprn tmp.comm`
+##PRN's removed from session.info because they are missing from orbit file
+echo $o_prn | nawk '{split($0,prns); n = NF} \
+{for (i=1;i<=n;i++) {printf "%3d\n", prns[i]}}' > tmp.oprn
+set m_prn = `comm -23 tmp.sprn tmp.oprn`
+echo $m_prn | nawk '{split($0,prns); n = NF} \
+{for (i=1;i<=n;i++) {printf "%3d\n", prns[i]}}' > tmp.mprn
+##PRN's removed from session.info because bad rms fit in orbit file
+set b_prn = `comm -23 tmp.oprn tmp.gprn`
+##PRN's missing from session.info but in the orbit file
+set n_prn = `comm -13 tmp.sprn tmp.oprn`
+##PRN's with good fit in orbit file to be added to session.info 
+set a_prn = `comm -23 tmp.gprn tmp.sprn` 
+\rm tmp.sprn tmp.gprn tmp.comm tmp.oprn tmp.mprn
+
+##Print the above finding's 
+echo "PRN's in session.info:     "$s_prn
+echo "PRN's in "$file":       "$o_prn 
+echo "PRN's well fit "$file": "$g_prn 
+echo "PRN's missing from orbit "$file": "$m_prn 
+echo "PRN's with bad rms in "$file": "$b_prn 
+echo "PRN's missing from session.info: "$n_prn  
+                                              
+##Add good satellites back to the session.info file   
+echo $a_prn $common_prn | nawk '{split($0,prns); n = NF} \
+{for (i=1;i<=n;i++) {printf "%3d\n", prns[i]}}' >! tmp.comm
+set comm_prn = `cat tmp.comm | sort`
+
+##Write out the new session.info
+if ( -e session.info.new) \rm session.info.new    
+(echo $sess; echo $comm_prn; cat session.info) | awk ' NR == 1 {split($0,info)} \
+NR == 2 {split($0,prns); n = NF} \
+NR == 3 || NR == 4 {print} \
+NR > 4 && info[1] == $2 {printf "%s",substr($0,1,33); \
+for (i=1;i<=n;i++) printf "%3d",prns[i]; printf "\n"} \
+info[1] != $2 && NR > 4 {print} \
+END {print}' >! session.info.new 
+
+##Print some concluding remarks
+echo "  "
+echo "Sat's written to session.info for sess "$sess": "$comm_prn 
+echo "All PRN's removed from session.info (rms or missing): "$r_prn 
+echo "All PRN's added to session.info (rms or missing): "$a_prn 
+ 
+ 
+\cp  session.info session.info.old
+\cp  session.info.new session.info 
+\rm session.info.new tmp.comm   
+
+exit
+

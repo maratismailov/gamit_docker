@@ -1,0 +1,14 @@
+EXCITE_PMU: Computes polar motion/UT1 excitation values
+ 
+EXCITE_PMU:
+
+Program to compare tables of polar motion UT1 series.  The
+runstring is:
+% excite_pmu <output excite>  <in primary> <UT1_def>
+
+where  <output excite> is the name of the excitation file
+       <in primary> is the name of the file for the input
+            series.  Must be uniformly spaced.
+       <UT1_def> is the definition of UT1 in the input series
+            (R-denoted regularized)
+

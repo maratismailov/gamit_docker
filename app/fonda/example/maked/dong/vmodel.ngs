@@ -1,0 +1,6 @@
+1                           {ngp
+4                           {site number
+1 0 1 0 0 0 0 0 0 0         {translation, rotation, gradient, ...
+1 2 3 4                     {site index
+0.1 0.02                    {vxt,vyt
+239.394813 34.893767 0.1 0.12 90.0 -0.152 -0.130 0.054 0.046      {icnt,vxdx,vxdy,vydx,vydy,vxc,vyc

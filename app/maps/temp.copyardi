@@ -1,0 +1,16 @@
+ cp ~adwivedi/stdrel/maps/srtm3_E15N45_E35N30.grd ./
+ cp ~adwivedi/stdrel/maps/srtm3_E15N45_E35N30i.grd ./
+ cp ~adwivedi/stdrel/maps/srtmplus_30_120.grd   ./
+ cp ~adwivedi/stdrel/maps/srtmplus_30_120i.grd  ./
+ cp ~adwivedi/stdrel/maps/srtmplus_w20s50-e100n90.grd ./
+ cp ~adwivedi/stdrel/maps/srtmplus_w20s50-e100n90_i.grd ./
+ cp ~adwivedi/stdrel/maps/textbook.cpt   ./
+ cp ~adwivedi/stdrel/maps/w001001.grd    ./
+ cp ~adwivedi/stdrel/maps/w001001i.grd   ./
+ cp ~adwivedi/stdrel/maps/w001001r.grd   ./
+ cp ~adwivedi/stdrel/maps/wiki-1.03.cpt  ./
+ cp ~adwivedi/stdrel/maps/wiki-1.03_m.cpt./
+ cp ~adwivedi/stdrel/maps/World_int.xy   ./
+ cp ~adwivedi/stdrel/maps/WorldVelVi.xy  ./
+ cp ~adwivedi/stdrel/maps/WorldVelV.xy   ./
+

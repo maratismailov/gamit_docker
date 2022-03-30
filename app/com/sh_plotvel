@@ -1,0 +1,2501 @@
+#!/bin/csh -f
+#
+#doc Create maps of station velocities from GLOBK and GLORG output files.
+#doc
+#
+echo " "    
+echo "Arguments for sh_plotvel: " $argv 
+echo " " 
+#
+# Shell script for creating GMT maps of station velocities from GLOBK and GLORG
+# output files.  It is a generic version of the script sh_vel_gmt written by
+# M Burc Oral of MIT's ERL between Feb 1993 and Aug 1994.  The chronology
+# of the original script and documentation for some features not included in
+# this version may be found in /contributions/oral/com_globk.  
+# R. King and S. McClusky October 1995.   Last modified by R. King 981021
+#
+# MODTAH 000127: Made treatment of long-360 same for files 3 and 4 as for files
+# 1 and 2.   
+#
+# MOD Simon 020407: 
+# MOD RWK 020905: Change logic so that the -map option sort-of works as an initial
+#     call.  It still doesn't work with coastlines and political boundaries, nor,
+#     probably does the -maplist option work. To fix all of this we need to change
+#     the logic significantly for these first calls.
+# MOD 021114 Kurt
+#     Fix to work on GMT compiled with SI units
+# MOD rwk 070720: Change to work by default with 0-360 E longitude; add -wlon
+#     option to invoke -180 - +180.  Note that extra map files (e.g. faults)
+#     must be consistent with the option chosen. 
+# MOD rwk 100218: Add option to plot block boundaries.  Echo file names for block boundaries,
+#     faults, and Euler poles   
+# MOD Gilbert Ferhat  110119: Change to work with GMT4
+#     -Di is not longer used. -Du for US defaults,
+#     replace old DEGREE_FORMAT option by PLOT_DEGREE_FORMAT to get 117W for longitude 
+# MOD TAH 171220: Updated the -B option so that multiple values can be used to be consistent
+#     with GMT5 multiple -B options.
+#     Note epiradius is now diameter in GMT5
+# MOD MAF 200221: Added call to sh_dem to create topographic (and, optionally,
+#                 illumination) .grd-file for GMT grdimage.
+# MOD MAF 200413: Corrected definition of maximum longitude in minmax variable
+#                 when passing topo_file name from sh_dem to grdimage for
+#                 plotting, and updated logic to derive an illumination .grd-
+#                 file from topo_file by requiring "topo_file" to be passed as
+#                 the argument to the "-illu_file" option.
+# MOD TAH 200515: Added coastline line specification (-cwl opton)
+# MOD MAF 200818: Added tests to recognize DEM file name (from "-topo_file"
+#                 option) with longitudes in the range 180W-180E (default output
+#                 from sh_dem) and 0E-360E.
+#
+#2345678901234567890123456789012345678901234567890123456789012345678901234567890
+if ( $#argv == 0  || `echo $1 | cut -c2-` == "help"   ) then
+echo "  "
+echo " Script to plot station velocities on a map, using a GLOBK prt file as input."
+echo " "
+echo " Options allow selection of stations, multiple velocities, and enhanced maps. " 
+echo " "
+echo " Basic usage : "
+echo "  "
+echo "            sh_plotvel -f <file> -s <site>      "   
+echo " "
+echo "    -file              : Input GLOBK prt file or GETREL file"
+echo "    -site              : 4-char station id of reference site for velocities"  
+echo "                         (requires BRAT print option) "
+echo "                         If site omitted, plot absolute velocities"
+echo "  "                       
+echo " With no additional options specified, the map features will be taken from the "
+echo " global map in the GMT library.  Three mutually exclusive options are available "
+echo " to obtain enhanced or specialized maps: "
+echo " " 
+echo "   -mapscript file     : Execute the shell script [file] to produce the map "
+echo "                           See sh_map_turk in gs/com for a template "
+echo " "
+echo "   -map list           : Use the list of maps specified from ~/gg/maps/[file]"
+echo " "
+echo "   -maplist file       : Overlay the maps with full pathnames specified in [file] " 
+echo " "  
+echo "      With either of these last two options, you should set the range of the map using the option "
+echo "   "
+echo "   -maprange type      : Calls sh_map_elements with the keyword <type> to select a region."
+echo "                         Among those allowed are <world> <europe> <turkey> <cal> "
+echo "                         See sh_map_elements for a complete list or to add your own"  
+echo " "
+echo "      and if a coastline map is not included, you must specifiy -coast to get the GMT coastlines."
+echo " "             
+echo " Output:"
+echo " "      
+echo "   -c[omment]  text    : Title for plot.  No need for quotes. This option should be issued LAST "
+echo " "                              
+echo "   -figcap             : Turn off figure caption mode. Header is off; comment is figure caption."    
+echo " "
+echo "   -h[eader]           : Turn off header prints. Default is ON, print header."
+echo "  "
+echo "   -p[rinter]  name    : Printer name.  If null use system default. "
+echo "  "
+echo "   -ps file            : postscript save file. Default is FILE.SITE.ps"
+echo "  " 
+echo " To get complete help on all available commands enter:  sh_plotvel -help "
+echo " "
+echo " Limitations:  Cannot be run in background "
+echo " "
+echo " See the script for requirements and documentation of extended features."
+echo " "
+echo " Example:  sh_plotvel -f turkey.prt -s yigi -mapscript sh_map_turk "
+echo " "   
+echo " "
+echo " Requirements          : GLOBK prt-file "
+echo "                       : GMT(netcdf/gmt/ghostscript)"
+echo "                       : mag_azim (Fortran program in gamit/utils)"
+echo "                       : sh_map_elements (for option -maprange; in gamit/com) " 
+echo "                       : for specialized maps (-map option), the location of"
+echo "                         the maps, set as 'root_map' below (default is ~/gg/maps "
+echo "                         where 'gg' is an alias for the level above 'gamit' and 'kf'"
+
+if ( $argv == "-help" )  then
+  cat << END
+===================
+ Extended features
+===================
+----------------------------------------------------------------------------------------
+ << Station and velocity options >>
+
+   -d[elete]  sites    : Remove listed site names from tables. Case insensitive; does not work for -name and -vel.
+   -D[ELETE]  file     : Remove sites listed in the file from tables. Case insensitive; does not work for -name and -vel.
+   -I[NCLUDE] file     : List of sites to be included.
+
+   -delsigma  sites    : Do not plot sigmas/error ellipses for listed sites.
+
+   -e[rrorbar]         : Turn off plotting of error ellipses.  Default is ON.
+
+   -maxsigma  value    : Maximum sigmas/error ellipses to be plotted (both E & N in original file must be < maxsigma)
+
+   -maxvect   value    : Maximum vector length to be plotted
+
+   -factor  value      : Scale the internally defined arrow value. by this factor
+
+   -fixed  lon lat     : Fixed site in velocity plots.
+
+   -u  value           : Scale the uncertainties by this factor.  Example -u 1.7
+
+   -i[nterval]  value  : Confidence interval. Default is 95(%). Example -i 95
+
+   -glist  file opt    : Input name of GLIST output file for plotting - opt = num, tsl or all
+
+   -name               : Plot only site locations and their names, no velocities.
+                         File is either in getrel format or lon/lat or lon/lat/site-name
+                         THIS OPTION NO LONGER WORKS; see -namefile below
+
+   -namefile  files    : Plot site locations with names taken from [files] (more than one allowed).
+                         Suggestion:  run without -namefile and modify the tmp.names. Rename it and
+                         use this file for nicer plots. (input file must be in in GMT pstext format:
+                           41.564  43.789  ZECK d noname
+                         but with the 2d-to-last field optionally added to specify the symbol used
+                         to plot the site-- c, s, d, t, r specify circle, square, diamond, triangle or star,
+                         respectively (default is triangle)-- and the last field blank or noname to omit
+                         the name (plot the symbol only.  When plotting both velocities and names, set
+                         -sitefont 0 to avoid double printing of names
+
+   -nameshift  value   : Y axis distance in inches to shift all station names on plot ( Default 0.0 )
+
+   -plain              : Plot sites without names
+
+   -symbol_size        : Size in inches of the symbols to be plotted from the names file (Defautl 0.1).
+
+   -symbol_color       : Color in R/G/B of the symbols to be plotted from the names file (Defautl 0/0/0).
+
+   -arrow_value  value : define the size of the velocity scale arrow in mm. Default = 20mm/yr
+
+   -vs  value          : define velocity scale. Default is 1.0 = 1:1 ratio (plot:file)
+
+   -save_gmt           : save the GMT format plot files used to generate plot
+
+--------------------------------------------------------------------------------------------
+ << Multiple velocity solutions >>
+
+   -f[ile] file        : Input GLOBK prt-file
+   -f1
+
+   -file2  file2       : Input getrel-ed comparison file. Green arrows/ellipses in all cases
+   -f2                   Assumes identital parameters (confidence interval scaling)
+
+   -file3  file3       : Input getrel-ed comparison file. Green arrows/ellipses in all cases.
+   -f3                   Assumes identital parameters (confidence interval scaling)
+
+   -file4  file4       : Input getrel-ed comparison file. Green arrows/ellipses in all cases.
+   -f4                   Assumes identital parameters (confidence interval scaling)
+
+   -file5  file5       : Input getrel-ed comparison file. Green arrows/ellipses in all cases.
+   -f5                   Assumes identital parameters (confidence interval scaling)
+
+    File format
+    Long.  Lat.   E-Rate N-Rate   E-Adj N-Adj  E-Unc  N-Unc   E-N-RHO   Vert-Rate  Vert-adj  Vert-Unc  SITE
+
+  The uncertainties for each of these solutions may be scaled separately:
+
+    -u[ncscale] value  : scale uncertainties with value. Default is 1.
+    -u1                  if issued automatic scaling with chisqr of the experiment.
+
+    -u[ncscale]2 value : scale uncertainties with value. Default is 1.
+    -u2                  if issued automatic scaling with chisqr of the experiment.
+
+    -u[ncscale]3 value : scale uncertainties with value. Default is 1.
+    -u3                  if issued automatic scaling with chisqr of the experiment.
+
+    -u[ncscale]4 value : scale uncertainties with value. Default is 1.
+    -u4                  if issued automatic scaling with chisqr of the experiment.
+
+ Error ellipses may be surpressed for clarity:
+
+    -e[rrorbar]        : Turn off error bar plotting. Default is ON.
+
+    -e[rrorbar]2       : Turn off error bar plotting for file 2 . Default is ON.
+    -e2
+
+    -e[rrorbar]3       : Turn off error bar plotting for file 3 . Default is ON.
+    -e3
+
+    -e[rrorbar]4       : Turn off error bar plotting for file 4. Default is ON.
+    -e4
+
+ The following color features are useful for multiple solutions.  Must set -color.
+    -arrowcolor1       : rgb numbers. Default is black 0/0/0. -color default is black 255/0/0.
+    -arrowcolor2       : rgb numbers. Default is black 0/0/0. -color default is red   255/0/0.
+    -arrowcolor3       : rgb numbers. Default is black 0/0/0. -color default is green 0/255/0.
+    -arrowcolor4       : rgb numbers. Default is black 0/0/0. -color default is blue  0/0/255.
+    -arrowcolor5       : rgb numbers. Default is black 0/0/0. -color default is blue  0/0/255.
+
+    -openarrow1        : draw vector arrows for file1 as open (not filled)
+    -openarrow2        : draw vector arrows for file2 as open (not filled)
+    -openarrow3        : draw vector arrows for file3 as open (not filled)
+    -openarrow4        : draw vector arrows for file4 as open (not filled)
+    -openarrow5        : draw vector arrows for file5 as open (not filled)
+
+    -arrowfont1  value : weight of arrow vectors for file1 l=light m=medium h=heavy [default = m]
+    -arrowfont2        : weight of arrow vectors for file2 l=light m=medium h=heavy [default = m]
+    -arrowfont3        : weight of arrow vectors for file3 l=light m=medium h=heavy [default = m]
+    -arrowfont4        : weight of arrow vectors for file4 l=light m=medium h=heavy [default = m]
+    -arrowfont5        : weight of arrow vectors for file5 l=light m=medium h=heavy [default = m]
+
+ The line number of the first data record in the plot files. Ie number of header lines +1
+
+    -line              : Header lines in file. default = 0
+
+    -line2             : Header lines in file2. default = 0
+
+    -line3             : Header lines in file3. default = 0
+
+    -line4             : Header lines in file4. default = 0
+
+    -line5             : Header lines in file4. default = 0
+
+ File contains velocity sigmas in error ellipse format: semimajor axis ,semiminor axis, azimuth
+ [default is sigma north ,sigma east, correlation north-east (rho)]
+
+    -rot               : default not ellipse format
+
+    -rot2              : default not ellipse format
+
+    -rot3              : default not ellipse format
+
+    -rot4              : default not ellipse format
+
+    -rot5              : default not ellipse format
+
+ Plot velocity adjustments/residuals instread of estimated velocities:
+
+    -vel_res        : Plot velocity resuduals Default is estimates.
+
+    -vel_res2       : Plot velocity resuduals for file 2. Default is estimates.
+
+    -vel_res3       : Plot velocity resuduals for file 3. Default is estimates.
+
+    -vel_res4       : Plot velocity resuduals for file 4. Default is estimates.
+
+    -vel_res5       : Plot velocity resuduals for file 4. Default is estimates.
+
+ Plot velocity differences instread of estimated velocities. Reference solution if -f1
+
+    -vel_diff <opt> : Plot velocity differences between solutions -f1 is reference.
+                    : opt = both - both ref and diff velocity error ellipses
+                    : opt = ref - plot only ref velocity error ellipses
+
+    -vert     : Plot vertical velocities too.
+
+--------------------------------------------------------------------------------------------
+  << Enhanced mapping options >>
+
+    -wlon              : Plot with West longitude (i.e. -180 to +180). Default is (0-360).
+
+    -boundary          : Plot political boundaries. Default is no.
+
+    -clw line_spec     : Set line specification for coastline (1p,gray2 default)
+
+    -bound_check       : check bounds for plottting site names. Default is yes.  Use to avoid GMT cut-off.
+                    "
+    -c text            : Caption for map. No need for quotes. This option should be issued LAST
+
+    -color             : Use color (tones are hardwired).
+
+    -euler file        : Plot euler pole from file, in format given below:
+                         Lon:  33.5 +/- 0.6   Lat:  32.9 +/-  1.1   Ang_vel(deg/myr): 1.3 +/-   0.2
+                         PLATE -  PLATE        Lat (deg)     +-    Long (deg)    +-       Mag (deg/My)   +-   RhoLaLg RhoLaMa RhoLgMa
+                         ANOTOLIA-ARABIA       32.870      0.632     40.249      0.673   0.863318   0.081597  -0.933  0.848 -0.747  LLM
+
+    -scmin     value   : small circle sweep angle start in degrees (default 0).
+
+    -scmax     value   : small circle sweep angle end in degrees (default 360).
+
+    -scint     value   : small circle sweep angle interval in degrees (default 5)
+
+    -scradii   values  : small circle radius in degrees (default 0 : no small circle)
+
+    -epicentre lat lon : Plot earthquake main shock location as a red star.
+
+    -epiradius         : The diameter (GMT5) of influence of an earthquake (2 times value in eq_def line)
+
+    -eqlocation file   : Plot earthquake locations.  File is lon/lat of epicenters.
+
+    -eqdepth list      : List of depth intervals to plot. Eg 0 33 70 150 300 500
+
+    -eqmag value       : Minimum EQ magnitude to plot. Eg 4.0 [Default 0.0]
+
+    -eqfocal_cmt file  : Plot earthquake focal mechanisms cmt format (new format).
+    -double_couple     : Plot best double couple CMT
+
+    -eqfocal_cmt_old file  : Plot earthquake focal mechanisms cmt format.
+
+    -eqfocal_aki file  : Plot earthquake focal mechanisms aki format.
+
+    -eqslip file       : Plot earthquake slip vectors.
+
+         File format for for earthquake options.  Must have all entries but unused ones may be zero.
+         longitude      latitude       strike  dip     rake    mag     slipV   type    date    ref
+
+    -fault_patch file  : fault patches in GMT line segment file format.
+
+    -blocks file       : block-model boundaries in GMT line segment file format.
+
+    -page option       : Page orientation   P for portrait (default)   L for landscape
+                           Fragile. May not work with all options.
+
+    -sitefont          : Size of site names. Default is 07.
+
+    -topo              : Turn on ETOPO5 overlay. Default is no
+
+    -topo_file  file   : netCDF file containing topo data. If the "file"
+                         argument is any of the options for sh_dem ("e5", "e2",
+                         "e1b", "e1i", "s30", "s30+", "s3" or "s1") then a .grd-
+                         file will be created using the chosen DEM and region
+                         given with the -R option, below.
+
+    -illu_file  file   : Illumination file for topo data. If "topo_file" is
+                         given as the argument, the illumination .grd-file will
+                         be derived from the gradient of the "topo_file", above,
+                         with an azimuth/elevation of 235/50. 
+
+    -palette  file     : ~/gg/maps/color8_m.cpt is default. Try  ~/gg/maps/color4.cpt
+
+    -psscale  length   : Plot color scale for topo (width is the length of bar). Default is not to plot.
+
+    -min_area  value   : Minimum size of features such as lakes or islands that will be plotted. Default 500km**2
+
+    -coast_res  value  : Selects the resolution of coastline to be plotted (f)ull, (h)igh, (i)intermediate,
+                         (l)ow, or (c)crude. Default is: i
+ << GMT parameters for custom plotting >>
+
+    -JGMTparameters    : Projection size.  Default is	  -Jm.25     (mercator) Refer to GMT manual
+
+    -RGMTparameters    : Projection range. Default is  -R22/48/32/45 (mercator) Refer to GMT manual
+
+    -BGMTparameters    : Projection borders.      Default is    -Bxf2 -Byf2 -BWSen (mercator) Refer to GMT manual
+
+    The following control placement on plot of the distance and velocity scale :
+
+    -arrow             : DO not plot arrow.
+    -arrowxp           : Default is lower right corner. Arrow scale longitude position; you have to know the map bounds.
+    -arrowyp           : Default is lower right corner. Arrow scale latitude position; you have to know the map bounds.
+    -linear            : DO not plot linear scale.
+    -linearxp          : Linear distance scale longitude position; you have to know the map bounds. Default is lower right corner.
+    -linearyp          : Linear distance scale lattitude position; you have to know the map bounds. Default is lower right corner.
+    -linearscale       : Length of linear scale bar in km. Default is calculated according to plot scale
+END
+endif
+exit
+endif 
+   
+##################### Set defaults for GMT to override local options #########################   
+#gmt gmtdefaults -Du >! gmt.conf
+# -Du = US defaults GF
+gmt gmtdefaults -Du >! gmt.conf
+gmt gmtset GMT_COMPATIBILITY 5
+gmt gmtset PS_MEDIA letter  
+gmt gmtset PROJ_LENGTH_UNIT i    
+gmt gmtset MAP_DEFAULT_PEN ,5/5/5 
+gmt gmtset FONT_LABEL 10p    
+gmt gmtset FONT_ANNOT_PRIMARY 14p     
+gmt gmtset FONT_TITLE 14p  
+# Defaults set here, but -wlon option below can override   
+# This will give longitude 0-360 in degrees 
+gmt gmtset FORMAT_GEO_MAP +D
+# This will give west longitudes as < 180 in degrees 
+# gmt gmtset FORMAT_GEO_MAP -D
+# This will give longitude 0-360 in deg/min/sec
+# gmt gmtset FORMAT_GEO_MAP +ddd:mm:ss
+# This will give longitudes 0360 to 0 in deg/min/sec   
+# gmt gmtset FORMAT_GEO_MAP -ddd:mm:ss
+#       MAP_ANNOT_OFFSET_PRIMARY 0.125i \
+#       MAP_TICK_LENGTH_PRIMARY=-0.075i \
+
+##################### Set up the input option defaults  #######################################
+set arrow        = yes
+set arrow_symbol =  mm/yr
+set vert_symbol =  mm/yr
+set arrow_value  =  20
+set vert_value  =  20
+set arrowcolor1  = "0/0/0"
+set arrowcolor2  = "255/0/0"
+set arrowcolor3  = "0/255/0"
+set arrowcolor4  = "0/0/255"
+set arrowcolor5  = "200/0/255"
+set openarrow1 = "no"
+set openarrow2 = "no"
+set openarrow3 = "no"
+set openarrow4 = "no"
+set openarrow5 = "no"
+set arrowfontl  = "-A0.08+e+p0.5p"
+set arrowfontm  = "-A0.12+e+p1.5p"
+set arrowfonth  = "-A0.12+e+p3p"
+set arrowfont1 = $arrowfontm
+set arrowfont2 = $arrowfontm
+set arrowfont3 = $arrowfontm
+set arrowfont4 = $arrowfontm
+set arrowfont5 = $arrowfontm
+set arrowxp = ""
+set arrowyp = ""
+set vertxp = ""
+set vertyp = ""     
+set blocks = none
+set border       = ""
+set bound_check = yes 
+set boundary    = no
+set c            = " "  
+set c1           = "0/0/0"  
+set c2           = "255/0/0"  
+set c3           = "0/255/0"  
+set c4           = "0/0/255"  
+set c5           = "200/0/255"  
+set cal = ""
+set chiscale     = yes 
+set chisqr       = ""
+set clw          = "1p,gray2"
+set coast        = ""
+set coast_res    = i
+set color        = no
+set comment      = ""
+set confidence  = ""
+set delete       = none
+set delsigma     = none
+set diff_sites   = ""
+set dc = "no"
+set east = yes
+set east2 = yes
+set east3 = yes
+set east4 = yes  
+set east5 = yes  
+set epilat = ""
+set epilon = ""
+set epilat2 = ""
+set epilon2 = ""
+set epiradius = ""
+set epiradius2 = ""
+set eqfocal_cmt        = ""
+set eqfocal_cmt_old    = ""
+set eqfocal_aki        = ""
+set eqlocation     =   ""
+set eqdepth = (0 999999)
+set eqmag = 0
+set eqslip   = ""
+set errchk = ""
+set errorbar     = yes
+set errorbar2     = yes
+set errorbar3     = yes
+set errorbar4     = yes
+set errorbar5     = yes
+set euler        = none
+set fault_patch = none 
+set figcap = no 
+set file         = none
+set file2        = none
+set file3        = none
+set file4        = none
+set file5        = none
+set fixed  = ""
+set getrel	 = yes 
+set gmtfile      = "none"
+set glist = ""
+set glist_opt = "num"
+set header       =  yes
+set inc = "none"
+set interval     = 95  
+set line          = 0
+set line2         = 0
+set line3         = 0
+set line4         = 0
+set line5         = 0
+set linear   = yes
+set linearxp = ""
+set linearyp = ""
+set linearscale = 20      
+set user_linearscale = 'N'
+set makePSname   = yes 
+set map          = ""  
+set maplist      = ""
+set maprange     = ""
+set mapscript    = ""
+set maxsigma     = 100
+set maxvect      = ''
+set min_area     = 500
+set name         = no 
+set namefile     = ""
+set nameshift    = '0.0i'
+set north = yes 
+set north2 = yes     
+set north3 = yes     
+set north4 = yes     
+set north5 = yes     
+# The sh_ calling option '-page' has value 'P' or 'L' but the GMT option is '-P' 
+set page         = -P
+set pageopt      =  P
+set plain 	 = no    
+set printer      = ""
+set projection   = ""
+set ps           = no 
+set psscale       = no      
+set psscale_width = '7.0i'
+set range        = ""
+set raster       = " "  
+set rot          = "no"
+set rot2         = "no"
+set rot3         = "no"
+set rot4         = "no"
+set rot5         = "no"
+set site         = none 
+set sitefont     = 07
+set topo         = "no"
+set uncscale     = 1
+set uncscale2    = 1
+set uncscale3    = 1
+set uncscale4    = 1
+set uncscale5    = 1
+set vel          = yes
+set velfile      = none 
+set vel_res      = "no"
+set vel_res2     = "no"
+set vel_res3     = "no"
+set vel_res4     = "no"
+set vel_res5     = "no"
+set vel_diff     = "no"
+set save_gmt     = ""
+set SCALE        = ""
+set SCALE2       = ""  
+set SCALE3       = ""  
+set SCALE4       = ""  
+set SCALE5       = ""  
+set scmin        = 0
+set scmax        = 360
+set scint        = 5
+set scradii      = ""
+set sclonpole    = ""
+set sclatpole    = "" 
+set sclinetype   = ""
+set symbol_size_c  = '0.1i'
+set symbol_size_s  = '0.1i'
+set symbol_size_t  = '0.12i'
+set symbol_size_d  = '0.12i'
+set symbol_size_r  = '0.12i'
+set symbol_color_c  = "0/0/255"
+set symbol_color_s  = "0/0/0"
+set symbol_color_t  = "255/0/0"
+set symbol_color_d  = "0/255/0"
+set symbol_color_r  = "200/200/0"
+# turn off verbose for calls to GMT routines
+#set V            = -V 
+set V            = " "   
+# VELSCALE set default 1mm plot = 1mm file (1/25.4inch = 1mm file)
+set VELSCALE      =  0.039370078 
+set VERTSCALE     =  0.039370078 
+set VELscale      = no 
+set VERTscale     = no 
+set vert = no     
+set wlon = no 
+set yshift       = '1.5i'
+# Topography stuff
+set root_map     = ~/gg/maps
+set palette    =  $root_map/color4.cpt
+#set palette    =  $root_map/color8_m.cpt
+set illu_file  =  "none"
+#set illu_file  =  $root_map/topo62i.grd
+set topo_file = ""
+# set topo_file  =  $root_map/topo62.grd
+#set topo_file  =  $root_map/etopo5.grd
+
+   
+##################### Decipher the command line ###################################### 
+
+while ($#argv > 0 ) 
+set input = ( $argv ) 
+switch($input[1])
+	case -f:
+	case -f1:
+	case -file:
+		set file        =  $input[2]
+		breaksw
+	case -f2:
+	case -file2:
+		set file2        =  $input[2]
+		breaksw
+	case -f3:
+	case -file3:
+		set file3        =  $input[2]
+		breaksw
+	case -f4:
+	case -file4:
+		set file4        =  $input[2]
+		breaksw
+	case -f5:
+		set file5        =  $input[2]
+		breaksw
+	case -s:
+	case -site:
+		set site        =  $input[2]
+		breaksw
+	case -arrow:
+		set arrow       = no
+		breaksw
+	case -arrow_value:
+		set arrow_value    =  $input[2]
+		breaksw
+	case -vert_value:
+		set vert_value    =  $input[2]
+		breaksw
+	case -linear:
+		set  linear      = no
+		breaksw
+	case -linearxp:
+		set  linearxp      = $input[2]
+		breaksw
+	case -linearyp:
+		set linearyp       = $input[2]
+		breaksw
+	case -linearscale:
+		set linearscale       = $input[2]
+                set user_linearscale = "Y"
+		breaksw
+	case -arrowxp:
+		set  arrowxp      = $input[2]
+		breaksw
+	case -arrowyp:
+		set arrowyp       = $input[2]
+		breaksw
+	case -arrow_symbol:
+		set arrow_symbol       = $input[2]
+		breaksw
+	case -vertxp:
+		set  vertxp      = $input[2]
+		breaksw
+	case -vertyp:
+		set vertyp       = $input[2]
+		breaksw
+	case -vert_symbol:
+		set vert_symbol       = $input[2]
+		breaksw
+	case -east:
+		set east       = no
+		set north      = yes
+		breaksw
+	case -north:
+		set north       = no
+		set east        = yes
+		breaksw
+	case -name:
+		set vel         =  no 
+		set name        =  yes
+#		set arrow       =  no
+		breaksw
+	case -nameshift:
+		set nameshift   =  $input[2] 
+		breaksw
+	case -sitefont:
+		set sitefont =  $input[2]
+		breaksw
+	case -save_gmt:
+		set save_gmt       = yes
+		breaksw
+	case -namefile:
+		set vel         =  no 
+		set name        =  yes
+                set namefile   =   ( $namefile $input[2] )
+                shift input; shift input
+                while ( $#input > 0 &&   `echo  $input[1]  | cut -c1` != "-" )
+                        set inarg =  $input[1]
+                        if ( `echo  $inarg | cut -c1` != "-" ) then
+                                set namefile    =   ( $namefile $inarg )
+				if ( $#input == 1 ) goto alldone
+                                shift input
+                        endif
+                end
+        if ( $#input == 0 ) goto alldone
+        breaksw
+	case -glist:
+		set glist        =  $input[2]
+                set glist_opt    =  $input[3]
+		breaksw		
+ 	case -h:
+	case -header:
+		set header      =  no
+		breaksw
+	case -figcap:
+		set figcap      =  yes
+		set header      =  no
+		echo  $figcap  $header    
+		breaksw
+	case -vs:
+                set VELscale     = yes 
+		set VELSCALE     =  `echo $input[2] | awk '{print $1 / 25.4}'`
+		breaksw
+	case -vts:
+                set VERTscale     = yes 
+		set VERTSCALE     =  `echo $input[2] | awk '{print $1 / 25.4}'`
+		breaksw
+	case -factor:
+        	        set VELscale     = yes 
+			set factor        =  $input[2]
+			set VELSCALE     =  `echo  $VELSCALE    $factor | awk '{print $1 * $2}'`
+			set arrow_value  =  `echo  $arrow_value $factor | awk '{print $1 / $2}'`
+		breaksw
+	case -bound_check:
+		set bound_check = no
+		breaksw
+	case -du*:
+	case -ps:
+		set makePSname  =  no
+		set psfile      =  $input[2].ps
+		set prefix = $input[2]
+		breaksw
+	case -epicentre:
+       set epilat            = $input[2]
+       set epilon            = $input[3]
+		breaksw
+	case -epicentre2:
+       set epilat2            = $input[2]
+       set epilon2            = $input[3]
+		breaksw
+	case -epiradius:
+		set epiradius         = $input[2]
+		breaksw
+	case -epiradius2:
+		set epiradius2         = $input[2]
+		breaksw
+	case -eqfocal_cmt:
+		set eqfocal_cmt         = $input[2]
+		breaksw
+        case -double_couple:
+		set dc     = "yes"
+		breaksw
+	case -eqfocal_cmt_old:
+		set eqfocal_cmt_old     = $input[2]
+		breaksw
+	case -eqfocal_aki:
+		set eqfocal_aki         = $input[2]
+		breaksw
+	case -eqlocation:
+		set eqlocation         = $input[2]
+		breaksw
+	case -eqdepth: 
+       set eqdepth =  (`echo $argv | cut -d- -f2`); shift eqdepth 
+       echo "eqdepth $eqdepth"
+		breaksw
+        case -eqmag:
+		set eqmag         = $input[2]
+		breaksw
+	case -eqslip:
+		set eqslip         = $input[2]
+		breaksw
+	case -palette:
+		set palette         = $input[2]
+		breaksw
+	case -topo_file:
+		set topo_file         = $input[2]
+		breaksw
+	case -illu_file:
+		set illu_file         = $input[2]
+		breaksw
+	case -fixed:
+		set fixed        =  ( $input[2]  $input[3] )
+		if    ( $#input == 0 ) goto alldone
+		breaksw
+	case -e:
+	case -errorbar:
+		set errorbar    =  no
+		breaksw
+	case -e2:
+	case -errorbar2:
+		set errorbar2    =  no
+		breaksw
+	case -e3:
+	case -errorbar3:
+		set errorbar3    =  no
+		breaksw
+	case -e4:
+	case -errorbar4:
+		set errorbar4    =  no
+		breaksw
+	case -topo:
+		set topo        =  yes
+       set yshift       = '1.0i' 
+		breaksw
+	case -psscale:
+		set psscale        =  yes
+       set psscale_width        =  $input[2]
+		breaksw
+	case -raster:
+		set raster       =  -3 
+#"psto24 -b 255 255 255 colors.ras8 colors.ras.24"
+		breaksw
+	case -u: 
+	case -uncscale:
+	case -u1: 
+	case -uncscale1:
+ 		set uncscale    =  $input[2]
+		breaksw
+	case -u2: 
+	case -uncscale2:
+ 		set uncscale2    =  $input[2]
+		breaksw
+	case -u3: 
+	case -uncscale3:
+ 		set uncscale3    =  $input[2]
+		breaksw
+	case -u4: 
+	case -uncscale4:
+ 		set uncscale4    =  $input[2]
+		breaksw
+	case -u5: 
+	case -uncscale5:
+ 		set uncscale5    =  $input[2]
+		breaksw
+	case -g: 
+	case -gmt:
+ 		set  gmtfile    =  $input[2]
+		breaksw  
+	case -map: 
+                set map   =   ( $map $input[2] )
+                shift input; shift input
+                while ( $#input > 0 &&   `echo  $input[1]  | cut -c1` != "-" )
+                        set inarg =  $input[1]
+                        if ( `echo  $inarg | cut -c1` != "-" ) then
+                                set map    =   ( $map $inarg )
+				if ( $#input == 1 ) goto alldone
+                                shift input
+                        endif
+                end
+                if ( $#input == 0 ) goto alldone
+                breaksw  
+	case -maplist:
+		set maplist        =  $input[2]
+		breaksw     
+	case -maprange:
+		set maprange        =  $input[2]
+		breaksw    
+	case -mapscript:
+		set mapscript      =  $input[2]
+		breaksw  
+   case -coast:
+       set coast       = yes
+       breaksw
+	case -i: 
+	case -interval:
+ 		set  interval   =  $input[2]
+		breaksw
+	case -line: 
+	case -line1: 
+ 		set line        =  $input[2]
+		breaksw
+	case -line2: 
+ 		set line2        =  $input[2]
+		breaksw
+	case -line3: 
+ 		set line3        =  $input[2]
+		breaksw
+	case -line4: 
+ 		set line4        =  $input[2]
+		breaksw
+	case -rot:
+	case -rot1:
+		set rot      =  yes
+		breaksw
+	case -rot2:
+		set rot2      =  yes
+		breaksw
+	case -rot3:
+		set rot3      =  yes
+		breaksw
+	case -rot4:
+		set rot4      =  yes
+		breaksw
+	case -vel_res:
+	case -vel_res1:
+		set vel_res    =  yes
+		breaksw
+	case -vel_res2:
+		set vel_res2    =  yes
+		breaksw
+	case -vel_res3:
+		set vel_res3    =  yes
+		breaksw
+	case -vel_res4:
+		set vel_res4    =  yes
+		breaksw
+	case -vel_diff:
+		set vel_diff    = $input[2] 
+		breaksw
+	case -plain: 
+ 		set  plain      =  yes
+		set sitefont = 00
+		breaksw
+	case -mega: 
+	case -J*: 
+ 		set  projection =  $input[1]
+		breaksw
+	case -R*: 
+ 		set  range      =  $input[1]
+		breaksw      
+        case -wlon:
+                set wlon = yes 
+                gmt gmtset FORMAT_GEO_MAP -D
+                breaksw 
+	case -B*: 
+ 		set border      =  ($border $input[1] " ")
+		breaksw
+	case -boundary: 
+ 		set  boundary   =  yes
+		breaksw   
+        case -clw
+                set clw         =  $input[2]
+                breaksw
+	case -min_area:
+		set min_area    =  $input[2]
+		breaksw
+	case -coast_res:
+		set coast_res   =  $input[2]
+		breaksw
+	case -page: 
+ 		set pageopt    =  $input[2]
+ 		set page       =  "-"$input[2] 
+       if ( $input[2] == "L" ) set page = " "
+#      landscape is GMT default
+		breaksw
+	case -color:
+ 		set color     =  yes
+		set arrowcolor1  = "0/0/0"
+		set arrowcolor2  = "255/0/0"
+		set arrowcolor3  = "0/255/0"
+		set arrowcolor4  = "0/0/255"
+		set c1  =  "0/0/0"
+		set c2  =  "255/0/0"
+		set c3  =  "0/255/0"
+		set c4  =  "0/0/255"
+		breaksw	
+	case -arrowcolor1:
+		set arrowcolor1  = $input[2]
+		set c1 = $input[2]
+		breaksw	
+	case -arrowcolor2:
+		set arrowcolor2  = $input[2]
+		set c2 = $input[2]
+		breaksw	
+	case -arrowcolor3:
+		set arrowcolor3  = $input[2]
+      		set c3 = $input[2]
+		breaksw	
+	case -arrowcolor4:
+		set arrowcolor4  = $input[2]
+		set c4 = $input[2]
+		breaksw	
+	case -openarrow1:
+		set openarrow1  = yes
+		breaksw	
+	case -openarrow2:
+		set openarrow2  = yes
+		breaksw	
+	case -openarrow3:
+		set openarrow3  = yes
+		breaksw	
+	case -openarrow4:
+		set openarrow4  = yes
+		breaksw	
+	case -arrowfont1:
+       if ( $input[2] == l ) set arrowfont1  = $arrowfontl
+       if ( $input[2] == m ) set arrowfont1  = $arrowfontm
+       if ( $input[2] == h ) set arrowfont1  = $arrowfonth
+		breaksw	                                             
+	case -arrowfont2:                                     
+       if ( $input[2] == l ) set arrowfont2  = $arrowfontl
+       if ( $input[2] == m ) set arrowfont2  = $arrowfontm
+       if ( $input[2] == h ) set arrowfont2  = $arrowfonth
+		breaksw	                                             
+	case -arrowfont3:                                     
+             if ( $input[2] == l ) set arrowfont3  = $arrowfontl
+             if ( $input[2] == m ) set arrowfont3  = $arrowfontm
+             if ( $input[2] == h ) set arrowfont3  = $arrowfonth
+	breaksw	                                             
+	case -arrowfont4:                                     
+              if ( $input[2] == l ) set arrowfont4  = $arrowfontl
+              if ( $input[2] == m ) set arrowfont4  = $arrowfontm
+              if ( $input[2] == h ) set arrowfont4  = $arrowfonth
+	breaksw	                                             
+	case -arrowfont5:                                     
+                if ( $input[2] == l ) set arrowfont5  = $arrowfontl
+                if ( $input[2] == m ) set arrowfont5  = $arrowfontm
+                if ( $input[2] == h ) set arrowfont5  = $arrowfonth
+	breaksw	
+	case -p:
+	case -printer:
+ 		set printer     =  "-P"$input[2]
+        breaksw	
+	case -euler:
+ 		set euler       =  $input[2]
+        breaksw	
+	case -D:
+	case -DELETE:
+                set delete = ` cat $input[2] | awk ' substr($0,1,1) == " " {print $0}' `
+        breaksw	
+	case -I:
+        case -INCLUDE:
+          set inc = $input[2]
+        breaksw	
+	case -d:
+	case -delete:
+                set delete = ''
+                set delete   =   ( $delete $input[2] )
+                shift input; shift input
+                while ( $#input > 0 &&   `echo  $input[1]  | cut -c1` != "-" )
+                        set inarg =  $input[1]
+                        if ( `echo  $inarg | cut -c1` != "-" ) then
+                                set delete    =   ( $delete $inarg )
+				if ( $#input == 1 ) goto alldone
+                                shift input
+                        endif
+                end
+                if ( $#input == 0 ) goto alldone
+        breaksw
+	case -delsigma:
+                set delsigma   =   ( $delsigma $input[2] )
+                shift input; shift input
+                while ( $#input > 0 &&   `echo  $input[1]  | cut -c1` != "-" )
+                        set inarg =  $input[1]
+                        if ( `echo  $inarg | cut -c1` != "-" ) then
+                                set delsigma    =   ( $delsigma $inarg )
+				if ( $#input == 1 ) goto alldone
+                                shift input
+                        endif
+                end
+                if ( $#input == 0 ) goto alldone
+        breaksw
+	case -maxs*:
+	case -maxsigma:
+ 		set maxsigma    =  $input[2]
+	breaksw	
+	case -maxv*:
+	case -maxvect:
+ 		set maxvect    =  $input[2]
+	breaksw	
+	case -chiscale: 
+	case -chi:
+ 		set chiscale    =  no
+	breaksw
+	case -scradii:
+                set scradii   =   ( $scradii $input[2] )
+                shift input; shift input
+                while ( $#input > 0 &&   `echo  $input[1]  | cut -c1` != "-" )
+                        set inarg =  $input[1]
+                        if ( `echo  $inarg | cut -c1` != "-" ) then
+                                set scradii    =   ( $scradii $inarg )
+				           if ( $#input == 1 ) goto alldone
+                                shift input
+                        endif
+                end
+                if ( $#input == 0 ) goto alldone
+        breaksw
+	case -scint: 
+		set scint = $input[2]
+	breaksw
+	case -scmin: 
+		set scmin = $input[2]
+	breaksw
+	case -scmax: 
+		set scmax = $input[2]
+	breaksw	
+	case -sclinetype:
+		set sclinetype   =  "\"$input[2]
+	breaksw  
+	case -vert:
+		set vert  =  yes
+	breaksw     
+	case -symbol_size: 
+		set symbol_size_c = $input[2]
+		set symbol_size_s = $input[2]
+		set symbol_size_t = $input[2]
+		set symbol_size_d = $input[2]
+		set symbol_size_r = $input[2]
+	breaksw
+	case -symbol_size_c: 
+		set symbol_size_c = $input[2]
+	breaksw
+	case -symbol_size_s: 
+		set symbol_size_s = $input[2]
+	breaksw
+	case -symbol_size_t: 
+		set symbol_size_t = $input[2]
+	breaksw
+	case -symbol_size_d: 
+		set symbol_size_d = $input[2]
+	breaksw
+	case -symbol_size_r: 
+		set symbol_size_r = $input[2]
+	breaksw
+	case -symbol_color_c: 
+		set symbol_color_c = $input[2]
+	breaksw
+	case -symbol_color_s: 
+		set symbol_color_s = $input[2]
+	breaksw
+	case -symbol_color_t: 
+		set symbol_color_t = $input[2]
+                echo $symbol_color_t
+	breaksw
+	case -symbol_color_d: 
+		set symbol_color_d = $input[2]
+	breaksw
+	case -symbol_color_r: 
+		set symbol_color_r = $input[2]
+	breaksw
+   case -c:
+   case -comment:
+      set comment   =   ( $comment $input[2] )
+      shift input; shift input
+      while ( $#input > 0 &&   `echo  $input[1]  | cut -c1` != "-" )
+          set inarg =  $input[1]
+          if ( `echo  $inarg | cut -c1` != "-" ) then
+           set comment    =   ( $comment $inarg )
+       	if ( $#input == 1 ) goto alldone
+                  shift input
+           endif
+       end
+    case -fault_patch: 
+   	set fault_patch = $input[2]
+    breaksw 
+    case -blocks:
+       set blocks = $input[2]
+    breaksw
+if ( $#input == 0 ) goto alldone
+breaksw
+shift input
+
+endsw 
+shift argv 
+end
+alldone:  
+
+##################### Initialize the internal parameters  ################################################## 
+   set tmpdelete = ( ` echo $delete |   tr  'a-z' 'A-Z'  `  ) 
+	set delete  = ( $tmpdelete )  
+
+   set tmpdelsigma = ( ` echo $delsigma |   tr  'a-z' 'A-Z'  `  ) 
+	set delsigma  = ( $tmpdelsigma ) 
+
+set DATE = ( `date` ) 
+set today = `/bin/date '+%m/%d/%y--%H:%M:%S'`
+
+	if ( $comment[1] == "" ) then
+		set comment = "."
+	endif 
+
+# No site given, plot absolute velocities
+   if( $site == none ) then
+ 		set getrel   =  no
+    endif
+
+	if ( $makePSname == no  ) then 
+		set psfile      =  $psfile
+		set prefix = $prefix
+	endif
+
+# get site name upper & lower case 
+
+        echo  $site >! tmp
+	set siteRELATIVE = `tr  'a-z' 'A-Z' < tmp `
+	set site       = `tr  'A-Z' 'a-z'  < tmp `
+
+	if ( $makePSname == yes ) then 
+	set prefix = $file"."$site
+	set psfile = $prefix.ps
+		if ( $getrel == no   ) set psfile = $file.ps
+		if ( $getrel == no   ) set prefix = $file
+	endif
+  
+echo Output plot file : $psfile 
+
+##################### Get the velocity values  ################################################## 
+
+#  Run getrel to extract relative velocities from the GLOBK prt file
+
+	if ( $getrel == yes ) then
+#		sed -e /"    0.00    0.00    0.00    0.00    0.00    0.00"/d  $file >!   tmp.$file
+#		\cp  $file   tmp.$file
+		echo " "
+		echo "Input velocity file : "$file 
+		echo " "
+		echo "Velocities relative to site :   " $site  
+       echo " "
+		echo "Maximum uncertainty to retain site = " $maxsigma 
+       echo " "
+       echo "Calling getrel to extract velocities .. "
+		getrel $siteRELATIVE"_GPS"     $file $maxsigma >! tmp.vel   
+       set errchk = `grep -i IOSTAT tmp.vel | head -n 1 | awk '{print "IOSTAT" }'`
+       if ( $errchk == "IOSTAT" ) then
+         echo " Error running getrel: see tmp.vel "  
+         exit
+       endif
+		\cp tmp.vel GETREL   
+		\cp 	 tmp.vel getrel.$prefix
+	else
+		\rm -f  tmp.vel
+		if ( -e  $file  ) then
+          grep '^ ' $file  >! tmp.vel   
+       else
+          echo " Error extracting velocities:  Input file not found " $file  
+#          exit
+       endif
+	endif
+
+# Extract velocities for this site from a second, third, and fourth solutions  (must be already 'getrel-ed') 
+	if ( $file2 != none && $rot2 == "no" ) 	then 
+		if (  $errorbar2 == yes  )  then 
+          if ( $vel_res2 != yes) then
+#			 more +$line2  $file2 |  awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma  >! tmp.vel2     
+#            if( $wlon == yes ) then
+#              more +$line2  $file2 |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 <= 180 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma >!  tmp.vel2
+#		       more +$line2  $file2 |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 > 180 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1-360,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma >>  tmp.vel2
+#            else
+		       more +$line2  $file2 |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0  {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma >!  tmp.vel2
+#            endif
+          else
+			 more +$line2  $file2 |  awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$5,$6,$7,$8,$9,$13}' ms=$maxsigma  >! tmp.vel2
+          endif
+		   if ( $east2 == no  && $north2 == yes ) then 
+				more +$line2  $file2 |  awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2, 0.00,$4,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel2
+ 	   	   else if ( $east2 == yes && $north2 == no  ) then
+				more +$line2  $file2 |  awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,0.00,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel2
+		   endif
+		else
+			more +$line2  $file2 | awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,"0.","0.","0.",$13}' ms=$maxsigma >! tmp.vel2
+		endif  
+## remove _gps from site names 
+	sed -e s/"_G"/" "/     tmp.vel2 | cut -c 1-110 | awk '{printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %s\n",$1,$2,$3,$4,$5,$6,$7,$8}'  >! vel2.tmp  
+   \mv  vel2.tmp  tmp.vel2
+	else 
+		if ( -e  $file2  )  \cp $file2 tmp.vel2
+	endif    
+
+	if ( $file3 != none && $rot3 == "no" ) 	then 
+		if (  $errorbar3 == yes  )  then 
+          if ( $vel_res3 != yes) then
+#			 more +$line3  $file3 |  awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2, $3,$4,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel3
+            if( $wlon == yes ) then
+              more +$line3  $file3 |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 <= 180 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma >!  tmp.vel3
+		       more +$line3  $file3 |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 > 180 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1-360,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma >>  tmp.vel3
+            else
+		       more +$line3  $file3 |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma >!  tmp.vel3
+            endif
+          else
+			 more +$line3  $file3 |  awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2, $5,$6,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel3
+          endif
+		   if ( $east3 == no  && $north3 == yes ) then 
+				more +$line3  $file3 |  awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,0.00,$4,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel3
+ 	   	   else if ( $east3 == yes && $north3 == no  ) then
+				more +$line3  $file3 |  awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,0.00,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel3
+		   endif
+		else
+			more +$line3  $file3 | awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,"0.","0.","0.",$13}' ms=$maxsigma >! tmp.vel3
+		endif 
+## remove _gps from site names 
+	sed -e s/"_G"/" "/     tmp.vel3 | cut -c 1-110 | awk '{printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %s\n",$1,$2,$3,$4,$5,$6,$7,$8}'  >! vel3.tmp  
+   \mv  vel3.tmp  tmp.vel3
+	else 
+		if ( -e  $file3  )  \cp $file3 tmp.vel3
+	endif 
+
+	if ( $file4 != none && $rot4 == "no" ) 	then 
+		if (  $errorbar4 == yes  )  then 
+          if ( $vel_res4 != yes) then
+#			 more +$line4  $file4 |  awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel4   
+            if( $wlon == yes ) then
+              more +$line4  $file4 |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 <= 180 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma >!  tmp.vel4
+		       more +$line4  $file4 |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 > 180 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1-360,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma >>  tmp.vel4
+            else
+		       more +$line4  $file4 |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0  {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma >!  tmp.vel4
+            endif
+          else
+			 more +$line4  $file4 |  awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$5,$6,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel4
+          endif
+		   if ( $east4 == no  && $north4 == yes ) then 
+				more +$line4  $file4 |  awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,0.00,$4,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel4
+ 	   	   else if ( $east4 == yes && $north4 == no  ) then
+				more +$line4  $file4 |  awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,0.00,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel4
+		   endif
+		else
+			more +$line4  $file4 | awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,"0.","0.","0.",$13}' ms=$maxsigma >! tmp.vel4
+		endif 
+## remove _gps from site names 
+	sed -e s/"_G"/" "/     tmp.vel4  | cut -c 1-110 | awk '{printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %s\n",$1,$2,$3,$4,$5,$6,$7,$8}' >! vel4.tmp  
+   \mv  vel4.tmp  tmp.vel4
+	else 
+		if ( -e  $file4  )  \cp $file4 tmp.vel4
+	endif  
+
+	if ( $file5 != none && $rot5 == "no" ) 	then 
+		if (  $errorbar5 == yes  )  then 
+          if ( $vel_res5 != yes) then
+#			 more +$line5  $file5 |  awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel5
+            if( $wlon == yes ) then
+              more +$line5  $file5 |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 <= 180 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma >!  tmp.vel5
+		       more +$line5  $file5 |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 > 180 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1-360,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma >>  tmp.vel5
+            else
+ 		       more +$line5  $file5 |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0  {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma >!  tmp.vel5
+            endif
+          else
+			 more +$line5  $file5 |  awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$5,$6,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel5
+          endif
+		   if ( $east5 == no  && $north5 == yes ) then 
+				more +$line5  $file5 |  awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,0.00,$4,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel5
+ 	   	   else if ( $east5 == yes && $north5 == no  ) then
+				more +$line5  $file5 |  awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,0.00,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel5
+		   endif
+		else
+			more +$line5  $file5 | awk ' $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,"0.","0.","0.",$13}' ms=$maxsigma >! tmp.vel5
+		endif 
+## remove _gps from site names 
+	sed -e s/"_G"/" "/     tmp.vel5  | cut -c 1-110 | awk '{printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %s\n",$1,$2,$3,$4,$5,$6,$7,$8}' >! vel5.tmp  
+   \mv  vel5.tmp  tmp.vel5
+	else 
+		if ( -e  $file5  )  \cp $file5 tmp.vel5
+   endif
+
+## remove _gps from site names 
+   if ( $gmtfile != "none" ) then
+	  sed -e s/"_G"/" "/  $gmtfile | cut -c 1-110 | awk '{printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %s\n",$1,$2,$3,$4,$5,$6,$7,$8}'  >! tmp.gmt
+   endif 
+
+# Get sqrt of chi**2
+if ( -e $file ) set chisqr = 	`cat $file | grep refit | grep input | cut -c52- `   
+# rwk: quotes added to $chisqr below to avoid badly formed number when multiple occurences (concatenated files
+if ( "$chisqr" == "" ) set chisqr =  0 
+/bin/rm  -f  tmp.sqrt_chisqr 
+bc -l  << END_chisqr >! tmp.sqrt_chisqr
+sqrt($chisqr)
+END_chisqr
+set sqrt_chisqr = `cat  tmp.sqrt_chisqr `
+
+# Set the uncertainty scale(s)
+	set SCALE       =   $uncscale  
+	set SCALE2      =   $uncscale2  
+	set SCALE3      =   $uncscale3   
+	set SCALE4      =   $uncscale4   
+	set SCALE5      =   $uncscale5   
+echo " "
+if ( $uncscale == chi ) then 
+	echo  $chisqr $sqrt_chisqr $today | awk '{printf"Chi-square/dof : %6.2f    Uncertainties scaled by : %6.2f       %18s \n",$1,$2,$3}'
+	echo  $chisqr $sqrt_chisqr $today | awk '{printf"Chi=square/dof : %6.2f    Uncertainties scaled by : %6.2f       %18s \n",$1,$2,$3}' >!  vel.$site
+	set info = (  `echo  $chisqr $sqrt_chisqr $site $file |  awk '{printf" %6.2f %6.2f    %6s %30s",$1,$2,$3,$4}' ` )
+		set SCALE       =   $sqrt_chisqr  
+		set SCALE2      =   $uncscale2  
+		set SCALE3      =   $uncscale3  
+		set SCALE4      =   $uncscale4  
+		set SCALE5      =   $uncscale5  
+else   
+	echo  $chisqr $uncscale  $today   | awk '{printf"Chi-square/dof : %6.2f    Uncertainties scaled by : %6.2f       %18s \n",$1,$2,$3}'
+	echo  $chisqr $sqrt_chisqr $today | awk '{printf"Chi-square/dof : %6.2f    Uncertainties scaled by : %6.2f       %18s \n",$1,$2,$3}' >!  vel.$site
+	set info = (  `echo  $chisqr $uncscale    $siteRELATIVE $file |  awk '{printf" %6.2f %6.2f    %6s %30s",$1,$2,$3,$4}' ` )
+		set SCALE       =   $uncscale  
+		set SCALE2      =   $uncscale2  
+		set SCALE3      =   $uncscale3 
+		set SCALE4      =   $uncscale4  
+		set SCALE5      =   $uncscale5  
+endif
+
+#since we added chissqr etc info increase line count 
+#  @ line = $line + 1    
+@ line = `echo "ibase=10; ${line} + 1" | bc`
+
+cat tmp.vel >> vel.$site
+
+# Remove specified sites from the velocity plot
+echo  $delete | awk '{for (i=1;i<=NF;i++) printf " %s \n",$i}' >! tmp.delete 
+
+if ( $delete[1] == NONE ) then
+  echo "No sites removed from plot"
+else
+  echo "Sites removed from plot  : "  $delete
+endif
+
+if ( $delete[1] != NONE ) then 
+echo "sh_delete -f  vel.$site -sf  tmp.delete -d  -copy -silent"
+	sh_delete -f  vel.$site -sf  tmp.delete -d  -copy -silent
+endif
+if (   $file2 != none &&  $delete[1] != NONE ) then 
+	sh_delete -f  tmp.vel2 -sf  tmp.delete -d  -copy -silent 
+endif
+if (   $file3 != none &&  $delete[1] != NONE ) then 
+	sh_delete -f  tmp.vel3 -sf  tmp.delete -d  -copy -silent 
+endif
+if (   $file4 != none &&  $delete[1] != NONE ) then 
+	sh_delete -f  tmp.vel4 -sf  tmp.delete -d  -copy -silent 
+endif
+if (   $file5 != none &&  $delete[1] != NONE ) then 
+	sh_delete -f  tmp.vel5 -sf  tmp.delete -d  -copy -silent 
+endif
+if (   $gmtfile != none &&  $delete[1] != NONE ) then 
+	sh_delete -f  tmp.gmt -sf  tmp.delete -d  -copy -silent 
+endif
+
+# Remove error ellipses for specified sites
+if (   $rot == "no" ) then 
+  if (  $delsigma[1]  != NONE ) then 
+    shift  delsigma 
+    echo " "   
+    echo "Error ellipses omitted for sites: "  $delsigma 
+	 foreach i ( `echo $delsigma ` )
+  		set check = ` cat vel.$site  | grep $i`
+		if ( $#check > 0 ) then 
+  			cat vel.$site | grep $i | awk '{printf" %8.3f %8.3f  %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %6.3f   %7.2f %7.2f %7.2f %-10s \n",$1,$2,$3,$4,$5,$6,0.,0.,0.,$10,$11,$12,$13}' >! tmp.delsigma
+  			sed -e /$i/d  vel.$site >! tmp.vel
+  			cat tmp.delsigma >> tmp.vel
+  			\mv  tmp.vel vel.$site 
+		endif
+	 end
+  endif 
+endif
+
+# Obtain a clean  psvelo input file 
+#  Long.     Lat.         E & N Rate       E & N Adj.      E & N +-    RHO       H Rate  H adj.   +- SITE
+#  288.507   42.613    -4.48   23.26   -4.48   23.26    5.34    3.86  0.221    -33.46  -33.46    6.50 WSFF
+#    1         2         3      4         5     6        7         8    9       10      11        12   13   
+
+if ( $rot == "no" ) 	then 
+  if (  $errorbar == "yes" )  then  
+    if ( $vel_res != yes ) then     
+      if( $wlon == yes ) then    
+	     more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 <= 180 {printf"%10.4f%10.4f%12.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel
+		 more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 > 180 {printf"%10.4f%10.4f%11.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1-360,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma >> tmp.vel
+      else 
+   	 more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0  {printf"%10.4f%10.4f%11.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel
+      endif
+      if ( $vert == "yes" ) then 
+        if ( -e tmp.vertp ) \rm tmp.vertp; touch tmp.vertp
+        if ( -e tmp.vertn ) \rm tmp.vertn; touch tmp.vertn
+        if( $wlon == yes ) then
+	        more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 <= 180 && $10 >= 0 {printf"%10.4f%10.4f%12.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,0,$10,0.1,$12,0.1,$13}' ms=$maxsigma >> tmp.vertp
+	        more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 > 180  && $10 >= 0 {printf"%10.4f%10.4f%11.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1-360,$2,0,$10,0.1,$12,0.1,$13}' ms=$maxsigma >> tmp.vertp
+	     else
+	        more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0  && $10 >= 0 {printf"%10.4f%10.4f%11.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,0,$10,0.1,$12,0.1,$13}' ms=$maxsigma >> tmp.vertp
+        endif  
+        if( $wlon == yes ) then
+      	   more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 <= 180 && $10 < 0 {printf"%10.4f%10.4f%12.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,0,$10,0.1,$12,0.1,$13}' ms=$maxsigma >> tmp.vertn
+	       more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 > 180  && $10 < 0 {printf"%10.4f%10.4f%11.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1-360,$2,0,$10,0.1,$12,0.1,$13}' ms=$maxsigma >> tmp.vertn
+        else
+	       more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $10 < 0 {printf"%10.4f%10.4f%11.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,0,$10,0.1,$12,0.1,$13}' ms=$maxsigma >> tmp.vertn
+        endif
+      endif
+    else    
+      if( $wlon == yes ) then
+	     more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 <= 180 {printf"%10.4f%10.4f%12.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$5,$6,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel
+		 more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 > 180  {printf"%10.4f%10.4f%12.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1-360,$2,$5,$6,$7,$8,$9,$13}' ms=$maxsigma >> tmp.vel
+      else                                                                                       
+		 more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0  {printf"%10.4f%10.4f%12.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$5,$6,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel
+      endif
+    endif
+	 if ( $east == no  && $north == yes ) then  
+      if( $wlon == yes ) then
+	     more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 <= 180 {printf"%10.4f%10.4f%12.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,0.00,$4,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel
+	     more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 > 180  {printf"%10.4f%10.4f%12.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1-360,$2,0.00,$4,$7,$8,$9,$13}' ms=$maxsigma >> tmp.vel
+      else
+	     more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%12.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,0.00,$4,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel
+      endif
+	 else if ( $east == yes && $north == no  ) then   
+      if( $wlon == yes ) then
+	     more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 <= 180 {printf"%10.4f%10.4f%12.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,0.00,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel
+	     more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 > 180  {printf"%10.4f%10.4f%12.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1-360,$2,$3,0.00,$7,$8,$9,$13}' ms=$maxsigma >> tmp.vel
+      else
+ 	     more +$line  vel.$site |  awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 {printf"%10.4f%10.4f%12.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,0.00,$7,$8,$9,$13}' ms=$maxsigma >! tmp.vel
+      endif   
+	 endif
+  else     
+    if( $wlon == yes ) then
+      more +$line  vel.$site | awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 <= 180 {printf"%10.4f%10.4f%12.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,"0.","0.","0.",$13}' ms=$maxsigma >! tmp.vel
+      more +$line  vel.$site | awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0 && $1 > 180  {printf"%10.4f%10.4f%12.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1-360,$2,$3,$4,"0.","0.","0.",$13}' ms=$maxsigma >> tmp.vel
+    else
+      more +$line  vel.$site | awk 'NF == 13 && $7 < ms*1.0 && $8 < ms*1.0  {printf"%10.4f%10.4f%12.4f%12.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,"0.","0.","0.",$13}' ms=$maxsigma >! tmp.vel
+    endif
+  endif 
+else
+	echo "rotated errors, errorbars are plotted from error ellipse information:" 
+   if ( -e  vel.$file  )  \cp  vel.$site tmp.vel
+endif 
+
+## write in the rest of getrel information   
+sed -e s/"_G"/" "/    tmp.vel | cut -c 1-110 | awk '{printf"%10.4f%10.4f%12.4f%12.4f%10.4f%10.4f%10.4f   %s\n",$1,$2,$3,$4,$5,$6,$7,$8}' >! vel.tmp
+\mv vel.tmp tmp.vel 
+
+if ( $inc != "none" ) then
+   echo "Including only sites: "
+   cat $inc
+endif
+if ( $inc != "none" ) then
+   \rm tmp.file >&! /dev/null
+   touch tmp.file
+   foreach i ( `cat $inc` )
+	  grep -i $i tmp.vel | awk 'tolower(substr($8,1,4)) == tolower(i) {print $0}' i=$i  >>  tmp.file
+   end 
+   \mv  tmp.file  tmp.vel  
+endif    
+if ( $file2 != none  &&  $inc != "none" ) then
+   \rm tmp.file >&! /dev/null
+   touch tmp.file
+   foreach i ( `cat $inc` )
+	  grep -i $i tmp.vel2 | awk 'tolower(substr($8,1,4)) == tolower(i) {print $0}' i=$i  >>  tmp.file
+   end                        
+   \mv  tmp.file  tmp.vel2
+endif    
+if ( $file3 != none  &&  $inc != "none" ) then
+   \rm tmp.file >&! /dev/null
+   touch tmp.file
+   foreach i ( `cat $inc` )
+	  grep -i $i tmp.vel3 | awk 'tolower(substr($8,1,4)) == tolower(i) {print $0}' i=$i  >>  tmp.file
+   end 
+   \mv  tmp.file  tmp.vel3
+endif    
+if ( $file4 != none  &&  $inc != "none" ) then
+   \rm tmp.file >&! /dev/null
+   touch tmp.file
+   foreach i ( `cat $inc` )
+	  grep -i $i tmp.vel4 | awk 'tolower(substr($8,1,4)) == tolower(i) {print $0}' i=$i  >>  tmp.file
+   end 
+   \mv  tmp.file  tmp.vel4
+endif    
+if ( $file5 != none  &&  $inc != "none" ) then
+   \rm tmp.file >&! /dev/null
+   touch tmp.file
+   foreach i ( `cat $inc` )
+	  grep -i $i tmp.vel5 | awk 'tolower(substr($8,1,4)) == tolower(i) {print $0}' i=$i  >>  tmp.file
+   end 
+   \mv  tmp.file  tmp.vel5
+endif    
+
+if ( $vel_diff != "no" ) then
+# delete any existing diff files
+  if ( -e tmp.ref.diff ) \rm tmp.ref.diff
+  if ( $diff_sites == "" ) then 
+    cat tmp.vel | awk '{print $8}' >! tmp.ref
+    set diff_sites = tmp.ref
+  endif
+  foreach j ( ` ls -1 tmp.vel[2-4] ` ) 
+# delete any existing diff files
+    if ( -e $j.diff ) \rm $j.diff
+    set k = 0  
+    echo "Calculating velocity differences: Hang on.... "
+    foreach i ( ` cat $diff_sites ` )
+#      echo "Checking for site: $i in file: $j "
+      set tempk = "" 
+      set tempr = "" 
+      set nargs = 0
+      if ( $k == 0 ) then
+        set tempr = `grep $i tmp.vel | awk ' substr($0,1,1) == " " {print $0}' `
+        set tempk = `grep $i $j | awk ' substr($0,1,1) == " " {print $0}' `
+        set nargs = ` echo $tempk | awk '{print NF}'` 
+        if ( $nargs == 0 || $nargs == "" ) goto skip
+#        echo "Found site: $i in file: $j"
+        if ( $vel_diff != "ref" ) then
+          echo $tempr $tempr | awk '{printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f\n",$1,$2,$3-$11,$4-$12,$13,$14,$15}' >! tmp.ref.diff 
+          echo $tempr $tempk | awk '{printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f  %6s\n",$1,$2,$3-$11,$4-$12,$13,$14,$15,$8}' >! $j.diff
+        else 
+          touch tmp.ref.diff
+#         echo $tempr $tempr | awk '{printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f\n",$1,$2,$3-$11,$4-$12,0,0,0.001}' >! tmp.ref.diff 
+          echo $tempr $tempk | awk '{printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f  %6s\n",$1,$2,$3-$11,$4-$12,$5,$6,$7,$8}' >! $j.diff 
+        endif
+        @ k = $k + 1
+        skip:
+      else
+        set tempr = `grep $i tmp.vel | awk ' substr($0,1,1) == " " {print $0}' `
+        set tempk = `grep $i $j | awk ' substr($0,1,1) == " " {print $0}' `
+        set nargs = ` echo $tempk | awk '{print NF}'` 
+        if ( $nargs == 0 || $nargs == "" ) goto skip1
+#        echo "Found site: $i in file: $j"
+        if ( $vel_diff != "ref" ) then
+          echo $tempr $tempr | awk '{printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f\n",$1,$2,$3-$11,$4-$12,$13,$14,$15}' >> tmp.ref.diff 
+          echo $tempr $tempk | awk '{printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f  %6s\n",$1,$2,$3-$11,$4-$12,$13,$14,$15,$8}' >> $j.diff 
+        else 
+#          echo $tempr $tempr | awk '{printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f\n",$1,$2,$3-$11,$4-$12,0,0,0.001}' >> tmp.ref.diff 
+          echo $tempr $tempk | awk '{printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f  %6s\n",$1,$2,$3-$11,$4-$12,$5,$6,$7,$8}' >> $j.diff 
+        endif
+        @ k = $k + 1
+        skip1:
+      endif
+    end
+  \cp $j.diff $j
+  end
+\cp  tmp.ref.diff tmp.vel 
+
+foreach j ( ` ls -1 tmp.vel[2-4] ` )    
+  echo "#Residuals" >! $j.vel
+  echo "# " >> $j.vel
+  echo "# " >> $j.vel
+  echo '  Long.     Lat.        E & N Rate      E & N Adj.      E & N +-   RHO        H Rate   H adj.    +-  SITE'  >> $j.vel
+  echo '  (deg)    (deg)          (mm/yr)       (mm/yr)       (mm/yr)                 (mm/yr)' >> $j.vel
+  if ( $maxvect == '' ) then
+    cat $j | awk ' $1 <  0.0 {printf"  %7.3f  %7.3f %8.2f%8.2f%8.2f%8.2f%8.2f%8.2f%7.3f  %8.2f%8.2f%8.2f %-8s\n",$1+360.0,$2,$3,$4,0.00,0.00,$5,$6,$7,0.00,0.00,0.00,$8}' >> $j.vel
+    cat $j | awk ' $1 >= 0.0 {printf"  %7.3f  %7.3f %8.2f%8.2f%8.2f%8.2f%8.2f%8.2f%7.3f  %8.2f%8.2f%8.2f %-8s\n",$1,$2,$3,$4,0.00,0.00,$5,$6,$7,0.00,0.00,0.00,$8}' >> $j.vel
+  else
+    echo "maxvect = ${maxvect} mm"
+    cat $j | awk '{if ($1 <  0.0 && sqrt($3^2 + $4^2) <= mv*1.0 ) {printf"  %7.3f  %7.3f %8.2f%8.2f%8.2f%8.2f%8.2f%8.2f%7.3f  %8.2f%8.2f%8.2f %-8s\n",$1+360.0,$2,$3,$4,0.00,0.00,$5,$6,$7,0.00,0.00,0.00,$8}}' mv=$maxvect >> $j.vel
+    cat $j | awk '{if ($1 >= 0.0 && sqrt($3^2 + $4^2) <= mv*1.0 ) {printf"   %7.3f  %7.3f %8.2f%8.2f%8.2f%8.2f%8.2f%8.2f%7.3f  %8.2f%8.2f%8.2f %-8s\n",$1,$2,$3,$4,0.00,0.00,$5,$6,$7,0.00,0.00,0.00,$8}}' mv=$maxvect >> $j.vel
+    cat $j | awk '{if ($1 <  0.0 && sqrt($3^2 + $4^2) <= mv*1.0 ) {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1+360.0,$2,$3,$4,$5,$6,$7,$8}}' mv=$maxvect >! $j.max
+    cat $j | awk '{if ($1 >= 0.0 && sqrt($3^2 + $4^2) <= mv*1.0 ) {printf"%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f%10.4f   %6s\n",$1,$2,$3,$4,$5,$6,$7,$8}}' mv=$maxvect >> $j.max
+    \mv $j.max $j
+  endif
+end
+endif
+
+######################### Plotting #################################################
+
+# scaling/title  information 
+set confidence  = `echo $interval | awk '{print $1 / 100}'`
+#set text0 = (`echo $info | awk '{printf"%6s %4s ",substr($4,14,4), substr($4,18,3) }'`)
+set text0 = ( "  " $comment  )
+set text1 = `echo  $interval | awk '{printf" Confidence interval : %3.0f ",$1}'`
+set text2 = `echo   $info    | awk '{printf" ChiSquare / dof    : %10.2f",$1}'`
+set text3 = `echo   $info    | awk '{printf" Formal Errors Scaled by  %10.2f",$2}'`
+set text4 = `echo   $info    | awk '{printf" Relative to    %6s",$3 }'`
+set text5 = `echo   $info    | awk '{printf" Input file : %30s ",$4 }'`
+
+plotsites:
+
+# scaling/title  information
+# This does not work in SI units - KURT
+#        gmt gmtdefaults -Du                  >! gmt.conf
+#        echo "FONT_LABEL = 10p"    >> gmt.conf
+#        echo "FONT_ANNOT_PRIMARY = 10p"    >> gmt.conf
+#        echo "FONT_TITLE = 14p"    >> gmt.conf
+#        echo "MAP_FRAME_WIDTH = 0.03"       >> gmt.conf
+
+set OPTION_text  = " -h0 -R0/8.5/0/11 -Jx1/1" 
+if ( $pageopt  == "P" ) set OPTION_text  = " -h0 -R0/11/0/8.5 -Jx1/1" 
+set OVERLAY     =   ( " -O -K "  $page ) 
+# Set the map size, range, border, and orientation for the plots
+
+if ( $maprange != "" ) then    
+
+	set OPTION = ( `sh_map_elements $maprange`)  
+   set range      = $OPTION[1] 
+   set projection = $OPTION[2] 
+   set border     = $OPTION[3]  
+
+# See if auto scaling is required?
+else if ( $range == "" || $border[1] == "" || $projection == "" ) then   
+
+   if ( $range == "" ) then
+     if ( -e  $file ) cat tmp.vel >! tmp.all  
+     if ( -e  $file2 ) then
+       if ( -e tmp.all ) then
+         cat tmp.vel2 >> tmp.all
+       else
+         cat tmp.vel2 >! tmp.all
+       endif 
+     endif
+     if ( -e  $file3 ) then
+       if ( -e tmp.all ) then
+         cat tmp.vel3 >> tmp.all
+       else
+         cat tmp.vel3 >! tmp.all
+       endif 
+     endif
+     if ( -e  $file4 ) then
+       if ( -e tmp.all ) then
+         cat tmp.vel4 >> tmp.all
+       else
+         cat tmp.vel4 >! tmp.all
+       endif 
+     endif
+     if ( -e  $file5 ) then
+       if ( -e tmp.all ) then
+         cat tmp.vel5 >> tmp.all
+       else
+         cat tmp.vel5 >! tmp.all
+       endif 
+     endif
+     if ( -e  tmp.gmt ) then
+       if ( -e tmp.all ) then
+         cat tmp.gmt >> tmp.all
+       else
+         cat tmp.gmt >! tmp.all
+       endif 
+     endif
+     cat tmp.all | awk '{print $1,$2}' | gmt gmtinfo -I0.1 >! tmp      
+#     set r = `cat tmp | cut -c3- | awk '{FS="/"} {print ($1-0.2), ($2+0.2), ($3-0.2), ($4+0.5)}'` 
+#     set r = `cat tmp | cut -c3- | awk -F/ '{print ($1-0.2), ($2+0.2), ($3-0.2), ($4+0.5)}'` 
+     set r = `cat tmp | cut -c3- | awk -F/ '{print $1, $2, $3, $4}'` 
+     set range = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4]  
+   else
+#     set r = `echo $range | cut -c3- | awk '{FS="/"} {print $1, $2, $3, $4}'`   
+     set r = `echo $range | cut -c3- | awk -F/ '{print $1, $2, $3, $4}'`   
+   endif  
+
+   if ( $border[1] == "" ) then 
+     set yspread = `echo  $r[3]  $r[4] | awk '{ printf "%6d",  $2 - $1}'`
+     if ( $yspread <= 3 )   set yanot  = 0.5
+     if ( $yspread > 3 )   set yanot  = 1
+     if ( $yspread > 10 )  set yanot  = 2
+     if ( $yspread > 20 )  set yanot  = 5
+     if ( $yspread > 40 )  set yanot  = 10
+     if ( $yspread > 90 )  set yanot  = 10
+     if ( $yspread > 120)  set yanot  = 15
+     if ( $yspread > 160)  set yanot  = 20
+     if ( $yspread > 170)  set yanot  = 25
+     set  yframe = ` echo $yanot | awk '{print $1 / 2 }'`
+  
+     set xspread = `echo  $r[1]  $r[2] | awk '{ printf "%6d",  $2 - $1}'`
+     if ( $xspread <= 3 )   set xanot  = 0.5
+     if ( $xspread > 3 )   set xanot  = 1
+     if ( $xspread > 10 )  set xanot  = 2
+     if ( $xspread > 20 )  set xanot  = 5
+     if ( $xspread > 40 )  set xanot  = 10
+     if ( $xspread > 90 )  set xanot  = 10
+     if ( $xspread > 180)  set xanot  = 20
+     if ( $xspread > 270)  set xanot  = 30
+     if ( $xspread > 350)  set xanot  = 30
+     set  xframe = ` echo $yanot | awk '{print $1 / 2 }'`  
+     set border = "-Bxa${xanot}f$xframe -Bya${yanot}f$yframe -BWeSn" 
+   endif
+
+   if ( $projection == "" ) then  
+     if ( $pageopt == P ) then
+       set projection = ` echo $r | awk '{print "-Jm"6.5/($2-$1) }'`
+     else
+       set projection = ` echo $r | awk '{print "-Jm"9.0/($2-$1) }'`   
+     endif  
+   endif
+
+   set OPTION    =   ( $range $projection $border ) 
+
+else  
+
+   set OPTION       =   ( $range $projection $border ) 
+
+endif
+
+if ($maprange == test)  set OPTION       =   ( -R26/44/35/44 -Jm.4 -Bxa2f1 -Bya2f1 -BWSen) 
+                    set OPTION_text  = ("  -h0 -R0/8.5/0/11 -Jx1/1" )  
+
+if ( $pageopt == "P" ) then
+  echo " "
+  echo "GMT projection (size range border) :" $OPTION
+else
+#  set OPTION = ( `echo $OPTION | awk '{print $1,"-Jm"(1.0*substr($2,4,100)),$3}' ` ) 
+  echo " "
+  echo "** Landscape mode ** GMT projection (size range border) :" $OPTION
+endif  
+
+if ( -e  $psfile ) /bin/rm $psfile
+
+### Plot required maps ###
+#Option 1:  A complete map script has been input
+
+if ( $mapscript != "" ) then  
+#  The sh_ calling option '-page' has value 'P' or 'L' but the GMT option is '-P' 
+#   if ( $page == "-P" ) then 
+#     set pageopt = "P"
+#   else
+#     set pageopt = "L"
+#   endif        
+   echo "pageopt" $pageopt
+	$mapscript -c -ps $psfile -o $OPTION  -page $pageopt  -color $color      
+
+#Option 2:  A single map has been input
+
+else if ( $map != "" ) then
+   if ( $coast == yes ) then 
+      if ( $boundary == yes ) then 
+	    	gmt pscoast $OPTION     -W${clw} -N1  $V  $page -K  -Y$yshift -D$coast_res -A$min_area >! $psfile
+       else 
+    		gmt pscoast $OPTION     -W${clw}      $V  $page -K  -Y$yshift -D$coast_res -A$min_area >! $psfile
+      endif 
+      gmt psxy $root_map/$map $OPTION   -W3p          $V $page -K -O >> $psfile 
+   else
+      gmt psxy $root_map/$map $OPTION   -W3p          $V $page -K >> $psfile
+   endif
+
+#Option 3:  A list of maps has been input  
+
+else if ( $maplist != "" ) then 
+   if ( $coast == yes ) then 
+      if ( $boundary == yes ) then 
+	    	gmt pscoast $OPTION   -W${clw}  -N1   $V  $page -K  -Y$yshift -D$coast_res -A$min_area >! $psfile
+       else 
+    		gmt pscoast $OPTION   -W${clw}        $V  $page -K  -Y$yshift -D$coast_res -A$min_area >! $psfile
+      endif 
+   endif
+   foreach i ( `cat $maplist ` )
+      gmt psxy $i $OPTION -W3p $V $page -K -O >> $psfile
+   end
+
+#Option 4:  Use GMT maps plus enhancements
+
+else 
+  if ( $topo != yes ) then 
+       if ( $boundary == yes ) then 
+          if ( $color == "yes" ) then
+	    	   gmt pscoast $OPTION    -W${clw}  -N1    $V -S190/240/255  $page -K  -Y$yshift -D$coast_res -A$min_area >! $psfile  
+          else
+	  	   gmt pscoast $OPTION    -W${clw}  -N1    $V  $page -K  -Y$yshift -D$coast_res -A$min_area >! $psfile
+          endif
+       else 
+          if ( $color == "yes" ) then
+                   gmt pscoast $OPTION    -W${clw}        $V -S190/240/255   $page -K  -Y$yshift -D$coast_res -A$min_area >! $psfile
+          else
+                   gmt pscoast $OPTION    -W${clw}        $V  $page -K  -Y$yshift -D$coast_res -A$min_area >! $psfile
+          endif
+       endif 
+  else
+    echo " "                    
+    #set minmaxll = `echo "$range" | awk -v FS='/' '{if (substr($1,3) < 0) lon1 = substr($1,4)"W"; else lon1 = substr($1,3)"E"; if ($2 < 0) lon2 = substr($2,2)"W"; else lon2 = $2"E"; if ($3 < 0) lat1 = substr($3,2)"S"; else lat1 = $3"N"; if ($4 < 0) lat2 = substr($4,2)"S"; else lat2 = $4"N"}; END {print lon1,lon2,lat1,lat2}'`
+    set minmaxll = `echo "$range" | awk -v FS='/' '{printf "%03dW %03dE %03dW %03dE ",sqrt(((substr($1,3)-360)%360)^2),sqrt(((substr($1,3)+360)%360)^2),sqrt((($2-360)%360)^2),sqrt((($2+360)%360)^2); if ($3 < 0) printf "%02dS ",sqrt($3^2); else printf "%02dN ",$3; if ($4 < 0) printf "%02dS",sqrt($4^2); else printf "%02dN",$4}'`  # MOD: Changed longitude range to 180W-180E for $topo_file name (MAF 2020-08-18, MIT)
+    if ( "$topo_file" == '' ) then
+      set topo_file = "ETOPO5_$minmaxll[1]-$minmaxll[2]_$minmaxll[3]-$minmaxll[4].grd"
+      if ( ! -e "$topo_file" && ! -e "$HOME/gg/maps/`basename $topo_file`" ) then
+        sh_dem e5 `echo "$range" | awk -v FS='/' '{print substr($1,3),$2,$3,$4}'`
+      endif
+    else if ( "$topo_file" == 'e5' || "$topo_file" == 'e2' || "$topo_file" == 'e1b' || "$topo_file" == 'e1i' || "$topo_file" == 's30' || "$topo_file" == 's30+' || "$topo_file" == 's3' || "$topo_file" == 's1' ) then
+      switch ($topo_file)
+        case e5:
+          set dem = 'ETOPO5'
+          breaksw
+        case e2:
+          set dem = 'ETOPO2v2'
+          breaksw
+        case e1[bi]:
+          set dem = 'ETOPO1'
+          breaksw
+        case s30:
+          set dem = 'SRTM30'
+          breaksw
+        case s30+:
+          set dem = 'SRTM30_PLUS'
+          breaksw
+        case s3:
+          set dem = 'SRTM3v2.1'
+          breaksw
+        case s1:
+          set dem = 'SRTM1v2.1'
+          breaksw
+      endsw
+      if ( -e "${dem}_$minmaxll[1]-$minmaxll[3]_$minmaxll[5]-$minmaxll[6].grd" ) then
+        set topo_file = "${dem}_$minmaxll[1]-$minmaxll[3]_$minmaxll[5]-$minmaxll[6].grd"
+      else if ( -e "${dem}_$minmaxll[2]-$minmaxll[4]_$minmaxll[5]-$minmaxll[6].grd" ) then
+        set topo_file = "${dem}_$minmaxll[2]-$minmaxll[4]_$minmaxll[5]-$minmaxll[6].grd"
+      else if ( -e "$HOME/gg/maps/${dem}_$minmaxll[1]-$minmaxll[3]_$minmaxll[5]-$minmaxll[6].grd" ) then
+        set topo_file = "$HOME/gg/maps/${dem}_$minmaxll[1]-$minmaxll[3]_$minmaxll[5]-$minmaxll[6].grd"
+      else if ( -e "$HOME/gg/maps/${dem}_$minmaxll[2]-$minmaxll[4]_$minmaxll[5]-$minmaxll[6].grd" ) then
+        set topo_file = "$HOME/gg/maps/${dem}_$minmaxll[2]-$minmaxll[4]_$minmaxll[5]-$minmaxll[6].grd"
+      else
+        sh_dem $topo_file `echo "$range" | awk -v FS='/' '{print substr($1,3),$2,$3,$4}'`
+      endif
+    endif
+    if ( "$illu_file" == 'topo_file' ) then
+      set illu_file = "${topo_file:r}.i.grd"
+      if ( ! -e "$illu_file" && ! -e "$HOME/gg/maps/`basename $illu_file`" ) then
+        gmt grdgradient $topo_file -A235/50 -Ne0.4 -G$illu_file
+      endif
+    endif
+    if ( ! -e "$topo_file" && -e "$HOME/gg/maps/`basename $topo_file`" ) then
+      set topo_file = "$HOME/gg/maps/`basename $topo_file`"
+    endif
+    if ( ! -e "$illu_file" && -e "$HOME/gg/maps/`basename $illu_file`" ) then
+      set illu_file = "$HOME/gg/maps/`basename $illu_file`"
+    endif
+    echo "Plotting topography   topo_file: " $topo_file "  illu_file: " $illu_file  " palette: " $palette
+    if ( $psscale == yes ) then
+      set paletteXY  = (  -D4.0i/0.125i/$psscale_width/0.125ih -L   -B+t'ELEVATION'  ) 
+      gmt psscale   -C$palette  $paletteXY             $V  $page  -K                 $raster >! $psfile
+      if ( $illu_file == "none" ) then
+        gmt grdimage  -C$palette  $topo_file                $OPTION  $V  $page  -K  -O -Y$yshift   $raster -V -fg -n+c >> $psfile   
+      else
+        gmt grdimage  -C$palette  $topo_file  -I$illu_file  $OPTION  $V  $page  -K  -O -Y$yshift   $raster -V -fg -n+c >> $psfile   
+      endif
+    else
+      if ( $illu_file == "none" ) then
+        gmt grdimage  -C$palette  $topo_file               $OPTION  $V  $page  -K     -Y$yshift   $raster -V -fg -n+c >! $psfile
+      else   
+        gmt grdimage  -C$palette  $topo_file -I$illu_file  $OPTION  $V  $page  -K     -Y$yshift   $raster -V -fg -n+c >! $psfile
+      endif
+    endif
+    if ( $boundary == yes ) then 
+# MOD TAH 200720 Replaced 2p with selected coastline line type
+       gmt pscoast                    -N1  -W${clw}  $OPTION  $V $page  -K  -O  -D$coast_res -A$min_area   >> $psfile
+    else
+       gmt pscoast                         -W${clw}  $OPTION  $V $page  -K  -O  -D$coast_res -A$min_area   >> $psfile     
+    endif
+  endif 
+endif
+
+# Set the scale of the map according to its size
+if ( $linear != no ) then
+#  if  ( `echo $OPTION | awk '{print $1}' | cut -c3-  | awk '{FS="/"} {printf"%3d \n", $2 - $1 }'` > 2  )  set linearscale = 60 
+#  if  ( `echo $OPTION | awk '{print $1}' | cut -c3-  | awk '{FS="/"} {printf"%3d \n", $2 - $1 }'` > 5  )  set linearscale = 100 
+#  if  ( `echo $OPTION | awk '{print $1}' | cut -c3-  | awk '{FS="/"} {printf"%3d \n", $2 - $1 }'` > 10 )  set linearscale = 200 
+#  if  ( `echo $OPTION | awk '{print $1}' | cut -c3-  | awk '{FS="/"} {printf"%3d \n", $2 - $1 }'` > 20 )  set linearscale = 600 
+#  if  ( `echo $OPTION | awk '{print $1}' | cut -c3-  | awk '{FS="/"} {printf"%3d \n", $2 - $1 }'` > 50 )  set linearscale = 1000 
+#  if  ( `echo $OPTION | awk '{print $1}' | cut -c3-  | awk '{FS="/"} {printf"%3d \n", $2 - $1 }'` > 100 )  set linearscale = 3000 
+#  if  ( `echo $OPTION | awk '{print $1}' | cut -c3-  | awk '{FS="/"} {printf"%3d \n", $2 - $1 }'` > 200 )  set linearscale = 6000 
+  if ( $user_linearscale == "N" ) then
+    if  ( `echo $OPTION | awk '{print $1}' | cut -c3-  | awk -F/ '{printf"%3d \n", $2 - $1 }'` > 2  )  set linearscale = 60 
+    if  ( `echo $OPTION | awk '{print $1}' | cut -c3-  | awk -F/ '{printf"%3d \n", $2 - $1 }'` > 5  )  set linearscale = 100 
+    if  ( `echo $OPTION | awk '{print $1}' | cut -c3-  | awk -F/ '{printf"%3d \n", $2 - $1 }'` > 10 )  set linearscale = 200 
+    if  ( `echo $OPTION | awk '{print $1}' | cut -c3-  | awk -F/ '{printf"%3d \n", $2 - $1 }'` > 20 )  set linearscale = 600 
+    if  ( `echo $OPTION | awk '{print $1}' | cut -c3-  | awk -F/ '{printf"%3d \n", $2 - $1 }'` > 50 )  set linearscale = 1000 
+    if  ( `echo $OPTION | awk '{print $1}' | cut -c3-  | awk -F/ '{printf"%3d \n", $2 - $1 }'` > 100 )  set linearscale = 3000 
+    if  ( `echo $OPTION | awk '{print $1}' | cut -c3-  | awk -F/ '{printf"%3d \n", $2 - $1 }'` > 200 )  set linearscale = 6000 
+  endif
+#get middle latitude for calculation of the linearscale 
+#  set slat  = `echo $OPTION | awk '{print $1}' | cut -c3-  | awk '{FS="/"} {print ($3+(($4 - $3)/2.0)) }'`
+  set slat  = `echo $OPTION | awk '{print $1}' | cut -c3-  | awk -F/ '{print ($3+(($4 - $3)/2.0)) }'`
+#plot linear scale
+  if ($linearxp != "" && $linearyp != "" ) then 
+    gmt psbasemap  $OPTION  $OVERLAY -Lf$linearxp/$linearyp/$slat/$linearscale >> $psfile
+  else
+    gmt psbasemap  $OPTION  $OVERLAY -Lfx1.5i/0.3i/$slat/$linearscale >> $psfile
+  endif
+endif 
+#get coordinates of linearscale
+#if ( $linearxp == "")  set linearxp  = `echo $OPTION | awk '{print $1}' | cut -c3-  | awk '{FS="/"} {print $1 + (($2 - $1)*.27) }'`i
+#if ( $linearyp == "")  set linearyp  = `echo $OPTION | awk '{print $1}' | cut -c3-  | awk '{FS="/"} {print $3 + (($4 - $3)/20) }'`i  
+
+# find lat long in XY
+#gmt mapproject <<!  -R-180/180/-88/88  -Jm -F  >! tmp.horzscale
+#$linearxp   $linearyp
+#!
+## add linearscale to the X position
+#echo `cat  tmp.horzscale`  $linearscale | awk '{print $1 + $3*1000., $2}' >> tmp.horzscale
+## convert back to lat long
+#gmt mapproject tmp.horzscale    -R-180/180/-88/88 -Jm     -F -I     >! tmp.horzscale1
+#cat tmp.horzscale1 | awk ' $1 < 0   {print $1+360, $2} ' >! tmp.horzscale2  
+## plot linearscale and label
+#gmt psxy tmp.horzscale2   $OPTION  $OVERLAY   -L  -W20p -A   >> $psfile 
+#set scalecoord = ( `tail -n -1 tmp.horzscale2` )
+#gmt pstext <<!   $OPTION  -F+f10p+jTL  $OVERLAY  >> $psfile 
+#$scalecoord  $linearscale km   
+#!
+  
+# Write in the arrow scale
+#set xdiff   = `echo $OPTION | awk '{print $1}' | cut -c3-  | awk '{FS="/"} {print ($2 - $1)}'`
+#set ydiff   = `echo $OPTION | awk '{print $1}' | cut -c3-  | awk '{FS="/"} {print ($4 - $3)}'`
+#if ( $arrowxp == "") set arrowxp  = `echo $OPTION | awk '{print $1}' | cut -c3-  | awk '{FS="/"} {print $2 - (($2 - $1)/5) }'`
+#if ( $arrowyp == "") set arrowyp  = `echo $OPTION | awk '{print $1}' | cut -c3-  | awk '{FS="/"} {print $3 + (($4 - $3)/12) }'`
+set xdiff   = `echo $OPTION | awk '{print $1}' | cut -c3-  | awk -F/ '{print ($2 - $1)}'`
+set ydiff   = `echo $OPTION | awk '{print $1}' | cut -c3-  | awk -F/ '{print ($4 - $3)}'`
+if ( $arrowxp == "") set arrowxp  = `echo $OPTION | awk '{print $1}' | cut -c3-  | awk -F/ '{print $2 - (($2 - $1)/5) }'`
+if ( $arrowyp == "") set arrowyp  = `echo $OPTION | awk '{print $1}' | cut -c3-  | awk -F/ '{print $3 + (($4 - $3)/12) }'`
+if ( $vertxp == "")  set vertxp   = `echo $OPTION | awk '{print $1}' | cut -c3-  | awk -F/ '{print $2 - (($2 - $1)/5) }'`
+if ( $vertyp == "")  set vertyp   = `echo $OPTION | awk '{print $1}' | cut -c3-  | awk -F/ '{print $3 + (($4 - $3)/6) }'`
+if ( $arrowxp == "") set arrowxp  = `echo $linearxp $xdiff  | awk ' {print $1+$2*0.5}'`
+if ( $arrowyp == "") set arrowyp  = `echo $linearyp $ydiff  | awk ' {print $1+$2*0.6}'`
+if ( $vertxp == "")  set vertxp   = `echo $linearxp $xdiff  | awk ' {print $1+$2*0.5}'`
+if ( $vertyp == "")  set vertyp   = `echo $linearyp $ydiff  | awk ' {print $1+$2*0.5}'`
+#echo  ">>>>>>  "    $arrowxp        $arrowyp   
+echo $arrowxp        $arrowyp       "-"$arrow_value      0.0000    0.0000    0.0000    0.0000    $arrow_value $arrow_symbol  >! tmp.arrow
+echo $arrowxp        $arrowyp         0.0000        $arrow_value   0.0000    0.0000    0.0000    $arrow_value $arrow_symbol  >> tmp.arrow  
+echo $vertxp         $vertyp          0.0000        $vert_value    0.0000    0.0000    0.0000    $vert_value $vert_symbol  >! tmp.up   
+if ( $arrow == yes ) gmt psvelo  tmp.arrow $arrowfont1 -Se${VELSCALE}i/$confidence/15  -D$SCALE  -h0  $OPTION  $OVERLAY    >> $psfile  
+if ( $arrow == yes && $vert == yes ) gmt psvelo  tmp.up -A+p2p -Se${VERTSCALE}i/$confidence/15  -D$SCALE  -h0  $OPTION  $OVERLAY    >> $psfile  
+
+	set cxp   = `echo $arrowxp $xdiff | awk ' {print $1+$2*0.02}'`
+	set cyp1  = `echo $arrowyp $ydiff | awk ' {print $1+$2*0.065}'`
+	set cyp2  = `echo $arrowyp $ydiff | awk ' {print $1+$2*0.040}'`
+	set cyp3  = `echo $arrowyp $ydiff | awk ' {print $1+$2*0.015}'`
+endif
+
+# Plot earthquake locations 
+# Plot Position of Earthquake Epicentre
+if ( $epilat  != ""  ) then
+  gmt psxy $OPTION -Sa0.25i -O  -K -V $page -G255/0/0  << END >> $psfile   
+           $epilon $epilat 0.110i
+END
+endif
+if ( $epilat2  != ""  ) then
+  gmt psxy $OPTION -Sa -O  -K -V $page -G0/0/255  << END >> $psfile   
+           $epilon2 $epilat2 0.110i
+END
+endif
+# Plot radius of Influence of Earthquake
+if ( $epiradius != "" ) then 
+  echo $epilon $epilat $epiradius | gmt psxy  $OPTION -O  -K -V $page -SE- -W.5p,,-  >> $psfile   
+endif
+if ( $epiradius2 != "" ) then 
+  echo $epilon2 $epilat2 $epiradius2 | gmt psxy  $OPTION -O  -K -V $page -SE- -W3p,,-  >> $psfile   
+endif
+# Plot Position of Earthquakes from an NEIC file
+if ( $eqlocation  != ""  ) then
+  	if ( -e $eqlocation ) then   
+	  echo " Generating earthquake plot file from "$eqlocation 
+     cat $eqlocation >! tmp.eq1
+     if ( $#eqdepth > 1 ) then
+       set eqint = $#eqdepth
+       set c = 0
+       set d = 1
+       while ( $eqint > 1 )
+         @ c = $c + 1
+         @ d = $d + 1
+  	      echo "extracting locations for $eqdepth[$c] - $eqdepth[$d] km" 
+         cat $eqlocation | awk '$8 >= min && $8 < max && $9 >= mag {print $6, $7, $8, $9}' mag=$eqmag min=$eqdepth[$c] max=$eqdepth[$d] >! tmp.eq${c}
+#         cat $eqlocation | awk '{print $6, $7}' mag=$eqmag min=$eqdepth[$c] max=$eqdepth[$d] >! tmp.eq${c}
+#  	      @ eqint = $eqint - 1   
+         @ eqint = `echo "ibase=10; ${eqint} - 1" | bc`
+       end 
+     endif
+#  1   2  3   4 5    6    7    8     9   10   11 12       13  14     15    16
+#1994  6 14   1 21 19.11  36  4.95 -117 52.02 A 3.2      0.00 52    0.20 3172227
+#       cat $eqlocation | awk '{print $9, $10, $7, $8, $12}' >! tmp.eq
+#       awk '$1 < 0 && $2 < 0 { print $1-$2/60, $3-$4/60, $5/200}' tmp.eq >! tmp.eq1
+#       if ( -e tmp.eq1 ) then
+#         awk '$1 < 0 && $2 > 0 { print 360+$1-$2/60, $3+$4/60, $5/200}' tmp.eq >> tmp.eq1
+#       else                                   
+#         awk '$1 < 0 && $2 > 0 { print 360+$1-$2/60, $3+$4/60, $5/200}' tmp.eq >! tmp.eq1
+#       endif
+#       if ( -e tmp.eq1 ) then
+#         awk '$1 > 0 && $2 < 0 { print $1+$2/60, $3-$4/60, $5/200}' tmp.eq >> tmp.eq1
+#       else
+#         awk '$1 > 0 && $2 < 0 { print $1+$2/60, $3-$4/60, $5/200}' tmp.eq >! tmp.eq1
+#       endif
+#       if ( -e tmp.eq1 ) then
+#         awk '$1 > 0 && $2 > 0 { print $1+$2/60, $3+$4/60, $5/200}' tmp.eq >> tmp.eq1
+#       else
+#         awk '$1 > 0 && $2 > 0 { print $1+$2/60, $3+$4/60, $5/200}' tmp.eq >! tmp.eq1
+#       endif
+		if ( $color  == yes  ) then
+        		gmt psxy tmp.eq1  $V -h0 $OPTION   -K   -O $page -Sc0.015i  -W1p,0/0/255 -G0/0/255   >> $psfile
+		else
+#        		gmt psxy tmp.eq1   -V  -h0  $OPTION   -K   -O $page -Sc0.015i  -W1p,255/0/0    >> $psfile
+         set eqint = $#eqdepth
+         set c = 0
+         while ( $eqint > 1 )
+           @ c = $c + 1
+           set scolor = "arrowcolor$c"
+           set ecolor = `eval echo \$${scolor}`
+           awk '{ if ($4 < 4.5) print $1,$2}' tmp.eq${c}              | gmt psxy    -V  -h0  $OPTION   -K   -O $page -Sc0.04i  -W2p,$ecolor -G${ecolor} -:  >> $psfile
+           awk '{ if ($4 >= 4.5 && $4 < 5.5) print $1,$2}' tmp.eq${c} | gmt psxy    -V  -h0  $OPTION   -K   -O $page -Sc0.06i  -W2p,$ecolor -G${ecolor} -:  >> $psfile
+           awk '{ if ($4 >= 5.5 && $4 < 6.5) print $1,$2}' tmp.eq${c} | gmt psxy    -V  -h0  $OPTION   -K   -O $page -Sc0.09i  -W2p,$ecolor -G${ecolor} -:  >> $psfile
+           awk '{ if ($4 >= 6.5 && $4 < 7.5) print $1,$2}' tmp.eq${c} | gmt psxy    -V  -h0  $OPTION   -K   -O $page -Sc0.11i  -W2p,$ecolor -G${ecolor} -:  >> $psfile
+           awk '{ if ($4 >= 7.5) print $1,$2}' tmp.eq${c}             | gmt psxy    -V  -h0  $OPTION   -K   -O $page -Sc0.15i  -W2p,$ecolor -G${ecolor} -:  >> $psfile
+
+#  	        @ eqint = $eqint - 1     
+           @ eqint = `echo "ibase=10; ${eqint} - 1" | bc`
+         end 
+		endif
+  	else
+		echo  $eqlocation does not exist... Skipping.....
+  	endif
+endif
+
+# Plot earthquake slipvector -- need to reformat 9 col entries
+
+if ( $eqslip  != ""  ) then
+	if ( -e $eqslip  ) then
+#		grep the slipvector(correct for azimuth from N), length( mag / 10 )
+		cat  $eqslip  | grep -v NaN | grep -v "*" | awk '{print $1,$2,-$7+90,$6 / 10}' > ! tmp.sv.$eqslip
+     		gmt psxy tmp.sv.$eqslip  $OPTION   -SV3.5p -W1.5p -G0/0/0 -O  $V  $page  -K >> $psfile
+#		reinstate after reformatting cols
+#		cat  $eqslip  | grep -v NaN | grep -v "*" | awk '{print $1,$2," 06 0 0   9",$11}' > ! tmp.date.$eqslip
+#		pstext  tmp.date.$eqslip $OPTION -O $V $page -K >> $psfile
+#		\rm tmp.sv.$eqslip 
+  	else
+		echo  File $eqslip of earthquake slip vectors does not exist.  Skipping.....
+  	endif
+endif
+
+# Plot earthquake focal mechanisms 
+
+if ( $eqfocal_cmt  != "" || $eqfocal_cmt_old != "" || $eqfocal_aki != "" ) then
+  if ( $color  == yes  ) then
+    if ( $eqfocal_cmt != ""  && $dc == "no") then
+#       1         2      3   4     5    6   7      8   9   10     11   12       13
+# (m) Moment tensor
+#       X,        Y,  depth, mrr, mtt, mff, mrt, mrf, mtf, exp, newX, newY, event_title
+#     longitude latitude str1 dip1 rake1 str2 dip2 rake2  mo  ex newlongitude newlatitude title
+#      52.08   28.49    15 3.77  -1.83  -1.94  -0.63  0.06  1.55  24  X  Y  042276A  
+      echo "Plotting non double couple CMT mechanisms"
+      gmt psmeca  $eqfocal_cmt   $OPTION  -Sm0.1i $page -O -K -V -h1 >>  $psfile 
+    endif
+    if ( $eqfocal_cmt != "" && $dc == "yes") then
+#       1         2      3   4     5    6   7      8   9   10     11   12       13
+# (d) Moment tensor double couple.
+#       X,        Y,  depth, mrr, mtt, mff, mrt, mrf, mtf, exp, newX, newY, event_title
+#     longitude latitude str1 dip1 rake1 str2 dip2 rake2  mo  ex newlongitude newlatitude title
+#      52.08   28.49    15 3.77  -1.83  -1.94  -0.63  0.06  1.55  24  X  Y  042276A  
+      echo "Plotting double couple CMT mechanisms"
+      gmt psmeca  $eqfocal_cmt   $OPTION  -Sd0.1i $page -O -K -V -h1 >>  $psfile 
+    endif    
+    if ( $eqfocal_cmt_old != "") then
+#       1         2      3   4     5    6   7      8   9   10     11           12       13
+#     longitude latitude depth str1 dip1 rake1 str2 dip2 rake2  mo  ex newlongitude newlatitude title
+#     45.770   26.760     15   50   28    86   235  62     92   2.0 27      0            0      770304
+      echo "here"
+      gmt psmeca  $eqfocal_cmt_old   $OPTION  -Sc0.1i $page -O $V $page -K -V -h1  -W1p,255/0/0  -G255/0/0  >>  $psfile 
+    endif
+    if ( $eqfocal_aki != "" ) then
+#      1      2      3     4      5    6     7      8         9
+#     LAT	LON  	STRIKE	DIP	RAKE  M	  newlat newlon   MO.DAY.YR
+#     33.40	49.1	135	    90  180  7.4    0      0      1.23.09
+      gmt psmeca  $eqfocal_aki   $OPTION  -Sa0.1i $page -O $V $page -K -V -h1  -W1p,255/0/0  -G255/0/0 -: >>  $psfile
+    endif
+  else 
+    if ( $eqfocal_cmt != "" && $dc == "no") then
+      echo "Plotting non double couple CMT mechanisms"
+      gmt psmeca  $eqfocal_cmt   $OPTION  -Sm0.13i  $page -O -K $V -h1  >>  $psfile 
+    endif
+      if ( $eqfocal_cmt != "" && $dc == "yes" ) then
+      echo "Plotting double couple CMT mechanisms"
+      gmt psmeca  $eqfocal_cmt   $OPTION  -Sd0.13i  $page -O -K $V -h1  >>  $psfile 
+    endif
+    if ( $eqfocal_cmt_old != "" ) then
+      echo "Plotting OLD psvelomeca format CMT mechanisms"
+      gmt psmeca  $eqfocal_cmt_old   $OPTION  -Sc0.13i -o $page -O $V $page -K -V -h1                        >>  $psfile
+#      gmt psmeca  $eqfocal_cmt_old   $OPTION  -So0.13i $page -O $V $page -K -V -h1 -:                        >>  $psfile
+    endif
+    if ( $eqfocal_aki != "" ) then 
+      gmt psmeca  $eqfocal_aki   $OPTION  -Sa0.13i $page -O $V $page -K -V -h1  -:                        >>  $psfile
+    endif
+  endif
+## finish plotting 
+#  set OPTION_text  = " -h0 -R0/8.5/0/11 -Jx1i/1i"
+#  if ( $header == no ) then 
+#    gmt pstext <<! $OPTION_text -F+f12p+jTL -O $V $page -N     >> $psfile
+#-10    -10    Earthquake Focal Mechanisms 
+#!
+#  else 
+#    gmt pstext <<! $OPTION_text -F+f12p+jTL -O $V $page -N     >> $psfile
+#0    -0.5    Earthquake Focal Mechanisms 
+#!
+#  endif
+#  echo " "
+#  echo " "
+#  echo "Created   " $psfile
+#  echo " "
+#  echo "To view  :  gs        " $psfile
+#  echo " "
+#  echo "To print :  lpr       " $psfile
+#  echo " "
+#  echo " "
+#  exit
+endif
+
+# Plot fault patches if requested
+if ( $fault_patch  != "none"  ) then  
+  echo " "    
+  echo "Plotting faults from $fault_patch "
+# MOD TAH 210105: Changed line from W5p to 1p,darkblue
+  gmt psxy $fault_patch $OPTION -O  -K -V -L $page -W1p,darkblue >> $psfile   
+endif  
+
+# Plot block boundaries if requested
+if ( $blocks != "none" ) then      
+  echo " " 
+  echo "Plotting block-model boundaries from $blocks "   
+  echo "option " $OPTION
+  gmt psxy  $blocks   $OPTION  -h0  -K -O $page -Wthickest,gray  $V    >> $psfile
+
+endif 
+ 
+
+# Plot an euler pole and small circles if requested 
+if ( $euler != none ) then  
+  echo " "   
+  echo "Plotting Euler poles from $euler "
+
+  if ( -e  $euler  ) then
+# Euler polefile format 
+# Lon:     33.5 +/-    0.6   Lat:     32.9 +/-    1.1   Ang_vel(deg/myr):      1.3 +/-    0.2
+#  PLATE -  PLATE        Lat (deg)     +-    Long (deg)    +-       Mag (deg/My)   +-   RhoLaLg RhoLaMa RhoLgMa"
+#  ANOTOLIA-ARABIA       32.870      0.632     40.249      0.673   0.863318   0.081597  -0.933  0.848 -0.747  LLM " 
+#    tail -n +2 $euler | awk '{print $2, $4, $3, $5, $8}' >! tmp.euler
+    cat $euler | awk ' substr($0,1,1) == " " {print $0}' >! tmp.euler
+#    cat tmp.euler | awk '{print $1, $2, 90-(180/3.141592653 * (0.5 * atan2((2 * $4 * $3 * $5), (($4*$4) - ($3*$3))))), \
+#                  110 * sqrt (0.5 * (($4*$4) + ($3*$3) + sqrt ((($4*$4) - ($3*$3)) * (($4*$4) - ($3*$3)) + 4 * ($5*$5)))), \
+#                   110 * sqrt (0.5 * (($4*$4) + ($3*$3) - sqrt ((($4*$4) - ($3*$3)) * (($4*$4) - ($3*$3)) + 4 * ($5*$5)))) }' >! tmp.euler_abaz
+#    ~/gu/euler_utils/confpol $euler >! tmp.euler_conf 
+     confpol $euler >! tmp.euler_conf 
+#     cat tmp.euler_abaz | awk '{print $1,$2}' >! tmp.euler_pos
+     cat tmp.euler_conf | awk '{print $1,$2}' >! tmp.euler_pos
+#    cat $euler | awk '{print $2,$6,$4,$8}' >! tmp.euler
+    set sclonpole = ` cat tmp.euler | awk '{print $2}'`
+    set sclatpole = ` cat tmp.euler | awk '{print $1}'`
+    if ( $color == yes ) then
+#      gmt psxy tmp.euler   -h0  $OPTION  $V  $OVERLAY  -Exy0.1/1p,0/0/255   -Sc.1 -W3p,0/0/255  >>   $psfile 
+      gmt psxy tmp.euler_pos    -h0  $OPTION  $V  $OVERLAY  -St0.07i -W3p,255/0/0 -G255/0/0 -: >>   $psfile 
+#      gmt psxy tmp.euler_abaz   -h0  $OPTION  $V  $OVERLAY  -SE -W3p,0/0/255    -: >>   $psfile 
+      gmt psxy tmp.euler_conf   -h0  $OPTION  $V  $OVERLAY  -SE -W3p,0/0/255  -: >>   $psfile 
+    else 
+#      gmt psxy tmp.euler   -h0  $OPTION  $V  $OVERLAY  -Exy0.1i   -Sc.1i              >>   $psfile 
+#      gmt psxy tmp.euler_abaz   -h0  $OPTION  $V  $OVERLAY  -SE -W3p,0/0/255    -: >>   $psfile 
+      gmt psxy tmp.euler_conf   -h0  $OPTION  $V  $OVERLAY  -SE -W3p,0/255/0  -G0/255/0      >>   $psfile 
+      gmt psxy tmp.euler_pos    -h0  $OPTION  $V  $OVERLAY  -St0.1i -W3p,255/0/0  -G255/0/0      >>   $psfile 
+    endif
+    if ( $scradii[1] != "" ) then
+      echo "HI" $sclonpole/$sclatpole
+      \rm  tmp.smallcircle* tmp.small*  tmp.getrel.smallcircle*
+#create north pole and the origin
+      echo "0 90 " >! tmp_proj.org
+      echo "0  0 " >> tmp_proj.org
+# find the oblique coordinates of the north pole and the origin
+      gmt project tmp_proj.org -C0i/0i  -T$sclonpole[1]/$sclatpole[1] -Fpq >! tmp_proj.T_C
+# use the projected  north pole and  origin as Rotation pole and Center
+      set T = `cat tmp_proj.T_C | head -n 1  | awk '{print "-T"$1"/"$2}'`
+      set C = `more +2 tmp_proj.T_C        | awk '{print "-C"$1"/"$2}'`
+      echo "Rotation pole : "  $T   "    Center : " $C
+#small circle file counter 
+      set c = -1 
+#small circle radius  
+      set cn = ( $scradii ) 
+#creating small circle files 
+      while ( $#cn > 0  ) 
+	     @ c = $c + 1 
+	     set lat = `echo $cn[1]  | awk '{print 90 - $1 }'`
+	     set lon = $scmin 
+	     while ( $lon < $scmax + $scint )
+#  	       @ lon = $lon + $scint 
+          @ lon = `echo "ibase=10; ${lon} + ${scint}" | bc`
+	       if ( ! -e tmp.small$c ) then 
+		     echo $lon $lat >! tmp.small$c 
+	       else
+		     echo $lon $lat >> tmp.small$c 
+		   endif 
+	     end
+	     shift cn
+#small circle about the pole 
+	     gmt project tmp.small$c    $T       $C     -Fpq  > ! tmp.smallcircle$c
+	     gmt psxy tmp.smallcircle$c $OPTION   -P -O   -K       -W10p,255/0/0$sclinetype        >>$psfile
+      end
+	   gmt psxy tmp.smallcircle$c $OPTION   -P -O  -K          -W10p,255/0/0$sclinetype           >>$psfile   
+    endif
+  else
+    echo "Euler pole file not found" $euler
+  endif
+endif
+
+# Plotting site locations only (no velocities)
+
+if ( $vel == no ) then 
+
+   set savedelete = ""
+   if ($name == yes) then 
+      if ($namefile[1] == "" ) then
+#        checking for the bounding box 
+#        set r = ( `echo $OPTION | cut -c3-  | awk '{FS="/"} {print $1,$2,$3,$4}' ` )
+         set r = ( `echo $OPTION | cut -c3-  | awk -F/ '{print $1,$2,$3,$4}' ` )
+         cat tmp.vel tmp.vel2 tmp.vel3 tmp.vel4 tmp.gmt |  sed s/'^'/"`echo $r[1]  $r[2]  $r[3]  $r[4]  `   "/  >! tmp.$file.allnames 
+         cat tmp.vel tmp.vel2 tmp.vel3 tmp.vel4 tmp.gmt >! tmp.sites
+         cat  tmp.sites  | awk '{print $1,$2}'  >! tmp.sites1
+#        gmt psxy  tmp.sites1  $OPTION   $OVERLAY -St.06  -G$c3  $V  >>  $psfile
+         gmt psxy  tmp.sites1  $OPTION   $OVERLAY -St.06  -G255/0/0  $V  >>  $psfile
+      endif
+      if  ( $plain != yes )	then 
+         if ( $namefile[1] != ""  ) then
+	    echo namefiles : $namefile
+	    cat $namefile[1-] | awk '$NF != "noname" && substr($1,1,1) != "#" {print $1, $2, $4, $5, $6, $7, $8 }' >!  tmp.names 
+#	    cat $namefile[1-] | awk '$NF != "noname" && substr($1,1,1) != "#" {print $1, $2, $3, $4, $5, $6, $7 }' >!  tmp.names 
+            cat $namefile[1-] | awk '$9 == "c" && substr($1,1,1) != "#"{ print $1,$2,$3}' >! tmp.circles
+            cat $namefile[1-] | awk '$9 == "s" && substr($1,1,1) != "#"{ print $1,$2,$3}' >! tmp.squares
+            cat $namefile[1-] | awk '$9 == "d" && substr($1,1,1) != "#"{ print $1,$2,$3}' >! tmp.diamonds
+            cat $namefile[1-] | awk '$9 == "r" && substr($1,1,1) != "#"{ print $1,$2,$3}' >! tmp.stars
+            cat $namefile[1-] | awk '$9 == "t" || $9 == "" && substr($1,1,1) != "#" { print $1,$2,$3}' >! tmp.triangles
+         else 
+            awk '$5 > $1 && $5 < $2 && $6 > $3 && $6 < $4  {print $5,$6,"1",sitefont," 0  0 02  " $12}' sitefont=$sitefont tmp.$file.allnames >! tmp.names
+            if (bound_check == "no" ) then
+  	       awk ' {print $5 ,$6 ,"1", sitefont, " 0  0 2  " $11}' sitefont=$sitefont tmp.$file.allnames >! tmp.names
+            endif
+         endif
+         if ( $glist != ""  ) then
+	    touch tmp.names
+	    cat $glist | grep P$ | tail -n +4 | awk 'substr($0,1,1) == " "{print $1, $2, "09 0 0 02",substr($8,1,4)}' >> tmp.names
+            if ( $glist_opt == "num" ) then 
+	      cat $glist | grep P$ | tail -n +4 | awk 'substr($0,1,1) == " "{print $1, $2, $4}' >! tmp.invtriangles
+            else if ( $glist_opt == "span" ) then
+	      cat $glist | grep P$ | tail -n +4 | awk 'substr($0,1,1) == " "{print $1, $2, $7}' >! tmp.invtriangles
+            else if ( $glist_opt == "all" ) then
+	      cat $glist | grep P$ | tail -n +4 | awk 'substr($0,1,1) == " "{print $1, $2, "3"}' >! tmp.invtriangles
+            else
+              set now = `doy | tail -n -1 | awk '{print $3}'`
+	      cat $glist | grep P$ | tail -n +4 | awk  -v now=$now 'substr($0,1,1) == " "{print $1, $2, now-$6}' >! tmp.invtriangles
+            endif
+	 endif
+	 if ( -e tmp.names ) then 
+            echo "Created names file : "   tmp.names   tmp.$file.names 
+            \cp tmp.names tmp.$file.names
+            if ( -e tmp.reset ) \rm tmp.reset; touch tmp.reset
+         endif 
+         echo "#COLOR_MODEL = RGB" >! rainbow.cpt
+         echo "#" >> rainbow.cpt
+         echo "0	0	0	0	1	0	0	0"   >> rainbow.cpt
+         echo "1	255	0	0	2	255	0	0"   >> rainbow.cpt
+         echo "2	0	255	0	3	0	255	0"   >> rainbow.cpt
+	 echo "3	0	0	255	4	0	0	255" >> rainbow.cpt
+         echo "4	255	255	0	5	255	255	0"   >> rainbow.cpt  
+         echo "5	255	0	255	6	255	0	255" >> rainbow.cpt
+         echo "B	0	0	0"   >> rainbow.cpt
+         echo "F	0	255	255" >> rainbow.cpt
+         echo "N	128	128	128" >> rainbow.cpt			
+
+         gmt psxy  tmp.circles      $OPTION   $OVERLAY -Sc$symbol_size_c   -Crainbow.cpt $page   -V  >>  $psfile
+         gmt psxy  tmp.squares      $OPTION   $OVERLAY -Ss$symbol_size_s   -Crainbow.cpt $page   -V  >>  $psfile
+         gmt psxy  tmp.diamonds     $OPTION   $OVERLAY -Sd$symbol_size_d   -Crainbow.cpt $page   -V  >>  $psfile
+         gmt psxy  tmp.stars        $OPTION   $OVERLAY -Sa$symbol_size_r   -Crainbow.cpt $page   -V  >>  $psfile
+         gmt psxy  tmp.triangles    $OPTION   $OVERLAY -St$symbol_size_t   -Crainbow.cpt $page   -V  >>  $psfile	
+         gmt psxy  tmp.invtriangles $OPTION   $OVERLAY -Si$symbol_size_t   -Crainbow.cpt $page   -V  >>  $psfile	
+	 gmt psscale -D5i/-0.5i/5.0c/0.5ch $OVERLAY -V -Crainbow.cpt >>  $psfile
+#        gmt psxy  tmp.circles    $OPTION   $OVERLAY -Sc$symbol_size_c  -G$symbol_color_c $page   -V  >>  $psfile
+#        gmt psxy  tmp.squares    $OPTION   $OVERLAY -Ss$symbol_size_s  -G$symbol_color_s $page   -V  >>  $psfile
+#        gmt psxy  tmp.diamonds   $OPTION   $OVERLAY -Sd$symbol_size_d  -G$symbol_color_d $page   -V  >>  $psfile
+#        gmt psxy  tmp.stars      $OPTION   $OVERLAY -Sa$symbol_size_r  -G$symbol_color_r $page   -V  >>  $psfile
+#        gmt psxy  tmp.triangles  $OPTION   $OVERLAY -St$symbol_size_t  -G$symbol_color_t $page   -V  >>  $psfile
+####  This needs to be fixed. Currently if you turn it on you get plots you cannot print if 0 font size used!!! (--Simon)
+         gmt pstext tmp.names     $range $projection  $OVERLAY  -V $page -D0.0i/${nameshift}   >> $psfile  
+#        gmt pstext tmp.reset     $range $projection  $OVERLAY  -V $page -Y-$nameshift   >> $psfile  
+      endif 
+   endif
+endif
+
+if ( ! -e  tmp.vel ) then
+
+   \rm -f tmp tmp.all tmp.arrow tmp.gmt tmp.horzscale tmp.horzscale1 tmp.horzscale2 tmp.$file.allnames  
+   \rm tmp.sites tmp.sites1 tmp.sqrt_chisqr tmp.vel tmp.names tmp.circles tmp.squares tmp.diamonds tmp.triangles tmp.stars
+
+	set  shft = ""
+
+# if no header finish up plotting HERE
+	if ( $header == no  ) then 
+	gmt pstext <<! -h0  $OPTION_text  -F+f10p+jTL  -O  $V  $page -N   >> $psfile 
+-10 -10  FINISH plotting 
+!
+	else
+			gmt pstext <<! -h0  $OPTION_text  -F+f10p+jTL  -O  $V  $page $shft -N   >> $psfile  
+0    -0.5  $DATE
+5    -0.5  `whoami` 
+!
+	endif 
+
+	echo "Created site  plot file :"  $psfile
+	echo "  "
+	echo "Hardcopy velocity MAP  :  lpr  "$printer $psfile
+	echo "  "
+	echo "To plot  velocity MAP  :  gs  "$psfile
+	echo "  "
+	echo "To scale the postsript  use : sh_postscript  %90 " $psfile
+	exit 
+endif
+#--------- end of plotting for sites only -------------#
+
+#  Plot velocities 
+echo " "
+echo Scale=$SCALE Scale2=$SCALE2 Scale3=$SCALE3 Scale4=$SCALE4 Scale5=$SCALE5 Velocity scale=$VELSCALE Confidence interval=$confidence
+if ( $rot5 == "no" ) then 
+  if ( $openarrow5 == "no" ) then   
+    if ( $file5 != none ) gmt psvelo tmp.vel5 $arrowfont5,$arrowcolor5+g$arrowcolor5 -D$SCALE5  -h0  $OPTION  -Se${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile  
+  else
+    if ( $file5 != none ) gmt psvelo tmp.vel5 -A0.12+e+p1.5p,$arrowcolor5+g$arrowcolor5 -D$SCALE5  -h0  $OPTION  -Se${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile    
+    if ( $file5 != none ) gmt psvelo tmp.vel5 -A0.11+e+p0.75p,$arrowcolor5+g255  -D$SCALE5  -h0  $OPTION  -Se${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile    
+  endif
+else  
+  if ( $file5 != none ) gmt psvelo tmp.vel5  -A+e+p,$arrowcolor5+g$arrowcolor5  -h0  $OPTION  -Sr${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile 
+endif 
+if ( $rot4 == "no" ) then 
+  if ( $openarrow4 == "no" ) then   
+    if ( $file4 != none ) gmt psvelo tmp.vel4 $arrowfont4,$arrowcolor4+g$arrowcolor4 -D$SCALE4  -h0  $OPTION  -Se${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile  
+  else
+    if ( $file4 != none ) gmt psvelo tmp.vel4 -A0.12+e+p1.5p,$arrowcolor4+g$arrowcolor4 -D$SCALE4  -h0  $OPTION  -Se${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile    
+    if ( $file4 != none ) gmt psvelo tmp.vel4 -A0.11+e+p0.75p,$arrowcolor4+g255 -D$SCALE4  -h0  $OPTION  -Se${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile    
+  endif
+else  
+  if ( $file4 != none ) gmt psvelo tmp.vel4 -A+e+p,$arrowcolor4+g$arrowcolor4   -h0  $OPTION  -Sr${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile 
+endif 
+if ( $rot3 == "no" ) then 
+  if ( $openarrow3 == "no" ) then   
+    if ( $file3 != none ) gmt psvelo tmp.vel3 $arrowfont3,$arrowcolor3+g$arrowcolor3 -D$SCALE3  -h0  $OPTION  -Se${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile  
+  else
+    if ( $file3 != none ) gmt psvelo tmp.vel3 -A0.12+e+p1.5p,$arrowcolor3+$arrowcolor3 -D$SCALE3  -h0  $OPTION  -Se${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile    
+    if ( $file3 != none ) gmt psvelo tmp.vel3 -A0.11+e+p0.75p,$arrowcolor3+g255 -D$SCALE3  -h0  $OPTION  -Se${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile    
+  endif
+else  
+  if ( $file3 != none ) gmt psvelo tmp.vel3 -A+e+p,$arrowcolor3+g$arrowcolor3  -h0  $OPTION  -Sr${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile 
+endif 
+if ( $rot2 == "no" ) then
+  if ( $openarrow2 == "no" ) then   
+    if ( $file2 != none ) gmt psvelo tmp.vel2 $arrowfont2,$arrowcolor2+g$arrowcolor2 -D$SCALE2  -h0  $OPTION  -Se${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile    
+  else
+    if ( $file2 != none ) gmt psvelo tmp.vel2 -A0.12+e+p1.5p,$arrowcolor2+g$arrowcolor2 -D$SCALE2  -h0  $OPTION  -Se${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile    
+    if ( $file2 != none ) gmt psvelo tmp.vel2 -A0.11+e+p0.75p,$arrowcolor2+g255 -D$SCALE2  -h0  $OPTION  -Se${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile    
+  endif
+else
+  if ( $file2 != none ) gmt psvelo tmp.vel2 -A+e+p,$arrowcolor2+g$arrowcolor2  -h0  $OPTION  -Sr${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile 
+endif  
+if ( $rot == "no" ) then 
+  if ( $openarrow1 == "no" ) then  
+    gmt psvelo tmp.vel $arrowfont1,$arrowcolor1+g$arrowcolor1 -D$SCALE   -h0  $OPTION  -Se${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile 
+  else
+    gmt psvelo tmp.vel -A0.12+e+p1.5p,$arrowcolor1+g$arrowcolor1 -D$SCALE  -h0  $OPTION  -Se${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile    
+    gmt psvelo tmp.vel -A0.11+e+p0.75p,$arrowcolor1+g255 -D$SCALE  -h0  $OPTION  -Se${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile    
+  endif 
+  if ( $vert == yes ) then
+    gmt psvelo tmp.vertp -Ap3.5p+g$arrowcolor1 -D$SCALE   -h0  $OPTION   -E$arrowcolor2  -Se${VERTSCALE}i/$confidence/0   $OVERLAY   -V   >> $psfile 
+    gmt psvelo tmp.vertn -Ap3.5p+g$arrowcolor1 -D$SCALE   -h0  $OPTION   -E$arrowcolor2  -Se${VERTSCALE}i/$confidence/0   $OVERLAY   -V   >> $psfile 
+  endif                                                                                                                                                                           
+#-W1"/255/255/255"
+else
+    gmt psvelo tmp.vel -A+e+p,$arrowcolor1+g$arrowcolor1  -h0  $OPTION  -Sr${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile  
+    echo gmt psvelo tmp.vel -A+e+p,$arrowcolor1+g$arrowcolor1  -h0  $OPTION  -Sr${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile  
+endif
+if ( $gmtfile != none ) gmt psvelo tmp.gmt -A+e+p,$arrowcolor1+g$arrowcolor1  -D$SCALE   -h0  $OPTION  -Se${VELSCALE}i/$confidence/$sitefont   $OVERLAY   -V   >> $psfile    
+
+# Plot the fixed site 
+#echo    ........
+grep $siteRELATIVE  vel.$site | awk '{print $1, $2, ".05i" }' | grep -v "*"  >! tmp.fixed 
+if ( $fixed[1]  != "" ) then 
+#	echo .. FIXED .. $fixed[1] $fixed[2] 
+	echo $fixed[1] $fixed[2]  | awk '{print $1, $2, ".05i" }' | grep -v "*"  >! tmp.fixed 
+endif
+
+# Write the headers 
+if ( $header == no  ) then 
+	if ( $figcap == yes ) then 
+		gmt pstext  <<! $OPTION_text  -F+f10p+jTL  -O  $V  $page  -N          >> $psfile  
+0.2    -2.0  `echo $text0 | cut -c101-`
+0.2    -2.2  `echo $text0 | cut -c1-100`
+!
+	else 
+    gmt psxy   tmp.fixed   -h0  $OPTION  -W1p  $V  -O  $page  -L  -G$c2  -Sd >> $psfile 
+	endif
+else 
+	gmt psxy   tmp.fixed   -h0 $OPTION  -W1p  $OVERLAY $V  -L -G$c2 -Sd >> $psfile
+#write out two comment lines and terminate the plot
+	gmt pstext <<! $OPTION_text  -F+f+jTL -O  $V  $page  -N  >> $psfile  
+0    -1.2  8p $DATE
+0    -1.0  8p $text1  $text2     $text3 
+0    -0.8  8p $text4    $text5  
+0    -0.5 20p `echo $text0 | cut -c1-100`  
+!
+endif 
+
+echo "  "
+echo "Created velocity summary file      :   "vel.$site
+echo " "
+echo "Created velocity postscript file   :   "$psfile
+echo "  "
+echo "  "
+echo "To plot velocity MAP   :  gs  "$psfile
+echo "  "
+echo "Hardcopy velocity MAP  :  lpr  "$printer $psfile
+echo "  "
+	if ( $color == yes ) echo " to scale the postsript  use :  "
+	if ( $color == yes ) echo "                       sh_postscript  %90 " $psfile
+endif
+echo "  "
+echo "  "
+# gs  $psfile
+#lpr $psfile
+
+if ( $save_gmt == "yes" ) then
+  /bin/rm -f tmp tmp.sqrt_chisqr tmp.fixed tmp.horzscale tmp.horzscale1 tmp.horzscale2 tmp.arrow 
+  /bin/rm -f tmp.labels tmp.all tmp.rad tmp.eq tmp.eq1 tmp.delete tmp.up
+  /bin/mv tmp.vel psvelo.$file
+  /bin/mv tmp.vel2 psvelo.$file2
+  /bin/mv tmp.vel3 psvelo.$file3 
+  /bin/mv tmp.vel4 psvelo.$file4
+  /bin/mv tmp.vel5 psvelo.$file5
+else
+  /bin/rm -f tmp tmp.sqrt_chisqr tmp.$file tmp.vel tmp.vel2 tmp.vel3 tmp.vel4 tmp.fixed tmp.horzscale tmp.horzscale1
+  /bin/rm -f tmp.horzscale2 tmp.arrow tmp.labels tmp.all tmp.rad tmp.eq tmp.eq1 tmp.delete tmp.up
+endif
+exit
+
+
+
+
+
+

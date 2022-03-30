@@ -1,0 +1,396 @@
+#!/bin/csh -f
+#
+#doc Generate range and scale for GMT maps (used by sh_plotvel)
+#doc
+#
+if ( $#argv == 0 ) then 
+ echo " Shell script for generating range and scale GMT maps "
+ echo " "   
+ echo " Syntax: "
+ echo "  "
+ echo "   sh_map_elements region "   
+ echo " "
+ echo "   Allowed regions       Lat range    Long range  "
+ echo "   ---------------       ---------    ---------- "
+ echo "     world               +- 85        +- 180     "
+ echo " "
+ echo "     europe             20-70 N       10 W - 50 E  " 
+ echo " "
+ echo "     eura_wide          30-70 N       10 W - 80 E "
+ echo "   "
+ echo "     turkey             35-44 N       26-44 E      (see script for sub-regions)"   
+ echo "   "
+ echo "     balkans            38.5-48 N     19-29 E      (see script for sub-regions)"
+ echo "   "                         
+ echo "     cal                31-37.5 N     114-122 E    (see script for sub-regions)"
+ echo "   "
+ echo "     kaz                0-50 N        60-105 E "  
+ echo "  "
+ echo "     china              22-42 N       90-112 E "  
+ echo "  "
+ echo "     tibet_east         28-42 N       90-110 E " 
+ echo "  "
+ echo "     tibet              28-42 N       80-110 E "
+ echo "  "
+ echo "     yunnan             20-34 N       95-107 E "  
+ echo " "
+ echo "     syntaxis           25-33 N       90-105 E "
+ echo "  "
+ echo "     asia_se            10-55 N       70-130 E "
+ echo " "                                            
+ echo "     asia_east          10-65 N       65-145 E "
+ echo " "                                              
+ echo "     asia_ne            30-70 N      120-170 E "
+ echo " "
+ echo "     japan              30-55 N      125-150 E "  
+ echo " " 
+ echo "     sunda              30S-40N       70-145 E "  
+ echo " "
+ echo "     psp_n (Philipine)  19-34 N      120-134 E "
+ echo " "
+ echo "     australia          05-45 S      100-160 E "  
+ echo " " 
+ echo " Usage: sh_map_elements <region> " 
+ echo " Where: <region> is the region of the world you are intereasted in plotting "
+ echo " " 
+ echo " See source code for complete list of other allowed regions or add you own "
+ echo " " 
+ echo " Returns to screen: range projection border "   
+ echo " "
+endif                                           
+
+#  Instructions for adding new regions:
+#
+#  Set long/lat range with -R , e.g. -R22/48/32/45  is long 22-48 E, lat 32-45 N
+#  Set scale with -Jm, e.g.  -Jm0.13i is 0.13 inches per degree 
+#  Shortcut:  Run sh_plotvel with -Rdd/dd/dd/dd where dd are bounds in degrees, and
+#             then use the values for -Jm and -B calculated by GMT and displayed in execution
+
+
+set type = $1 
+set VELscale  = "" 
+set VELSCALE  = "" 
+set OPTION    =  ""
+switch($type)
+##########################################################################################
+	case w:
+	case world:
+			set OPTION       =   ( -R-180/180/-85/85  -Jm.02i  -Bxa20f10 -Bya20f10 -BWSen )
+			set VELSCALE     =  .01 
+	breaksw
+##########################################################################################
+	case europe:
+			set OPTION       =   ( -R-10/50/20/70  -Jm.09i  -Bxa20f10 -Bya20f10 -BWSen )
+			set VELSCALE     =  .01 
+	breaksw                                                          
+	case africa:
+			set OPTION       =   ( -R-10/50/-34/37  -Jm.09i  -Bxa10f5 -Bya10f5 -BWSen )
+			set VELSCALE     =  .01 
+	breaksw                                                          
+	case uganda:
+			set OPTION       =   ( -R25/35/-5/5  -JM7i  -Bxa5f5 -Bya5f5 -BWSen )
+			set VELSCALE     =  .01 
+	case tanz:
+			set OPTION       =   ( -R26/40/-12/0  -JM7i  -Bxa5f5 -Bya5f5 -BWSen )
+			set VELSCALE     =  .01 
+	case etho:
+			set OPTION       =   ( -R35/45/5/10  -JM9i  -Bxa5f5 -Bya5f5 -BWSen )
+			set VELSCALE     =  .01 
+	breaksw                                                          
+##########################################################################################
+	case eura_wide:
+			set OPTION       =   ( -R-10/80/30/70  -Jm.09i  -Bxa20f10 -Bya20f10 -BWSen )
+			set VELSCALE     =  .01 
+	breaksw
+##########################################################################################
+	case arabia:
+			set OPTION       =   ( -R18/70/10/50  -JM7i  -Bxa20f10 -Bya20f10 -BWSen )
+			set VELSCALE     =  .002 
+	breaksw
+##########################################################################################
+	case westof0:
+			set OPTION       =   ( -R-180/00/-70/70  -Jm.04i  -Bxa20f10 -Bya20f10 -BWSen )
+			set VELSCALE     =  .01 
+	breaksw
+##########################################################################################
+	case turk_wide:
+			set OPTION       =   ( -R22/48/32/45  -Jm.35i  -Bxa2f1 -Bya2f1 -BWSen )
+	breaksw
+##########################################################################################
+	case turk:
+	case turk_all:
+			set OPTION       =   ( -R22/48/32/45  -Jm.25i  -Bxa2f1 -Bya2f1 -BWSen )
+	breaksw
+##########################################################################################
+	case turkey:
+			set OPTION       =    ( -R26/44/35/44 -Jm.4i -Bxa2f1 -Bya2f1 -BWSen) 
+	breaksw
+##########################################################################################
+	case turk_west:
+			set OPTION       =   ( -R23/37/33.5/43  -Jm.5i  -Bxa1f0.5 -Bya1f0.5 -BWSen )
+	breaksw
+##########################################################################################
+	case turk_west1:
+			set OPTION       =   ( -R26/33/36/43  -Jm.9i   -Bxa1f0.5 -Bya1f0.5 -BWSen )
+	breaksw
+##########################################################################################
+	case turk_west_detail -n1:
+			set OPTION       =   ( -R25.5/36/35/43  -Jm.65i  -Bxa1f0.5 -Bya1f0.5 -BWSen )
+	breaksw
+##########################################################################################
+	case turk_east:
+			set OPTION       =   ( -R34/48/33.5/43  -Jm.5i  -Bxa1f0.5 -Bya1f0.5 -BWSen )
+	breaksw
+##########################################################################################
+	case turk_aegea:
+			set OPTION       =   (  -R20/34/34/43      -Jm.5i -Bxa1f0.5 -Bya1f0.5 -BWSen )
+	breaksw
+	case turk_aegea2:
+			set OPTION       =   (  -R20/34/32/43      -Jm.5i -Bxa1f0.5 -Bya1f0.5 -BWSen )
+	breaksw
+##########################################################################################
+	case turk_east_detail -n1:
+			set OPTION       =   ( -R38/42/37.5/41.5 -Jm1.5i  -Bxa1f0.5 -Bya1f0.5 -BWSen )
+	breaksw
+##########################################################################################
+	case turk_cent:
+	case turk_central:
+			set OPTION       =   ( -R31/41/38/43 -Jm.7i -Bxa1f0.5 -Bya1f0.5 -BWSen )
+	breaksw
+##########################################################################################
+	case turk_teke:
+			set OPTION       =   ( -R27/34/35/39  -Jm1.i  -Bxa1f0.5 -Bya1f0.5 -BWSen )
+	breaksw
+##########################################################################################
+	case turk_horst:
+			set OPTION       =   ( -R25/30/36/40  -Jm1.2i  -Bxa1f0.5 -Bya1f0.5 -BWSen )
+	breaksw
+##########################################################################################
+	case turk_marm:
+	case turk_marmara:
+			set OPTION       =   ( -R25/33.5/38.8/43  -Jm.7i -Bxa1f0.5 -Bya1f0.5 -BWSen )
+	breaksw                                                                         
+##########################################################################################
+	case balkans:
+			set OPTION       =   (  -R19/29/38.5/48.5   -Jm0.65i -Bxa1f0.5 -Bya1f0.5 -BWeSn )
+	breaksw  
+	case balkans_north:
+			set OPTION       =   (  -R20/29/43/48.5   -Jm0.9i -Bxa1f0.5 -Bya1f0.5 -BWeSn )
+	breaksw                                                                           
+	case balkans_south:
+			set OPTION       =   (  -R19/29/38.5/44   -Jm0.9i -Bxa1f0.5 -Bya1f0.5 -BWeSn )
+	breaksw      
+	case balkans_sw:
+			set OPTION       =   (  -R19/26/40/44   -Jm0.9i -Bxa1f0.5 -Bya1f0.5 -BWeSn )
+	breaksw
+	case bulgaria:
+			set OPTION       =   (  -R21/29/40.6/44.6  -Jm1.125i -Bxa1f0.5 -Bya1f0.5 -BWeSn )
+	breaksw        
+	case sofia:
+			set OPTION       =   (  -R22.4/24.4/41.8/43.2  -Jm3.25i -Bxa0.5f0.25 -Bya0.5f0.25 -BWeSn )
+	breaksw    
+
+	case ngreece:
+			set OPTION       =   ( -R20/25/39/41.5 -Jm1.8i -Bxa1f0.25 -Bya0.5f0.25 -BWeSn )
+	breaksw    
+	case volvi:
+			set OPTION       =   ( -R22.5/24/40.3/40.85 -Jm6i -Bxa0.5f0.25 -Bya0.5f0.25 -BWeSn  )
+	breaksw    
+##########################################################################################
+	case caucasus:
+			set OPTION       =   (  -R41/47/39/45     -Jm0.90i  -Bxa1f1 -Bya1f1 -BWSen )
+	breaksw
+##########################################################################################
+	case turk_eq:
+			set OPTION       =   ( -R38./42/39./41  -Jm1.6i -Bxa1f30m -Bya1f30m -BWSen )
+	breaksw
+##########################################################################################
+	case eq_co:
+			set OPTION       =   ( -R38./42/39./41  -Jm1.6i -Bxa1f30m -Bya1f30m -BWSen )
+			if ( $VELscale == no ) set VELSCALE     =  .015 
+	breaksw
+##########################################################################################
+	case eq_post:
+			set OPTION       =   ( -R38.8/41.8/39/40.4 -Jm2.2i -Bxa1f20m -Bya1f20m -BWSen )
+			if ( $VELscale == no ) set VELSCALE     =  .015 
+	breaksw
+##########################################################################################
+	case middle2:
+			set OPTION       =   ( -R18/60/10/50 -Jt35/.15i	  -Bxa10f5 -Bya10f5 -BWSEN )
+	breaksw
+##########################################################################################
+	case middle:
+			set OPTION       =   ( -R18/60/10/50  -Jm.15i	  -Bxa10f5 -Bya10f5 -BWSEN )
+	breaksw
+##########################################################################################
+	case middlet:
+			set OPTION       =   ( -R18/60/10/50  -Jm.15i	  -Bxa10f1 -Bya10f1 -BWSEN )
+	breaksw
+##########################################################################################
+	case slr:
+			set OPTION       =   ( -R17/48/31/45    -Jm.225i  -Bxa4f2 -Bya2f2 -BWSen )
+	breaksw
+##########################################################################################
+	case cal:
+			set OPTION       =   ( -R-122/-114/31/37.5    -Jm.85i  -Bxa1f30m -Bya1f30m -BWSen )
+	breaksw
+##########################################################################################
+	case cal_ven:
+			set OPTION       =   ( -R-119/-117/33/35    -Jm3i  -Bxa30mf15m -Bya30mf15m -BWSen )
+	breaksw
+########################################################################################## 
+	case cal_wtr:
+			set OPTION       =   ( -R-121.5/-118.5/33.75/36.25    -Jm2.3i  -Bxa30mf15m -Bya30mf15m -BWSen )
+	breaksw
+########################################################################################## 
+	case cal_strc:
+			set OPTION       =   ( -R-120/-113.5/30.5/35.25    -Jm1.1i  -Bxa1f30m -Bya1f30m -BWSen )
+	breaksw
+########################################################################################## 
+	case cal_salton:
+			set OPTION       =   ( -R-117.5/-114/32/34.5    -Jm2i  -Bxa30mf15m -Bya30mf15m -BWSen )
+	breaksw   
+########################################################################################## 
+	case cal_landers:
+           set OPTION       =   ( -R-117.5/-115.5/33.5/35.5 -Jm3.25i -Bxa0.5f0.25 -Bya0.5f0.25 -BWeSn )
+	breaksw
+
+########################################################################################## 
+	case kaz:
+			set OPTION       =   (  -R60/105/0/50     -Jm0.13i   -Bxa4f2 -Bya2f2 -BWSen )
+	breaksw
+##########################################################################################
+	case china:  
+# old, including East China
+#			set OPTION       =   (  -R94/126/20/35    -Jm0.28i   -Bxa4f2 -Bya2f2 -BWSen )
+# new, including Tibet but not East China
+#			set OPTION       =   ( -R85/116/22/42 -Jm0.295455i -Bxa5f2.5 -Bya5f2.5 -BWeSn ) 
+			set OPTION       =   ( -R90/112/20/42 -Jm0.295455i -Bxa5f2.5 -Bya5f2.5 -BWeSn )  
+#			set OPTION       =   ( -R72/85/38/45 -Jm0.48i  -Bxa5f2.5 -Bya5f2.5 -BWeSn )
+	breaksw                                                                     
+##########################################################################################
+	case china_east:                                                        
+ 			set OPTION       =   (  -R100/140/20/45    -Jm0.20i   -Bxa4f2 -Bya2f2 -BWSen )
+	breaksw                                                                            
+##########################################################################################
+	case amuria:                                                        
+ 			set OPTION       =   (  -R102/132/30/55    -Jm0.23i   -Bxa4f2 -Bya2f2 -BWSen )  
+# Must print Portrait
+	breaksw      
+##########################################################################################
+	case tibet: 
+			set OPTION       =   ( -R80/110/28/42 -Jm0.325i -Bxa2f1 -Bya2f1 -BWeSn )
+	breaksw                                                                      
+##########################################################################################
+	case tibet_east:
+			set OPTION       =   ( -R90/110/28/42 -Jm0.325i -Bxa2f1 -Bya2f1 -BWeSn )
+	breaksw                                                                                  
+##########################################################################################
+	case yunnan:
+			set OPTION       =   ( -R90/105/21/34 -Jm0.325i -Bxa2f1 -Bya2f1 -BWeSn )
+	breaksw                                                                               
+##########################################################################################
+	case yunnan2:
+			set OPTION       =   ( -R90/110/21/35 -Jm0.30i -Bxa2f1 -Bya2f1 -BWeSn )
+	breaksw                                                                               
+########################################################################################## 
+   case yunnan3:
+           set OPTION       =   ( -R95/107/20/34 -Jm0.541667i -Bxa2f1 -Bya2f1 -BWeSn )
+   breaksw                                                                             
+########################################################################################## 
+   case syntaxis
+           set OPTION       =   ( -R90/105/25/33 -Jm0.6i -Bxa2f0.5 -Bya1f0.5 -BWeSn )
+   breaksw
+
+########################################################################################## 
+	case china_anninghe:
+			set OPTION       =   ( -R102/103/28/29      -Jm6.0i   -Bxa4f2 -Bya2f2 -BWSen )
+	breaksw                                                                               
+	case china_muli:
+			set OPTION       =   ( -R100/103/27/29      -Jm2.0i   -Bxa4f2 -Bya2f2 -BWSen )
+	breaksw                                                                               
+	case china_sich:
+			set OPTION       =   ( -R99/108/26/34      -Jm0.8i   -Bxa3f3 -Bya3f3 -BWSen )
+	breaksw                                                                               
+##########################################################################################
+	case asia_se:
+			set OPTION       =   ( -R70/130/12/53 -Jm0.110169i -Bxa10f2.5 -Bya5f2.5 -BWeSn ) 
+#          will need to print in landscape; if portrait, change to -Jm0.13  
+	breaksw
+##########################################################################################
+	case asia_east:
+			set OPTION       =   ( -R65/145/10/65 -Jm0.08i -Bxa10f2.5 -Bya5f2.5 -BWeSn ) 
+#          will need to print in landscape; if portrait, change to -Jm0.13i  
+	breaksw
+##########################################################################################   
+	case asia_ne:
+			set OPTION       =   ( -R120/170/30/70 -Jm0.110169i -Bxa10f2.5 -Bya5f2.5 -BWeSn ) 
+#          will need to print in landscape; if portrait, change to -Jm0.13i  
+	breaksw     
+##########################################################################################   
+	case asia_ne_az:
+			set OPTION       =   ( -R120/170/30/70 -Ja140/80/0.110169i -Bxa10f2.5 -Bya5f2.5 -BWeSn ) 
+#          will need to print in landscape; if portrait, change to -Jm0.13i  
+	breaksw                           
+##########################################################################################  
+	case okhotsk:
+			set OPTION       =   ( -R130/168/45/63 -Jm0.171053i -Bxa5f1 -Bya2f1 -BWeSn ) 
+	breaksw     
+##########################################################################################   
+	case japan:
+			set OPTION       =   ( -R125/150/30/55 -Jm0.26i -Bxa5f2.5 -Bya5f2.5 -BWeSn ) 
+#          will need to print in landscape; if portrait, change to -Jm0.13i  
+	breaksw                
+##########################################################################################
+	case asia_sunda:
+			set OPTION       =   (  -R70/145/-25/50 -Jm0.0866667i -Bxa10f5 -Bya10f5 -BWeSn )
+	breaksw
+
+##########################################################################################
+	case sunda:
+			set OPTION       =   (  -R70/145/-30/40 -Jm0.0866667i -Bxa10f5 -Bya10f5 -BWeSn )
+	breaksw
+########################################################################################## 
+	case psp_n:
+			set OPTION       =   (  -R119/134/20/34 -Jm0.325i -Bxa2f1 -Bya2f1 -BWeSn )
+	breaksw
+########################################################################################## 
+	case australia:
+			set OPTION       =   (  -R107/158/-47/0     -Jm0.13i   -Bxa4f2 -Bya2f2 -BWSen )
+	breaksw
+##########################################################################################
+	case east_marm1:
+			set OPTION       =    ( -R28.5/33/40/42 -Jm2.0i -Bxa2f1 -Bya2f1 -BWSen) 
+	breaksw                                               
+##########################################################################################
+	case east_marm2:
+			set OPTION       =   ( -R28.5/33/40/42  -Jm2.0i -Bxa1f0.5 -Bya1f0.5 -BWSen )
+	breaksw
+##########################################################################################
+	case wide_marm:
+			set OPTION       =    ( -R28/33.5/39.25/41.75 -Jm1.5i -Bxa1f0.5 -Bya1f0.5 -BWSen) 
+	breaksw
+##########################################################################################
+
+endsw 	
+
+set check = ( $OPTION $VELscale  $VELSCALE ) 
+if ( $#check == 0 ) then
+	echo "No parameters were resolved. Exiting sh_map_elements"
+	exit
+endif
+
+if ( $#OPTION == 0 ) then
+	echo "No parameters for GMT OPTION found for region: " $type " Exiting ......."
+	exit
+endif
+
+#### 
+set VELscale  = "" 
+set VELSCALE  = "" 
+#### 
+
+echo $OPTION $VELscale  $VELSCALE 
+
+
+

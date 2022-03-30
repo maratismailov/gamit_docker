@@ -1,0 +1,631 @@
+#!/bin/bash
+
+version='2020-11-18'
+
+#2345678901234567890123456789012345678901234567890123456789012345678901234567890
+#
+# 2020-11-18: MAF updated start and end times of Rebuilt ISC-EHB Bulletin and
+#             changed preferred download program to curl for all systems.
+# 2019-05-15: TAH added option to start earthquake count at > 1 to allow 
+#             appending of files when duration is too long.
+# 2019-01-24: MAF corrected awk command with syntax error, expanded $ehbyear
+#             variable and added more descriptive comments Bulletins and
+#             Catalogues used through time.
+# 2018-05-21: MAF added echo of .eq-file created and failed catalog download.
+# 2018-05-08: MAF added "EQ_ID" comment line and $ehbyear variable.
+# 2018-05-04: MAF added test for curl (on Macs) or wget (on all other systems).
+# 2017-01-13: MAF completed translation of old sh_makeeqdef to bash.
+# 2016-12-29: MAF translated old sh_makeeqdef to bash and added MAF's radius of
+#             influence model and coefficients as an option. The default remains
+#             identical to TAH's old scheme.
+#
+#2345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+
+# Redirect standard error to /dev/null
+#exec 2>/dev/null
+
+
+flags='aefjmrst'  # Command line option flags
+
+
+# Program defaults
+ymd1=()                                    # Start date (program will quit if still empty after parsing command line arguments are parsed)
+ymd2=( $(date '+%Y %m %d') )               # End date [default today]
+ehbyear=( 1964 2016 )                      # Original EHB Bulletin (http://www.isc.ac.uk/ehbbulletin/) before ${ehbyear[0]}, Rebuilt ISC-EHB Bulletin (http://www.isc.ac.uk/isc-ehb/) from ${ehbyear[0]} to ${ehbyear[1]}, inclusive (last updated 2020-11-18; see http://www.isc.ac.uk/isc-ehb/)
+files=()                                   # Site coordinate file(s) (script will quit if still empty after parsing command line arguments
+agency='usgs'                              # Agency to search for earthquakes
+minM='5.0'                                 # Minimum magnitude
+model='0'                                  # TAH's original model: radius = <scale> * 2.5e-3 * 5^M + 8
+coeffs=( 1 0 2.5e-3 8 5 )                  # scale, a, b, c, x
+transtbl=()                                # Do not translate automatic event IDs if null string
+wgs84=( 6378137 298.257223563 6371008.8 )  # Major radius and inverse flattening of WGS84 ellipsoid, and mean radius of sphere
+jint='1'                                   # Initial counter value for count output earthquakes
+date="$(date -u '+%Y%m%d%H%M%S%Z')"
+
+# Null input test
+if [ $# -eq 0 ]; then
+
+  less -X << END && exit 1
+Usage displayed using "less". Press up and down arrows to scroll or "q" to quit.
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+  Program:     sh_makeeqdef
+  Written by:  Thomas A Herring (MIT)
+  Last edited: Michael A Floyd ($version, MIT)
+
+  Usage: sh_makeeqdef -start <YYYY/MM/DD> -f <file(s)> [options]
+
+  Description: sh_makeeqdef downloads earthquake location and magnitude
+               information from the ANSS (USGS) [default] or ISC catalogs and
+               converts these to a set of "eq_def" and associated commands for
+               reading by GLOBK. As part of this conversion, an empirical radius
+               of influence for the earthquake is assumed. The default for this
+               value remains the old scheme defined by T. Herring. However, a
+               revised model and coefficients are now available with the -r
+               option. See -r option for more information.
+
+  Options:
+
+    -st[art] <YMD> : Start date from which to search the earthquake catalog.
+                     <YMD> must be in the format "YYYY/MM/DD".
+
+    -e[nd] <YMD>   : End date until which to search the earthquake catalog.
+                     <YMD> must be in the format "YYYY/MM/DD".
+
+    -f[ile] <file> : File of site coordinates. The file is free-format but must
+                     be white-spaced fields of longitude, latitude and site ID,
+                     with whitespace as the first character if not a comment.
+                     This format may be written easily using the following
+                     command with a glist summary file:
+                     grep '^ .* P$' <glist sum-file> | awk '{print " "\$1,\$2,\$8}'
+
+    -a[gency] <ID> : <ID> may be one of the following:
+                     usgs   : ANSS (Comprehensive) catalog (from USGS) [default]
+                     isc_uk : ISC Bulletin (from www.isc.ac.uk)
+                     isc_us : ISC Bulletin (from isc-mirror.iris.washington.edu)
+                     ehb_uk : Original EHB Bulletin before ${ehbyear[0]}, Rebuilt ISC-EHB
+                              Bulletin from ${ehbyear[0]} to ${ehbyear[1]}, inclusive, and ISC
+                              Bulletin thereafter (from www.isc.ac.uk)
+                     ehb_us : Original EHB Bulletin before ${ehbyear[0]}, Rebuilt ISC-EHB
+                              Bulletin from ${ehbyear[0]} to ${ehbyear[1]}, inclusive, and ISC
+                              Bulletin thereafter (from
+                              isc-mirror.iris.washington.edu)
+
+    -m[ag] <min M> : Minimum magnitude for which to search the earthquake
+                     catalogs [default = $minM].
+
+    -j[int] <jint> : Initial earthquake count for generating EQ def code. Used 
+                     when too long a duration requested in catalogs.
+
+    -r[adius] <ID> : Empirical model coefficients to use for the earthquake
+                     radius of influence. The default [$model] uses
+                     T. Herring's original empirical formulation:
+                       radius = <scale> * 2.5e-3 * 5^M + 8
+                     where M is the earthquake magnitude. Other options are
+                     based on an extended formulation:
+                       radius = <scale> * ( a * z + b * x^M ) + c
+                     where z is the earthquake depth. If one of the following
+                     arguments is given for <ID>, coefficients for hard-wired
+                     models will be used as follows:
+
+                     0:  a = ${coeffs[1]}; b = ${coeffs[2]}; c = ${coeffs[3]}; x = ${coeffs[4]} [default]
+                     1a: a = 0.4; b = 1.50e-3; c = 0; x = 6.0
+                         (encompasses ~ 95% of predicted displacements >= 1 mm)
+                     1b: a = 0.3; b = 1.96e-3; c = 0; x = 5.9
+                         (encompasses ~ 99% of predicted displacements >= 1 mm)
+                     1c: a = 0.3; b = 2.62e-3; c = 0; x = 5.7
+                         (encompasses ~ 100% of predicted displacements >= 1 mm)
+                     2a: a = 0.4; b = 1.12e-3; c = 0; x = 6.0
+                         (encompasses ~ 95% of predicted displacements >= 2 mm)
+                     2b: a = 0.3; b = 1.43e-3; c = 0; x = 5.8
+                         (encompasses ~ 99% of predicted displacements >= 2 mm)
+                     2c: a = 0.3; b = 1.99e-3; c = 0; x = 5.6
+                         (encompasses ~ 100% of predicted displacements >= 2 mm)
+                     3a: a = 0.3; b = 1.14e-3; c = 0; x = 5.8
+                         (encompasses ~ 95% of predicted displacements >= 3 mm)
+                     3b: a = 0.3; b = 1.32e-3; c = 0; x = 5.7
+                         (encompasses ~ 99% of predicted displacements >= 3 mm)
+                     3c: a = 0.3; b = 1.83e-3; c = 0; x = 5.5
+                         (encompasses ~ 100% of predicted displacements >= 3 mm)
+                     4a: a = 0.3; b = 9.02e-4; c = 0; x = 5.9
+                         (encompasses ~ 95% of predicted displacements >= 4 mm)
+                     4b: a = 0.2; b = 1.31e-3; c = 0; x = 5.6
+                         (encompasses ~ 99% of predicted displacements >= 4 mm)
+                     4c: a = 0.2; b = 1.71e-3; c = 0; x = 5.5
+                         (encompasses ~ 100% of predicted displacements >= 4 mm)
+                     5a: a = 0.4; b = 4.33e-4; c = 0; x = 6.4
+                         (encompasses ~ 95% of predicted displacements >= 5 mm)
+                     5b: a = 0.3; b = 1.06e-3; c = 0; x = 5.7
+                         (encompasses ~ 99% of predicted displacements >= 5 mm)
+                     5c: a = 0.3; b = 1.35e-3; c = 0; x = 5.5
+                         (encompasses ~ 100% of predicted displacements >= 5 mm)
+                     10a: a = 0.4; b = 3.02e-4; c = 0; x = 6.4
+                         (encompasses ~ 95% of predicted displacements >= 10 mm)
+                     10b: a = 0.3; b = 7.69e-4; c = 0; x = 5.7
+                         (encompasses ~ 99% of predicted displacements >= 10 mm)
+                     10c: a = 0.3; b = 9.19e-4; c = 0; x = 5.6
+                         (encompasses ~ 100% of predicted displacements >= 10 mm)
+
+    -sc[ale] <#>   : Scale factor by which to multiply radius of influence
+                     [default = ${coeffs[0]}].
+
+    -t <table>     : Table with preferred two-character earthquake ID to be
+                     translated. The table is free-format with white-spaced
+                     fields of longitude, latitude, depth, year, month, day,
+                     hour and minute of event, with a leading whitespace
+                     characters if not a comment, e.g.
+                     " IZ   30.004  40.770  15.0 1999 08 17 00 01"
+                     Final output will use preferred code for earthquake
+                     matching within 5 minutes of origin time and 0.5 degrees
+                     longitude and latitude.
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+END
+
+fi
+
+
+# Print version
+echo "$(basename $0) version $version"
+
+
+# Parse command line arguments
+while [ $# -gt 0 ]; do
+
+  case $1 in
+
+    -st* )  # Start date
+
+      ymd1=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-st[^ ]* *//; s/\// /g') )
+      if [ ${#ymd1[@]} -lt 3 ]; then
+        echo "! Error ! Incorrect date string in argument to -start option. Exiting..." &&
+         exit 1
+      fi
+      ;;
+
+    -f* )  # Site coordinate file
+      files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-f[^ ]* *//') )
+      if [ ${#files[@]} -eq 0 ]; then
+        echo "! Error ! No argument(s) given to -f[ile] option. Exiting..." &&
+         exit 1
+      fi
+      ;;
+
+    -a* )  # Agency to search for earthquakes
+      a_opts=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-a[^ ]* *//') )
+      if [ ${#a_opts[@]} -eq 0 ]; then
+        cat << END
+! Warning ! No argument(s) given to -a[gency] option.
+            Proceeding using default [$agency]...
+END
+      else
+        if [ ${#a_opts[@]} -gt 1 ]; then
+          cat << END
+! Warning ! Too many arguments (${#a_opts[@]}) given to -a[gency] option.
+            Proceeding using first argument (${a_opts[0]})...
+END
+        fi
+        if [ "${a_opts[0]}" = 'usgs' -o "${a_opts[0]}" = 'isc_uk' -o "${a_opts[0]}" = 'isc_us' -o "${a_opts[0]}" = 'ehb_uk' -o "${a_opts[0]}" = 'ehb_us' ]; then
+          agency="${a_opts[0]}"
+        else
+          cat << END
+! Warning ! Incorrect agency code ("${a_opts[0]}") given to -a[gency] option.
+            Proceeding using default [$agency]...
+END
+        fi
+      fi
+      ;;
+
+    -e* )  # End date
+
+      ymd2=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-e[^ ]* *//; s/\// /g') )
+      if [ ${#ymd2[@]} -lt 3 ]; then
+        echo "! Error ! Incorrect date string in argument to -end option. Exiting..." &&
+         exit 1
+      fi
+      ;;
+
+    -m* )  # Minimum magnitude
+      m_opts=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-m[^ ]* *//') )
+      if [ ${#m_opts[@]} -eq 1 ]; then
+        minM="${m_opts[0]}"
+      elif [ ${#m_opts[@]} -eq 0 ]; then
+        echo "! Warning ! No argument given to -m[ag] option. Proceeding using default [$minM]..."
+      else
+        minM="${m_opts[0]}"
+        cat << END
+! Warning ! Too many arguments (${#m_opts[@]}) given to -m[ag] option.
+            Proceeding using first argument ($minM)...
+END
+      fi
+      ;;
+
+    -r* )  # Model for radius of influence
+      r_opts=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-r[^ ]* *//') )
+      if [ ${#r_opts[@]} -eq 0 ]; then
+        echo '! Warning ! No argument given to -r option. Proceeding using default model...'
+      elif [ ${#r_opts[@]} -eq 1 ]; then  # Pre-defined model coefficients
+        model="${r_opts[0]}"
+        case ${r_opts[0]} in
+          1a )
+            coeffs[1]='0.4'
+            coeffs[2]='1.50e-3'
+            coeffs[3]='0'
+            coeffs[4]='6.0'
+            ;;
+          1b )
+            coeffs[1]='0.3'
+            coeffs[2]='1.96e-3'
+            coeffs[3]='0'
+            coeffs[4]='5.9'
+            ;;
+          1c )
+            coeffs[1]='0.3'
+            coeffs[2]='2.62e-3'
+            coeffs[3]='0'
+            coeffs[4]='5.7'
+            ;;
+          2a )
+            coeffs[1]='0.4'
+            coeffs[2]='1.12e-3'
+            coeffs[3]='0'
+            coeffs[4]='6.0'
+            ;;
+          2b )
+            coeffs[1]='0.3'
+            coeffs[2]='1.43e-3'
+            coeffs[3]='0'
+            coeffs[4]='5.8'
+            ;;
+          2c )
+            coeffs[1]='0.3'
+            coeffs[2]='1.99e-3'
+            coeffs[3]='0'
+            coeffs[4]='5.6'
+            ;;
+          3a )
+            coeffs[1]='0.3'
+            coeffs[2]='1.14e-3'
+            coeffs[3]='0'
+            coeffs[4]='5.8'
+            ;;
+          3b )
+            coeffs[1]='0.3'
+            coeffs[2]='1.32e-3'
+            coeffs[3]='0'
+            coeffs[4]='5.7'
+            ;;
+          3c )
+            coeffs[1]='0.3'
+            coeffs[2]='1.83e-3'
+            coeffs[3]='0'
+            coeffs[4]='5.5'
+            ;;
+          4a )
+            coeffs[1]='0.3'
+            coeffs[2]='9.02e-4'
+            coeffs[3]='0'
+            coeffs[4]='5.9'
+            ;;
+          4b )
+            coeffs[1]='0.2'
+            coeffs[2]='1.31e-3'
+            coeffs[3]='0'
+            coeffs[4]='5.6'
+            ;;
+          4c )
+            coeffs[1]='0.2'
+            coeffs[2]='1.71e-3'
+            coeffs[3]='0'
+            coeffs[4]='5.5'
+            ;;
+          5a )
+            coeffs[1]='0.4'
+            coeffs[2]='4.33e-4'
+            coeffs[3]='0'
+            coeffs[4]='6.4'
+            ;;
+          5b )
+            coeffs[1]='0.3'
+            coeffs[2]='1.06e-3'
+            coeffs[3]='0'
+            coeffs[4]='5.7'
+            ;;
+          5c )
+            coeffs[1]='0.3'
+            coeffs[2]='1.35e-3'
+            coeffs[3]='0'
+            coeffs[4]='5.5'
+            ;;
+          10a )
+            coeffs[1]='0.4'
+            coeffs[2]='3.02e-4'
+            coeffs[3]='0'
+            coeffs[4]='6.4'
+            ;;
+          10b )
+            coeffs[1]='0.3'
+            coeffs[2]='7.69e-4'
+            coeffs[3]='0'
+            coeffs[4]='5.7'
+            ;;
+          10c )
+            coeffs[1]='0.3'
+            coeffs[2]='9.19e-4'
+            coeffs[3]='0'
+            coeffs[4]='5.6'
+            ;;
+          * )
+            cat << END
+! Warning ! Incorrect argument given to -r[adius] option. See help page for usage.
+            Proceeding using default model coefficients...
+END
+            ;;
+        esac
+      elif [ ${#r_opts[@]} -eq 4 ]; then  # User-defined model coefficients
+        coeffs[1]="${r_opts[0]}"
+        coeffs[2]="${r_opts[1]}"
+        coeffs[3]="${r_opts[2]}"
+        coeffs[4]="${r_opts[3]}"
+      else
+        cat << END
+! Warning ! Incorrect number of arguments (${#r_opts[@]}) given to -r[adius] option.
+            Must be 1 (for hard-wired model coefficients) or 4 (for user-defined
+            model coefficients). Proceeding using default model coefficients...
+END
+      fi
+      ;;
+
+    -sc* )  # Radius scale factor
+      sc_opts=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-sc[^ ]* *//') )
+      if [ ${#sc_opts[@]} -eq 1 ]; then
+        coeffs[0]="${sc_opts[0]}"
+      elif [ ${#sc_opts[@]} -eq 0 ]; then
+        echo "! Warning ! No argument given to -m[ag] option. Proceeding using default [${coeffs[0]}]..."
+      else
+        coeffs[0]="${sc_opts[0]}"
+        cat << END
+! Warning ! Too many arguments (${#sc_opts[@]}) given to -sc[ale] option.
+            Proceeding using first argument (${coeffs[0]})...
+END
+      fi
+      ;;
+
+    -j* )  # Initial value for output earthquake count (default 1)
+      j_opts=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-j[^ ]* *//') )
+      if [ ${#j_opts[@]} -eq 1 ]; then
+        jint="${j_opts[0]}"
+      elif [ ${#j_opts[@]} -eq 0 ]; then
+        echo "! Warning ! No argument given to -j[int] option. Proceeding using default [${jint}]..."
+      else
+        jint="${j_opts[0]}"
+        cat << END
+! Warning ! Too many arguments (${#j_opts[@]}) given to -j[int] option.
+            Proceeding using first argument (${jint})...
+END
+      fi
+      ;;
+
+    -t* )  # Translation table
+      t_opts=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-t[^ ]* *//') )
+      if [ ${#t_opts[@]} -gt 0 ]; then
+        transtbl=( ${t_opts[@]} )
+      else
+        cat << END
+! Warning ! No argument(s) given to -t option.
+            Proceeding without translation of earthquake IDs...
+END
+      fi
+      ;;
+
+  esac
+
+  shift
+
+done
+
+
+# Check required command line options
+if [ ${#ymd1[@]} -eq 0 ]; then
+  echo '! Error ! Start date not defined with -st[art] option. Exiting...' &&
+   exit 1
+fi
+if [ ${#files[@]} -eq 0 ]; then
+  echo '! Error ! Site coordinate file not defined with -f[ile] option. Exiting...' &&
+   exit 1
+fi
+
+
+# Print message to standard output
+if [ "$model" = '0' ]; then
+  echo "Radius of influence = ${coeffs[0]} * ${coeffs[2]}*${coeffs[4]}^M + ${coeffs[3]}"
+else
+  echo "Radius of influence = ${coeffs[0]} * (${coeffs[1]}*z + ${coeffs[2]}*${coeffs[4]}^M) + ${coeffs[3]}"
+fi
+
+
+# Test which program to use for download
+if [ -e "$(which curl)" ]; then  # curl exists
+  prog='curl -# -L -R -o'
+elif [ -e "$(which wget)" ]; then  # wget exists
+  prog='wget -nv -O'
+else  # Neither curl nor wget available
+  echo 'Neither wget nor curl available to download EOP tables. Exiting...' &&
+   exit 1
+fi
+
+
+# Download results of earthquake catalog search
+search_file="${agency}_${ymd1[0]}${ymd1[1]}${ymd1[2]}000000-${ymd2[0]}${ymd2[1]}${ymd2[2]}235959.out"
+if [ "${agency[0]}" = 'isc_uk' -o "${agency[0]}" = 'isc_us' -o "${agency[0]}" = 'ehb_uk' -o "${agency[0]}" = 'ehb_us' ]; then
+
+  if [ "${agency[0]:3:3}" = '_us' ]; then  # From mirror server in US
+    server='http://isc-mirror.iris.washington.edu'
+  else  # From primary server in UK [default]
+    server='http://www.isc.ac.uk'
+  fi
+
+  if [ "${agency[0]:0:3}" = 'isc' ]; then
+    bulletin='ISC'
+  elif [ "${agency[0]:0:3}" = 'ehb' ]; then
+    bulletin='ISC-EHB'
+  fi
+
+  if [ "${agency[0]}" = 'ehb_uk' -o "${agency[0]}" = 'ehb_us' ]; then  # Original EHB Bulletin until ${ehbyear[0]}, Rebuilt ISC-EHB Bulletin from ${ehbyear[0]} to ${ehbyear[1]}, inclusive, and ISC Bulletin thereafter
+
+    if [ ${ymd1[0]} -le ${ehbyear[1]} -a ${ymd2[0]} -le ${ehbyear[1]} ]; then  # Search original EHB/Rebuilt ISC-EHB Bulletins only
+
+      #$prog "$search_file" "$server/cgi-bin/web-db-v4?request=COLLECTED&req_agcy=EHB&out_format=CATCSV&searchshape=GLOBAL&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&top_lat=&bot_lat=&left_lon=&right_lon=&srn=&grn=&start_year=${ymd1[0]}&start_month=${ymd1[1]}&start_day=${ymd1[2]}&start_time=00%3A00%3A00&end_year=${ymd2[0]}&end_month=${ymd2[1]}&end_day=${ymd2[2]}&end_time=23%3A59%3A59&min_dep=&max_dep=&min_mag=${minM[0]}&max_mag=&req_mag_type=MW&req_mag_agcy=Any&table_owner=ehb"
+      $prog "$search_file" "$server/cgi-bin/web-db-v4?request=COLLECTED&req_agcy=ISC-EHB&out_format=CATCSV&searchshape=GLOBAL&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&top_lat=&bot_lat=&left_lon=&right_lon=&srn=&grn=&start_year=${ymd1[0]}&start_month=${ymd1[1]}&start_day=${ymd1[2]}&start_time=00%3A00%3A00&end_year=${ymd2[0]}&end_month=${ymd2[1]}&end_day=${ymd2[2]}&end_time=23%3A59%3A59&min_dep=&max_dep=&min_mag=${minM[0]}&max_mag=&req_mag_type=Any&req_mag_agcy=Any&table_owner=iscehb"
+      if [ -n "$(grep 'we are unable to process this query' $search_file)" -o -n "$(grep 'Sorry, but your request cannot be processed at the present time' $search_file)" ]; then
+        rm -f $search_file
+        cat << END && exit 1
+Maximum number of events catalog can output likely exceeded.
+Try with a higher magnitude threshold or shorter time period.
+END
+      fi
+
+    elif [ ${ymd1[0]} -le ${ehbyear[1]} -a ${ymd2[0]} -gt ${ehbyear[1]} ]; then  # Search both original EHB/Rebuilt ISC-EHB and ISC Bulletins
+
+      let ehbyear1="${ehbyear[1]} + 1"
+      #$prog "$search_file" "$server/cgi-bin/web-db-v4?request=COLLECTED&req_agcy=EHB&out_format=CATCSV&searchshape=GLOBAL&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&top_lat=&bot_lat=&left_lon=&right_lon=&srn=&grn=&start_year=${ymd1[0]}&start_month=${ymd1[1]}&start_day=${ymd1[2]}&start_time=00%3A00%3A00&end_year=${ehbyear[1]}&end_month=12&end_day=31&end_time=23%3A59%3A59&min_dep=&max_dep=&min_mag=${minM[0]}&max_mag=&req_mag_type=Any&req_mag_agcy=Any&table_owner=ehb" "$server/cgi-bin/web-db-v4?request=COMPREHENSIVE&out_format=CATCSV&bot_lat=&top_lat=&left_lon=&right_lon=&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&searchshape=GLOBAL&srn=&grn&start_year=${ehbyear1}&start_month=01&start_day=01&start_time=00%3A00%3A00&end_year=${ymd2[0]}&end_month=${ymd2[1]}&end_day=${ymd2[2]}&end_time=23%3A59%3A59&min_dep=&max_dep=&min_mag=${minM[0]}&max_mag=&req_mag_type=Any&req_mag_agcy=Any"
+      $prog "$search_file" "$server/cgi-bin/web-db-v4?request=COLLECTED&req_agcy=ISC-EHB&out_format=CATCSV&searchshape=GLOBAL&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&top_lat=&bot_lat=&left_lon=&right_lon=&srn=&grn=&start_year=${ymd1[0]}&start_month=${ymd1[1]}&start_day=${ymd1[2]}&start_time=00%3A00%3A00&end_year=${ehbyear[1]}&end_month=12&end_day=31&end_time=23%3A59%3A59&min_dep=&max_dep=&min_mag=${minM[0]}&max_mag=&req_mag_type=Any&req_mag_agcy=Any&table_owner=iscehb" "$server/cgi-bin/web-db-v4?request=COMPREHENSIVE&out_format=CATCSV&bot_lat=&top_lat=&left_lon=&right_lon=&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&searchshape=GLOBAL&srn=&grn=&start_year=${ehbyear1}&start_month=01&start_day=01&start_time=00%3A00%3A00&end_year=${ymd2[0]}&end_month=${ymd2[1]}&end_day=${ymd2[2]}&end_time=23%3A59%3A59&min_dep=&max_dep=&min_mag=${minM[0]}&max_mag=&req_mag_type=Any&req_mag_agcy=Any"
+      if [ -n "$(grep 'we are unable to process this query' $search_file)" -o -n "$(grep 'Sorry, but your request cannot be processed at the present time' $search_file)" ]; then
+        rm -f $search_file
+        cat << END && exit 1
+Maximum number of events catalog can output likely exceeded.
+Try with a higher magnitude threshold or shorter time period.
+END
+      fi
+
+    else  # Search ISC Bulletin only
+
+      $prog "$search_file" "$server/cgi-bin/web-db-v4?request=COMPREHENSIVE&out_format=CATCSV&bot_lat=&top_lat=&left_lon=&right_lon=&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&searchshape=GLOBAL&srn=&grn=&start_year=${ymd1[0]}&start_month=${ymd1[1]}&start_day=${ymd1[2]}&start_time=00%3A00%3A00&end_year=${ymd2[0]}&end_month=${ymd2[1]}&end_day=${ymd2[2]}&end_time=23%3A59%3A59&min_dep=&max_dep=&min_mag=${minM[0]}&max_mag=&req_mag_type=Any&req_mag_agcy=Any"
+      if [ -n "$(grep 'we are unable to process this query' $search_file)" -o -n "$(grep 'Sorry, but your request cannot be processed at the present time' $search_file)" ]; then
+        rm -f $search_file
+        cat << END && exit 1
+Maximum number of events catalog can output likely exceeded.
+Try with a higher magnitude threshold or shorter time period.
+END
+      fi
+
+    fi
+
+  else  # Search ISC Bulletin
+
+    $prog "$search_file" "$server/cgi-bin/web-db-v4?request=COMPREHENSIVE&out_format=CATCSV&bot_lat=&top_lat=&left_lon=&right_lon=&ctr_lat=&ctr_lon=&radius=&max_dist_units=deg&searchshape=GLOBAL&srn=&grn=&start_year=${ymd1[0]}&start_month=${ymd1[1]}&start_day=${ymd1[2]}&start_time=00%3A00%3A00&end_year=${ymd2[0]}&end_month=${ymd2[1]}&end_day=${ymd2[2]}&end_time=23%3A59%3A59&min_dep=&max_dep=&min_mag=${minM[0]}&max_mag=&req_mag_type=Any&req_mag_agcy=Any"
+    if [ -n "$(grep 'we are unable to process this query' $search_file)" -o -n "$(grep 'Sorry, but your request cannot be processed at the present time' $search_file)" ]; then
+      rm -f $search_file
+      cat << END && exit 1
+Maximum number of events catalog can output likely exceeded.
+Try with a higher magnitude threshold or shorter time period.
+END
+    fi
+
+  fi
+
+  # Write preliminary eq-file
+  if [ "$model" = '0' ]; then  # Use TAH's original formulation
+    sed 's/^ *//; s/ *, */,/g; s/,$//' $search_file |
+     awk -v ehbyear=${ehbyear[1]} -v bulletin=$bulletin -v minM=${minM[0]} -v s=${coeffs[0]} -v a=${coeffs[1]} -v b=${coeffs[2]} -v c=${coeffs[3]} -v x=${coeffs[4]} -v FS=',' 'BEGIN {i = 1}; /EVENTID,/,/^$/ {if ($1 != "EVENTID" && $0 !~ /^$/) {mag = ""; M = ""; for (j = 9; j <= NF; j++) if (($j == "GCMT" || $j == "HRVD") && ($(j+1) ~ /MW/ || $(j+1) ~ /Mw/ || $(j+1) ~ /mW/ || $(j+1) ~ /mw/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if (($j == "NEIC" || $j == "USGS") && ($(j+1) ~ /MW/ || $(j+1) ~ /Mw/ || $(j+1) ~ /mW/ || $(j+1) ~ /mw/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if ($j == "ISC" && ($(j+1) ~ /MW/ || $(j+1) ~ /Mw/ || $(j+1) ~ /mW/ || $(j+1) ~ /mw/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if ($j == "JMA" && ($(j+1) ~ /MW/ || $(j+1) ~ /Mw/ || $(j+1) ~ /mW/ || $(j+1) ~ /mw/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if (($j == "GCMT" || $j == "HRVD") && ($(j+1) ~ /MS/ || $(j+1) ~ /Ms/ || $(j+1) ~ /mS/ || $(j+1) ~ /ms/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if (($j == "NEIC" || $j == "USGS") && ($(j+1) ~ /MS/ || $(j+1) ~ /Ms/ || $(j+1) ~ /mS/ || $(j+1) ~ /ms/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if ($j == "ISC" && ($(j+1) ~ /MS/ || $(j+1) ~ /Ms/ || $(j+1) ~ /mS/ || $(j+1) ~ /ms/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if ($j == "JMA" && ($(j+1) ~ /MS/ || $(j+1) ~ /Ms/ || $(j+1) ~ /mS/ || $(j+1) ~ /ms/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if (($j == "GCMT" || $j == "HRVD") && ($(j+1) ~ /MB/ || $(j+1) ~ /Mb/ || $(j+1) ~ /mB/ || $(j+1) ~ /mb/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if (($j == "NEIC" || $j == "USGS") && ($(j+1) ~ /MB/ || $(j+1) ~ /Mb/ || $(j+1) ~ /mB/ || $(j+1) ~ /mb/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if ($j == "ISC" && ($(j+1) ~ /MB/ || $(j+1) ~ /Mb/ || $(j+1) ~ /mB/ || $(j+1) ~ /mb/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if ($j == "JMA" && ($(j+1) ~ /MB/ || $(j+1) ~ /Mb/ || $(j+1) ~ /mB/ || $(j+1) ~ /mb/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)}; if (M != "") {cs = s*3e-8*13^M; cd = s*(a*$7 + b*x^M) + c; if ($2 == bulletin) printf "* EQ_ID %s %s\n* EQ_DEF %s %s%.1f (%s km depth",bulletin,$1,src,mag,M,$7; else {if (substr($3,1,4) > ehbyear) bull = "ISC"; else bull = bulletin; printf "* EQ_ID %s(%s) %s\n* EQ_DEF %s %s%.1f (%s km depth",bull,$2,$1,src,mag,M,$7}; if ($8 == "TRUE") print " fixed)"; else print ")"; printf " eq_def %05d  %8.4f %9.4f  %6.1f  8  %4d %02d %02d %02d %02d  %8.4f\n eq_rename %05d\n eq_coseis %05d  0.0010 0.0010 0.0010  %8.4f %8.4f %8.4f\n",i,$5,$6,cd,substr($3,1,4),substr($3,6,2),substr($3,9,2),substr($4,1,2),substr($4,4,2)+1,cs,i,i,cs,cs,cs; i++}}}' >| sh_makeeqdef_$date.tmp
+  else
+    sed 's/^ *//; s/ *, */,/g; s/,$//' $search_file |
+     awk -v ehbyear=${ehbyear[1]} -v bulletin=$bulletin -v minM=${minM[0]} -v s=${coeffs[0]} -v a=${coeffs[1]} -v b=${coeffs[2]} -v c=${coeffs[3]} -v x=${coeffs[4]} -v FS=',' 'BEGIN {i = 1}; /EVENTID,/,/^$/ {if ($1 != "EVENTID" && $0 !~ /^$/) {mag = ""; M = ""; for (j = 9; j <= NF; j++) if (($j == "GCMT" || $j == "HRVD") && ($(j+1) ~ /MW/ || $(j+1) ~ /Mw/ || $(j+1) ~ /mW/ || $(j+1) ~ /mw/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if (($j == "NEIC" || $j == "USGS") && ($(j+1) ~ /MW/ || $(j+1) ~ /Mw/ || $(j+1) ~ /mW/ || $(j+1) ~ /mw/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if ($j == "ISC" && ($(j+1) ~ /MW/ || $(j+1) ~ /Mw/ || $(j+1) ~ /mW/ || $(j+1) ~ /mw/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if ($j == "JMA" && ($(j+1) ~ /MW/ || $(j+1) ~ /Mw/ || $(j+1) ~ /mW/ || $(j+1) ~ /mw/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if (($j == "GCMT" || $j == "HRVD") && ($(j+1) ~ /MS/ || $(j+1) ~ /Ms/ || $(j+1) ~ /mS/ || $(j+1) ~ /ms/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if (($j == "NEIC" || $j == "USGS") && ($(j+1) ~ /MS/ || $(j+1) ~ /Ms/ || $(j+1) ~ /mS/ || $(j+1) ~ /ms/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if ($j == "ISC" && ($(j+1) ~ /MS/ || $(j+1) ~ /Ms/ || $(j+1) ~ /mS/ || $(j+1) ~ /ms/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if ($j == "JMA" && ($(j+1) ~ /MS/ || $(j+1) ~ /Ms/ || $(j+1) ~ /mS/ || $(j+1) ~ /ms/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if (($j == "GCMT" || $j == "HRVD") && ($(j+1) ~ /MB/ || $(j+1) ~ /Mb/ || $(j+1) ~ /mB/ || $(j+1) ~ /mb/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if (($j == "NEIC" || $j == "USGS") && ($(j+1) ~ /MB/ || $(j+1) ~ /Mb/ || $(j+1) ~ /mB/ || $(j+1) ~ /mb/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if ($j == "ISC" && ($(j+1) ~ /MB/ || $(j+1) ~ /Mb/ || $(j+1) ~ /mB/ || $(j+1) ~ /mb/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)} else if ($j == "JMA" && ($(j+1) ~ /MB/ || $(j+1) ~ /Mb/ || $(j+1) ~ /mB/ || $(j+1) ~ /mb/) && $(j+2) >= minM) {src = $j; mag = $(j+1); M = $(j+2)}; if (M != "") {cs = s*3e-8*13^M; cd = s*(a*$7 + b*x^M) + c; if ($2 == bulletin) printf "* EQ_ID %s %s\n* EQ_DEF %s %s%.1f (%s km depth",bulletin,$1,src,mag,M,$7; else {if (substr($3,1,4) > ehbyear) bull = "ISC"; else bull = bulletin; printf "* EQ_ID %s(%s) %s\n* EQ_DEF %s %s%.1f (%s km depth",bull,$2,$1,src,mag,M,$7}; if ($8 == "TRUE") print " fixed)"; else print ")"; printf " eq_def %05d  %8.4f %9.4f  %6.1f  %5.1f  %4d %02d %02d %02d %02d  %8.4f\n eq_rename %05d\n eq_coseis %05d  0.0010 0.0010 0.0010  %8.4f %8.4f %8.4f\n",i,$5,$6,cd,$7,substr($3,1,4),substr($3,6,2),substr($3,9,2),substr($4,1,2),substr($4,4,2)+1,cs,i,i,cs,cs,cs; i++}}}' >| sh_makeeqdef_$date.tmp
+  fi
+
+else  # ANSS (Comprehensive) catalog [default]
+
+  server='http://earthquake.usgs.gov/fdsnws/event/1/'
+  $prog "$search_file" "${server}query?starttime=${ymd1[0]}-${ymd1[1]}-${ymd1[2]}T00:00:00&endtime=${ymd2[0]}-${ymd2[1]}-${ymd2[2]}T23:59:59&minmagnitude=${minM[0]}&eventtype=earthquake&format=csv&orderby=time-asc" 2>/dev/null
+  if [ ! -s "$search_file" ]; then
+    rm -f $search_file
+    cat << END && exit 1
+Maximum number of events catalog can output likely exceeded.
+Try with a higher magnitude threshold or shorter time period.
+END
+  fi
+
+  # Write preliminary eq-file
+  if [ "$model" = '0' ]; then  # Use TAH's original formulation
+    tr -d '"' < $search_file |
+     awk -v s=${coeffs[0]} -v a=${coeffs[1]} -v b=${coeffs[2]} -v c=${coeffs[3]} -v x=${coeffs[4]} -v FS=',' 'BEGIN {i = 0}; {if (NR > 1) {i++; cs = s*3e-8*13^$5; cd = s*(a*$4 + b*x^$5) + c; printf "* EQ_ID ANSS(ComCat) %s\n* EQ_DEF %s%.1f %s (%s km depth",$12,$6,$5,$14,$4; if ($4 !~ /\./) printf " fixed)"; else printf ")"; printf "\n eq_def %05d  %8.4f %9.4f  %6.1f  8  %4d %02d %02d %02d %02d  %8.4f\n eq_rename %05d\n eq_coseis %05d  0.0010 0.0010 0.0010  %8.4f %8.4f %8.4f\n",i,$2,$3,cd,substr($1,1,4),substr($1,6,2),substr($1,9,2),substr($1,12,2),substr($1,15,2)+1,cs,i,i,cs,cs,cs}}' >| sh_makeeqdef_$date.tmp
+  else
+    tr -d '"' < $search_file |
+     awk -v s=${coeffs[0]} -v a=${coeffs[1]} -v b=${coeffs[2]} -v c=${coeffs[3]} -v x=${coeffs[4]} -v FS=',' 'BEGIN {i = 0}; {if (NR > 1) {i++; cs = s*3e-8*13^$5; cd = s*(a*$4 + b*x^$5) + c; printf "* EQ_ID ANSS(ComCat) %s\n* EQ_DEF %s%.1f %s (%s km depth",$12,$6,$5,$14,$4; if ($4 !~ /\./) printf " fixed)"; else printf ")"; printf "\n eq_def %05d  %8.4f %9.4f  %6.1f  %5s  %4d %02d %02d %02d %02d  %8.4f\n eq_rename %05d\n eq_coseis %05d  0.0010 0.0010 0.0010  %8.4f %8.4f %8.4f\n",i,$2,$3,cd,$4,substr($1,1,4),substr($1,6,2),substr($1,9,2),substr($1,12,2),substr($1,15,2)+1,cs,i,i,cs,cs,cs}}' >| sh_makeeqdef_$date.tmp
+  fi
+
+fi
+
+rm -f $search_file
+
+
+# Write final sequenced eq-file
+out_eqfile="eq_${ymd2[0]}${ymd2[1]}${ymd2[2]}.eq"
+
+# Write header
+cat << END >| $out_eqfile
+* Earthquake definition file created with $(basename $0) by$(finger $(whoami) | awk -v FS=':' 'NR == 1 {print $NF}') on $(date '+%Y-%m-%d')
+* for events from ${ymd1[0]}-${ymd1[1]}-${ymd1[2]} to ${ymd2[0]}-${ymd2[1]}-${ymd2[2]} (inclusive)
+* from $server.
+* Empirical model for radius of influence of earthquake:
+* radius = scale*(a*z + b*x^M) + c
+* where scale = ${coeffs[0]}, a = ${coeffs[1]}, b = ${coeffs[2]}, c = ${coeffs[3]}, x = ${coeffs[4]},
+* z is earthquake depth and M is magnitude.
+* Proximity based on $(tr ' ' ',' <<< ${files[@]})
+* Initial earthquake count $jint
+END
+
+# Loop over earthquakes to see if any sites are predicted to be affected
+grep '^ *eq_def' sh_makeeqdef_$date.tmp >| eq_def_$date.tmp
+i=1  # Counter for all earthquakes from catalog search
+#j=1  # Counter for relevant earthquakes from site list
+# MOD TAH 190515: Added jint initial value (default 1)
+j=$jint  # Counter for relevant earthquakes from site list
+
+# Loop over earthquake definitions to see if any sites are predicted to be affected
+while [ $i -le $(wc -l eq_def_$date.tmp | awk '{print $1}') ]; do
+
+  eq_def=( $(awk -v i=$i '{if (NR == i) {print $0; exit}}' eq_def_$date.tmp) )
+
+  # Find sites within radius of influence of earthquake
+  grep -h '^ ' ${files[@]} |
+   awk -v lat="${eq_def[2]}" -v lon="${eq_def[3]}" -v radius=${eq_def[4]} -v depth=${eq_def[5]} -v cs=${eq_def[11]} -v a=${wgs84[0]} -v finv=${wgs84[1]} -v rE=${wgs84[2]} 'BEGIN {pi = 4*atan2(1,1); f = 1/finv; Neqk = a/sqrt(1-f*(2-f)*sin(lat*pi/180)^2); xeqk = (Neqk-depth*1e3)*cos(lat*pi/180)*cos(lon*pi/180); yeqk = (Neqk-depth*1e3)*cos(lat*pi/180)*sin(lon*pi/180); zeqk = ((1-f)^2*Neqk-depth*1e3)*sin(lat*pi/180)}; {N = a/sqrt(1-f*(2-f)*sin($2*pi/180)^2); x = N*cos($2*pi/180)*cos($1*pi/180); y = N*cos($2*pi/180)*sin($1*pi/180); z = (1-f)^2*N*sin($2*pi/180); dotprod = (x*xeqk + y*yeqk + z*zeqk)/(sqrt(x^2 + y^2 + z^2)*sqrt(xeqk^2 + yeqk^2 + zeqk^2)); dist = rE*atan2(sqrt(1-dotprod^2),dotprod); cm = cs*(8e3/dist)^2; if (dist <= radius*1e3) printf "* %s ~ %7.1f mm (~ %.2f km)\n",$3,cm*1e3,dist/1e3}' >| sites_$date.tmp
+
+  if [ -s sites_$date.tmp ]; then  # Found sites predicted to be affected
+
+    # Search for pre-defined event ID to use
+    if [ ${#transtbl[@]} -gt 0 ]; then
+      id="$(grep -h '^ ' ${transtbl[@]} | awk -v lat="${eq_def[2]}" -v lon="${eq_def[3]}" -v y="${eq_def[6]}" -v mo="${eq_def[7]}" -v d="${eq_def[8]}" -v h="${eq_def[9]}" -v mi="${eq_def[10]}" 'BEGIN {split("31 59 90 120 151 181 212 243 273 304 334 365",sum," ")}; {doy=sum[mo-1]+d; dpy=365; if (y % 4 == 0 && (y % 100 != 0 || y % 400 == 0) && mo > 2) {doy++; dpy++}; t0=y+(doy+(h+mi/60)/24)/dpy; doy=sum[$6-1]+$7; dpy=365; if ($5 % 4 == 0 && ($5 % 100 != 0 || $5 % 400 == 0) && $6 > 2) {doy++; dpy++}; t=$5+(doy+($8+$9/60)/24)/dpy; dt=sqrt((t-t0)^2); dlon=sqrt((($2+360)%360-(lon+360)%360)^2); dlat=sqrt(($3-lat)^2); if (dt <= 5/(60*24*dpy) && dlon <= 0.5 && dlat <= 0.5) print $1}')"
+    else
+      id=''
+    fi
+
+    if [ "$id" != '' ]; then
+      echo "Translating event ${eq_def[1]} to $id..."
+    else
+      #id="$(echo $j | awk 'BEGIN {split("A B C D E F G H I J K L M N O P Q R S T U V W X Y Z",letters," ")}; {if ($1 < 100) printf "%02d\n",$1; else {i=int(($1-100)/9)+1; if (i > 0 && i <= 26) printf "%s%1d\n",letters[i],($1-100)%9+1; else if (i <= 52) printf "%1d%s\n",($1-100-26*9)%9+1,letters[i-26]}}')"
+      id="$(echo $j | awk 'BEGIN {split("A B C D E F G H I J K L M N O P Q R S T U V W X Y Z",letters," ")}; {i=int(($1-1)/9)+1; if (i > 0 && i <= 26) printf "%s%1d\n",letters[i],($1-1)%9+1; else if (i <= 52) printf "%1d%s\n",($1-1-26*9)%9+1,letters[i-26]}')"
+      let j++  # Increment counter
+    fi
+
+    cat << END >> $out_eqfile
+* ---------------------------------------
+* Earthquake catalog search result # $i
+* Approximate predicted coseismic displacements (epicentral distance):
+END
+    cat sites_$date.tmp >> $out_eqfile
+    awk -v i=$i -v id="$id" '{if (NR >= 5*i-4 && NR <= 5*i) {if ($0 ~ /^\* *EQ_ID/) printf "* EQ_ID %s %s\n",id,substr($0,9); else if ($1 == "eq_def") printf " eq_def %2s  %8.4f %9.4f  %6.1f  %5.1f  %4d %02d %02d %02d %02d  %8.4f\n",id,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12; else if ($1 == "eq_rename") printf " eq_rename %2s\n",id; else if ($1 == "eq_coseis") printf " eq_coseis %2s  %6.4f %6.4f %6.4f  %8.4f %8.4f %8.4f\n",id,$3,$4,$5,$6,$7,$8; else print $0}; if (NR > 5*i) exit}' sh_makeeqdef_$date.tmp >> $out_eqfile
+
+  fi
+
+  rm -f sites_$date.tmp
+
+  let i++  # Increment counter
+
+done  # END: Loop over earthquake definitions to see if any sites are predicted to be affected
+
+echo "Created $out_eqfile"
+
+rm -f sh_makeeqdef_$date.tmp eq_def_$date.tmp
+

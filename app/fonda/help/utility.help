@@ -1,0 +1,21 @@
+
+    UTILITY is not a single package.  It is a collection of various functions.
+Each function performs its own work independently.  
+
+    The following is the list of functions currently available:
+align_frame:   align two reference frames by affine transformation.
+compare_coor:  calculate the difference of two apriori files.
+get_line:      sort baseline length data and perform statistics.
+plot_line:     plot baseline length observations line by line using GMT package.
+net_update:    update network apriori file.
+get_v_rel:     calculate the velocity relative to one site.
+
+    The UTILITY directory definitely should be enriched.  I hope every FONDA 
+user will make a contribution!
+
+                                            Danan Dong  92.10.08
+                                            e-mail: dong@chandler.mit.edu
+                                            (617)253-8872, MIT
+
+Modified by Matt King 31/3/2000
+

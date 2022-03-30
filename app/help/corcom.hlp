@@ -1,0 +1,119 @@
+CORCOM: Site coordinate comparison 
+
+CORCOM: Program for the comparison of site coordinates estimated by
+        difference systems.  
+
+The runstring of the program is:
+
+% corcom <sys1> <frame1> <sys2> <frame2> <outname> <out_frame> \
+         <ties> <fundamental sites> <height wght> <scale>
+
+where <sys 1> is the name of the file containing the sites
+            and their coordinates and velocity in system 1
+      <frame 1> is the frame for this first system.  (See frames
+            below).
+      <sys 2> is the second (comparison) system.  Sys 1 will be
+            rotated and translated into this frame.  Differences
+            will be given between sys1 and sys2 in this frame.
+      <frame 2> is the frame for this second system.  Same
+            choices as above.  Default NAFD_1990.0 where the
+            end characters are the epoch of the frame to be
+            used.  (Only used for the out_frame)
+      <outname> is name of file for output of frame (overwritten)
+      <out_frame> is the frame for the output field (as above)
+            The out_frame name MUST include a date at which to
+            align the frames.  The date is included as NAFD_1990.0
+            for example.
+      <ties> if the file containing site ties.  The file is
+            interpretted as using the second site name in the
+            tie to generate the position of the first tie.  The
+            ties are only applied to the sites in sys 1. (May
+            be neglected in runstring---no ties will be used)
+      <fundamental sites> names of sites to be used for rotation
+            and translation (names after ties have been applied)
+            If not given then all sites are used.  ALL may be
+            given as name and all common sites will be used.
+            A '-' in front of name will stop it being used.
+            Full 8-character name must be given 
+      <height wght> Weight to be given to heights in the
+            transformation determination.  If 1 then equal
+            weight given.  If 0 then no weight is given
+            (default is not to used heights)
+      <scale> indicates that scale should be estimated (Y will
+            cause sacle to be estimated, unless height weight
+            is zero, in which case scale can not be estimated.
+MOD TAH 170522: Using R for the <scale> results in only rotations
+            being estimated.
+
+Examples:
+
+Rotate an apr file from one frame to another:
+
+ corcom itrf05.apr ITRF05 '' '' itrf05_soam.apr SOAM_I05_2005.
+        
+The frame names NUV-NNR, ITRF94, and ITRF00 are equivalent, all assumed to
+be no-net-rotation.  There are small corrections for frame names AM-02
+and ITRF93.  Using any of the following plate-specific frame names will
+generate velocities for the site with its assigned plate assumed to move
+with the NUVEL-1A rate with respect to the NNR frame:
+
+ PCFC  COCO  NAZC  CARB  SAFD  ANTA  INDI  AUST  AFRC  ARAB
+ EURA  NAFD  JUAN  PHIL  AM-02 ITRF93 
+
+Adding a :O to the name will scale the rate to the NUVEL-1, rather
+than NUVEL-1A model model. 
+
+NEW 120106: Added the rotation vectors from ITRF2008 (NNR) to the
+15 plates considered by Altamimi et al. [J. Geopys. Res., 2012].
+To ivoke these rotations, use the plate names
+         
+ AMUR_I08  ANTA_I08  ARAB_I08  AUST_I08  CARB_I08  EURA_I08  INDI_I08    
+ NAZC_I08  NOAM_I08  NUBI_I08  OKHT_I08  PCFC_I08  SOAM_I08  SOMA_I08    
+ YANG_I08 
+             
+NEW 070801:  Added the rotation vectors from ITRF2005 (NNR) to the
+15 plates considered by Altamimi et al. [J. Geopys. Res., 2007].
+To ivoke these rotations, use the plate names
+         
+ AMUR_I05  ANTA_I05  ARAB_I05  AUST_I05  CARB_I05  EURA_I05  INDI_I05    
+ NAZC_I05  NOAM_I05  NUBI_I05  OKHT_I05  PCFC_I05  SOAM_I05  SOMA_I05    
+ YANG_I05 
+        
+NEW 011223:  For some (but not all) plates, the rotation to be used can be 
+the one estimated by Altamimi et al. [J. Geophys. Res., 2002] from the 
+ITRF2000 velocity field rather than the NUVEL-1A (or NUVEL-1) model.  To
+invoke these rotations, use the plate names
+
+ ANTA_I00  AUST_I00  EURA_I00  NOAM_I00  PCFC_I00  SOAM_I00 
+
+NEW 030816: Added Arabian plate based on McClusky et a;, GJI, 2003
+ ARAB_MCC
+ 
+MOD TAH: 031031: Example frames.dat file (values are PCFC_I00 values).
+* Test frames.dat file used in the frame_to_frame routine to find
+* Euler vectors not in its standard list.
+* Frame        wx          wy          wz
+  PCFC_TAH -0.10015    0.27228    -0.59949
+  PCFC_RAD -0.00174795 0.00475218 -0.0104631  rad/myr
+
+See plate help for other features and names.
+
+EXAMPLE <fundamental sites> file. (Fixed feature TAH 111223)
+This example uses all sites and removes specific sites that are
+discontant.
+  ALL
+ -ANTC_GPS
+ -TSKB_4PS
+ -MTKA_2PS
+ -SFER_6PS
+ -PARC_GPS
+ -PARC_2PS
+ -HERS_2PS
+ -MQZG_GPS
+ -RAMO_3PS
+
+EXAMPLE <ties> file
+  MEDI_GPS MEDI_VLB  -30.9120   3.3982 54.5289 XYZ
+  HOBA_GPS HOBA_VLB -165.3740 -67.6263 75.8209
+* NEU (globk definition) may laso be used by puttinh NEU at end
+* of line (XYX is default).

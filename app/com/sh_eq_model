@@ -1,0 +1,267 @@
+#!/bin/csh
+#
+# Script to use simplex and displace to make simple earthquake
+# coseismic or afterslip model.
+#
+##
+if( $#argv == 0 ) then
+    echo "sh_eq_model Usage:"
+    echo "sh_eq_model -off <Offset file> -eqr <EQ Root>"
+    echo "Options:"
+    echo "-off  Offset file in GLOBK Velocity field format"
+    echo "-eqr   <EQ Root> for input and output files:"
+    echo "      REQUIRED: Input <EQ Root>_simplex.base"
+    echo " "
+    echo "EXAMPLE <EQ Root>_simplex.base file"
+    echo "EPC 40.80 -125.23        # Lat and Longitude "
+    echo "EPF 143 90 15 10 100     # Strike, Dip, depth (km), width (km), length (km)"
+    echo "An optional line "
+    echo "EQD eq_def <CODE>  YYYY MM DD HR MIN" 
+    echo "can be included and this will compute all the parameters of the GLOBK eq_def"
+    echo "eq_coseis lines for use in a GLOBK eq file.  These lines are commented at the"
+    echo "end of the displace output file (<EQ Root>_displace.out)."
+    echo " "
+    echo "The first run creates a <EQ Root>_simplex.head file which can be edited"
+    echo "and will be used in subsequent runs (delete or used -mv option to start over)"
+    echo "After first run, try different parameters to be estimated and apriori values"
+    echo "by changing the values in the <EQ Root>_simplex.head file"
+    echo "The <EQ Root>_simplex.out file gives the results for the Simplex inverstion.  This "
+    echo "output should be checked to make sure it makes sense and try different apiori values"
+    echo "The strike and dip of the fault can obtained from CMT tensor solution.  These can"
+    echo "be accessed at http://www.globalcmt.org/"
+    echo " "
+    echo "The plots of the observed and modeled coseismic offsets are generated with"
+    echo "the displace (Okada half-space model) program.  The displace input file "
+    echo "<EQ Root>_displace.in is automatically generated.  The output of displace is" 
+    echo "<EQ Root>_displace.out and it contains eq_def and eq_cosie lines for use in"
+    echo "GLOBK.  The earthquake code, date, and time need to replaced in these lines "
+    echo "if the EQD line is not included in the <EQ Root>_simplex.base file"
+    echo "The file <EQ Root>_displace.off contains the modeled offets in GLOBK vel format."
+    echo "This is the same format as the -off file is in."
+    echo " "
+    echo "-iter <num>  Number of iterations in moving the starting point of the rupture" 
+    echo "-mv   Move the <EQ Root>_simplex.head file and regenerate from <EQ Root>_simplex.base"
+    echo "-plot To make plots of coseismic and postseismic terms (sh_plotvel). Saves the fault"
+    echo "      and surface trace in file <EQ Root>_displace.fault"
+    echo "-vs   Vector scale (default outi) when -plot used"
+    echo "-arrow_val  Length of scale vector (default auto mm)."
+    echo "-displace_only   Jump directly to displace code.  Assumes <EQ Root>_displace.in"
+    echo "       exists and is valid"
+    echo " "
+    echo "Example: sh_eq_model -off pbo_nam08_170318KF.sum29_Off.off -eqr EQ29F -plot"
+    echo "Both pbo_nam08_170318KF.sum29_Off.off and EQ29F_simplex.base must exist"
+    echo " "
+    exit
+endif
+
+
+# Get the options
+set plot = N
+set vs = 0
+set arrow_value = 0
+set itn = 2
+set disponly = N     # Displace code only No Default
+set mv_head = N      # Don't remove existing <EQ Root>_simplex.head file
+
+foreach a ($argv)
+  switch($a)
+
+#   Center
+    case -o*:
+       set if = $argv[2]
+       breaksw
+
+#   Command file name
+    case -e*:
+       set eqr = $argv[2]
+       breaksw
+
+#   Turn of plots (off by default_
+    case -p*:
+       set plot = Y
+       breaksw
+    case -v*
+       set vs = $argv[2]
+       breaksw
+    case -a*
+       set arrow_value = $argv[2]
+       breaksw
+#   Number of iterations for starting location.
+    case -i*
+       set itn = $argv[2]
+       breaksw
+#   Directly run the displace code with ${eqr}_displace.in already existing.
+    case -d*
+       set disponly = Y
+       echo "Running displace only"
+       breaksw
+#   Remove the <EQ Root>_simplex.head file if it exists.  Good way to test
+#   if run can be re-created from the simple <EQ Root>_simplex.base file.
+    case -m*
+       set mv_head = Y
+       echo "Moving any existing <EQ Root>_simplex.head file"
+       breaksw
+
+  endsw
+  shift
+end
+
+#set if = pbo_nam08_170318KF.sum29_Off.off
+#set eqr = EQ29F
+set sb = ${eqr}_simplex.base
+set si = $sb:r.in
+set so = $sb:r.out
+set hf = $sb:r.head
+set di = ${eqr}_displace.in
+set do = ${eqr}_displace.out
+set dv = ${eqr}_displace.off
+set plot = Y
+
+# See if will move any <EQ Root>_simplex.head file 
+if( $mv_head == Y && $disponly == N ) then
+    set ts = `date +"%Y%m%d%H%M%S"`
+    if( -e $hf ) then
+       echo "Moving $hf to $hf.${ts}" 
+       \mv $hf $hf.${ts}
+    endif
+endif
+
+# See if we are just to run displace
+if( $disponly != Y ) then    # Setup and run simplex
+# Start by making Simplex command file
+   if( ! -e $hf ) then
+#     Create the header file, otherwise use exisitng one
+      echo "Creating $hf"
+      echo "1 " >! $hf
+      echo " " >> $hf
+
+#     Set the simplex fault parameters (0 not estimated).  
+      echo "1  1   0.0         # x location (km) " >> $hf    # x location
+      echo "2  1   0.0         # y location (km) " >> $hf    # y location
+#     Get the strike, dip and depth for base file (EPF line)
+      set sd = `grep "^EPF " $sb | awk '{print $2, $3, $4,$5, $6}'`
+      echo "3  1  $sd[1]       # Strike " >> $hf   # Strike
+      echo "4  1  $sd[2]       # Dip ">> $hf    # Dip
+      echo "5  0  $sd[3]       # Depth (km) ">> $hf    # Depth (km)
+      echo "6  0  $sd[4]       # Width (km)" >> $hf   # width (nominal)
+      echo "7  0  $sd[5]       # Length (km)" >> $hf   # length (nominal)
+      echo "8  1  1000         # Slip in strike (mm) " >> $hf     # slip in strike (mm)
+      echo "9  1  0            # Slip in dip  (mm) " >> $hf        # slip in dip (mm)
+
+      echo " " >> $hf
+   else
+      echo "Using exiting $hf"
+   endif
+
+#  Generate the command file
+   set LtLn = `grep "^EPC " $sb | awk '{if( $3<0 ) {print $2,$3+360} else {print $2,$3}}'`
+   foreach it ( `seq 1 $itn` )
+      echo "------------------------------------------------------------------------------------------------------"
+      echo "Iteration $it EPC lat long ",$LtLn
+      cat $hf | awk '{print $1, $2, $3 }' >! $si
+      grep '^ ' $if | awk '{if( $7 < 10 ) {print $0}}' >! t.i
+      set cl = `echo $LtLn[1] | awk '{printf("%.5f",cos($1/57.2958))}'`
+      awk -v olat=$LtLn[1] -v olng=$LtLn[2] '{printf("1 %8.2f %8.2f  %8.2f %8.2f\n",($1-olng)*cos(olat/57.2958)*111.3,($2-olat)*111.3,$3,$7)}' t.i >! t.d
+      awk -v olat=$LtLn[1] -v olng=$LtLn[2] '{printf("2 %8.2f %8.2f  %8.2f %8.2f\n",($1-olng)*cos(olat/57.2958)*111.3,($2-olat)*111.3,$4,$8)}' t.i >> t.d
+      awk -v olat=$LtLn[1] -v olng=$LtLn[2] '{printf("3 %8.2f %8.2f  %8.2f %8.2f\n",($1-olng)*cos(olat/57.2958)*111.3,($2-olat)*111.3,$10,$12)}' t.i >> t.d
+      set ns = `cat t.d | wc -l`
+      echo $ns >> $si
+      echo " " >> $si
+      echo "0.00 2000 15" >> $si
+      echo " " >> $si
+      cat t.d >> $si
+    
+      grep '  11.08     0.38' $si
+      simplexfd  $si $so
+      grep '  11.08' $so
+      grep Moment $so
+      #
+      # See if we should adjust initial lat and long
+      grep 'y = ' $so | awk -v olat=$LtLn[1] '{printf("New Lati %8.3f Dlat %5.4f ",olat+$3/(111.3),$3/(111.3))}'
+      grep 'x = ' $so | awk -v olng=$LtLn[2] -v cl=$cl '{printf("New Long %8.3f Dlng %5.4f\n",olng+$3/(cl*111.3),$3/(cl*111.3))}'
+
+      set LtLn[1] = `grep 'y = ' $so | awk -v olat=$LtLn[1] '{printf(" %.4f ",olat+$3/(111.3))}'`
+      set LtLn[2] = `grep 'x = ' $so | awk -v olng=$LtLn[2] -v cl=$cl '{printf(" %.4f", olng+$3/(cl*111.3))}'`
+
+   end
+
+#  Now generate model with displace so that we can see what is looks like.
+#  Get parameters
+   set fault = `cat $sb:r.fault`
+#    Paramters are:
+#     1 Fault Number
+#     2 x km
+#     3 y km 
+#     4 strike deg
+#     5 dip deg
+#     6 depth km
+#     7 width km
+#     8 length km 
+#     9 strike-slip mm 
+#    10 dip-slip mm
+#  See of EQD eq_def line in the simplex base file
+   set GKeqdf  = `grep "^EQD " $sb | awk '{print substr($0,4)}'`
+   if( $#GKeqdf == 7 ) then   # Line should contain: eq_def <CODE> YYYY MM DD HR MIN
+       echo $GKeqdf >! $di
+   else                       # Use the EPC valyes   
+       set GKLtLn  = `grep "^EPC " $sb | awk '{if( $3<0 ) {print $2,$3+360} else {print $2,$3}}'`
+       echo $GKLtLn[1] $GKLtLn[2] $fault[6] >! $di  
+   endif
+ 
+   echo "1 " >> $di   # Number of faults
+   echo $LtLn[2] $LtLn[1] $fault[4] >> $di
+   echo $fault[6]  $fault[5] $fault[8] $fault[7] $fault[9] $fault[10] >> $di
+   set ns = `grep "^ " $if | wc -l`
+   echo "1 $ns" >> $di
+   grep '^ ' $if | awk '{printf(" %10.5f %10.6f %s \n",$1,$2,substr($13,1,4))}' >> $di
+endif
+
+# MAke sure $di exist
+if( ! -e $di ) then
+   echo "Displace input file $di does not exist"
+   echo "Exising.  If -displace_only option check input"
+   exit
+endif
+
+displace $di $do
+echo "Created $di $do"
+# Now Create GLOBK .vel file.
+echo "* DISPLACE offset file from sh_eq_model with input $if" >! $dv
+head -2 $do | awk '{printf("* %s\n",$0)}' >> $dv
+grep '^ '  $do | awk '{printf(" %10.4f %10.4f %8.2f %8.2f   0.00   0.00    0.10   0.10  0.000 %8.2f    0.00   0.20 %s_GPS \n",$1, $2, $4, $5, $6, $3)}' >> $dv 
+
+# Now plot the results
+
+ if( $plot == Y ) then 
+#   Now generate the plot of the results
+    set eqdef = `grep '^* eq_def ' $do | awk '{print substr($0,2)}'`
+    set R = `echo $eqdef | awk '{dlat=1.2*$5/111} {dlng=1.2*$5/111/cos($3/57.3)} {printf("-R%.4f/%.4f/%.4f/%.4f",$4-dlng,$4+dlng,$3-dlat,$3+dlat)}'`
+    set dlat = `echo $eqdef | awk '{print int((1.2*$5/111)*10)}'`
+    if( $dlat < 5 ) then
+        set B = '-Ba0.1f0.05/a0.1f0.05WeSn'
+        set L = '-linearscale 5'
+    else if ( $dlat < 20 ) then
+        set B = '-Ba0.5f0.25/a0.5f0.25WeSn'
+        set L = '-linearscale 50'
+    else if ( $dlat < 60 ) then
+        set B = '-Ba2f0.5/a2f0.5WeSn'
+        set L = '-linearscale 200'
+    else
+        set B = '-Ba5f1/a5f1WeSn'
+        set L = '-linearscale 500'
+    endif
+#   Set the scale sizes for arrows (based on max vector)
+    set maxv = `grep -h '^ ' $dv $if | awk '{printf(" %d \n",int(sqrt($3^2+$4^2))+1)}' | sort -n | tail -1`
+    set arrow_value = $maxv
+    set vs = `echo $maxv | awk '{printf("%.2f",50/$1)}'`
+
+    set epc = `echo  $eqdef | awk '{if( $4 >0 ) {printf("-epicentre %.4f %.4f",$3,$4)} else {printf("-epicentre %.4f %.4f",$3,$4+360)}}'`
+    set epr = `echo  $eqdef | awk '{printf("-epiradius %.2f",$5)}'`
+    cat fault.out trace.out >! $dv:r.fault
+    echo sh_plotvel -f $if -f2 $dv -ps $di:r $R $epc $epr -vs $vs -arrow_value $arrow_value  $B $L -fault_patch $dv:r.fault
+    sh_plotvel -f $if -f2 $dv -ps $di:r $R $epc $epr -vs $vs -arrow_value $arrow_value  $B $L -fault_patch $dv:r.fault  >&! /dev/null 
+#   Originally used sed -i (in place) but option seems different format between mac and unix.
+    sed  's/mm\/yr/mm/g' $di:r.ps >! t.ps ; \mv t.ps $di:r.ps
+    echo "Created $di:r.ps"
+ endif
+

@@ -1,0 +1,271 @@
+#!/bin/csh -f 
+#
+#doc Use GMT to make multiple panel plots from cview output files
+#doc
+#
+#M.Burc Oral Fri Apr 22 14:13:20 EDT 1994
+if ( $#argv == 0 ) then
+echo " "
+echo " Use GMT to make a multiple  panels for n-tuple residuals from  GAMIT -- CVIEW  "
+echo "  "
+echo "  "
+echo "  requirements  : GMT(netcdf/gmt/ghostscript)"
+#echo "                : ~/contrib/progs/poly01"
+echo "  "
+echo "  "
+echo "  USAGE :    sh_cview_panel  <options>. "
+echo "  "
+echo "  EXAMPLES:" 
+echo "  sh_cview_panel  -cp  12SEP92.03.00.ANKM......P0.*"
+echo "  " 
+echo "  " 
+echo "=+=+=+=+=+=+=+=+=+=+=+=+=+ OPTIONS +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+"
+echo " -cp     list    : cview panel files. "
+echo "   		     " 
+echo "  "
+echo " -y[scale]   min max   : vertical   scale.  If not issued it will be calculated."
+echo "  " 
+echo " -x[scale]   min max   : horizontal scale.  If not issued it will be calculated."
+echo "  " 
+echo "  " 
+echo " -frame      value     : gmt border day-axis frame  ticks. Default is  1. " 
+echo "  " 
+echo " -anot       value     : gmt border day-axis label intervals. Default is  1. " 
+echo "  " 
+echo "  " 
+echo " -a         ext        : Add more descriptors to postscript file name. Default is psgamit.#" 
+echo "  " 
+echo "  " 
+echo "  M. Burc Oral  (617)  253-2471         oral@gps.mit.edu             Fri Apr 22 14:13:20 EDT 1994"
+exit
+else
+endif
+##################### SET UP DEFAULTS ############################################################
+set V = -V
+set V = ""
+set xmin     =  0
+set xmax     =  0
+set ymin     =  0
+set ymax     =  0
+set order    =  0
+set frame    =  20 
+set anot     =  10 
+set ofiles   = ""
+set baselines   = ""
+set file   = ""
+set ADD = ""
+set cviewPanels = ""
+set do_anot  = yes 
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+# decipher command line
+while ($#argv > 0 )
+set input = ( $argv )
+switch($input[1])
+        case -f:
+        case -file:
+		set file     =   $input[2] 
+		breaksw
+        case -anot:
+                set anot     =   $input[2]  
+		set do_anot  = no
+		breaksw
+        case -frame:
+                set frame     =   $input[2]  
+		set do_anot  = no
+		breaksw
+	case -x:
+	case -xscale:
+		set xmin = $input[2] 
+		set xmax = $input[3] 
+		shift input
+                breaksw
+	case -y:
+	case -yscale:
+		set ymin =  $input[2]
+		set ymax =  $input[3]
+		shift input
+                breaksw
+        case -a:
+        case -add:
+                set ADD     =  "."$input[2]
+                breaksw
+	case -b:
+	case -base*:
+	case -baselines:
+		set baselines   =   ( $baselines $input[2] ) 
+	if ( $#input == 2 ) goto alldone
+		shift input
+		shift input 
+		while ( $#input > 0 &&   `echo  $input[1]  | colrm 2` != "-" ) 
+			set inarg =  $input[1]
+			if ( `echo  $inarg | colrm 2` != "-" ) then
+				set baselines    =   ( $baselines $inarg ) 
+				shift input
+			endif
+		end
+if ( $#input == 0 ) goto alldone
+			breaksw
+	case -cp:
+	case -cviewPanels:
+		set cviewPanels   =   ( $cviewPanels $input[2] ) 
+		if ( $#input > 2 ) then 
+			shift input; shift input 
+		else 
+			goto alldone	
+		endif 
+		while ( $#input > 0 &&   `echo  $input[1]  | colrm 2` != "-" ) 
+			set inarg =  $input[1]
+			if ( `echo  $inarg | colrm 2` != "-" ) then
+				set cviewPanels    =   ( $cviewPanels  $inarg ) 
+				if ( $#input == 0 ) goto alldone
+				shift input
+			endif
+		end
+if ( $#input == 0 ) goto alldone
+			breaksw
+endsw
+shift argv
+end
+alldone:
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+echo "PROCESSING cview files"
+
+set Jspan = -JX3i/1.8i 
+set Jspan = -JX6i/1.8i 
+
+set PAGE = 0
+set psfile = pscview$ADD
+
+\rm -r $psfile.* >&! /dev/null
+
+
+# scaling/title  information
+        gmt gmtdefaults -Du >! gmt.conf
+        gmt gmtset GMT_COMPATIBILITY 5
+        gmt gmtset FONT_LABEL 10p \
+                   FONT_ANNOT_PRIMARY 10p \
+                   MAP_ANNOT_OFFSET_PRIMARY 0.05i \
+                   PROJ_LENGTH_UNIT i
+
+# LG 12 SEP 92  2 PRN03  0 ...00  1 ANKM  0 .... NO POLY
+#  SPAN=   6.749444901943E+00 YMID=  -1.868932366371E+00 SDEV=   2.900476070444E+00
+#    41  1.808980494738E+00  148.69513  2206.32145   1.850000000000E+01   1.808980494738E+00
+#    42  1.811255916953E+00  150.61983  2207.74418   1.900000000000E+01   1.811255916953E+00
+#    43  1.812154889107E+00  152.54394  2209.17387   1.950000000000E+01   1.812154889107E+00
+#    44  1.802015244961E+00  154.46744  2210.61067   2.000000000000E+01   1.802015244961E+00
+#  1        2  3          4     5      6   7         8      9      10  11      12      13       14 15     16        17    18   
+
+
+set N = 4
+foreach i ( $cviewPanels  ) 
+
+@ N = $N + 1 
+if ( $N == 5 ) then 
+set N = 1 
+@ PAGE = $PAGE + 1 
+gmt pstext <<ENDD  -h0  -R0/1/0/1  $Jspan  -F+f14p+jTL  -P  -K  -Y10.25i          >! $psfile.$PAGE
+0    .2   page:$PAGE             `whoami`
+ENDD
+endif 
+#echo .......N:  $N    ........  PAGE: $PAGE   ........ 
+
+
+cat  $i | awk 'NR > 2 {printf"%10d %20.10f \n",$1, $2}' >! tmp.dat
+#cat  $i | awk 'NR ==  1 {print "-.0 1.12 8 0 0 9   " $0}' >! tmp.txt
+set info1 = ( `cat  $i | awk 'NR ==  1 {print $0}' `) 
+set info2 = ( `cat  $i | awk 'NR ==  2 {printf"%15.6e  %15.6e   \n",$4,$6}' ` ) 
+echo $info1 "    YMID= " $info2[1] "    SDEV= " $info2[2]  | awk 'NR ==  1 {print "-.0 1.12 " $0}' >! tmp.txt
+
+
+
+
+
+gmt pstext tmp.txt -R0/1/0/1 $Jspan -F+f8p+jTL -K -P -O  -Y-2.3i  >>   $psfile.$PAGE	
+
+###### start: axis set up ####################################################################
+   set RANGE = `gmt gmtinfo -I1/.2  tmp.dat`
+# set some space for error  bars
+   set r = ( `echo $RANGE | colrm 1 2  | awk  -F/ ' {print $1  - ($2-$1)*.10 ,$2 + ($2-$1)*.10,  $3 - ($4-$3)*.10,  $4 + ($4-$3)*.10 }' ` )
+
+   if ( $xmin != 0 ) set r[1] = $xmin 
+   if ( $xmax != 0 ) set r[2] = $xmax
+   if ( $ymin != 0 ) set r[3] = $ymin 
+   if ( $ymax != 0 ) set r[4] = $ymax
+
+#make sure that horizontal min-max has an aperture
+   if( $r[1] ==  $r[2]  ) then
+	set r[1] = `echo $r[1] | awk '{print $1 - 1 }'`
+	set r[2] = `echo $r[2] | awk '{print $1 + 1 }'`
+	endif
+
+#make sure that vertical min-max has an aperture
+   if( $r[3] ==  $r[4]  ) then
+	set r[3] = `echo $r[3] | awk '{print $1 - 5 }'`
+	set r[4] = `echo $r[4] | awk '{print $1 + 5 }'`
+	endif
+
+   set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4]
+#  echo $RANGE
+
+	set yanot  = .01 
+	set yframe = .005 
+	set yspread = `echo  $r[4]  $r[3] | awk '{ printf "%d",  $1*1000 - $2*1000}'`
+#	foreach iy (  1 10 100 1000   10000 100000 1000000 10000000 10000000 100000000 1000000000 100000000000 )
+#	foreach iy (  1 5 10 50 100 500 1000 5000  10000 100000 500000  1000000 5000000 10000000 50000000 10000000 50000000  100000000 500000000 1000000000 5000000000 100000000000 )
+	foreach iy ( 1 5 10 50 100 500 1000 5000  10000 100000 500000  1000000 5000000 10000000 50000000 10000000 50000000  100000000 500000000 1000000000 5000000000 100000000000 500000000000 )
+	  if ( $yspread > $iy )  set yanot =  ` echo $iy | awk '{print $1/2000}'`
+	end
+	set  yframe = ` echo $yanot | awk '{print $1 / 2 }'`
+
+#	set yl = `echo  $r[4]  $r[3] | awk '{ printf "%6d", ( ( $1 - $2 ) / 100 ) + 1   }'`
+#		set yanot   = ` echo $yanot   $yl |  awk '{ print  $1 * $2 }' `
+#		set yframe  = ` echo $yframe  $yl |  awk '{ print  $1 * $2 }' ` 
+
+	set xspread = `echo  $r[2]  $r[1] | awk '{ printf "%6d",  $1 - $2}'`
+
+if ( $do_anot == yes ) then 
+	  if ( $xspread > 2000 )  set anot =  200
+	  if ( $xspread < 2000 )  set anot =  100
+	  if ( $xspread < 1000 )  set anot =  200
+	  if ( $xspread < 500  )  set anot =  50
+	  if ( $xspread < 100  )  set anot =  20
+	  if ( $xspread < 50   )  set anot =  10
+	  set  frame = ` echo $anot | awk '{print $1 / 2 }'`
+endif
+
+set ya = `echo $i  | colrm 1 27 `\(cycles\)
+if ( `echo $i  | colrm 1 27 ` == EL ) set ya = Elevation\(degrees\)
+if ( `echo $i  | colrm 1 27 ` == AZ ) set ya = Azimuth\(degrees\)
+
+
+
+#	set SCALE = "-Bxa${anot}f$frame -Bya${yanot}f$yframe
+	set SCALE = "-Bxa${anot}f${frame} -Bya${yanot}f${yframe}+l'$ya' -BWeSn"
+###### end: axis set up ####################################################################
+
+
+if ( $N < 4 )  then 
+	gmt psxy tmp.dat   $RANGE -Sc0.05i  $Jspan    -G0 -K -O   $SCALE -P  $V  >>   $psfile.$PAGE
+else 
+	gmt psxy tmp.dat   $RANGE -Sc0.05i  $Jspan    -G0    -O   $SCALE -P  $V  >>   $psfile.$PAGE
+endif 
+
+#	echo "Created"  $psfile.$PAGE
+
+end
+
+
+echo "  "
+echo "  "
+if ( $PAGE > 1 ) then
+echo "Created  postript files    : "$psfile".1-"$PAGE 
+else 
+echo "  "
+echo "Created  postript files    : "$psfile".1" 
+endif
+echo "  "
+echo "To view  postript files    : gs "$psfile".*"
+echo "  "
+	echo "Hardcopy   postript files  :  lpr -s "$psfile".*"
+
+\rm -rf tmp.dat tmp.txt

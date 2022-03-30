@@ -1,0 +1,61 @@
+DBLIST: VLBI data base list program
+  
+DBLIST is a program which read the list the currently active databases. 
+The Runstring for this program is:
+
+[%] DBLIST,print file,script file,calc file, Calc descriptor,  Y/N
+where:
+      <print_file>  is a new file to which complete output goes
+      <script_file> is a UNIX Csh Script file for reading data.  Normally
+                    this file will need some cleaning up before use.
+      <calc_file>   is a control for calc.  Currently CALC is set to
+                    run with out applying the horizontal ocean loading
+                    corrections.
+      <calc_des>    is description for the calc run
+      <Y/N>         is answer to using old DBLIS file. The Default is NO.
+
+  
+All elements in the runstring are optional.  If <print> is not specified
+then <crt> is used for output.  If the <Readin file> is not given 
+then no file will be generated. 
+  
+OPERATIONS ON READIN FILE 
+The script file may be edited to produce the desired transferr file. 
+
+There are some SETENV commands at the top which should be modified as
+needed.
+
+The generic form of the KalObs file name is:
+kyymmddC.kal
+where yy is year, mm is month, and dd is day.
+      C is typically choosen from the list below.
+  
+The last character should give some indication of the type of experiment: 
+The following convention should be used:
+Char Type 
+ A   Atlantic experiments (X-ATL, N-ATL)
+ I   IRIS experiments (multi-baseline)
+ L   Lowel and ATD experiments
+ M   Mobile (ex. 86K types) 
+ N   North American plate stability (NAPS)
+ O   Phase delay experiments
+ P   Single baseline POLARIS
+ S   Southern Hemisphere experiments or S-band data 
+     (These days as S to name for S-band)
+ U   Unknown type of experiment (dont use all the time) 
+ W   Pacific experiments (E.PAC, W.PAC) 
+ U   Source survey experiments
+ T   Polar experiments (used to be ^)
+ P   IRISP (pacific experiments)
+ H   IRISS (southern hemisphere IRIS)  (SHS are S sometimes)
+ ?   Mark I experiments 
+ E   Engineering tests (plus other miscellaneous duplicates)
+ R   R&D experiments
+ T   Merit I and II 
+ D   Differential astrometry experiments
+ G   Global experiments
+ J   Japanense experiments
+ E   Europe experiments
+ C   RESERVED for combined global solutions 
+  
+ 

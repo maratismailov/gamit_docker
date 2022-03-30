@@ -1,0 +1,34 @@
+# Generic Makefile for arc - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King October 23, 2015
+    
+#SHARELIB: ../lib:gamit_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+
+#LABELS: ficachop:ficachop:NONE:ficachop
+#LABELS: ficacomp:ficacomp:NONE:ficacomp
+#LABELS: ficalabl:ficalabl:NONE:ficalabl
+#LABELS: ficamerg:ficamerg:NONE:ficamerg
+#LABELS: ficamove:ficamove:NONE:ficamove
+#LABELS: ficapull:ficapull:NONE:ficapull
+#LABELS: ficascan:ficascan:ficascan_lib:ficascan
+#LABELS: ficaslim:ficaslim:NONE:ficaslim
+#LABELS: ficaspan:ficaspan:ficaspan_lib:ficaspan
+#LABELS: ficaweek:ficaweek:NONE:ficaweek
+#LABELS: fica2rx:fic2rx:fic2rx_lib:fic2rx
+                                       
+#OBJ_ficascan_lib blk101
+ 
+#OBJ_ficaspan_lib dofica blk101 blk1380 blk6 blk70 blk80 blk9 blk401 blk1001 blk670 blk1080 blk1180 blk1280
+
+#OBJ_fic2rx_lib blk1001 blk101 blk1101 blk1201 blk1301 blk1080 blk1180
+#OBJ_fic2rx_lib blk1280 blk1380 blk401 blk6 blk670 blk70 blk80 blk9
+#OBJ_fic2rx_lib dofica rficahd   
+
+
+
+
+
+
+
+
+

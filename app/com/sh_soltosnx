@@ -1,0 +1,52 @@
+#!/bin/csh -f
+if ($#argv == 0) then
+   echo ' '                                       
+   echo ' Convert one or more GLOBK or GLORG solution files to SINEX'
+   echo ' '
+   echo ' Usage: sh_soltosnx -f [files] -comext [com extent] -solext [sol extent]'
+   echo ' ' 
+   echo '   where [files] are the com and sol file names (minus the extent) to be converted'
+   echo '                 wildcards are allowed'   
+   echo ' ' 
+   echo '         [comext] is the extent for the com files (e.g. com)'
+   echo ' '
+   echo '         [solext] is the extent for the sol files (e.g. consol)'
+   echo ' '
+   echo '   The output files will be named [files].snx ' 
+   echo ' ' 
+   echo ' Example: sh_soltosnx  -f L*  -comext com  -solext consol'
+   echo ' '
+   echo '    will convert L9912071159.consol '
+   echo '                 L9912081159.consol '
+   echo '                 ... '
+   echo ' '
+   echo '      to         L9912071159.snx '
+   echo '                 L9912081159.snx '
+   echo '                 ... '
+   echo ' '
+else   
+
+ while ($#argv > 0 )
+   set input = ( $argv )
+   switch($input[1])   
+     case -comext
+       set comextent = $input[2]
+     breaksw
+     case -f
+        set names = (`echo $argv | cut -d- -f2`); shift names 
+     breaksw
+     case -solext 
+       set solextent = $input[2]
+     breaksw   
+   endsw
+   if ( $#argv > 0 ) shift argv
+ end
+      
+ foreach file_ext ( $names)
+   set file = `echo $file_ext | awk -F. '{print $1}'`
+   glsave $file.$comextent $file.glx ' ' $file.$solextent
+   glbtosnx . ' ' $file.glx $file.snx  
+ end
+
+endif
+

@@ -1,0 +1,19 @@
+#!/bin/csh
+if ($#argv == 0) then
+   echo ' '                                       
+   echo ' copy a bunch of K-files '
+   echo '               '
+   echo ' useage: copyk b a'
+   echo ' '
+   echo ' will move b-series K-files to a-series'
+   echo ' '
+else
+ foreach file ( k????$1.??? )
+   set oldser = `ls $file | awk '{print substr($1,6,1)}'`
+   set newser = $2
+   set code4  = `ls $file | awk '{print substr($1,2,4)}'`
+   set code3  = `ls $file | awk '{print substr($1,8,3)}'`
+   \mv -i k$code4$oldser.$code3 k$code4$newser.$code3
+ end #for
+endif
+

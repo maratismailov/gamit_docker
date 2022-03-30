@@ -1,0 +1,22 @@
+GEN_SNG: Generates high resolution polar motion/UT1 times series from tidal components
+
+      Program gen_sng
+ 
+This program will read a pait of files with the quadrature
+components of the diurnal and semi-diurnal UT1 and Pole position
+variations and output the instantaneous pole position and UT1
+values.
+
+Runstring:
+% gen_sng <in_ut1> <in_xy> [step] [duration]
+
+where in_ut1 is the ut1 diurnal and semidiurnal totals, adjustments and
+              sigmas (date + 12 values per line)
+      in_xy  is the xy diurnal and semidiurnal totals, adjustments and
+             sigmas (date + 18 values per line)
+      step   is optional step size in days (default 0.1 days)
+and   duration is optional duration overwhich to generate the values
+             (default is 1 day)
+
+The values in in_ut1 and in_xy are in the order output by solvk and
+globk.

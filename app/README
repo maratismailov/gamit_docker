@@ -1,0 +1,1957 @@
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+                    Incremental Updates for GAMIT/GLOBK 10.71
+
+   This file lists updates available immediately in the incremental_updates/
+   directory. These are combined into a single tar-file at the start of each
+   month or when necessary to incorporate an important update. Therefore
+   users generally only need to download and install the latest tar-file.
+   Check for available incremental updates on the first day of each month.
+
+                      Last updated: Monday 29 November 2021
+
+com/sh_apr2otl: Updated tolerance for matching sites with the same ID to 10 km
+  from 100 m, to be consistent with gamit/grdtab/get_otl_list.f. MAF 20211129
+
+tables/: Added igs14_2186.atx, igs14_2186_plus.atx, ngs14_2185.atx and
+  ngs14_2185_plus.atx, and linked antmod.dat to igs14_2186_plus.atx; changed
+  calibration flag to IGS ("*") from NGS ("-") for SPPSP85UHF (SPP85U) antenna
+  and added AKTAR270 (AKTR27) antenna with NGS calibration in rcvant.dat;
+  corrected and deduplicated records in otl_FES2014bM_igb14_comb.list to match
+  igb14_comb.apr. MAF 20211129
+
+tables/: Added igs_satellite_metadata_2185.snx and
+  igs_satellite_metadata_2185_plus.snx, and linked igs_metadata.snx to
+  igs_satellite_metadata_2185_plus.snx; updated svnav.dat.gnss following
+  igs_satellite_metadata_2185.snx. MAF 20211125
+
+kf/blsum/tssum.h: Revoked increase of "max_site" to 20000 from 9000.
+  TAH/MAF 20211124
+
+com/sh_plot_pos: Added extra width of <fraction>*[time series length] to
+  beginning and end of time axis even with -t1 and/or -t2 option(s), and changed
+  order of plotting so time series points always overlay any annotations (e.g.
+  lines and IDs marking discontinuities and earthquakes). MAF 20211123/20211124
+
+tables/: Added igs14_2185.atx and igs14_2185_plus.atx, updated
+  ngs14_2184_plus.atx, and linked antmod.dat to igs14_2185_plus.atx; added IGS
+  calibration flag ("*") to ASH701945B.99 (ASHB99) antenna (valid with SCIS and
+  SCIT radomes and "NONE") in rcvant.dat; added J005/J04 to svnav.dat.gnss
+  following igs14_2185.atx and NAQU 2021199. MAF 20211122
+
+kf/blsum/tssum.h: Increased "max_site" to 20000 from 9000 to handle number of
+  NGL stations. MAF 20211121 [REVOKED 20211124]
+
+tables/otl_FES2014bM_igb14_comb.list: Added 147 sites not already included from
+  igb14_comb.apr. MAF 20211119
+
+tables/: Added ngs14_2184.atx and ngs14_2184_plus.atx, updated
+  igs14_2178_plus.atx, and linked antmod.dat to igs14_2178_plus.atx; added
+  CNTAT360 (CNTA36), TOIC6 (TOI_C6) and TOIG1STAR (TOIG1S) antennas with NGS
+  calibrations to rcvant.dat. MAF 20211118
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021055. MAF 20211116
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021054. MAF 20211110
+
+kf/gen_util/real_stats.f: Increased "max_av" to 300 from 150. MAF 20211109
+
+tables/: Added ngs14_2182.atx and ngs14_2182_plus.atx, and updated
+  igs14_2178_plus.atx; added ASH701945B.99 (ASHB99) antenna and STHGALAXYG2
+  (STHGG2) antenna with NGS calibration to rcvant.dat. MAF 20211103
+
+tables/rcvant.dat: Added SOK GRX3 (SOKGR3) and TPS HIPER_II (TPSHII) receivers.
+  MAF 20211027
+
+tables/: Added ngs14_2180.atx and ngs14_2180_plus.atx, updated
+  igs14_2178_plus.atx, and linked antmod.dat to igs14_2178_plus.atx; added
+  ESVUA92 (ESVUA9) and SOIT9PRO (SOI9PR) antennas with NGS calibrations to
+  rcvant.dat. MAF 20211025
+
+tables/: Added igs14_2177.atx and igs14_2177_plus.atx, and linked antmod.dat to
+  igs14_2177_plus.atx; added IGS calibration flag ("*") to GMXZENITH60 (GMXZ60),
+  STXSA1200 (STXSA2), TRSAX4E02 (TRSAX4) and TRM115000.00+S (TRMZ3S) (valid only
+  with SCIT radome) antennas. MAF 20211007
+
+tables/: Added igs14_2175.atx, igs14_2175_plus.atx, ngs14_2177.atx and
+  ngs14_2177_plus.atx, and linked antmod.dat to igs14_2175_plus.atx; added
+  GEOMAX ZENITH60 (GMXZ60) receiver, GMXZENITH60 (GMXZ60) and STXSA1200 (STXSA2)
+  antennas, and EFIF7 (EFI_F7), UNIG950III (UNIG95), UNIG960 (UNIG96),
+  UNIG970IIPRO (UNIG7P) and UNIG990II (UNIG99) antennas with NGS calibrations to
+  rcvant.dat. MAF 20211006
+
+tables/: Added igs_satellite_metadata_2177.snx and
+  igs_satellite_metadata_2177_plus.snx, and linked igs_metadata.snx to
+  igs_satellite_metadata_2177_plus.snx; updated svnav.dat.gnss following
+  igs_satellite_metadata_2177.snx. MAF 20211001
+
+com/sh_hector: Updated citation for MJD algorithm to original Van Flandern and
+  Pulkkinen (1979). MAF 20210930
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021051. MAF 20210924
+
+tables/: Added ngs14_2173.atx and ngs14_2173_plus.atx, and updated
+  igs14_2163_plus.atx with new entries from ngs14_2173.atx; added TERSUS DAVID30
+  (TRSD30) receiver and TRSAX4E02 (TRSAX4) antenna, and 3COAG35 (3COG35),
+  3COAG35H (3COG3H), 3COAT901 (3COT91), EFIF4 (EFI_F4), ESVE200 (ESVE20),
+  HITAT4500 (HITT45), HITIRTK10 (HITIR1), HITV200 (HITV20), SOIT7 (SOI_T7),
+  SPPSP30 (SPPSP3), SWESA30 (SWESA3) and TRMTDC650 (TRMTD6) antennas with NGS
+  calibrations to rcvant.dat. MAF 20210909
+
+gamit/solve/Makefile.generic: Revoked commented "FFLAGS" lines to return to
+  previous file to avoid "Error reading M-file ... ERROR  5016" fatals. The
+  updated gamit/solve/Makefile.generic file is called
+  gamit/solve/Makefile.generic.new in incremental_updates to avoid an unwanted
+  overwrite of a pre-existing gamit/solve/Makefile.generic; move this
+  gamit/solve/Makefile.generic.new to gamit/solve/Makefile.generic to use this
+  file if desired. MAF 20210906
+
+kf/update_pmu/igs_to_pmu.f: Updated the Lagrangian option and fixed bug in first
+  implementation. TAH 20210830
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021047. MAF 20210819
+
+gamit/arc/ertorb.f: Added BEIDOU-3G type satellites (same d0 value as 2G/I,3I 
+  satellites. TAH 20210811
+
+kf/update_pmu/igs_to_pmu.f: Added new option [L] to use Lagrangian inversion 
+  coefficients to generate tabular points and removed tides before integrating 
+  UT1 values with I option. Use of Lagrangian inversion coefficients to generate
+  tabular points at 0:00 hrs that should reproduce rates at 12:00 hrs points
+  better than simple Lagrangian interpolation. (Improvement not clear at time of
+  implementation). TAH 20210704
+
+com/sh_plot_pos: Removed criterion that "$raw_up -eq 0" to plot vertical
+  velocity annotations even when -u option given to plot original data rather
+  than residuals. MAF 20210810
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021045. MAF 20210806
+
+libraries/includes/freq_def.h,gamit/lib/sel_obtyp.f,gamit/model/setup.f: Added
+  BeiDou B2a (L5) signal. MAF 20210730
+
+com/sh_{gamit,preproc}: Updated help to include "-lfreq 5" for BeiDou B2a (L5).
+  MAF 20210730
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021044. MAF 20210730
+
+com/sh_preproc: Corrected typo "-lfeq" to "-lfreq" in call to sh_makexp.
+  MAF 20210729
+
+com/sh_plot_pos: Corrected parsing of "time" variable for -l, -t1 and -t2
+  options, and replaced all instances of "echo" with "printf". MAF 20210721
+
+com/sh_hector: Corrected definition of Modified Julian Date for post-seismic
+  deformation. MAF 20210716
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021039. MAF 20210716
+
+com/sh_hector: Updated default version of Hector to 1.9 from 1.7.2. MAF 20210715
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021038. MAF 20210709
+
+gamit/lib/sel_obtyp.f: Added L2Y phase and C2Y pseudorange observables for GPS
+  before L2S/C2S equivalents. MAF 20210708
+
+com/sh_plot_track: Updated description of options in help page to clarify use of
+  -d, -t, -ta, -tf and -tg options. MAF 20210706
+
+tables/leap.sec: Extended to 30 June 2022 without addition of leap second at end
+  of December 2021, following IERS Bulletin C 62. MAF 20210705
+
+gamit/lib/writm1.f: Updated version to 1072 for the change in slot numbers to
+  accommodate 45 Beidou satellites. TAH 20210701
+
+kf/ctogobs/comp_dphs.f: Updated to handle m-file version 1072 slot numbers for
+  atmospheric parameters. TAH 20210701
+
+kf/ctogobs/{est_dd_wl,zero_dd_wl}.f: Updated "32(I5)" to "50(I5)" to allow for
+  45 BeiDou satellites. MAF 20210701
+
+kf/includes/mfile_def.h: Updated comments for new m-file version. TAH 20210701
+
+com/sh_plot_track: Converted old script written in csh to bash, removed
+  incorrect reassignment of $unit in case of "DHU" file, and set GMT to
+  calculate annotation, frame and grid interval automatically rather than the
+  script itself ($b1, $b2, $b3, $ba). MAF 20210624/20210630
+
+gamit/{cfmrg/fills1,solve/{bcheck,filpar,fxbias,glohed,gradout,keywrd,lsquar,
+  read_bfl,set_para,zenout}}.f: Reassign islot1 bias, atm, and grad parameters
+  to allow for 45 SVs. He/RWK 20210619 / MAF 20210629
+
+tables/dcb.dat: Corrected to be symbolic link pointing to dcb.dat.G.
+  TAH/MAF 20210629
+
+kf/ctogobs/proc_phsfin.f: Updated "32(1x,I4)" to "50(1x,I4)" to allow for 45
+  BeiDou satellites. He/TAH 20210616 / MAF 20210629
+
+kf/includes/kalman_param.h: Increased max_gsvs to 45 to accommodate BeiDou
+  constellation. He/TAH 20210616 / MAF 20210629
+
+test_install/README: Added missing "-netext G R E C" option to sh_glred for
+  repeatability in 2016 and "-netext G R" in 2014. MAF 20210629
+
+kf/plot/read_label.f: Fixed absolute position input (was being interpreted as
+  % scale input. TAH 20210629
+
+kf/plot/put_label.f: Fixed output if end " not given. TAH 20210629
+
+kf/plot/finish_up.f: Fixed so no segmentation violations when cplotx is started
+  and ended without plotting anything. TAH 20210629
+
+kf/plot/x1000/{j2drw_hp,jr2mv_sun,j2drw_sun,j2mrk_hp,jwloc_hp,j2mrk_sun,
+  jr2mv_hp,jr2dr_hp,jwloc_sun,j2mov_sun,gsclip_hp,jr2dr_sun,gsclip_sun,
+  j2mov_hp}.c: Fixed declaration versus function calls that we modified in an
+  earlier update to handle more stringent C-compilers. TAH 20210629
+
+com/sh_cddis: Added long name if-test for GFZ, GRG and WUM MGEX SP3 files.
+  MAF 20210628
+
+com/sh_get_ultrarapids: Changed arguments to sh_uncompress from
+  "${prod}${gpsw}'?_??.sp3.Z'" to "${prod}${gpswlast}${gpsdlast}_18.sp3.Z
+  ${prod}${gpsw}${gpsd}_{00,06,12,18}.sp3.Z". Hreinsdottir/MAF 20210628
+
+kf/track/theory.f: Added definition of "jd_tide", "pjd_etide" and
+  "pjd_etide_int" if "etide_2010" is not true, i.e. "IERS2010" argument is not
+  given to "use_blq" option in the track command file. MAF 20210625
+
+tables/: Added igs_satellite_metadata_2163.snx and
+  igs_satellite_metadata_2163_plus.snx, and linked igs_metadata.snx to
+  igs_satellite_metadata_2163_plus.snx; updated svnav.dat.gnss following
+  igs_satellite_metadata_2163.snx. MAF 20210625
+
+tables/: Added igs14_2163.atx, igs14_2163_plus.atx, ngs14_2163.atx and
+  ngs14_2163_plus.atx, and linked antmod.dat to igs14_2163_plus.atx; updated
+  svnav.dat.gnss following igs14_2163.atx; added EOSFBANT (EOSFBA) and HITA30
+  (HITA30) antennas, and added IGS calibration ("*") flag to SOKGRX3 (SOKGR3)
+  antenna in rcvant.dat. MAF 20210624
+
+kf/track/taiutc.f: Changed unit number for leap.sec to 96 from 98 to avoid clash
+  with summary file defined in init_track.f. MAF 20210624
+
+tables/: Updated igs14_2148_plus.atx with new entries from ngs14_2161.atx;
+  added DYWGGBR044P00S (DYWBR4), DYWGNSSR044P00I (DYWR44), DYWGNSSR045P00B
+  (DYWR45), ESVE500 (ESVE50), HXCCVX600A (HXCVX6), IGAI73 (IGAI73), KMDQZG1256FQ
+  (KMDQ56), SOKGRX3 (SOKGR3) and TPMT20PLUS (TPMT2P) antennas, and changed GAMIT
+  six-character code of HXCCSX601A antenna to HXCSX6 from HXSX76 in rcvant.dat.
+  MAF 20210622
+
+com/sh_get_ion: Corrected functionality of "-multiday" option to ensure only one
+  (first) TEC map is retained across day boundaries, where duplicate epochs may
+  be recorded. MAF 20210619
+
+tables/otl_FES2014bM_igb14_comb.list: Added sites in ~/gg/tables/igb14_comb.apr
+  from NGS17P03 solution and recent IGS cumulative solutions. MAF 20210615
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021032. MAF 20210611
+
+tables/rcvant.dat: Added TOPCON HIPER GA (TOPHGA) and TOPCON HIPER GB (TOPHHB)
+  receivers with "PCN"-code "N", following other TOPCON receivers. MAF 20210601
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021030. MAF 20210528
+
+tables/rcvant.dat: Added COMNAV N5 GNSS (CNTN5G) receiver with "PCN"-code "C",
+  following COMNAV M300 MINI (CNTM3M). MAF 20210525
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021029. MAF 20210520
+
+Summary features added 17-May-21:
+ 
+New version (5.21) of glorg which has added option to modify station coordinate 
+covariances to account for the number of times stations are used in multiple 
+analysis center combinations on daily solutions.  Feature invoked with
+"org_opt BALN". 
+ 
+kf/includes/kalman_param.h: Added documentation for new version of glorg.
+  TAH 20210517
+ 
+com/sh_dem: Updated URLs for downloading SRTM30 (version 2.1), and SRTM3 and
+  SRTM1 (version 3); SRTM3 and SRTM1 version 2.1 seems no longer available.
+  These new URLs require a NASA Earthdata login in a ~/.netrc file, exactly the
+  same as sh_get_rinex, sh_get_nav, sh_cddis (called by sh_get_orbits),
+  sh_get_ion, sh_get_met, sh_update_eop, sh_get_ultrarapids and sh_sel_rinex
+  (see 2020-08-31 record, and 2020-09-04, 2020-09-17, 2020-09-20 and 2020-10-21
+  updates for details). MAF 20210513
+
+kf/glorg/Makefile.generic: Added balance_cov.f to glorg library. TAH 20210510
+ 
+kf/glorg/balance_cov.f: New routine added to glorg to account for multiple uses 
+  of stations when combinations from multiple analysis centers (ACs) on one day 
+  are made (IGS type-combined solutions). Satellite PCO estimates are also 
+  modified by number of ACs in combination. TAH 20210509
+ 
+kf/glout/write_glb_he.f: Modified to add line if BALN option has been used.
+  TAH 20210509
+ 
+kf/globk/decode_prt.f: Added new option BALN to balance networks so that
+  stations used multiple times do not have their standard deviations reduced by
+  sqrt(N). The operation is only done in the output stage of glorg. If the
+  "out_sol" command is used in glorg to outout the combined binary h-file (.CON
+  extent), the balancing operation has been performed. (Standard "out_glb"
+  binary h-files from globk is not effected). When using the .CON h-files,
+  "apr_rot" should be used to allow rotation of the frame resolved H-file.
+  These .CON files also have the translations resolved. If converted to SINEX,
+  the -d=TR can be used to add back rotation and translation uncertainty. Scale
+  should not be estimated when frame resolved H-files are produced because the
+  scale will be fixed at the reference frame values in these files. TAH 20210509
+ 
+com/sh_exglk: Updated time-tag uniqueness for scratch files to avoid possible 
+  clashed during parallel runs. TAH 20210507
+
+tables/: Added igs_satellite_metadata_2156.snx and
+  igs_satellite_metadata_2156_plus.snx, and linked igs_metadata.snx to
+  igs_satellite_metadata_2156_plus.snx; updated svnav.dat.gnss following
+  igs_satellite_metadata_2156.snx. MAF 20210507
+
+kf/htoglb/decsnx_soln.f: Added feature for multifrequency satellite PCO values 
+  from TUG SINEX. Radiation parameters used for storage. TAH 20210506
+
+kf/htoglb/make_snx.f: Added debug out of inverted normal equation solution 
+  vector. TAH 20210506
+
+kf/htoglb/htog_ut.f: Fixed small bug in indexing to see If satellite PCOs are 
+  estimated (old code only X component checked, now XYZ checked). TAH 20210506
+
+com/sh_update_eop: Added date range (yr >= 92 or yr < 73) to read from
+  downloaded file(s) when writing pmu.* file(s). MAF 20210506
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021026. MAF 20210506
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021025. MAF 20210504
+
+kf/htoglb/decsnx_soln.f/remove_neq.f: Fixed reading upper triangular normal
+  equations and de-constraining satellites PCOs when normal equations are read
+  (-d=A option). TAH 20210503
+
+kf/globk/decode_nonse.f: Replaced ".ne." with "abs(delta).lt.1.e-8"-type test of
+  changes in the non-secular terms. Stops reports due to just rounding errors.
+  TAH 20210429
+
+kf/utils/make_rms.f: Updated for IGS ACs in repro3 submissions. Added help file.
+  TAH 20210428
+
+com/sh_sp3fit: Formatted output of start and stop times so that the day is three
+  columns wide and matched the fortran formatted read. Issue if no leading zeros
+  on -d option. TAH 20210425
+ 
+tables/svs_exclude.dat.nanu: Updated following USCG NANUs 2021022 and 2021023.
+  MAF 20210422
+
+gamit/utils/dcbtab2.f: Added functionality for GLONASS DCBs. Three main tables
+  now exist in tables/: dcb.dat.gnss (GPS+GLONASS), dcb.dat.G (GPS only) and
+  dcb.dat.R (GLONASS only). The generic tables/dcb.dat file is a copy of
+  dcb.dat.G until we have fully tested the influence of DCBs on GLONASS
+  processing. MAF 20210223/20210421
+
+gamit/{lib/rrxhed,utils/scan_rinex}.f: Updated warning about maximum RINEX
+  version to 3.05 from 3.04. MAF 20210415
+
+tables/rcvant.dat: Added JAVAD TR_2S (JAVT2S), JAVAD TR_3S (JAVT3S),
+  JAVAD TR_3S ALPHA (JAVTSA), JAVAD TRE_3S (JAVTRS), JAVAD TRE_3S DELTA (JAVTRD)
+  and JAVAD TRE_3S SIGMA (JAV3SS) receivers, each with "PCN"-code "N", following
+  other Javad receivers. MAF 20210414
+
+gamit/clean/csubs_{g77,hp,sol}.c: Corrected void (black) display by changing
+  declaration of get_colors() to preamble from call within gsetup() function and
+  changed output type of gsetup() function to "int" from "void". MAF 20210409
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021020. MAF 20210409
+
+tables/rcvant.dat: Added STONEX SC600A (STXS6A) receiver. MAF 20210407
+
+kf/glist/glist.f: Fixed indexing for use_xxx commands when read by glist for
+  site selection. Command misinterpreted before fix. TAH 20210402
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021018. MAF 20210401
+
+com/sh_apr2otl: Corrected output formatting when using the -o option.
+  MAF 20210329
+
+kf/blsum/tscon.f: Added functionality to handle the case where MEaSUREs
+  "*RawJumpTrend.xyz" time series records are missing correlations.
+  MAF 20210325/20210326
+
+com/sh_sp3fit: Added default definitions of "tabint" and "stepsize" in the case
+  that no sestbl. is found. MAF 20210323
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021015. MAF 20210319
+
+tables/: Added igs_satellite_metadata_2149.snx and
+  igs_satellite_metadata_2149_plus.snx, and linked igs_metadata.snx to
+  igs_satellite_metadata_2149_plus.snx; updated svnav.dat.gnss following
+  igs_satellite_metadata_2149.snx. MAF 20210315
+
+tables/: Added igs14_2148.atx, igs14_2148_plus.atx, ngs14_2148.atx and
+  ngs14_2148_plus.atx, and linked antmod.dat to igs14_2148_plus.atx. Added "*"
+  flag to LEIAS11 (LCAS11) antenna and changed "+" flag to "*" for
+  SEPPOLANT_X_MF (SEPXMF) antenna following new IGS calibrations in
+  igs14_2148.atx; and added HEMA631 (HEMA63), KOLK1 (KOL_K1), KOLK20S (KOLK2S),
+  QSISR6 (QSISR6), RSIR93I (RSI93I), STHINNO7 (STHIN7), STHSOUTHCR5 (STHCR5),
+  and STXSA65 (STXS65) antennas in rcvant.dat. Updated svs_exclude.dat.nanu
+  following USCG NANU 2021014. MAF 20210312
+
+kf/blsum/{tsutcon,tscomp}.f: Fixed issue with mean calculation when only one
+  value present which had resulted in bad date and no values. Added check for
+  short lines in reading pos files. TAH 20210310
+
+gamit/model/setup.f: Multiplied height by 1000 to convert to m in call to gpt3.
+  MAF 20210308
+
+kf/htoglb/hw_util.f: Patch to fix bad CWU sinex files where names SITE/ID block 
+  are not written correctly (wrong columns so non _GPS extents can be added.
+  TAH 20210308
+
+tables/rcvant.dat: Added LEIAS11 (LCAS11) antenna. MAF 20210304
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021011. MAF 20210302
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021010. MAF 20210226
+
+tables/svnav.dat.gnss: Verified that information for all satellite systems,
+  including original GPS records, are consistent with igs_metadata.snx. Formerly
+  named "svnav.dat.allgnss", now with a symbolic link of that name. MAF 20210224
+
+com/sh_hector: Added explicit "periodicsignals" option when periods other than
+  annual and semi-annual are specified in a tsfit command file. MAF 20210223
+
+com/sh_sltols: Fixed Csmp assignment. TAH 20210222
+
+com/sh_sp3fit: Set explicit "LC_NUMERIC" environment variable to ensure a dot is
+  used for the decimal separator when user locale settings would otherwise use a
+  comma. MAF 20210222
+
+*REVOKED* gamit/lib/sel_obtyp.f: Added L2X observable after L2S and before L2W.
+  MAF 20210220 *REVOKED*
+
+kf/htoglb/mstinf.f: Fixed pcncod declaration and additional argument in
+  report_stat call. TAH 20210218
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021007. MAF 20210218
+
+libraries/Makefile.config,gamit/solve/Makefile.generic: Replaced "-std=legacy"
+  with "-fallow-argument-mismatch" to avoid apparent runtime problems and added
+  FFLAGS definition to uncomment when using gfortran 10 and greater. The updated
+  libraries/Makefile.config file is called libraries/Makefile.config.new in
+  incremental_updates to avoid an unwanted overwrite of a pre-existing
+  libraries/Makefile.config; move this libraries/Makefile.config.new to
+  libraries/Makefile.config to use this file if desired. MAF 20210216
+
+libraries/Makefile.config: Updated maximum Linux "OSID" to 5990 (to accommodate
+  kernel version 5.9.9, which is the version number that translates to the
+  largest four-digit integer before the current latest version, 5.10.16, whose
+  incremented sub-version to a two-digit number does not translate in the same
+  way). The updated file is called libraries/Makefile.config.new in
+  incremental_updates to avoid an unwanted overwrite of a pre-existing
+  libraries/Makefile.config; move this libraries/Makefile.config.new to
+  libraries/Makefile.config to use this file if desired. MAF 20210214
+
+tables/: Added igs_satellite_metadata_2144.snx and
+  igs_satellite_metadata_2144_plus.snx, and linked igs_metadata.snx to
+  igs_satellite_metadata_2144_plus.snx; added "PCN"-code (and "*" flag) for
+  SEPT ASTERX SB (SEPXSB) ["C"] based on no recorded P1 observable in RINEX 2
+  files provided by E. Serpelloni. MAF 20210211
+
+com/sh_get_ultrarapids: Added CDDIS secure FTP address when no ~/.netrc file
+  exists and added call to sh_get_ftp_info to define $ftplogin[2]. MAF 20210209
+
+com/sh_get_{ion,met,nav,rinex}: Corrected stripping of "/pub" from CDDIS FTP
+  address, rather than replacement with "/archive", as for CDDIS HTTPS address.
+  MAF 20210209
+
+tables/: Added igs_satellite_metadata_2143.snx and
+  igs_satellite_metadata_2143_plus.snx, and linked igs_metadata.snx to
+  igs_satellite_metadata_2143_plus.snx; and updated svnav.dat.allgnss following
+  igs_satellite_metadata_2143.snx. MAF 20210206
+
+com/sh_sp3fit: Added reading Tabular and Stepsize from sestbl. for fitting to
+  orbits. Values default to 900 s and 75 s if entries are not in sestbl. Caution
+  should be used if Stepsize is changed. g-file entries for eclipsing satellites
+  will change with stepsize, with RMS differences up to 50 mm seen changing from
+  75 s to 25 s. TAH 20210202
+
+gamit/arc/init.f: Updated to write enough epochs into t-file for 5-minute
+  tabular points. Number based on test limit in model setup. TAH 20210202
+
+gamit/orbits/yawtab.f: Updated to write enough epochs to handle 5-minute t-
+  files. TAH 20210202
+
+kf/gen_util/sp3_lib.f: Use svnav.dat in original format svnav.dat.allgnss
+  explicitly because new svnav.dat link is to igs_metadata.snx, which track does
+  not yet read. TAH 20210201
+
+gamit/orbits/orbdif.f: Removed deleting second t-file if t-file rather than SP3
+  file used. TAH 20210201
+
+gamit/orbits/{ttongs,wsp3hd,sdtrit}.f: Added sample rate to runstring. Integer
+  value >= 1. For example, sample rate = 3 will output 5 min SP3 file from 15-
+  minute t-file. TAH 20210122
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021004. MAF 20210121
+
+kf/glbak/write_loc_pa.f: Fixed indexing error in unit_label for EOP rate terms.  
+  Longstanding bug that results in <null> for unit label. TAH 20210119
+
+tables/: Added igs_satellite_metadata_2142.snx and
+  igs_satellite_metadata_2142_plus.snx, and linked igs_metadata.snx to
+  igs_satellite_metadata_2142_plus.snx. (No substantive changes apparent).
+  MAF 20210128
+
+kf/plot/x1000/j2mrk_{hp,sun}.c: Explicitly added declaration of functions
+  DrawMark and DrawChar with return type "void";
+kf/plot/x1000/jbegn_{hp,sun}.c: Explicitly added return type "void" to call of
+  function jfont and type "char" to input argument default_font.
+  MAF 20210126
+
+gamit/solve/Makefile.generic: Added "-std=legacy" to gfortran FFLAGS to imply
+  "-fallow-argument-mismatch" when using gfortran 10 and greater. MAF 20210126
+
+com/sh_gamit: Added exit message when "-ion" used with "-noftp". MAF 20210122
+
+com/sh_hector: Added option to sort earthquakes using date/time columns from
+  "eq_def" commands. MAF 20210121
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2021002. MAF 20210121
+
+tables/dcb.dat: Removed erroneous non-unique lines. MAF 20210119
+
+gamit/lib/gpt3.f90: Removed extraneous "print *,n_grid" debug line. MAF 20210118
+
+tables/: Added igs_satellite_metadata_2140.snx and
+  igs_satellite_metadata_2140_plus.snx, and linked igs_metadata.snx to
+  igs_satellite_metadata_2140_plus.snx; and updated svnav.dat.allgnss following
+  igs_satellite_metadata_2140.snx. MAF 20210115
+
+gg/com/GGVersion: 10.71.013 Wed Jan 13 21:55:49 EST 2021 added. TAH 20210113
+
+kf/htoglb/glbtosnx.f: Added -V=<var> option to control output of large sigma 
+  sites. Default behavior not changed;
+kf/htoglb/htoglb_comm.h: Added Var_Limit for -V option;
+kf/htoglb/create_snx.f: Code updates for -V feature;
+kf/htoglb/cresnx_site.f Code updates for -V feature.
+  TAH 20210113
+
+libraries/comlib/getmac_{sun,hp}.c: Updated to use structure from uname not 
+  deprecated int ibuf array. TAH 20210112
+
+gamit/fixdrv/dcheck.f: Changed variable "nsoln" (integer*4) to "gnss"
+  (character*1) to ensure accurate rewriting of d-file header when "edit_needed"
+  is true, following makexp scheme, and replaced skipping of GNSS code and #
+  sessions information with definition of "gnss" and "nsess", respectively.
+  Hreinsdottir/MAF 20210113
+
+com/sh_get_nav: Added ".gz" extension for all files, following new recommended
+  compression for IGS archives. MAF 20210113
+
+libraries/comlib/name_to_blk.f: BEIDOU-3I SV body type added (not coded in
+  gamit/arc/earthradTUM.f yet), replacing dummy placeholder "BEI NEXT 07" (ID
+  37). Qing/MAF 20210113
+
+gamit/arc/ertorb.f: Added "BEIDOU-3I" SV body type to block defining d0 for
+  "BEIDOU-2I" and "BEIDOU-2G". Qing/MAF 20210113
+
+tables/atmdisp_cm.2021: Added generic symbolic link (../GRIDS/atmdisp_cm.2021)
+  for new center-of-mass atmospheric loading grid for 2021. MAF 20210111
+
+tables/leap.sec: Extended to 31 December 2021 without addition of leap second at
+  end of June 2021, following IERS Bulletin C 61. MAF 20210107
+
+tables/vmf1grd.2021: Added generic symbolic link (../GRIDS/vmf1grd.2021) to new
+  VMF1 grid for 2021. MAF 20210107
+
+kf/blsum/tscon.f: Added capability to recognize and read new MEaSUREs
+  "*RawJumpsTrend.xyz" format, including skipping of comment lines. MAF 20210106
+
+com/sh_plotvel: Changed line used to plot faults to 1p,darkblue from 5p.
+  TAH 20210105
+
+libraries/Makefile.config: Added "-std=legacy" to gfortran FFLAGS to imply
+  "-fallow-argument-mismatch" when using gfortran 10 and greater. The updated
+  file is called libraries/Makefile.config.new in incremental_updates to avoid
+  an unwanted overwrite of a pre-existing libraries/Makefile.config; move this
+  libraries/Makefile.config.new to libraries/Makefile.config to use this file if
+  desired. TAH 20210101/MAF 20210102
+
+gamit/orbits/getics.f: Updated maximum year to 2100 from 2020. TAH 20210101
+
+gamit/lib/{rrinex,timcon}.f: Updated maximum year to 2100 from 2020.
+  TAH 20210101
+
+com/sh_get_rinex: Updated to allow .gz as well as .Z for all archives. Fixed
+  issue with archive cors not returning list of sites (long standing problem).
+  TAH 20201230
+
+tables/{gpt3_1.grd,gpt3_5.grd,gpt.grid}: Added grid tables for GPT3 model and
+  set default (gpt.grid) to latest, highest-resolution file (gpt3_1.grd) from
+  gpt2_5.grd.GG. Change the symbolic link "gpt.grid" to preferred model if
+  not GPT3 on a 1°x1° grid, e.g. "ln -s -f gpt2_5.grd.GG gpt.grid" to switch
+  back to former default GPT2 model on a 5°x5° grid. MAF 20201227
+
+gamit/{lib/{gpt2.f,gpt3.f90,Makefile.generic},model/setup.f}: Added subroutine
+  for GPT3 model from a combination of TU Wien routines gpt3_5.f90 and
+  gpt3_1.f90, with saasthyd.f and asknewet.f appended, and moved gpt.grid file
+  opening and initial reading to the calling routine. RWK 20201216/MAF 20201227
+
+libraries/Makefile.config: Updated maximum Linux "OSID" to 5103 (to accommodate
+  kernel version 5.10.3). The updated file is called
+  libraries/Makefile.config.new in incremental_updates to avoid an unwanted
+  overwrite of a pre-existing libraries/Makefile.config; move this
+  libraries/Makefile.config.new to libraries/Makefile.config to use this file if
+  desired. MAF 20201227
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020090. MAF 20201226
+
+com/sh_sltols: Added letters for C--, reassigned GE-, added RE-. TAH 20201218
+
+com/sh_ecode: Script to translate between short and long codes for GNSS single
+  and combined system processing. Used in sh_sltols (and cluster codes).
+  TAH 20201218
+
+tables/: Added igs14_2136.atx, igs14_2136_plus.atx, ngs14_2135.atx and
+  ngs14_2135_plus.atx, and linked antmod.dat to igs14_2136_plus.atx; added "*"
+  flag to SEPVC6150L and SPP135000.00 antennas following new IGS calibrations in
+  igs14_2136.atx, and added BEIBT300S (BEIB3S) antenna to rcvant.dat; updated
+  IGS satellite metadata file name to
+  igs_satellite_metadata_[0-9][0-9][0-9][0-9].snx from
+  igs_metadata_[0-9][0-9][0-9][0-9].snx following change on IGS server
+  (GAMIT/GLOBK's expected generic link remains igs_metadata.snx). MAF 20201217
+
+gamit/includes/makex.h: Increased maxchn to 99 (RX3 files with 82 channels
+  found). TAH 20201215
+
+gamit/makexp/makexp.f: Added reading satellites from sp3 file is jclock=sp3 and 
+  no satellites are found in nav-file. TAH 20201215
+
+com/sh_link_rinex: Added LC_NUMERIC environment variable explicitly to avoid
+  problems when locale uses comma for the decimal separator. MAF 20201214
+
+gamit/orbits/{sdtrit,rdsvclk}.f: Added GNSS to call and reading so correct clock
+  added from multi-gnss  clock file generate with merge_igs_clk (see sh_mergesp3
+  also). Added EOF line at the end of SP3 file. TAH 20201211
+
+com/sh_rx2apr: Added source when "From RX_Header" output. TAH 20201211
+
+com/sh_preproc: Cleaned up lfile check and output to minimize conflicts in
+  parallel runs. TAH 20201211
+
+com/sh_mergesp3: New script to create multi-GNSS SP3c files by combining single
+  system GNSS sp3 files generated by ttongs. TAH 20201211
+
+tables/ftp_info: Changed all CDDIS archive subdirectories to "/pub/gnss/..."
+  from "/pub/gps/..." and updated URL of IGS data center at IGN France to
+  "igs.ign.fr" from "igs.ensg.ign.fr". MAF 20201211
+
+com/sh_gamit: Added check the command file name is unique (sometimes needed for
+  parallel runs) TAH 20201209
+
+tables/dcb.dat: Corrected end year for G026/G26 December 2014 record, end
+  day-of-year for G045/G21 December 2019 record and end year for G060/G23
+  December 2016 record. MAF 20201207
+
+tables/: Updated dcb.dat after hiatus in production since 2020-08-13 due to
+  change of svnav.dat symbolic link to igs_metadata.snx from svnav.dat.allgnss.
+  MAF 20201204
+
+com/sh_update_dcb: Added test to ensure local svnav.dat link is to original
+  (version 2) format, now maintained as svnav.dat.allgnss, and does not
+  overwrite any link to the new igs_metadata.snx format. MAF 20201204
+
+tables/: Added igs_metadata_2134.snx and igs_metadata_2134_plus.snx, and linked
+  igs_metadata.snx to igs_metadata_2134_plus.snx; and updated svnav.dat.allgnss
+  following igs_metadata_2134.snx. MAF 20201204
+
+kf/plot/x1000/{j2drw_{hp,sun},j2mov_{hp,sun},j2mrk_{hp,sun},jr2dr_{hp,sun},
+  jr2mv_{hp,sun},jwloc_{hp,sun},gsclip_{hp,sun}}.c: Explicitly added return type
+  "void" to call of function check_window;
+kf/plot/x1000/jlstl_{hp,sun}.c: Changed variable type to "const char" from
+  "unsigned char" in declarations of variables dotted, dot_dash, short_dash and
+  long_dash;
+kf/plot/x1000/jtexh_{hp,sun}.c: Added stdlib.h to list of includes to
+  accommodate call of abs.
+  MAF 20201202
+
+tables/: Added igs14_2134.atx and igs14_2134_plus.atx, and linked antmod.dat to
+  igs14_2134_plus.atx; updated svnav.dat.allgnss and igs_metadata_2132_plus.snx
+  (igs_metadata.snx/svnav.dat) following igs14_2134.atx; and added SEPT MOSAICX5
+  (SEPMX5) ["C"] and U-BLOX F9P (UBLF9P) ["C"] receivers, added "PCN"-code (and
+  "*" flag) for STONEX SC600 (STXSC6) ["C"] receiver, each based on a RINEX 3
+  file provided by E. Serpelloni, and added LEICGA100 (LCCGA1) antenna to
+  rcvant.dat. MAF 20201202
+
+kf/plot/x1000/check_window.c: Explicitly added return type "void" to function
+  definition;
+kf/plot/x1000/x1000.icon: Changed variable type to "const char" from
+  "unsigned char" in declaration of x1000_bits.
+  MAF 20201201
+
+kf/blsum/eulvect.f: Removed comma before output variable(s) on lines 401 and
+  504;
+kf/utils/{break_to_rename,disp2apr,merge_renames}.f: Removed comma before output
+  string on line 174, output variable(s) on lines 420 and 517, and output string
+  on line 305, respectively.
+  MAF 20201201
+
+gamit/lib/rsp3hd.f: Added SP3 versions a (or blank) and b to reading of header
+  lines (3-7 and 8-12). MAF 20201201
+
+gamit/solve/{filpar,fnddbi,normd}.f: Removed declaration of unused variables i
+  (for commented debug), j, and ii and jj (for commented debug), respectively;
+gamit/solve/nm2233.f: Uncommented initialization of variable "debug = .false."
+  MAF 20201201
+
+gamit/clean/csubs_{dec,g77,gftn,hp,igm,intel,sgi,sol,sun}.c: Added stdlib.h to
+  list of includes to accommodate calls of exit and malloc, and explicitly added
+  return type "void" to all function definitions except get_colors ("int");
+gamit/clean/cview_icon: Changed variable type to "const char" from
+  "unsigned char" in declaration of cview_icon_bits;
+gamit/clean/get_color_ro.c: Added stdlib.h to list of includes to accommodate
+  call of exit, and explicitly added return type "int" to function definition.
+  MAF 20201201
+
+libraries/Makefile.config: Updated maximum Linux "OSID" to 5911 (to accommodate
+  kernel version 5.9.11). The updated file is called
+  libraries/Makefile.config.new in incremental_updates to avoid an unwanted
+  overwrite of a pre-existing libraries/Makefile.config; move this
+  libraries/Makefile.config.new to libraries/Makefile.config to use this file if
+  desired. MAF 20201201
+
+kf/track/ephred.f: Removed comma before output variable(s) on lines 155, 159,
+  164, 168, 456, 471, 486, 501, 513 and 526;
+gamit/utils/scan_rinex.f: Removed comma before output string on line 1361 and
+  output variable(s) on line 1479;
+gamit/makex/wxhead.f: Removed comma before output string on line 141;
+gamit/lib/{ephred,xhdred}.f: Removed comma before output variable(s) on lines
+  151, 155, 160, 164, 452, 467, 482, 497, 509 and 522, and on line 203,
+  respectively.
+  MAF 20201201
+
+gamit/lib/rsp3hd.f: Removed comma before output variable(s) on lines 172 and
+  193. MAF 20201130
+
+libraries/comlib/getdir_{g77,hp,sol}.c: Added fnmatch.h to list of includes to
+  accommodate call of fnmatch;
+libraries/comlib/inkey_{g77,hp,sol,sun}.c: Added unistd.h to list of includes to
+  accommodate calls of isatty and read;
+libraries/comlib/irename_{hp,sol}.c: Added string.h to list of includes to
+  accommodate call of strtok;
+libraries/comlib/pickfn_{hp,sol}.c: Added fnmatch.h, ctype.h and stdlib.h to
+  list of includes to accommodate calls of fnmatch, isdigit and atoi,
+  respectively.
+  MAF 20201130
+
+com/sh_{crx2rnx,rnx2crx}: Added latest acceptable extensions for compressed
+  RINEX files and edited sh_crx2rnx to accept uppercase file names (but still
+  always outputs lowercase file names). Morgan/MAF 20201130
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020085. MAF 20201123
+
+tables/rcvant.dat: Added HI-TARGET V100 (HITV10) receiver. RWK 20201123
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020084. MAF 20201120
+
+tables/rcvant.dat: Updated copy of "Antenna Domes" block from IGS's rcvr_ant.tab
+  for OSPS radome. MAF 20201120
+
+com/sh_makeeqdef: Updated start and end times of Rebuilt ISC-EHB Bulletin and
+  changed preferred download program to curl for all systems. MAF 20201118
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020082. MAF 20201118
+
+tables/eq.def: Updated locations to Reviewed ISC Bulletin for period 2016-08-01
+  to 2018-07-01 and ISC-EHB locations for rebuilt 1964-1999 period (inclusive).
+  MAF 20201117
+
+tables/: Added igs14_2132.atx, igs14_2132_plus.atx, ngs14_2132.atx and
+  ngs14_2132_plus.atx, and linked antmod.dat to igs14_2132_plus.atx; added
+  igs_metadata_2132.snx and igs_metadata_2132_plus.snx, and linked
+  igs_metadata.snx to igs_metadata_2132_plus.snx; updated svnav.dat.allgnss
+  following igs_metadata_2132.snx and IGS Mail # 7993; and added AS-ANT3BCAL01
+  (AS-3B1) antenna to rcvant.dat. MAF 20201117
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020081. MAF 20201116
+
+tables/: Added igs14_2131.atx, igs14_2131_plus.atx, ngs14_2131.atx and
+  ngs14_2131_plus.atx, and linked antmod.dat to igs14_2131_plus.atx; updated
+  igs_metadata_2131_plus.snx (igs_metadata.snx/svnav.dat), svnav.dat.allgnss
+  (G041/G14 and G077/G14) and rcvant.dat (CNTAT600, HGGCYH8372, LEIFLX100 and
+  TWIVSP6037L antennas for new IGS calibrations) following igs14_2131.atx; also
+  added BEIBT300 (BEIBT3), BEIBT300D (BEIB3D) and JCA228G (JCA28G) antennas to
+  rcvant.dat following ngs14_2131.atx. MAF 20201112
+
+gamit/orbits/kouba_gps.f: Updated and cleaned code for ybias by block type.
+  TAH 20201111
+
+com/sh_network_sel: Fixed problem reference sites being listed twice and
+  reducing number of unique sites. TAH 20201111
+
+gamit/grdtab/get_otl_list.f: Ensured "tlon" variable (longitude read from ocean
+  tide loading list file) is also in positive range (0-360) for comparison to
+  "slon" variable (longitude of site to be found in ocean tide loading list
+  file). MAF 20201111
+
+tables/: Added igs_metadata_2131.snx and igs_metadata_2131_plus.snx, and linked
+  igs_metadata.snx to igs_metadata_2131_plus.snx; updated svnav.dat.allgnss
+  following igs_metadata_2131.snx. MAF 20201111
+
+com/sh_gamit: Added parsing of -aprfile option, which was missing. MAF 20201111
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020074. MAF 20201110
+
+tables/rcvant.dat: Added LEICA FLX100 (LCFLX1) receiver and LEIFLX100 (LCFLX1)
+  and TWIVSP6037L (TWISP6) antennas (no current calibrations); CNTAT600 (CNTAT6)
+  and HGGCYH8372 (HGG837) antennas are now official IGS codes in rcvr_ant.tab,
+  but still only have an NGS ANTEX calibration. MAF 20201110
+
+tables/{otl_FES2014bM_igb14_comb.list,otl_FES2014bM.list,otl.list}: Added
+  FES2014b ocean tide loading list file corresponding to all sites in
+  igb14_comb.apr (otl_FES2014bM_igb14_comb.list), constructed from J.-P. Boy's
+  otl_FES2014b_IGS_cm.list file for IGS repro3 plus additional sites calculated
+  from http://holt.oso.chalmers.se/loading/index.html#select; linked
+  otl_FES2014bM.list to otl_FES2014bM_igb14_comb.list and linked otl.list to
+  otl_FES2014bM.list. MAF 20201110
+
+com/sh_apr2otl: Added option to read and use BLQ records from pre-existing
+  otl.list file, and write only coordinates for unavailable sites for upload to
+  http://holt.oso.chalmers.se/loading/index.html#select. MAF 20201109
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020073. MAF 20201109
+
+com/sh_get_rinex: Simulated ftp directory list with -list option for cddis.
+  TAH 20201106
+
+com/sh_rx2apr: Added back ability to output .apr-file directly from coordinates
+  in RINEX header when no broadcast navigation file is given with the "-nav"
+  option. MAF/Kim H. J. 20201105
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020068. MAF 20201104
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020067. MAF 20201102
+
+CRITICAL UPDATE: Access to the CDDIS global data archive via anonymous FTP was
+discontinued after 31 October 2020. CDDIS now needs to be accessed via
+authenticated secure HTTP or anonymous secure FTP. We have updated the following
+eight scripts to accommodate this change (see 2020-08-31 record, and 2020-09-04,
+2020-09-17, 2020-09-20 and 2020-10-21 updates, below): sh_get_rinex, sh_get_nav,
+sh_cddis (called by sh_get_orbits), sh_get_ion, sh_get_met, sh_update_eop,
+sh_get_ultrarapids and sh_sel_rinex. Each of these updated scripts must be
+downloaded to your ~/gg/com/ directory to continue to access the CDDIS archive.
+  We recommend that you register to use authenticated secure HTTP by creating an
+Earthdata account at https://urs.earthdata.nasa.gov/. Then you must include this
+information in a ".netrc" file (note the dot at the beginning of the file name)
+in your home directory with the following line:
+machine urs.earthdata.nasa.gov login <username> password <password>
+where <username> is your Earthdata username and <password> is your Earthdata
+password (do not use quotation marks around your <username> or <password> in
+this line in .netrc). If you do not wish to create an Earthdata account, you may
+still access the CDDIS archive via anonymous secure FTP but this requires your
+system to have curl version >= 7.11.0 or wget version >= 1.18.
+  See https://cddis.nasa.gov/Data_and_Derived_Products/CDDIS_Archive_Access.html
+for more information.
+
+kf/ctogobs/ctogobs_com.h: Increased ct_maxsat to 45 for Beidou update.
+  TAH 20201031
+
+kf/includes/cfile_def.h: Increased cf_maxsat to 45 for Beidou update.
+  TAH 20201031
+
+kf/includes/mfile_def.h: Increased mf_maxsat to 45 for Beidou update.
+  TAH 20201031
+
+gamit/orbits/ngstot: Added explicit ends to antbody string in generating satnam
+  to avoid errors with some compilers for long antbody strings. TAH 20201031
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020066. MAF 20201030
+
+tables/rcvant.dat: Added all antennas in antmod.dat (igs14_2129_plus.atx as of
+  this update) not already listed in this file (see record in header for
+  details); changed six-character code for SOK RADIAN receiver to SOKRDN from
+  SOKRAD to avoid non-uniqueness with SOKKIA RADIAN PDCST receiver; changed six-
+  character code for SOKGCX2 antenna to SOKGC2 from SOKGX2 and SOKGSX2 antenna
+  to SOKGS2 from SOKGX2 to avoid non-uniqueness with each other. MAF 20201029
+
+tables/: Added igs14_2129.atx, igs14_2129_plus.atx, ngs14_2129.atx and
+  ngs14_2129_plus.atx, and linked antmod.dat to igs14_2129_plus.atx.
+  MAF 20201029
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020063. MAF 20201028
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020062. MAF 20201027
+
+tables/rcvant.dat: Added TPSPG_F1+GP (TPSF1G) receiver [not in IGS rcvr_ant.tab;
+  NGS calibration only]; and, following IGS rcvr_ant.tab, added EMLID REACH RS2
+  (EMLRS2) receiver and EML_REACH_RS2 (EMLRS2) antenna. MAF 20201027
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020058. MAF 20201022
+
+tables/rcvant.dat: Following IGS rcvr_ant.tab, added QIANXUN ISTATION18 (QSII18)
+  and SOUTH NET-S9 (STHNS9) receivers. MAF 20201022
+
+com/sh_update_eop: Added call to sh_get_ftp_info to get email address for
+  anonymous secure FTP login to CDDIS, and changed "$ftplogin[2]" to
+  "$ftp_info[5]" throughout. MAF/Stamps/Troia 20201021
+
+gamit/orbits/orbdif: Initialized rmsnam to stop null in output when not
+  specified. TAH 20201020
+
+gamit/orbits/orbrms: Initialized ext to stop null in output when not specified.
+  TAH 20201020
+
+tables/rcvant.dat: Added "PCN"-codes for SEPT POLARX5E (SEPX5E) ["N"] and
+  CHC P5E (CHCP5E) ["C"] receivers, the latter based on a RINEX 3 file provided
+  by E. Serpelloni. MAF 20201020
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020056. MAF 20201020
+
+gamit/includes/dimpar.h: Increased "PARAMETER (maxsat=45)" from 35 for Beidou
+  updated. TAH 20201016
+
+gamit/{lib/rrxhed,utils/scan_rinex}.f: Updated warning about maximum RINEX
+  version to 3.04 from 3.03. MAF 20201016
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020055. MAF 20201016
+
+libraries/Makefile.config: Updated maximum Linux "OSID" to 5900 (to accommodate
+  kernel version 5.9) and increased "MAXSAT" to 45 from 35 to accommodate
+  current number of available Beidou ("C") satellites. The updated file is
+  called libraries/Makefile.config.new in incremental_updates to avoid an
+  unwanted overwrite of a pre-existing libraries/Makefile.config; move this
+  libraries/Makefile.config.new to libraries/Makefile.config to use this file
+  if desired. MAF 20201016
+
+tables/rcvant.dat: Added "PCN"-codes for COMNAV M300 MINI (CNTM3M) ["C"],
+  SEPT ASTERX-U (SEPAXU) ["N"] and STONEX SC2200 (STX220) ["C"] receivers, based
+  on RINEX 3 files provided by E. Serpelloni. MAF 20201014
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020051. MAF 20201008
+
+kf/ctogobs/merge_igs_clk.f: Updated to allow single file copy with change in 
+  sampling rate. TAH 20201006
+
+gamit/makex/j_from_sp3.f: Modified to make missing clock as warning and to 
+  write zero for the clock entries. (Normally if no clock something is bad with
+  satellite and it is deleted elsewhere.) TAH 20201003
+
+kf/blsum/tscon.f: Added capability to restore scale to JPL (NASA MEaSUREs) and
+  USGS time series. MAF 20201005
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020049. MAF 20201003
+
+libraries/Makefile.config: Updated maximum Linux "OSID" to 5813 (to accommodate
+  kernel version 5.8.13). The updated file is called
+  libraries/Makefile.config.new in incremental_updates to avoid an unwanted
+  overwrite of a pre-existing libraries/Makefile.config; move this
+  libraries/Makefile.config.new to libraries/Makefile.config to use this file
+  if desired. MAF 20201001
+
+com/sh_rx2apr: Cleaned up handling RINEX 3 files, generated <site>.apr when
+  RINEX header values used to to RINEX 3. TAH 20200929
+
+com/sh_preproc: Cleaned up temporary file names to avoid conflicts during
+  parallel processing runs. TAH 20200929
+
+kf/ctogobs/merge_igs_clk.f: Updated to pass clock sampling interval.
+  TAH 20200928
+
+gamit/makexp/makexp.f: Added option to assign SP3 name when running manually.
+  MAF 20200928 (originally 20190215 GG 10.70)
+
+com/sh_get_ion: Added functionality for "-multiday" option to produce
+  concatenated IONEX files over more than one day. MAF 20200923
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANUs 2020027, 2020043 and
+  2020044. MAF 20200923
+
+com/sh_{get_rinex,get_nav,sel_rinex}: Updated if-test for cddis to handle
+  "cddismgex" as well. TAH 20200920/MAF 20200921
+
+tables/ftp_info: Added CDDIS ("cddiso") for RINEX observation files not
+  compressed with Hatanaka's RNXCMP. MAF 20200918
+
+com/sh_{cddis,get_ion,get_met,get_nav,get_rinex,get_ultrarapids,update_eop}:
+  Added fallback attempt using curl with "--ciphers 'DEFAULT@SECLEVEL=1'" option
+  in case curl is a very recent version, which has problems establishing a
+  secure connection with the CDDIS server, as of the date of this record, with
+  error message:
+  curl: (35) error:1414D172:SSL routines:tls12_check_peer_sigalg:wrong signature type
+  MAF/Riccardi 20200917
+
+tables/: Added igs_metadata_2123.snx and igs_metadata_2123_plus.snx, and linked
+  igs_metadata.snx to igs_metadata_2123_plus.snx; updated svnav.dat.allgnss
+  following igs_metadata_2123.snx. MAF 20200917
+
+tables/rcvant.dat: Following IGS rcvr_ant.tab, added TPS GB-500 (TPSGB5),
+  TRIMBLE R12I (TRMR2I) and TIASAHI PENG6J2 (TIA6J2) receivers, and TRMR12I
+  (TRMR2I) and TIAPENG6J2 (TIA6J2) antennas. MAF 20200916
+
+com/sh_plot_pos: Corrected writing of .eq-files given with the -e option to a
+  tsfit command file when tsfit is called without an explicit command file (-t
+  option with no arguments). MAF 20200916
+
+tables/frames.dat: Added Stable North America Reference Frame (SNARF) from
+  https://www.unavco.org/projects/past-projects/snarf/products/SNARF_V00.txt.
+  MAF 20200911
+
+tables/rcvant.dat: Following IGS rcvr_ant.tab, renamed RDR6PCSX049A (RDR_6P)
+  antenna to RSIPULSARR6P (RSIR6P), RDR90IT970A (RDR90I) antenna to RSIR90INEO
+  (RSIR9I), SDT3T970A (SDT3T9) antenaa to SOIT3 (SOI_T3) and SDT66PCSX049A
+  (SDTT6P) antenna to SOIT66PRO (SOIT6P), keeping previously valid codes
+  available; removed RUIDE 680N GNSS (RUI68N), RUIDE R6I GNSS (RUIR6I) and
+  RUIDE R8I GNSS (RUIR8I) receivers, and RDR680NCH6013A (RDR68N), RDR6ICSX027A
+  (RDR_6I) and RDR8I037P00B (RDR_8I) antennas, keeping former entries for
+  backwards compatibility; removed SANDING T5 GNSS (SAN_T5), SANDING T66V GNSS
+  (SANT6V), SANDING TCUBE S680N (SANTCB) receivers, and SDT5037P00B (SDT503),
+  SDT66VCSX027A (SDTT6V) and SDTCBCH6013A (SDTCBC) antennas, keeping former
+  entries for backwards compatibility; and removed KOLIDA 680N GNSS (KOL68N),
+  KOLIDA K10 (KOLK10), KOLIDA K3 (KOL_K3), KOLIDA K5 INFINITY (KOLK5I),
+  KOLIDA K5PLUS+ (KOLK5P), KOLIDA K5 UFO (KOLK5U), KOLIDA K58PLUS (KOLK58) and
+  KOLIDA K86+ (KOLK86) receivers, and KLD680NCH6013A (KLD68N), KLDK10T970A
+  (KLDK10), KLDK3705A (KLDK3G), KLDK58PT970A (KLDK58), KLDK5ICSX049A (KLDK5I),
+  KLDK5P+CSX049A (KLDK5P), KLDK5UFOT970A (KLDK5U) and KLDK86+BS602A (KLDK86)
+  antennas, keeping former entries for backwards compatibility. MAF 20200908
+
+com/sh_get_nav: Updated to accommodate switch of CDDIS directories for multi-
+  GNSS broadcast navigation files, which are no longer in the MGEX campaign
+  directory. MAF/Riccardi 20200907
+
+com/sh_{cddis,get_ion,get_met,get_nav,get_rinex,get_ultrarapids,update_eop}:
+  Edited if-tests of $prog from "if ( "$prog" =~ 'curl *' ) then" to
+  "if ( `echo $prog | awk '{print $1}'` == 'curl' ) then" and from
+  "if ( "$prog" =~ 'wget *' ) then" to
+  "if ( `echo $prog | awk '{print $1}'` == 'wget' ) then" to avoid apparent
+  potential problems with some C-shells not interpreting a string containing
+  spaces in the match. MAF/Dasgupta 20200904
+
+com/sh_gamit: Updated default "aprf" variable to igb14_comb.apr from
+  itrf2008.apr. MAF 20200904
+
+com/sh_cddis: Added definition of email address for password for anonymous
+  secure FTP using sh_get_ftp_info. MAF 20200903
+
+com/sh_{cddis,get_ion,get_met,get_nav,get_rinex,get_ultrarapids,sel_rinex,
+  update_eop}: Updated to accommodate switch of CDDIS access from anonymous FTP
+  to authenticated secure HTTP or anonymous secure FTP. MAF 20200831
+
+tables/ftp_info: Updated CDDIS directory for troposphere products to
+  ".../troposphere/zpd/..." from ".../trop_new/...", and updated Geoscience
+  Australia FTP address to "ftp.data.gnss.ga.gov.au" from "ftp.ga.gov.au" and
+  RINEX directory structure. MAF 20200831
+
+com/sh_glred: Added -a option to be passed to htoglb for network/GNSS
+  combinations or when small networks with no rotation in globk estimated.
+  TAH 20200830
+
+com/sh_preproc: Fixed bug introduced 200523 which resulted in missing
+  coordinates not updating. Fixed logic with update so that failures of
+  sh_rx2apr result in RINEX header coordinates being used rather than fatal.
+  TAH 20200830
+
+tables/track.cmd: Edited to pass four-digit year and two-digit year in first
+  two arguments of -s option. MAF 20200828
+
+tables/: Added supplemental IGS14 and ITRF2014 sites not already included in
+  sittbl. and sittbl.long, which previously contained only the IGb14 core list.
+  MAF 20200825
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020040. MAF 20200821
+
+tables/: Added igs_metadata_2119.snx and igs_metadata_2119_plus.snx, and linked
+  igs_metadata.snx to igs_metadata_2119_plus.snx; updated svnav.dat.allgnss
+  following igs_metadata_2119.snx. MAF 20200819
+
+tables/: Added ngs14_2118.atx and ngs14_2118_plus.atx, and updated
+  igs14_2118_plus.atx. MAF 20200818
+
+com/{sh_dem,sh_plotvel}: Added test for longitudes > 180 to SRTM1/SRTM3, with
+  default output file name using 180W-180E convention, and to recognize DEM file
+  name, e.g. from sh_plotvel's "-topo_file" option, with longitudes in the range
+  either 180W-180E or 0E-360E (files previously created or otherwise with names
+  using 0E-360E convention will still be recognized as existing and not
+  recreated). MAF 20200818
+
+tables/: Added igs14_2118.atx, igs14_2118_plus.atx, ngs14_2116.atx and
+  ngs14_2116_plus.atx, and linked antmod.dat to igs14_2118_plus.atx; updated
+  igs_metadata_2118_plus.snx (igs_metadata.snx/svnav.dat), svnav.dat.allgnss
+  (R731/R22 and R735/R22) and rcvant.dat (FOIA90 and HEMS631 antennas) following
+  igs14_2118.atx; also added NOV701GG_1.03 (NOV71G), NOV702GGL_1.01 (NOV72G),
+  NOV702L_1.01 (NOV72L), NOV702L_1.03 (NOV7L3), SPP571908273+CR (SPP273) and
+  TRMR4S (TRMR4S) antennas to rcvant.dat following ngs14_2116.atx. MAF 20200814
+
+com/sh_get_orbits: Updated description of "-srp_param" option in help to match
+  sh_sp3fit. MAF 20200814
+
+tables/: Added augmented Beidou (C) satellite body types to svnav.dat.allgnss,
+  following introduction in igs_metadata_2110.snx (2020-06-16), and changed
+  svnav.dat symbolic link to point to igs_metadata.snx. MAF 20200813
+
+tables/: Added igs_metadata_2118.snx and igs_metadata_2118_plus.snx, and linked
+  igs_metadata.snx to igs_metadata_2118_plus.snx; updated svnav.dat.allgnss
+  following igs_metadata_2118.snx. MAF 20200811
+
+gamit/orbits/orbdif.f: Modified to delete t-files only when SP3 files are used
+  as input. TAH 20200810
+
+tables/rcvant.dat: Added FOIF A90 GNSS (FOIA90) receiver and FOIA90 (FOIA90)
+  antenna, following 2020-08-07 release of IGS rcvr_ant.tab. MAF 20200807
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020038. MAF 20200807
+
+kf/glout/write_glb_pa.f: Updated PM rate labels to be consistent with glorg.
+  TAH 20200806
+
+kf/glsave/gw_cons.f: Updated calculation of process noise effect on a priori 
+  variances saved in h-files. TAH 20200806
+
+kf/htoglb/decsnx_soln.f: Removed additional constraints from PCO and CoM when
+  -d=AC used. TAH 20200806
+
+kf/htoglb/make_snx.f: Updated internal commenting (no code change). TAH 20200806
+
+kf/glbak/write_loc_pa.f: Updated internal commenting (no code change).
+  TAH 20200806
+
+kf/blsum/tscon.f: Added reading GipsyX gdcat timeseries files. TAH 20200805
+
+kf/htoglb/cresnx_site.f: Updated to fix radome NON output when no radome in
+  SINEX files. TAH 20200805
+
+kf/glsave/gw_descripti.f: Updated saving of receiver type information so that
+  SINEX files with no receiver information do not replace valid entries.
+  TAH 20200804
+
+GGVersion: 10.71.012 Fri Jul 31 17:36:24 EDT 2020 Additions for Beidou, tscon
+  formats, APP_PTIDE options, COD SINEX. Satellite PCO constraints. TAH 20200731
+
+kf/glfor/glb_predict.f: Fix bug with apriori satellite PCO constraints being 
+  applied twice during back soluiton and negative process noise (white noise 
+  model). Problem arises in de-constraining SINEX files. TAH 20200731
+
+kf/htoglb/{htoglb,decsnx_soln,make_snx,hw_util}.f: Updated to remove additional
+  site days from COD 3-day orbit arc sinex files. Also remove PCO constraints
+  from normal equations. TAH 20200730
+
+kf/htoglb/{pack_neq,remove_neq}.f: New routines to remove sites from normal
+  equations (COD SINEX only). TAH 20200730
+
+kf/htoglb/htoglb_comm.h: COD mods. TAH 20200730
+
+kf/htoglb/Makefile.generic: Added new routines. TAH 20200730
+
+help/htoglb.hlp: Updated for COD mods. New -MD option to stop extra days being
+  removed from COD SINEX files. TAH 20200730
+
+tables/rcvant.dat: Added HEMISPHERE S631 (HEM631) receiver and HEMS631 (HEM631)
+  antenna, following 2020-07-30 release of IGS rcvr_ant.tab, and CHC I50
+  (CHCI50) receiver and CHCI50 (CHCI50) antenna. MAF/RWK 20200730
+
+tables/dcb.dat: Added finite end date for G060/G23 (2020-162) and dummy first
+  record for G076/G23 (from 2020-196) until first estimates of DCB are
+  available. MAF 20200727
+
+tables/rcvant.dat: Added UNICORE UR4B0 (UNIR4B) receiver. MAF 20200724
+
+kf/ctogobs/wr_igs_clk.f: Updated to correctly show GNSS SYS in header.
+  TAH 20200723
+
+kf/ctogobs/merge_igs_clk.f: Updated to correctly show GNSS in header (M when
+  mixed GNSS clocks are merged). TAH 20200723
+
+kf/ctogobs/merge_igs_clk.h: Updated for clk_gnss system. TAH 20200723
+
+help/merge_igs_clk.hlp: Document new GNSS features. -a option no longer needed.
+  TAH 20200723
+
+com/sh_sltols: New script to convert IGS short product names to long form and 
+  visa versa. Names for MIT and IGS products. TAH 20200723
+
+Summary features added July 21, 2020
+- modifications for timeseries processing.
+- small fixes to stop compilation errors with gfortran10. 
+- Updates for Beidou satellite body types.
+- Script updates to fix some issues.
+
+kf/blsum/tscon.[fh]: Updated to read new NASA Measures XYZ files with
+  TrendXYZ.xyz in file names. TAH 20200721
+
+kf/utils/make_rms.f: Replaced COF with COD for CODE finals IGS SINEX
+  combinations. TAH 20200720
+
+com/sh_plotvel: Replaced 2p line type with selected coastline line when
+  topography is plotted. TAH 20200720
+
+kf/globk/process_glb_.f: Added REP (report) option to app_ptide command to
+  changes in positions applied. TAH 20200717
+
+kf/includes/globk_cntl.h: Documentation updated on ptide_opt (new report bit).
+  TAH 20200717
+
+kf/glfor/glb_upd_apr.f: Updated to ensure ocean tide pole can be removed if 
+  applied. TAH 20200717
+
+kf/glfor/glfor.f: Updated format for ptide_opt octal output. TAH 20200717
+
+kf/glfor/app_ptide.f: Implemented report option, made implicit none and fixed 
+  small bug if pole tide had never been applied. TAH 20200717
+
+help/globk.hlp: Documentation updated on app_ptide command REP option.
+  TAH 20200717
+
+tables/rcvant.dat: Added "PCN"-code (N) for all JAVAD receivers, assuming the
+  same tracking characteristics. MAF 20200716
+
+tables/: Added igs14_2114.atx, igs14_2114_plus.atx, ngs14_2114.atx and
+  ngs14_2114_plus.atx, and linked antmod.dat to igs14_2114_plus.atx; added
+  igs_metadata_2114.snx and igs_metadata_2114_plus.snx, and linked
+  igs_metadata.snx to igs_metadata_2114_plus.snx; updated svnav.dat.allgnss
+  following igs_metadata_2114.snx; and updated svs_exclude.dat.nanu following
+  USCG NANU 2020036. MAF 20200714
+
+gamit/orbits/orbdif.f: Deleted temporary t-files on exit; cleaned up debug.
+  TAH 20200714
+
+tables/: Added igs14_2113.atx and igs14_2113_plus.atx, and linked antmod.dat to
+  igs14_2112_plus.atx. MAF 20200709
+
+tables/rcvant.dat: Added renamed CNTT300PLUS (CTNT3P) antenna, formerly CNTT300+
+  (CTNT3P), although the latter is still retained under "Previously valid",
+  CNTAT600 (CNTAT6) antenna from NGS ANTEX file, and "PCN"-code for SEPT ASTERX4
+  receiver (N). MAF/TAH 20200709
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020032. MAF 20200709
+
+com/install_software: Added zsh (default shell, replacing bash, on macOS
+  Catalina onwards) to instructions to set environment variables at end of
+  script. MAF 20200709
+
+libraries/comlib/multiread.f: Updated to make dimensioning of variables passed 
+  in read_line consistent (only a problem in latest, strict gfortran).
+  TAH 20200709
+
+com/sh_get_rinex: Updated -list option (with ftp) to list rinex3 file names and 
+  convert them to rinex2 style as is done in other parts of GAMIT. TAH 20200709
+
+com/sh_network_sel: Updated to gracefully exit of none of the reference sites in 
+  control file are available in the archives selected. TAH 20200709
+
+tables/leap.sec: Extended to 30 June 2021 without addition of leap second at end
+  of December 2020, following IERS Bulletin C 60. MAF 20200707
+
+tables/: Added igs14_2112.atx, igs14_2112_plus.atx, ngs14_2112.atx and
+  ngs14_2112_plus.atx, and linked antmod.dat to igs14_2112_plus.atx; added
+  igs_metadata_2113.snx and igs_metadata_2113_plus.snx, and linked
+  igs_metadata.snx to igs_metadata_2113_plus.snx; updated svnav.dat.allgnss
+  following igs_metadata_2113.snx. MAF 20200707
+
+gamit/orbits/write_summary.f: Increased bad list format to allow for more than 
+  10 bad satellites. TAH 20200706
+
+com/sh_gname: New script to 4-char g-file and 3-char sp3 file names for a given 
+  4-char orbit name and GNSS selection e.f., sh_gname mitf E returns mite and
+  mie. TAH 20200703
+
+libraries/comlib/name_to_blk.f: Added explicit types for BEIDOU-3M-SECM-A and 
+  BEIDOU-3M-SECM-B body types. TAH 20200703
+
+gamit/arc/earthradTUM.f: Updated to account BEIDOU-3M-SECM-A and
+  BEIDOU-3M-SECM-B body types. TAH 20200703
+
+kf/blsum/tsfit.f: Updated time range written to PBO vel file when only one day 
+  between earthquakes. Update latitude/longitude/height values in different 
+  intervals to be consistent with evolving XYZ coordinates. TAH 20200701
+
+Summary of featured added: Monday, June 29, 2020
+- Reporting of GNSS type in autcln summary files. Correct GNSS name when IGS
+  clock files are written.
+- glbtog explicitly allows GNSS to be specified in multi-GNSS solutions.
+
+kf/ctogobs/{rep_params,ctog_utils,fit_igs_clk,proc_phsfin}.f: Added reporting of
+  GNSS used. TAH 20200628
+
+kf/ctogobs/wr_igs_clk.f: Updated to correctly write GNSS system for clocks.
+  TAH 20200628
+
+kf/ctogobs/{merge_igs_clk.f,merge_igs_clk.h} Updated to better average clocks
+  between different networks and when values edited and averaged. TAH 20200628
+
+kf/ctogobs/ctogobs_com.h: Added saving GNSS system (sv_gnss). TAH 20200628
+
+kf/utils/glbtog.f: Added GNSS option to allow single or multi-gnss g-files to
+  written from an .org or .bak file containng multi-gnss orbits. Fixed some
+  issues with antenna body type not being found with old style svnav.dat used
+  (igs_metadata.snx linked to svnav.dat now recommended). TAH 20200625
+
+libraries/comlib/get_value.f: Moved dum from I*4 to I*2 (gfortran 10.01 error
+  during compilation). TAH 20200623
+
+libraries/Makefile.config: Updated maximum Linux "OSID" to 5760 (to accommodate
+  kernel version 5.7.6). The updated file is called
+  libraries/Makefile.config.new in incremental_updates to avoid an unwanted
+  overwrite of a pre-existing libraries/Makefile.config; move this
+  libraries/Makefile.config.new to libraries/Makefile.config to use this file
+  if desired. MAF 20200626
+
+tables/rcvant.dat: Added TWIVC6050 (TWIVC5) antenna. MAF 20200625
+
+test_install/{README,runtest}: Added "-lfreq 7" option to sh_gamit commands with
+  "-gnss C" to choose explicitly the second frequency for Beidou. MAF 20200622
+
+Summary of featured added: Sunday, June 21, 2020
+- Updated formats to handle more than 32 satellites (needed for Beidou).
+- Upgraded GLONASS processing in AUTCLN to better handle non-integer ambiguities
+  due to remapped frequencies.
+- Fixed issues with missing frequencies in the last or first cfile read in
+  AUTCLN.
+- Added more verification of scanning slips in AUTCLN when slip magnitude falls
+  between DD_FIT_TOL LC_min and LC_max.
+- Added short data segment removal at start of cleaning (controlled with
+  TRIM_ONEWAY_TOL command.
+- Improved network selection scripts to handle GNSS data. New sh_gnss_sel script
+  which checks RINEX files to make sure selected GNSS data is available.
+- Added new LAB<string> command line option in GLOBK which replaced <LAB>
+  strings in GLOBK/GLORG command files with <string>. Useful for GNSS processing
+  in same gsoln directory.
+
+gamit/orbits/{read_sp3.f,wsp1hd.f}: Updated 32I to 50I to allow for 35 Beidou
+  satellites. TAH 20200618
+
+gamit/solve/{qhead2.f,lsqerr.f} Updated 32I to 50I to allow for 35 Beidou
+  satellites. TAH 20200618
+
+gamit/makex/{makex.f,j_from_c.f}: Updated 32I to 50I to allow for 35 Beidou
+  satellites. TAH 20200618
+
+gamit/clean/showrms.f: Updated 32I to 50I to allow for 35 Beidou satellites.
+  TAH 20200618
+
+gamit/cfmrg/getcfs.f: Updated 32I to 50I to allow for 35 Beidou satellites.
+  TAH 20200618
+
+gamit/model/setup.f: Updated 32I to 50I to allow for 35 Beidou satellites.
+  Updated message about missing lower GNSS frequencies. TAH 20200618
+
+gamit/lib/rsp3hd.f: Updated 32I to 50I to allow for 35 Beidou satellites.
+  TAH 20200618
+
+gamit/fixdrv/seschk.f: Updated 32I to 50I to allow for 35 Beidou satellites.
+  TAH 20200618
+
+gamit/makexp/makexp.f: Updated 32I to 50I to allow for 35 Beidou satellites.
+  TAH 20200618
+
+gamit/ctox/ctox.f: Updated 32I to 50I to allow for 35 Beidou satellites.
+  TAH 20200618
+
+kf/track/read_all_rinex.f: Updated 32I to 50I to allow for 35 Beidou satellites
+  TAH 20200618
+
+kf/ctogobs/rep_params.f: Report new trim_shortseq option. TAH 20200618
+
+kf/ctogobs/est_dd_wl.f: Updated treatment of non-integer GLONASS ambiguities.
+  TAH 20200618
+
+kf/ctogobs/ctogobs_scan.f: Add verify_scan option to see if bias flag should be
+  added with jump is below max_tol. TAH 20200618
+
+kf/ctogobs/align_phs.f: Added frequency ratio for GLONASS. TAH 20200618
+
+kf/ctogobs/prc_ctog_cmd.f: Added trim_segment option to trim_oneway_tol command
+  and allow negative values to be use to keep default values. TAH 20200618
+
+kf/ctogobs/ctog_utils.f: Added trim_seg test and warning if frequencies change
+  between c-files. TAH 20200618
+
+kf/ctogobs/set_freqs.f: Cleaned up setting of frequencies in case c-file has
+  missing frequency. TAH 20200618
+
+kf/ctogobs/ctogobs_dd.f: Clean up GLONASS non-integer ambiguity treatment.
+  TAH 20200618
+
+kf/ctogobs/est_wlfull.f: Added effects of frequency ratios for GLONASS.
+  TAH 20200618
+
+kf/ctogobs/ctog_ut2.f: Added ctol check to make sure data present. TAH 20200618
+
+kf/ctogobs/ctogobs.f: Added call to trim_shortseg on first pass to delete data
+  in short segments between data gaps. TAH 20200618
+
+kf/ctogobs/trim_shortseg.f: New routine to delete data in short segments between
+  data gaps. TAH 20200618
+
+kf/ctogobs/ctogobs_com.h: Added trim_seg logical to say of short segments
+  between gaps should be removed at start of run. TAH 20200618
+
+kf/ctogobs/proc_phsfin.f: Added frequency ratios for GLONASS and Updated 32I to
+  50I to allow for 35 Beidou satellites. TAH 20200618
+
+kf/ctogobs/zero_dd_wl.f: Updated 32I to 50I to allow for 35 Beidou satellites.
+  TAH 20200618
+
+gamit/model/setup.f: Fixed setting alternative C06 frequency for Beidou when
+  "-lfreq 7" option used. Updated missing frequency message. TAH 20200617
+
+tables/: Added igs14_2108.atx, ngs14_2108.atx and ngs14_2108_plus.atx, and
+  linked antmod.dat to ngs14_2108_plus.atx; added STONEX S900A NEW (STXS9N)
+  receiver and STXS900A (STXS9A) antenna to rcvant.dat. MAF 20200615
+
+com/sh_plot_elmean: Updated TMP file names to make unique. TAH 20200610
+
+gamit/lib/read_svsinex.f: Updated fatal message when GLONASS frequency not found
+  to report the SV and PRN. TAH 20200608
+
+kf/glfor/glb_predict.f: Fixed missed index calculation when applying satellite
+  antenna offset process noise. Resulting in higher a priori sigma for Z
+  velocity. TAH 20200608
+
+gamit/orbits/bctot.f: Added leading zero to PRNs < 10. Made more flexible
+  reading of body type. TAH 20200606
+
+gamit/orbits/write_g.f: Modified to write svs files with GNSS satellite names
+  and with more significant digits. Added body type to end of line. However,
+  file needs antenna offset values to be used in analyses with antenna offsets
+  estimated. TAH 20200606
+
+gamit/orbits/read_input.f: Correct Y and Z TERR .-ROTD labels. TAH 20200608
+
+gamit/orbits/ngstot.f: Added leading zero to PRNs < 10. Made more flexible
+  reading of body type. Modified to end gracefully when no arguments are passed.
+  TAH 20200606
+
+gamit/arc/read_arc_batch.f: Added leading zero to PRNs < 10 (when gnss code
+  generated from old PRN style format). TAH 20200606
+
+com/sh_gnss_sel: Modified to better check data availability and to call
+  sh_network_sel if the number of usable GNSS rinex files exceeds a maximum
+  number of sites. TAH 20200604
+
+com/sh_network_sel: Modified to support sh_gnss_sel calling it when there are
+  too many GNSS sites available. TAH 20200604
+
+libraries/comlib/name_to_blk.f: Added explicit types for GLONASS M+, K1A and K1B
+  body types. TAH 20200603
+
+gamit/arc/earthradTUM.f: Updated to account for new GLONASS body types. M and M+
+  are treated the same and K1, K1A and K1B are treated the same. TAH 20200603
+
+kf/includes/kalman_param.h: Updated GLOBK version for new LAB<lab> runstring
+  option selection. TAH 20200603
+
+kf/utils/glbtog.f: Fixed issues with decoding non-GPS satellites and make
+  correct g-files. TAH 20200603
+
+kf/gen_util/decode_comopt.f: Added new option to allow <LAB> strings in commands
+  to be replaced by string <str> when LAB<str> is included in the GLOBK
+  runstring options. With option LABWkRD the command line
+  " bak_file <LAB>_<WEEK>.bak" is replaced with " bak_file WkRD_<WEEK>.bak".
+  TAH 20200602
+
+tables/{fes2014b_Cnm-Snm.dat,otides.dat}: Added FES2014b coefficients for orbit
+  intergration and updated otides.dat symbolic link to this new default.
+  MAF 20200609
+
+tables/sestbl.10.71: Updated "Mag field = IGRF13" from "IGRF12" to accommodate
+  data from 2020 onwards. MAF 20200604
+
+tables/lfile.apr: Updated symbolic link to igb14_comb.apr from igs14_comb.apr.
+  MAF 20200604
+
+com/sh_setup, tables/{globk.cmd,glorg.cmd,process.defaults}: Changed default
+  .apr-file to igb14_comb.apr from igs14_comb.apr to accommodate switch to IGb14
+  reference frame from GPS week 2106 (2020-05-17; 2020-138). MAF 20200602
+
+tables/: Added igb14.{apr,eq,vel}, igb14_hierarchy.stab_site, sittbl.IGb14,
+  sittbl.IGb14.long, igb14_comb.{apr,eq,stab_site} and igb14_comb_????.apr,
+  where "????" is a four-character plate ID from the ITRF2014 plate motion model
+  or other published definitions (see header lines in each file for reference),
+  to accommodate switch to IGb14 reference frame from GPS week 2106 (2020-05-17;
+  2020-138); "igs14*" tables will no longer be updated. MAF 20200602
+
+tables/: Added igs_metadata_2108.snx and igs_metadata_2108_plus.snx, and linked
+  igs_metadata.snx to igs_metadata_2108_plus.snx; updated svnav.dat.allgnss
+  following igs_metadata_2108.snx. MAF 20200602
+
+kf/track/taiutc.f: Cleaned up code and fixed unit conflict problem. TAH 20200531
+
+kf/track/{theory.f, get_miss.f, track_com.h}: Modified behavior of USE_BLQ
+   command to allow solid-Earth tide model to be specified (IERS2010 or default
+   analytic model) and to turn off model completely (NOETIDE). NOBLQ needs to be
+   given as argument to turn off ocean-tide model (structured this way for
+   backwards compatibility). TAH 20200531
+
+kf/track/track.f: Fixed rounding error in num_epochs calculation. TAH 20200527
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020025. MAF 20200528
+
+Summary of features added Wednesday, May 27, 2020
+- Changes to stop fatals when data occurs in a gap in station.info entries
+  (often associated with firmware updates.
+- Changes made to increase Glonass data yields due to issues with RINEX 2
+  headers.
+- New cddismgex archive to get RINEX 3 data from CDDIS MGEX area (needed for
+  data collected before MGEX data was saved in the same directories are GPS
+  data.
+- Fixed some issues with occasional failures of parallel runs.
+
+gamit/arc/earthradTUM.f: Fix calculation of mjd but has no impact due to antenna
+  thrust not being computed In this routine. TAH 20200526
+
+gamit/model/update_coords.f: Tested antenna changes to see if messages should be
+  printed about changes. TAH 20200527
+
+gamit/makex/makex.f: Fixed format reporting frequencies. TAH 20200526
+
+gamit/makex/rhead.f: For Glonass processing: Removed code that set P2 to x2 when
+  C2 available. Made P2 be secondary choice to C2 so that files with C2 in
+  header but no C2 data, will include the P2 data in the x-file. TAH 20200526
+
+gamit/makex/rbatch.f: Added back feature to have blank line act as EOF in batch
+  file. TAH 20200526
+
+gamit/lib/sel_obtyp.f: Fixed initialization loop to 6 (from 4) for iobtypx;
+  Changed secondary choice to P2 for Glonass when C2 in header. TAH 20200526
+ 
+gamit/lib/rstnfo.f: Updated to allow a gap between end and start times of up to
+  6 hours. This happens with firmware updates where the gap can be 1-minute to a
+  few hours. There is probably no data in gap but GAMIT is still generating
+  epochs during the gap (makex and maybe model fatals). Cleaned up indenting
+  around modified code. TAH 20200524
+
+com/sh_sp3fit: Incorporated GNSS into decoding svs_exclude.dat. Line format is
+  now Gnn, Rnn, etc. When gnss==G, old nn only designation allowed. Note: doy is
+  3-digit. TAH 20200524
+
+com/sh_gnss_sel: Fixed issue with hardwired date in find command. Updated help
+  message. TAH 20200524
+
+com/sh_preproc: Made lfile test name more unique by adding expt and doy to
+  temporary name (conflicts in parallel runs could lead to zero length
+  lfiles). TAH 20200523
+
+kf/ctogobs/ctogobs_dd.f: Fixed error in replaced integer do loop. TAH 20200520
+
+tables/otl_FES2014bM_MRG.list: Merged FES2014 list from otl_FES2014bM_IGS.list
+  and otl_FES2014bM.list generated at Chalmers University. TAH 20200520
+ 
+kf/track/{theory.f, get_miss.f, track_com.h}: Modified behavior of USE_BLQ
+  command to allow solid-Earth tide model to be specified (IERS2010 or default
+  analytic model) and to turn off model completely (NOETIDE). NOBLQ needs to be
+  given as argument to turn off ocean-tide model (structured this way for
+  backwards compatibility). TAH 20200520
+
+Wednesday 20 May 2020
+
+com/sh_get_grids: New script from S. McClusky to download grids from
+  ftp://everest.mit.edu to the current working directory. MAF 20200520
+
+kf/update_pmu/igs_to_pmu.f: Added feature to have UT1 in the PMU file be
+  generated by integrating the LOD values rather than using the globk estimates.
+  This can be useful when generating Earth fixed SP3 files from inertial t-
+  files. TAH 20200518
+
+com/sh_gnss_sel: New script to add GNSS networks to sites.default.yyyy.ddd
+  files. Assumes that the rinex files have been downloaded so that data types
+  available in the files can be determined with scan_rinex. TAH 20200518
+
+com/sh_plotvel: Added coast line specification -clw option. Default remains
+  unchanged. TAH 20200515
+
+com/sh_network_sel: Added feature to update existing sites.defaults file with
+  additional net names added. Removed default apr_file name. Useful for having
+  GPS and GNSS networks separate. TAH 20200515
+
+com/sh_rx2apr: Forced rinex header coordinate extraction if RINEX 3 files which
+  svpos and svdiff can't read. Cleaned up site name extraction when directory
+  included in site file name. Cleaned up indentation. Remove spherical l-file
+  output. TAH 20200518
+
+com/sh_rx2apr: Added RINEX 3 trap to use approximate coordinates in RINEX header
+  if file given with "-site" option is RINEX 3 or results of SVPOS if file given
+  with "-site" option is RINEX 2 but file given with "-ref" option is RINEX 3.
+  MAF 20200517
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020023. MAF 20200515
+
+tables/rcvant.dat: Added STONEX S980 (STXS98), STONEX S980A (STX98A) and STONEX
+  S990A (STX99A) receivers, and STXS990A (STX99A) antenna. MAF 20200514
+
+Summary of added features and updates. Tuesday, May 12, 2020
+- The Gipson 2017 VLBI model updated. Default: added UT1 libration term and
+  keeps the IERS2010 model.
+- New scan_rinex utility added assess observables in RINEX 2 and RINEX 3 files.
+- Added pre-fit millisecond clock jump scanning and fixing in autcln. Normally
+  not needed and default is not to do it. New status report option to look at
+  pre-scan clock residuals. Useful if lots of BAD PREFIT data delete messages.
+- Added lower frequency selection for GNSS processing (makex and sh_gamit -lfreq
+  option) so G5, C7, E6/7/8 are options of lower frequency instead of G2, C6 and
+  E5.
+- Updated autcln to avoid errors in autcln/solve when some stations are missing
+  a frequency band completely.
+
+libraries/includes/freq_def.h: Fixed small error in E8 frequency (0.001E6 Hz)
+  (impact MW-WL looked like LG in cview. TAH 20200512
+
+gamit/makex/settyp.f: Added E8 to list of valid frequency. TAH 20200512
+
+gamit/includes/model.h: Increased atxfrq to 4-characters and additional entry
+  for primary and secondary choice of ANTEX frequency. TAH 20200512
+
+gamit/utils/convert_antpcv.f: Updated read_antex call for new atxfrq definition.
+  TAH 20200512
+
+gamit/model/setup.f: Added selection of alternative lower frequency.
+  TAH 20200512
+
+gamit/model/get_svantpcv.f: Updated to allow primary and secondary choice of
+  frequency read from ANTEX file. TAH 20200512
+
+gamit/model/get_antpcv.f: Updated to allow primary and secondary frequency
+  choice of frequency read from ANTEX file. TAH 20200512
+
+gamit/model/get_antinfo.f: Modified format for reporting ANTEX frequencies used.
+  A * next entry shows if primary or secondary frequency used for PCO/PCV.
+  TAH 20200512
+
+gamit/lib/sel_obtyp.f: Added additional data selections based choice of lower
+  frequency. Added entries for G5, C7, E6/7/8; defaults are G2,C6 and E5.
+  TAH 20200512
+
+gamit/lib/read_antex.f: Passed modified atxfrq array now with 4 characters and
+  three entries: (1) L1, (2) primary choice for L2, (3) secondary choice for L2
+  where L2 if the lower frequency selection. TAH 20200512
+
+tables/ftp_info: Added GFZ Potsdam as source for MGEX orbits. Currently SP3
+  files need to be downloaded before sh_get_orbits is run. TAH 20200511
+
+kf/ctogobs/{ctog_utils,read_cfheads}.f: Updated save non-zero frequencies when
+  c-files are read. Solve has problems if the first c-file is missing a
+  frequency band and autcln could have problem if last c-file is missing
+  frequencies. This can happen with GNSS data missing standard frequencies at
+  some sites. TAH 20200511
+
+kf/ctogobs/set_freqs.f: Moved code that saves frequencies to ctog_utils.f and
+  read_cfheads.f. TAH 20200511
+
+kf/ctogobs/upd_cf_sd.f: Added code to write both frequencies bands to all c-
+  files even if one band is missing (all data would have been deleted).
+  TAH 20200511
+
+gamit/makex/makex.f: Modified gnss input so that a lower frequency selection can
+  be passed. For example C7 for the gnss runstring parameter will select C7 as
+  lower frequency instead of default C6. G5, E6, E7 and E8 are also options.
+  TAH 20200511
+
+gamit/lib/sel_obtyp.f: Added option for lower frequency selection. TAH 20200511
+
+gamit/makex/rbatch.f: Reading of GNSS as 2-character with lower frequency option
+  added. TAH 20200511
+
+gamit/includes/global.h: Added gnsslf which contain GNSS and lower frequency
+  selection (e.g., G or G5 for L5 lower frequency. TAH 20200511
+
+gamit/makexp/makexp.f: Added passing gnsslf string into makex batch file.
+  TAH 20200511
+
+com/sh_makexp: Added -lfreq option to select lower frequency for G,C and E, e.g.
+  "-gnss E -lfreq 7" will select L7 (E5b) as lower frequency for Galileo instead
+  of L5 (E5a). Options allowed are G5, C7, E6/7/8. TAH 20200511
+
+com/sh_preproc: Added -lfreq option (see sh_makexp). Fixed bug with g-file being
+  checked with "^G" rather than "^$gnss". TAH 20200511
+
+com/sh_gamit: Added -lfreq option (see sh_makexp); -remakex Y will be needed if
+  older x-files already exist in processing directory. TAH 20200511
+
+kf/ctogobs/prc_ctog_cmd.f: Added new option to prefit_clk command to remove
+  millisecond jumps in clocks. Not a common problem but could be useful for some
+  data. TAH 20200510
+
+kf/ctogobs/ctog_utils.f: Initialization of prescan_msj option. (Default no
+  scan). TAH 20200510
+
+kf/ctogobs/prescan_clk.f: Added some commented out write statements to print
+  information on clock fits. TAH 20200510
+
+kf/ctogobs/ctogobs.f: New call to prescan_msj. TAH 20200510
+
+kf/ctogobs/prescan_msj.f: New subroutine to scan and remove millisecond jumps.
+  TAH 20200510
+
+kf/ctogobs/ctogobs_com.h: Now logical added to implement prescan_msj. New
+  version number for autcln. TAH 20200510
+
+kf/ctogobs/fit_igs_clk.f: Limited updating linear fits to clocks with < 100 ns
+  RMS. Millisecond jumps in clocks can cause high RMS scatters. Corrected
+  indexing on frequencies (not issue since all frequencies are mapped to common
+  frequency at this point). TAH 20200510
+
+kf/ctogobs/upd_cf_sd.f: Removed a debug statement. TAH 20200510
+
+kf/ctogobs/Makefile.generic: Added prescan_msj subroutine. TAH 20200510
+
+gamit/utils/scan_rinex.f: New routine ported from GG11 to scan RINEX files to
+  determine the numbers of observations of different types. Modified to add
+  leading zero to PRNs<10 in output and generated a sorted output.
+  RWK/TAH 20200509
+
+gamit/includes/dimpar.h: Added max_ob11, maxgnss, max_sch for GG11 for
+  scan_rinex program. TAH 20200509
+
+gamit/utils/rinex.h: New include file from GG11 for use in scan_rinex.
+  TAH 20200509
+
+gamit/utils/Makefile.generic: Added scan_rinex to Makefile. TAH 20200509
+
+com/link_gamit_bin: Added ../utils/scan_rinex. TAH 20200509
+
+gamit/lib/{srotat,rotsnp_sofa}.f: Added module for hpeop_gipson and call to
+  calc_hf_gip_xyu. This code is implementation of Gipson 2017 VLBI model. Both
+  of these routines have same block of code for HF EOP but some time argument
+  variable names differ. TAH 20200509
+
+gamit/lib/hfeop_gipson.f90: New module implementing Gipson VLBI model. Libration
+  and solid Earth terms were in a priori so this model needs these terms added
+  and is compatible with Desai and Sibios implementation. TAH 20200509
+
+gamit/lib/hfeop_desai.f90: Modified to remove functions and subroutines that are
+  common to hfeop_gipson.f90. TAH 20200509
+
+gamit/lib/hfeop_util.f90: Functions and subroutines common to the two HF EOP
+  modules. TAH 20200509
+
+gamit/lib/Makefile.generic: Modified to add new hfeop_gipson.f90 and
+  hfeop_util.f90 modules and subroutines. TAH 20200509
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020020. MAF 20200508
+
+Summary features added Tuesday 5 May 2020:
+- Desai and Sibios HF EOP Model added, UT1 libration set in defaults.
+- Fixed -autooff in htoglb (-a was OK). Updated documentation to reflect that
+  this option should be used for subnetworks processed in baseline mode.
+- Fixed reading of FES2014 list and ocean tide potential models. Critical
+  update if these models used.
+- Fixed reading of dates near the ends of years in UNR time series files.
+- New MJD->date option in cplotx (field type 3).
+- Added secondary list selection option in sh_network_sel (allows a primary list
+  that should all be selected if they are available and their total number is
+  less than the total network size.
+
+tables/{sestbl.10.71,sestbl.10.71.MIT}: Set Etide model to IERS10 and added UT1
+  Libration to Earth Rotation model. TAH 20200505
+
+kf/{ctogobs/ctogobs_dd,svpos/spcsnr}.f: Replaced floating point do-loops with
+  integer code. TAH 20200505
+
+kf/htoglb/cresnx_file.f: Updated model names output to SINEX file. TAH 20200505
+
+kf/gen_util/gamit_mod_n.f: Updated model names for UT1-Libration (UT1-LIBR) and
+  Desai and Sibois (D&S2016). TAH 20200505
+
+gamit/model/setup.f: Updated output documentation to reflect Desai and Sibois
+  model, and the string assigned to speopmod character string. TAH 20200505
+
+gamit/fixdrv/mdmake.f: Updated decoding of "Earth Rotation" sestbl. entry.
+  TAH 20200505
+
+gamit/orbits/{get_svcoords,partl,sp3tot,trot}.f: Replaced arbitrary setting of
+  iut1pol bit mapped diurnal/semidiurnal models with value read from sestbl.
+  TAH 20200505
+
+gamit/lib/rot_gfile.f: Replaced setting iut1pol to zero with value read from
+  sestbl. TAH 20200505
+
+gamit/lib/{rotsnp_sofa.f,srotat.f}: Implemented new Desai and Sibois diurnal/
+  semidiurnal ocean tide EOP model. TAH 20200505
+
+gamit/lib/Makefile.generic: Added hfeop_desai.f90 and get_iut1pol.f routines.
+  TAH 20200505
+
+gamit/lib/get_iut1pol.f: New routine to get iut1pol value from sestbl. Called
+  rather than arbitrary set values in different routines. TAH 20200505
+
+gamit/lib/hfeop_desai.f90: New module to implement the Desai and Sibois model.
+  TAH 20200505
+
+gamit/arc/{earthradTUM.f,sbfn.f}: Replaced arbitrary setting of iut1pol bit-
+  mapped diurnal/semidiurnal models with value read from sestbl. TAH 20200505
+
+gamit/arc/satprop.f: Modified to remove repeated Block IIIA not modeling message
+  when NCLE1 albedo model used. TAH 20200504
+
+kf/htoglb/htoglb.f: Fixed decoding -a/-autooff option so both forms work. Only
+  -a worked in earlier version. This would cause problems when baseline mode
+  networks are combined. TAH 20200504
+
+gamit/makex/{makek,makex}.f: Fix misnamed variable causing MAKEK to fail; fix
+  inconsistent dimensions in both routines, with no effect; fix printing of the
+  observables to the infor file, also with no effect. RWK 20200504
+
+tables/rcvant.dat: Removed comment ("?") from beginning of records for several
+  receivers and antennas without IGS codes but previously added to rcvant.dat by
+  MIT. MAF 20200504
+
+com/{links.arc,links.day,links.com}: Added test to only link otides.dat if no
+  valid local file. Allows use of different ocean tide models (FES2004 versus
+  FES2014b). TAH 20200503
+
+gamit/arc/read_otides.f: Fixed logic in reading files with more than 18
+  frequencies (FES2014b) and added output of model name to GAMIT.status, cleaned
+  up debug output. Critical update when using FES2014. TAH 20200503
+
+gamit/grdtab/get_otl_list.f: Updated reading of TANG RADI lines for FES2014
+  format to ensure sites found (no sites found with old code). Critical update
+  when using FES2014. TAH 20200502
+
+tables/otl_FES2014bM_IGS.list: Updated model name to FES2014b from FES2014M,
+  which had been in the file. TAH 20200502
+
+com/sh_xtosess: Updated definition of "prn_list" to accommodate constellation
+  prefix (G, R, E, C, etc.) to PRN number. RWK/MAF 20200430
+
+kf/glinit/get_aprioris.f: Fixed mapping of ECOM-1 radiation parameters for old
+  (pre 1.07) binary h-files. Impact when orbits are tightly constrained in RELAX
+  solutions. TAH 20200429
+
+kf/glist/glist.f: Increased number of digits in reported h-file version.
+  TAH 20200429
+
+tables/frames.dat: Added Caribbean ("CARIB18") and Puerto Rico-Virgin Islands
+  ("PRVI18") reference frames relative to IGS14 from Wang et al. (2019),
+  doi:10.3390/rs11060680. MAF 20200428
+
+com/{sh_gamit,sh_make_sky_pngs}: Added .png extension to GMT's
+  ps2raster/psconvert -F option and rename if GMT creates PNG file with double-
+  extension ".png.png"). Y.-H. Chang/J. A. Garmen/MAF 20200426
+
+kf/globk/{add_GGV.f,read_glb_mar.f,Makefile.generic: New routine, add_GGV, to
+  add GGVersion information to the GLOBK description line at the end of
+  read_glb_mar to allow better assessment of version of GG installed.
+  TAH 20200426
+
+help/htoglb.hlp: Expanded the documentation about correct procedures for
+  combining sub-networks when baseline mode has been used in GAMIT processing.
+  TAH 20200425
+
+kf/blsum/tscon.f: Updated reading dates from UNR txyz2 files. Old algorithm
+  could have errors of a day near the end of the year and assign values to the
+  wrong year. TAH 20200424
+
+tables/svs_exclude.dat.nanu: Updated following USCG NANU 2020017. MAF 20200424
+
+com/sh_network_sel: Added a secondary list of stations so that the core list can
+  contain critical stations (the number of stations can be less than the total
+  network size). After selection of all core stations, the secondary list is
+  used for the priority of these stations. Added a -clear_list option to force
+  the re-download of archive data holdings. TAH 20200422
+
+Kf/utils/global_sel.f: Updated to handle non-"_GPS" site names in a priori file,
+  changed reporting of short lists. TAH 20200422
+
+help/head.snx: Updated DOMES codes. TAH 20200420
+
+tables/rcvant.dat: Added SEPVC6150L (SEPVC6) and SEPVP6050_CONE (SEPVP6)
+  antennas, and CHC P5E (CHCP5E) receiver. MAF 20200420
+
+kf/utils/make_rms.f: Changed F6.1 to F6.2 format when writing statistics.
+  TAH 20200417
+
+kf/htoglb/mstinf.f: Changed dimensioning so that max_site sites can be in a
+  station.info file to be merged with another one. E. D'Anastasio/TAH 20200417
+
+tables/: Added igs14_2101.atx, ngs14_2101.atx and ngs14_2101_plus.atx, and
+  linked antmod.dat to ngs14_2101_plus.atx; added igs_metadata_2101.snx and
+  igs_metadata_2101_plus.snx, and linked igs_metadata.snx to
+  igs_metadata_2101_plus.snx; updated svnav.dat.allgnss following
+  igs_metadata_2101.snx. MAF 20200416
+
+gamit/orbits/yawtab.f: Added one day to date for call to svnav_read because the
+  start of the t-file may occur before the start time of a PRN number record.
+  A. Koulali/R. Pickle/MAF 20200414
+
+com/{sh_dem,sh_plotvel}: Updated to write new .grd-files to current working
+  directory, rather than ~/gg/maps/; corrected definition of maximum longitude
+  in "minmax" variable when passing topo_file name from sh_dem to grdimage for
+  plotting, and updated logic to derive an illumination .grd-file from topo_file
+  by requiring "topo_file" to be passed as the argument to the "-illu_file"
+  option. MAF 20200413
+
+com/sh_dem: Removed extraneous "-fg" option from GMT's grdcut command for
+  SRTM3, SRTM30 and SRTM30_PLUS. S. Nistor/MAF 20200403
+
+tables/sites.defaults: Appended to updates/source/tables.10.71.tar.gz, because
+  it was missing from the original release, and incremental_updates/tables/.
+  R. Romero Andrade/RWK/MAF 20200403
+
+com/sh_sopac: Removed leading slash ("/") in definition of "sdir" variable to
+  avoid double-slash ("//") typo in host URL. R. Pickle/MAF 20200402
+
+com/links.arc: Changed links so that local ut1./pole. file will be retained
+  during linking. TAH 20200401
+
+com/sh_sp3fit: Changed logic to all allow multi-day orbit arcs of more than 3
+  days (orbits modified to allow 9-day arcs). TAH 20200401
+
+gamit/arc/read_arc_batch.f: Updated logic for reading arc.out file name and the
+  hidden debug featutes that are included on that line. TAH 20200401
+
+gamit/includes/orbits.h: Increased dimensioning to allow 9-day arcs.
+  TAH 20200401
+
+gamit/orbits/{orbdif,orbfit,orbrms,plt_postfit}.f: Modified outputs to add MJD
+  to ends of residual values so that true times can be plotted. TAH 20200401
+
+kf/plot/{dxaxis_mn,dxaxis_mx,get_xy_scale,make_line,plot_spec,report_scale}.f:
+  Added new data type field to have MJD interpreted as date rather than
+  converted to decimal year (help/{cplotx.hlp,ts_pos.plt,ts_pos2.plt} also
+  updated accordingly). TAH 20200401
+
+tables/nbody: Updated to use DE405 (little-endian) file for 1900-2050 from JPL
+  (ftp://ssd.jpl.nasa.gov/pub/eph/planets/Linux/de405/lnx1900.405). MAF 20200401
+
+tables/frames.dat: Added rotation rate vector for North America relative to
+  IGS08 from Kreemer et al. (2018), doi:10.1029/2017JB015257. MAF 20200331
+
+tables/hi.dat: Added DHTCR (= DHARP) height code for SEN671575-series antennas.
+  P. Fang/Y. Bock/MAF 20200326
+
+tables/rcvant.dat: Added STONEX S700A (STXS7A), STONEX S850A (STXS85) receivers,
+  and STXS700A (STXS7A) antenna, following 2020-03-25 release of IGS
+  rcvr_ant.tab. MAF 20200325
+
+test_install/: Added missing "-netext" option to first sh_glred commands for
+  2016 and 2014 in README; changed tssum product ID to conventional form of
+  "mit.final_igs14" from "mit.final.igs14" in README and runtest. MAF 20200323
+
+tables/: Updated igs_metadata_2097.snx and igs_metadata_2097_plus.snx; updated
+  svnav.dat.allgnss following igs_metadata_2097.snx; updated eq.def with
+  preliminary definitions for July 2019 Ridgecrest, California, earthquakes.
+  MAF 20200323
+
+tables/dcb.dat: Corrected open-ended end date for G037/G07 to 1993-334T23:59
+  and removed erroneous extra line for G063/G01 (2019-305T00:00 to
+  2019-304T23:59). S. Hreinsdottir/MAF 20200323
+
+test_install/README: Corrected erroneous "-gnss" option in one sh_glred command
+  to "-netext". MAF 20200319
+
+tables/: Added finite end date for G034/G18 (2020-070) and dummy first
+  record for G075/G18 (from 2020-073), until first estimates of DCB are
+  available, in dcb.dat; updated igs_metadata_2097.snx and
+  igs_metadata_2097_plus.snx to versions with corrected start date of G075/G18;
+  updated svs_exclude.dat.nanu with NANU 2020014. MAF 20200319
+
+tables/: Added igs14_2097.atx, ngs14_2097.atx and ngs14_2097_plus.atx, and
+  linked antmod.dat to ngs14_2097_plus.atx; added igs_metadata_2097.snx and
+  igs_metadata_2097_plus.snx, and linked igs_metadata.snx to
+  igs_metadata_2097_plus.snx; updated svnav.dat.allgnss following
+  igs_metadata_2097.snx. MAF 20200317
+
+gamit/lib/rstnfo.f, kf/htoglb/{hfupd_ut.f,mstinf.h}: Changed length of comment
+  to 36 characters from 30 (rstnfo.f), 24 (hfupd_ut.f) and 132 (mstinf.h)
+  characters. TAH 20200317
+
+com/{sh_plot_rinex,sh_rename_rinex}: Corrected calls of "CRX2RNX" (the original
+  program name) to "crx2rnx" (our distribution name, in gamit/bin/).
+  MAF 20200311
+
+tables/rcvant.dat: Updated "PCN"-code based on old rcvant.dat.200109 for
+  ROGUE SNR-8000 (P), TPS ODYSSEY_I (N), LEICA GS15 (C) and SEPT POLARXS (N)
+  receivers. MAF 20200310
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890

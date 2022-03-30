@@ -1,0 +1,23 @@
+WET2BASE: VLBI program to put WVR data in DBCAL file
+
+ Proper runstring is: 
+  
+ CI> wet2base <delay-file> <hist> <dbcal-format> [<dbcal-file>] 
+  
+ where
+  
+ <delay-file>   is the file descriptor of the delays from program ASTRID
+  
+ <hist>         is a maximum 30 char. long string (no blanks or commas in 
+                the string!) which is used as a description in the header 
+                records of the dbcal-file 
+  
+ <dbcal-format> is either 'old' or 'new'.  The old format is that which is
+                supported now (Aug-87 and use time-epoch, el, az, delay)
+                The new format will also incl. antenna temps. and sigma-
+                values for all parameters.
+  
+ <dbcal-file>   is the file descriptor of the output file, input to 'DBCAL' 
+                which puts the WVR data in the data-base.  If not given,
+                a def. name based on the delay-file-name will be used.
+ 

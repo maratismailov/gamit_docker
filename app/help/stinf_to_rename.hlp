@@ -1,0 +1,23 @@
+STINF_TO_RENAME: Generates GLOBK renames from new format station.info file
+
+stinf_to_rename
+
+ Program to read a new format station.info file and a list of GPS
+ site names and generate rename lines for each antenna and radome
+ change
+
+Runstring:
+stinf_to_rename <site list> <station.info file> [-norec] [-noend] [-post <date>]
+where <site list> is a file containing a list of sites (single column, columns 1-4)
+      <station.info file> is a new format station.info file
+      [-norec] option will stop entries being written for receiver changes.
+               (option added Jan 28, 2009 TAH)  
+      [-noend] option will leave out the stop time, avoiding gaps for sites 
+               not used in solution (option added Oct 1, 2009 RWK)
+      [-post <date>] specifies a date after which entries will be output.
+               date format is yr mn dy hr mn. Option used for appending to 
+               previously generated stinf_to_rename files).
+
+Output is to the screen and can be re-directed to a file.  Some
+editing of the output may be needed to ensure unique site names.
+

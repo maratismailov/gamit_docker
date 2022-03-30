@@ -1,0 +1,19 @@
+
+    This file stores all history of the evolution of UTILITY.
+
+------------------------------------------------------------------------------------------
+|  time   | designer   |       description 
+------------------------------------------------------------------------------------------
+ 03/01/93   D.N.Dong     Finish the prototype of UTILITY.  It includes:
+                        ALIGN_FRAME, GET_LINE,PLOT_LINE,NET_UPDATE,GET_V_REL,COMPARE_COOR.
+                        Also there is one gmt file: PLTLINE.GMT, and one compiling command
+                        file: MAKE.CMD. 
+ 03/23/93   Dong        modify pltline.gmt,net_update,compare_coor,align_frame.
+ 04/01/93   Kurt        RESIDL.GMT to get histogram of residuals
+ 04/05/93   Dong        GET_SCATER calculate length data scatters 
+                        also add PLTXY.GMT to perform scatter ploting.
+ 06/01/93   Dong        CALC_BSL_AZM to calculate baseline length and azimuth from net file
+                        REM_MODEL to remove model velocity and to perform compatibility test
+                        SYN_BSL_RAT to synthesize baseline length rate and azimuth rate
+                            from mapping file
+                           

@@ -1,0 +1,24 @@
+CALC_WL: VLBI program to compute wide lanes
+
+      program calc_WL
+ 
+This program is based on Calc_ion and will compute the 
+VLBI equivalnent of the WL obsersable.
+
+% calc_wl <KalObs1> <KalObs2> 
+
+where <KalObs1> and <KalObs2> are the KalObs files corresponding
+to the different frequency bands.
+
+% calc_wl KalObs_X.kal KalObs_S.kal
+
+tells the program to use the two files KalObs_X.kal and KalObs_S.kal
+to calculate the the WL observable.
+
+Throughout this program, one of the files is referred to as the
+X-Band file, and the other as the S-Band.  The assignment of these
+labels is for ease of variable-handling only;  the frequencies that
+the files correspond to is irrelevant since the frequency information
+is stored in the KalObs files.  Thus the two files could be from
+X- and K-Band data bases, for example.
+

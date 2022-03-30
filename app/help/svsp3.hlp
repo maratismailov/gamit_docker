@@ -1,0 +1,74 @@
+SVSP3: Point positioning using GPS code range data and SP3 orbit files
+
+program svsp3
+ 
+Computes differential positions of sites based on two rinex files
+and an SP3 file for the orbit.
+
+The runstring of the program is
+% svsp3 [sp3file] [data file] [ref file] <options> 
+where [ref file] can be entered as '' if absolurte positioning wanted.
+The options are (only redundant part needed):
+-proc_noise <position m^2/ep> <clock m^2/ep> <range noise (m)>
+    Sets process nosie values for site positions, clocks and data noise.
+    Default values are 0.00, 1.d6 and 100.0
+
+-ref_apr <X> <Y. <Z> -- Apriori coordinates for Reference (2nd) site
+    Sets coordinates for reference (2nd) site.  
+    Default Use values in RINEX header.
+
+-dat_apr <X> <Y. <Z> -- Apriori coordinates for first site.
+    Sets coordinates for primary (1st) site.  
+    Default Use values in RINEX header.
+
+-out  <out spacing> <out type (XYZ/NEU)> 
+
+-debug <start epoch> <end epoch>
+
+-span <start epoch> <end epoch>
+
+-gnss <systems>  G-GPS, R-Glonass, E-Galileo, C-Beidou
+
+-anal_type <Type> From PC, P1, P2, P5
+
+-rep_dels  -- Report deletes
+
+
+
+Old runstring:
+% svsp3 [sp3file] [data file] [ref file] <Site process noise> \ 
+         <clk process noise> <data noise> \
+         <Ref X apriori>   <Ref Y apriori>   <Ref Z apriori> <output spacing> <out type> \
+         <Data X apriori>  <Data X apriori>  <Data X apriori> \
+         <debug_start> <debug_end>
+
+
+
+where sp3_file is and SP3 orbit file name (required)
+    data_file is the name of the Rinex data file (required)
+    ref_file is the reference site rinex data file required)
+       MOD TAH 150514: If ref_file name not given ('') then point positioning
+         rather than differential postitioning will be used. 
+    Site process noise in m**2 per epoch pf data (optional, use '' to skip)
+    clock process noise in m**2 per epoch pf data (optional, use '' to skip)
+    data noise (m) (optional, use '' to skip).
+    <Ref X apriori> <Ref Y apriori> <Ref Z apriori> new apriori site 
+        coordinates instead of those in RINEX file of the Reference
+        site. (optional; use '' ''  '' to skip )
+    <out spacing> is output sacing in seconds (optional)
+    <out type> is XYZ for cartesian, NEU for Local
+    <Data X apriori> <Data Y apriori> <Data Z apriori> new apriori site 
+        coordinates for data sites instead of those in RINEX file of the 
+        data site. (optional, use '' ''  '' to skip  )
+
+MOD TAH 150514: Added debug start and end.  If the debug_start is 
+     negative, the absolute value will be the first epoch processed.  The
+     debug_end, if negative, then becomes the last epoch processed.  If 
+     debug start is negative and debug_end is positibe, debug_end is then
+     the number of epochs to processed.
+     (Allows positon estimate from data starting in the middle of the file
+      and only a part of the file to be used).
+
+
+The program outputs adjustments to the apriori site positions.
+ 

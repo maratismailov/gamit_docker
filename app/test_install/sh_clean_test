@@ -1,0 +1,182 @@
+#!/bin/csh -f
+#
+#doc Specialized (non-standard) script to remove old files from the example directories
+#doc
+#
+# Writtten by R King 2018/05/31
+#                                              
+if( $#argv == 0 ) then
+  echo " "
+  echo " Clean out the test_install directories to repeat the test "
+  echo "  --run once for each year (2018, 2016, 2014) and vsoln"
+  echo "    from the /test_install level "
+  echo " " 
+  echo "Usage:  sh_clean_test -d <dir> "  
+  echo " "
+  echo "  where <dir> is the directory name (year or vsoln) "
+  echo " " 
+  exit
+
+else
+  set input = ( $argv )
+  switch($input[1])
+    case -d:
+      set dir = $input[2]
+    breaksw
+  endsw
+endif
+                 
+cd $dir     
+echo "Deleting log, tmp, and disk.used  files at the $dir level "
+\rm tmp*   >& /dev/null 
+\rm *log   >& /dev/null             
+\rm disk*   >& /dev/null 
+              
+
+if ( $dir == "vsoln" ) then  
+ echo "Deleting all files in vsoln " 
+ \rm -f *   >& /dev/null
+
+else
+
+ echo "Deleting all except tables/sites.defaults in $dir "
+ \rm tmp.*   >& /dev/null    
+ \rm -f -r glbf;    \rm -f -r igs 
+ if( $dir == "2018" ) then
+   \rm -f -r 09??
+ else if ( $dir == "2016" ) then
+   \rm -r -f 10??
+ else if( $dir == "2014" ) then
+   \rm -r -f 11??
+ endif
+
+ echo "Deleting most files and links from the $dir tables directory"
+ echo " --save sites.defaults "
+ \rm tables/antmod.dat       >& /dev/null
+ \rm tables/atl.grid         >& /dev/null
+ \rm tables/atl.list         >& /dev/null
+ \rm tables/atml.grid        >& /dev/null
+ \rm tables/atml.list        >& /dev/null       
+ \rm tables/autcln.cmd       >& /dev/null       
+ \rm tables/core             >& /dev/null       
+ \rm tables/dcb.dat          >& /dev/null
+ \rm tables/ftp.inp          >& /dev/null
+ \rm tables/GAMIT.warning    >& /dev/null
+ \rm tables/GAMIT.fatal      >& /dev/null      
+ \rm tables/gdetic.dat       >& /dev/null       
+ \rm tables/guess_rcvant.dat >& /dev/null       
+ \rm tables/hi.dat           >& /dev/null       
+ \rm tables/itrf00.apr       >& /dev/null       
+ \rm tables/itrf05.apr       >& /dev/null       
+ \rm tables/itrf08_comb.apr  >& /dev/null       
+ \rm tables/leap.sec         >& /dev/null       
+ \rm tables/lfile*           >& /dev/null       
+ \rm tables/luntab.          >& /dev/null       
+ \rm tables/map.grid         >& /dev/null       
+ \rm tables/map.list         >& /dev/null       
+ \rm tables/met.grid         >& /dev/null       
+ \rm tables/met.list         >& /dev/null       
+ \rm tables/MSTINF.*         >& /dev/null       
+ \rm tables/nutabl.          >& /dev/null       
+ \rm tables/otlcmc.dat       >& /dev/null       
+ \rm tables/otl.grid         >& /dev/null       
+ \rm tables/otl.list         >& /dev/null       
+ \rm tables/pole.*           >& /dev/null       
+ \rm tables/process.defaults >& /dev/null       
+ \rm tables/rcvant.dat       >& /dev/null       
+ \rm tables/sat1*            >& /dev/null    
+ \rm tables/svt*             >& /dev/null       
+ \rm tables/sestbl.          >& /dev/null 
+ \rm tables/sittbl.          >& /dev/null       
+ \rm tables/soltab.          >& /dev/null  
+ \rm tables/nbody            >& /dev/null
+ \rm tables/station.info*    >& /dev/null       
+ \rm tables/stnfolist        >& /dev/null       
+ \rm tables/svnav.dat        >& /dev/null       
+ \rm tables/svs_exclude.dat  >& /dev/null       
+ \rm tables/tform.dat        >& /dev/null
+ \rm tables/gpt.grid         >& /dev/null     
+ \rm tables/eq_rename        >& /dev/null  
+ \rm tables/*.apr           >& /dev/null
+ \rm tables/ut1.*  o         >& /dev/null        
+ \rm tables/tmp.*            >& /dev/null   
+ \rm tables/*.bak            >& /dev/null
+
+ echo "Deleting brdc figs gfiles igs ionex met glbf and gsoln directories and their contents" 
+if( -e rinex ) then
+   \rm rinex/* >& /dev/null
+   rmdir rinex >& /dev/null
+ endif  
+ if( -e brdc ) then
+   \rm brdc/* >& /dev/null
+   rmdir brdc >& /dev/null
+ endif  
+ if( -e gfiles ) then
+   \rm gfiles/* >& /dev/null
+   rmdir gfiles >& /dev/null
+ endif
+ if( -e figs ) then
+   \rm figs/*  >& /dev/null
+   rmdir figs  >& /dev/null
+ endif
+ if( -e glbf ) then
+   \rm -r glbf/* >& /dev/null
+   rmdir glbf >& /dev/null
+ endif
+if( -e gsoln ) then
+   \rm -r gsoln/* >& /dev/null
+ endif  
+ if( -e igs ) then
+   \rm igs/*  >& /dev/null
+   rmdir igs  >& /dev/null
+ endif
+ if( -e ionex ) then
+   \rm ionex/*  >& /dev/null
+   rmdir ionex  >& /dev/null
+ endif
+ if( -e met ) then
+   \rm met/*  >& /dev/null
+   rmdir met  >& /dev/null
+ endif
+  
+ echo "Removing RINEX files   "
+ \rm rinex/* >& /dev/null 
+ 
+ echo "Deleting temporary files and directories"
+ \rm control/tmp*  >& /dev/null   
+ \rm mkrinex/teqc* >& /dev/null  
+ \rmdir archive    >& /dev/null 
+ \rmdir mkrinex    >& /dev/null
+ \rmdir raw        >& /dev/null 
+ \rmdir control    >& /dev/null
+
+endif
+
+exit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

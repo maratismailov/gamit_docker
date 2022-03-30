@@ -1,0 +1,44 @@
+DOY: Converts various date formats
+
+DOY: Converts various date formats.
+
+Runstring:
+% doy <jd/year> <doy/month> <day> <hr> <min> 
+or
+% doy <gps_week>W <gps_sow/gps_dow>
+or
+% doy <DecYear>Y
+or
+% doy <Grace Seconds>G
+
+where jd is Julian date (assumed if only one argument)
+      year is calender year
+      doy is day of year (assumed if two arguments)
+      month is month
+      day is day of month.
+      hr min is hrs and minutes of day (Only if ymd form used).
+In the second form (i.e. W appended to the first value),
+the entries are assumed to gps week no and the second entry
+(optional) is either gps day of week (0-6) or seconds of
+gps week.
+NOTE: GPS Day of Week runs from 0-6 (Changed May 20, 1997).
+In the third form with Y appended, the argument is taken as 
+deciminal year.  (Versions after 2004/12/21 correctly account
+for leap years in converting deciminal years back to Julian dates)
+
+The conversions made are based on the number of arguments
+passed.
+
+NDOY: Version of doy of year which takes keyboard input in the
+forms above.  (^D ends program input).
+
+Example: doy 92 200
+Date 1992/07/18  0:00 hrs, DOY 200 JD  2448821.5000 MJD  48821.0000
+GPS Week   653 Day of week  6, GPS Seconds 518400 Day of Week Sat 
+Decimal Year 1992.543715847 GRACE Seconds  -235310400.0
+
+Example: doy 654W 345600
+Date 1992/07/23  0:00 hrs, DOY 205 JD  2448826.5000 MJD  48826.0000
+GPS Week   654 Day of week  4, GPS Seconds 345600 Day of Week Thu 
+Decimal Year 1992.557377049 GRACE Seconds  -234878400.0
+

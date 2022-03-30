@@ -1,0 +1,32 @@
+#!/bin/csh -f
+# Script to download a GPS-only and  GNSS dcb file from COD for the current month
+# RWK/MAF 150803/160908
+# RWK 170404: Change the rename of the GNSS file to p1c1.dcb (no .gnss) since the GPS-only file no longer used         
+# RWK 170816: Change ftp address for AIUB
+
+# Need to get year, yr2, and mon from the current date using, e.g. 'doy'
+set Yym = ( `date -u +'%Y %y %m'` )  # Four-digit year; two-digit year; two-digit month (UTC)
+
+@ monlast = `echo "ibase=10; ${Yym[3]} - 1" | bc`      
+set monlast = `echo $monlast |  awk '{printf "%02d \n", $1}'`
+
+echo DEBUG $monlast 
+
+# RWK MOD 1801004; Comment out the GPS-only file; add an command to get an uncompressed file to the GNSS file command
+#                  The practice now seems to be to keep the most recent file without compression
+   
+# GPS-only file - no longer used, but keep the download for checking
+## wget -m -nd --ftp-user anonymous --ftp-password rwk@prey.mit.edu  ftp://ftp.aiub.unibe.ch/CODE/$Yym[1]/P1C1$Yym[2]{$monlast}.DCB.Z
+## gunzip -f  P1C1$Yym[2]{$monlast}.DCB.Z
+## \mv P1C1$Yym[2]{$monlast}.DCB p1c1.gpsdcb
+
+                             
+# GNSS file
+wget -m -nd --ftp-user anonymous --ftp-password rwk@prey.mit.edu  ftp://ftp.aiub.unibe.ch/CODE/$Yym[1]/P1C1$Yym[2]{$monlast}_RINEX.DCB
+# if the file was compressed, this last command will fail but the following one will work
+wget -m -nd --ftp-user anonymous --ftp-password rwk@prey.mit.edu  ftp://ftp.aiub.unibe.ch/CODE/$Yym[1]/P1C1$Yym[2]{$monlast}_RINEX.DCB.Z
+gunzip -f  P1C1$Yym[2]{$monlast}_RINEX.DCB.Z
+\mv P1C1$Yym[2]{$monlast}_RINEX.DCB p1c1.dcb  
+           
+exit
+

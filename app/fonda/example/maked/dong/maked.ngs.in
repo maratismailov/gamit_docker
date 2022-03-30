@@ -1,0 +1,39 @@
+1 3 0                            {cmode, vmode and nmode
+vmodel.ngs                       {model file name
+10                               {experiment number
+1925 321 2 2                     {time, type and groupnumber
+4 0.70 0.0                       {site number and error model for each exp.
+1 4 2 3
+3 0.70 0.0                       {site number and error model for each exp.
+3 1 2
+1876 1 2 1
+4 0.70 0.0
+1 4 2 3
+1875 1 2 1
+4 0.70 0.0                       {site number and error model for each exp.
+3 1 4 2
+1925 351 2 2                     {time, type and groupnumber
+4 0.70 0.0                       {site number and error model for each exp.
+4 2 3 1
+4 0.70 0.0
+2 3 1 4
+1883 1 2 1                       {time, type and groupnumber
+4 0.70 0.0                       {site number and error model for each exp.
+4 2 3 1
+1882 1 2 1                       {time, type and groupnumber
+4 0.70 0.0                       {site number and error model for each exp.
+2 4 3 1
+1879 1 4 1                       {time, type and groupnumber
+2 5.76 0.0                       {site number and error model for each exp.
+4 3
+1924 1 4 1                       {time, type and groupnumber
+2 5.76 0.0                       {site number and error model for each exp.
+4 3
+1879 1 1 1                       {time, type and groupnumber
+2 1.00 0.0                       {site number and error model for each exp.
+4 3
+1924 1 1 1                       {time, type and groupnumber
+2 1.00 0.0                       {site number and error model for each exp.
+4 3
+0                                {noise level
+1                                {output mode

@@ -1,0 +1,49 @@
+#!/bin/csh -f
+# 
+#doc Convert a list of DOS files to UNIX (remove the carriage return)
+#doc
+#
+#  Dang Y.M.   5 January 2001   --RINEX files only, no command-line argument
+#  Modified by R. King 31 July 2001 to work for all types of files 
+#  Modified 2005 MAY 25 to work with this version of dos2unix
+#  Modified by M. Floyd (2011/06/10, MIT) to use tr instead of potentially unavailable dos2unix
+#medoc.dtp.obs-mip.fr% dos2unix --help
+#dos2unix Copyright (c) 1994-1995 Benjamin Lin
+#         Copyright (c) 1998      Bernd Johannes Wuebben (Version 3.0)
+#         Copyright (c) 1998      Christian Wurll (Version 3.1)
+#Usage: dos2unix [-hkqV] [-c convmode] [-o file ...] [-n infile outfile ...]
+# -h --help        give this help
+# -k --keepdate    keep output file date
+# -q --quiet       quiet mode, suppress all warnings
+#                  always on in stdin->stdout mode
+# -V --version     display version number
+# -c --convmode    conversion mode
+# convmode         ASCII, 7bit, ISO, Mac, default to ASCII
+# -l --newline     add additional newline in all but Mac convmode
+# -o --oldfile     write to old file
+# file ...         files to convert in old file mode
+# -n --newfile     write to new file
+# infile           original file in new file mode
+# outfile          output file in new file mode
+#
+#..............................................................
+#    
+if($#argv < 1 ) then 
+ echo ' '   
+ echo '   sh_dos2unix [files] '
+ echo ' '
+ echo '     Example:  sh_dos2unix *.??o ' 
+ echo ' ' 
+ echo ' '
+
+else
+
+foreach rfile ($argv[1-])
+    # Modified by M. Floyd (2011/06/10, MIT)
+    # to use tr instead of potentially unavailable dos2unix
+    #dos2unix $rfile 
+    tr -d '\r' < $rfile > tmp.$rfile && mv -f tmp.$rfile $rfile
+end
+
+endif
+

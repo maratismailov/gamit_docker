@@ -1,0 +1,171 @@
+#!/bin/csh -f
+#
+#doc Automates creation of postscript phase residual sky plots and gifs
+#doc
+#
+# Last Modified by: Simon McClusky - To allow elevation dependent plots to be created. 03/23/00          
+#
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 || ` echo $1 | cut -c2-` == 'help' ) then
+  echo "=================================================================================="
+  echo "  "
+  echo " sh_make_sky_gifs: Automates creation of PS phase residual sky plots and gifs "
+  echo "  "
+  echo " Usage: sh_make_sky_gifs -site <site> -doy <doy> -gifs <Y/N> -rmps <Y/N> -elev <Y/N> -cmdfile <cmdfile>"
+  echo "  "
+  echo " NOTE: Must be run within sh_gamit in order to set directories properly and parse the command file"
+  echo " To create plots manually, use sh_oneway "
+  echo "  "
+  echo " Where: "
+  echo "          site   Sites to create sky plots for. Use ALL to create skyplots "
+  echo "                 for all sites in the current dirtectory. [Default ALL]"
+  echo "          doy    Day of year of the observations. [Required] " 
+  echo "          gifs   Convert postscript skyplots to gif images. [Default Y]" 
+  echo "          rmps   Remove postscript skyplot after .gif file is created [Default Y]" 
+  echo "          elev   Create elevation angle dependent plots and histograms [Default N]"
+  echo "          cmdfile Name of command file containing sh_gamit command line args"
+  echo "  "                                                                           
+  echo " Example: sh_make_sky_gifs -site ALL -doy 319 -gifs Y -elev Y"
+  echo " " 
+  echo "  "
+  echo "==================================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS #############################   
+# Set options which may not be in process.defaults
+set site = 'ALL'
+set gifs = 'Y'
+set rmps = 'Y'
+set elev = 'N'
+set doy = ''
+set cmdfile = 'tmp.cmds'
+
+######## GET SAVED COMMAND FILE NAME FROM COMMANDLINE IF GIVEN  #########   
+set argv_save = `echo $argv`
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -cmdfile: 
+        set cmdfile =  $argv[2] 
+    breaksw  
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+set argv = `echo $argv_save`
+
+# Setup necessary paths and filenames  
+source ${procdir}/tables/process.defaults  
+
+#  Reset commandline options.
+source ${cpth}/${cmdfile}
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -si*:
+        set site = $argv[2]
+        set site = `echo $site | awk '{print toupper($0)}'`
+        breaksw
+    case -g*:
+        set gifs = $argv[2]
+        breaksw
+    case -r*:
+        set rmps =  $argv[2]
+        breaksw
+    case -d*:
+        set nf =  $argv[2]
+        breaksw
+    case -e*:
+        set elev =  $argv[2]
+        breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ############################
+# Set timestamp hostname variable
+set ts = "`hostname`:`date +"%H%M%S"`"
+# MOD TAH 010820: Check to see if we can use antialias option
+set opt = `convert | grep Version | awk '{if ($3 > 4.0 ) {print "+antialias"}}'`
+#      Check that we have the correct set up to do this
+       set pfmode = `grep -i 'AUTCLN Postfit' sestbl. | awk '{print substr($4,1,1)}'` 
+# MOD TAH 061220: Since default is postfit mode, check if N set
+       if( $pfmode[1] == 'N'  ) then
+           echo 'AUTCLN not run in postfit mode.  Can not generate gifs'
+           exit
+       endif
+
+#      Now get the name of summary file and the prefix used 
+       set acmd = `grep -i '^AUTCLN Command File' sestbl. | awk '{print $5}'`
+       set nacmd = `echo $acmd | wc -w`
+       if( $nacmd == 0 ) set acmd = 'autcln.cmd'
+       set prefdph = `grep '^POST' $acmd[1] | grep -i phs_res | awk '{print $3}'`
+       if( $prefdph[1] == '' ) then
+          echo 'AUTCLN did not used phs_res_root. Can not generate gifs'
+          exit
+       endif
+ 
+       set pfsumf  = `grep '^POST' $acmd[1] | grep -i sum | awk '{print $3}'`
+       if( $pfsumf[1] == '' ) then
+          set pfsumf = autcln.sum
+       endif
+
+       if( $site != "ALL" ) then
+          if ( $elev == "N" ) then
+            sh_oneway -site $site -prefix ${prefdph[1]} -autsum ${pfsumf[1]} -scale 0.5  
+          else
+            sh_oneway -site $site -prefix ${prefdph[1]} -autsum ${pfsumf[1]} -scale 0.5 -elev
+          endif 
+          if ( -e ${site}.${nf}.DPH6.ps && $gifs == "Y" ) then 
+#             ${gspath}/ps2epsi ${site}.${nf}.DPH6.ps
+#            MOD TAH Go through a ppm file to aviod large gif files
+#             gs -sDEVICE=ppmraw -r72x72 -sOutputFile=/tmp/${site}.ppm  -dNOPAUSE -dQUIET ${site}.${nf}.DPH6.ps - < /dev/null >>& tmp.tst 
+#             if ($elev == "Y" ) gs -sDEVICE=ppmraw -r72x72 -sOutputFile=/tmp/${site}_elev.ppm  -dNOPAUSE -dQUIET ${site}.${nf}_elev_res.ps - < /dev/null >>& tmp.tst 
+# MOD TAH 991115: Modified to write PNG files
+#            ${impath}/convert -crop 0x0 -rotate 90 /tmp/${site}.ppm  PNG:${site}.${nf}.gif
+#            if ($elev == "Y" ) ${impath}/convert -crop 0x0 /tmp/${site}_elev.ppm  PNG:${site}.${nf}_elev_res.gif
+# MOD TAH 010801: Added +antialias and converted back to true gif files.
+# MOD TAH 010820: Replaced +antialias with $opt for those versions that support it
+             ${impath}/convert $opt -crop 0x0 -rotate 90 ${site}.${nf}.DPH6.ps ${site}.${nf}.gif
+             if ($elev == "Y" ) ${impath}/convert $opt -crop 0x0 ${site}.${nf}_elev_res.ps ${site}.${nf}_elev_res.gif
+#          \rm /tmp/${site}.ppm /tmp/${site}_elev.ppm >& /dev/null
+#            ${impath}/convert -crop 0x0 -rotate 90 ${site}.${nf}.DPH6.ps ${site}.${nf}.gif
+             if ( ${rmps} == "Y" && $gifs == "Y" ) \rm ${site}.${nf}.DPH6.ps ${site}.${nf}_elev_res.ps >& /dev/null
+             \mv ${site}.${nf}.gif ../gifs
+             if ($elev == "Y" ) \mv ${site}.${nf}_elev_res.gif ../gifs
+          endif
+       else
+#         Loop over all sites
+          foreach name (`ls x?????.${nf}* | awk '{print toupper(substr($0,2,4))}'` )
+             if ( $elev == "N" ) then
+               sh_oneway -site $name -prefix ${prefdph[1]} -autsum ${pfsumf[1]} -scale 0.5
+             else
+               sh_oneway -site $name -prefix ${prefdph[1]} -autsum ${pfsumf[1]} -scale 0.5 -elev
+             endif 
+             if ( -e ${name}.${nf}.DPH6.ps && $gifs == "Y" ) then 
+#                ${gspath}/ps2epsi ${name}.${nf}.DPH6.ps
+#               MOD TAH Go through a ppm file to aviod large gif files
+#               gs -sDEVICE=ppmraw -r72x72 -sOutputFile=/tmp/${name}.ppm  -dNOPAUSE -dQUIET ${name}.${nf}.DPH6.ps - < /dev/null >>& tmp.tst 
+#               if ($elev == "Y" ) gs -sDEVICE=ppmraw -r72x72 -sOutputFile=/tmp/${name}_elev.ppm  -dNOPAUSE -dQUIET ${name}.${nf}_elev_res.ps - < /dev/null >>& tmp.tst
+# MOD TAH 991115: Modified to write PNG files
+#               ${impath}/convert -crop 0x0 -rotate 90 /tmp/${name}.ppm  PNG:${name}.${nf}.gif
+#               if ($elev == "Y" ) ${impath}/convert -crop 0x0 /tmp/${name}_elev.ppm  PNG:${name}.${nf}_elev_res.gif
+#               \rm /tmp/${name}.ppm /tmp/${name}_elev.ppm >& /dev/null
+# MOD TAH 010804: Modified again to make gifs (instead of PNG) and to use the +antialias option.
+                 ${impath}/convert $opt -crop 0x0 -rotate 90 ${name}.${nf}.DPH6.ps ${name}.${nf}.gif
+                if ($elev == "Y" ) ${impath}/convert $opt -crop 0x0 ${name}.${nf}_elev_res.ps ${name}.${nf}_elev_res.gif
+                if ( ${rmps} == "Y" && $gifs == "Y" ) \rm ${name}.${nf}.DPH6.ps ${name}.${nf}_elev_res.ps >& /dev/null
+                \mv ${name}.${nf}.gif ../gifs
+                if ($elev == "Y" ) \mv ${name}.${nf}_elev_res.gif ../gifs
+             endif 
+          end  
+       endif
+           
+# Cleanup
+\rm tmp.tst >& /dev/null
+
+# Thats all
+exit

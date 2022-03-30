@@ -1,0 +1,57 @@
+tdifflast = 99999.
+nrecsv = 0 
+first = true
+do i=1,in
+
+if prn match then
+    if( first ) 
+      irec_last = i
+    else
+      
+    xetoe = bephems(1,i)
+    iwkne = iwknes(1,i)  
+    tdiff = dabs (t-toe)
+   if( tdiff.lt.tdifflat ) then
+     update 
+     irec = i
+   else
+     irec = irec_last
+   endif
+endif
+enddif on iprn
+enddo
+
+   
+      irec = 0 
+      matched = .false.
+      tdifflast = 99999.
+      i= 0 
+      do while ( .not.matched ) 
+        i= i + 1 
+c       check only if the satellites match
+        if( mprns(i).eq.iprn )  then     
+          irec = i
+          tdiff = dabs(secdif( iwkn,sow,iwkne(i),bephems(1,i)))
+          if( tdiff.lt.tdifflast ) then               
+            tdifflast = tdiff
+          else 
+c           set the match when tdiff starts increasing
+            matched = .true.  
+          endif
+        endif
+      enddo
+      if( irec.eq.0 ) then
+        write(message,'(a,a1,i2)') 'No nav-file values for ',gnss,iprn
+        call report_stat('FATAL',prog_name,'getnav',' ',message,0)
+      endif                    
+
+
+            
+        tdiff = secdif( iwkn,sow,iwkne,xetoe )
+cd        if(debug) 
+         if(iprn.eq.1) 
+    
+    
+         
+
+

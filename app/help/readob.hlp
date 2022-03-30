@@ -1,0 +1,49 @@
+READOB: VLBI program to dump contents of KalObs file
+
+READOB may be used to inspect a KalObs file.
+  
+CI> readob <KalObs> <out_lu> <ctrl_lu> [<ext_flag>] [<site>] [<dup_flag>] 
+  
+where [ ] indicates an optional parameter.
+  
+      <KalObs>        KalObs file descriptor. 
+  
+      <out_lu>        File or LU for output.
+  
+      <ctrl_lu>       File or LU for input.  The input consists of a list 
+                      of variable names in PLOT-command format (i.e. a
+                      non-blank character in the first column indicates 
+                      a comment).  The allowed variable names are stored
+                      in OBS_LIST.FTNI::KALMAN.  See below for an example 
+                      command file. 
+  
+      <ext_flag>      Flag indicating whether "extended" header information 
+                      is requested.  To request the extended header, eneter 
+                      in 'E' in this field.  Any other character or none
+                      will yield the regular header.
+  
+      <site>          Which site's information to output.  If this field
+                      is left out or is 'ALL', all the sites' information 
+                      is output.
+  
+      <dup_flag>      "Duplicate epoch" flag.  If one site's information
+                      only is being listed, and if the experiment is multi- 
+                      baseline, then for a given epoch only the information 
+                      from the first observation including <site> will be 
+                      listed.  If you want the data from every observation
+                      for all epochs, put a 'Y' in this field.  This field
+                      is ignored if <site> is not given or is 'ALL' 
+  
+Example input:
+  
+. This is an example of input to READOB 
+. 
+ wvr_dbase wvr_code 
+ site source
+ observation db_theo db_sigma 
+. 
+. The previous commands will list WVR_DBASE (both sites and rates), 
+. WVR_CODE (both sites) the site and source names, the OBSERVATION array, 
+. the DB_THEORETICAL array, and the DB_SIGMA array for all observations,
+. assuming <site> = 'ALL' 
+ 

@@ -1,0 +1,41 @@
+#!/bin/csh -f
+#
+#doc Uncompress links. On most systems this is done by uncompress (HPUX 11 requires zcat)
+#doc
+#
+# Script to uncompress links.  On most systems this is done by
+# uncompress, but for HPUX 11.0 this no longer works and we need
+# to use zcat.
+#
+if( $#argv == 0 ) then
+   echo 'sh_uncompress: Wrapper for uncompress on machines which do not uncompress links'
+   echo '(e.g., HPUX 11.0)'
+   echo 'Usage: call the same as uncompress'
+   exit
+endif
+# Try standard uncompress
+set ts = "`hostname`:`date +"%H%M%S"`"
+#MOD SCM 070336 - use gunzip not the uncompress
+gunzip -f $argv >&! tmp.c.$ts
+# uncompress $argv >&! tmp.c.$ts
+#
+# Now see if we have a link message
+# Note: remove : from end of $1 
+foreach link (`grep 'has symbolic links' tmp.c.$ts | awk '{print substr($1,1,length($1)-1)}'`)
+#
+#   Get the name of file with out .Z
+    set file = $link:r
+    set ow = `echo $argv[1] | awk '{if ( substr($1,1,2) == "-f" ) {print "Overwrite"}}'`
+    
+    if( $ow == "Overwrite" ) then
+        zcat $link >! $file
+        \rm $link
+    else
+        if( ! -e $file ) then
+            zcat $link > $file
+            \rm $link
+        endif
+    endif
+end
+\rm tmp.c.$ts
+

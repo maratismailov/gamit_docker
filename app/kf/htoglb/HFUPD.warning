@@ -1,0 +1,3 @@
+WARNING:031112:0105:15.0 HFUPD/hfupd: IOSTAT error opening file /data30/rwk/active/help/hfupd.hlp ERROR   101
+WARNING:191126:1557:38.0 HFUPD/hfupd: Frequencies for updating eccentries assumed to be GPS L1 L2
+WARNING:191126:1634:58.0 HFUPD/hfupd: Frequencies for updating eccentries assumed to be GPS L1 L2

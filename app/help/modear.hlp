@@ -1,0 +1,15 @@
+MODEAR: GPS phase modeling program
+ 
+MODEAR:
+Program to model the phase and range measurements in an Earth
+fixed frame taking as input a cfile and SP3 file.
+
+Runstring:
+% modear <cfile> <sp3 ephemeris file> [Nav file]
+
+where cfile is cfile to be processed (original renamed to <cfile>.o)
+      sp3 ephemeris file is an SP3 ephemeris file
+      [Nav file] is optional Rinex Nav file.  (Needed if the sp3 file
+          does not have satellite clock values).
+          The SP3 clock values are ignored if the nav file is given
+      

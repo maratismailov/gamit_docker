@@ -1,0 +1,14 @@
+SIMERR: Simulates first-order Gauss Markov time series
+
+program simerr
+
+Program to simulate random walks and FOGM processes
+Runstring
+% simerr <data> <White noise> <FOGM step> <FOGM tau> [Seed]
+where <data> is a file name or if 'GEN spacing duration'.
+             spacing and duration in days.
+      <White noise> is white noise in mm
+      <FOGM step> FOGM process noise mm**2/year
+      <FOGM tau>  FOGM correlation time (years)
+      [Seed]      Random number generator
+

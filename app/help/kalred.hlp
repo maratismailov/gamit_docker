@@ -1,0 +1,11 @@
+KALRED: VLBI program to reduce number of stations in data file
+
+KALRED: This program will make a new kalobs from an existing one which
+        containes only certain stations.  The runstring is:
+
+% kalred <input> <output> <sites .... >
+
+Where input is input kalobs file
+      output is output KalObs file
+and   sites ... is a list of sites.
+

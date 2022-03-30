@@ -1,0 +1,31 @@
+
+            << welcome to FONDA communication book>>
+            ----------------------------------------
+This is the communication file for all FONDA users.  You can use vi
+to add your contributions.  Meanwhile you can read other's comments.
+
+Regulations:
+============
+
+1. Everebody feel free to read this file and add whatever you think
+   important idea, comments, question and complains.
+2. Do not destroy other's comments, even you disagree with his opinion.
+3. Please leave your name, e-mail address or telephone numer, time
+   for tracking the history, as well as for future communication.
+4. Too old mail will be removed regularly.
+
+Remember how to quit the vi status:
+===================================
+  type   :q!   to quit when you only read this file.
+  type   :wq   to quit when you add your comments.
+
+   date   |                     comments                       |     name    &   address     |
+----------------------------------------------------------------------------------------------
+ 02/15/92           example                                       dong@chandler.mit.edu
+ 02/18/92  I think that the documentation should be changed to 
+	   read number of sites, not site number in several
+	   places.  Site number means that a particular site has
+	   a particular number associated with it.  Number of
+	   sites means that a certain number of sites are to be
+	   used.                                                  andrea@erebus.gsfc.nasa.gov
+

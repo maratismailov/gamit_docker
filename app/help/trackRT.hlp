@@ -1,0 +1,618 @@
+TrackRT  : Realtime GPS kinematic processing program
+TrackRTr : Rinex file emulator of trackRT for postprocessing evalution
+
+Runstring:
+% trackRT <options>
+where options are
+  -m <machine>  Host name of system with real-time data port 
+                (Normally BNC would be running on this system)
+                (Default local host)
+  -p <port>     Port number on host supplying the data stream
+                (Manadatory input).
+  -f <command file>  trackRT command file (similar to track command file)
+  -r <ref code> 4-char code for reference site.
+  -d <list of 4-character codes> list of sites to be processed.  If not
+                specified all sites in data stream will be processed 
+                (there is a limit on maximum number of sites that can be
+                 processed depending on max_site in track.  The reference 
+                 code should NOT be given here.)      
+  -n <root name> Specifies a root name to which output will be directed 
+                 (.out is appended for stdout output).  Use ? in the
+                 pos_root, sum_file and csv_file names the ? will be 
+                 replaced by this string.
+
+Command file name must be given.
+
+% trackRTr <options> Same list of option although -m, -p have no effect
+  -d <list of rinex files> list of rinex files (site names are generated from
+                 the first 4-characters of rinex file names)
+
+INTRODUCTION:
+-------------
+TrackRT and trackRTr have many commands that allow it be controled both when
+started and during runs.  Below the detailed commands are given and here we
+give the minimum commands needed.
+SP3_DIR : (unless sp3 files are in the current directory)
+SITE_POS: Site positions must be given for every site to be processed. 
+SITE_STATS: To set the apriori sigma and process noise for the sites.
+          NOTE: The reference site position should be set to zero 
+          for the apriori sigma and process noise. Typical site_stats
+          would be where cit1 here is the reference site.
+   site_stats
+     all   0.1 0.1 0.1   0.025 0.025 0.025
+     cit1  0.0 0.0 0.0   0.0 0.0 0.0
+
+ATM_STATS: By default atmospheric delays are not estimated, and normally
+          these should be.  Normally the reference site is set to zero
+          when site separations are less the 500-1000km. Typical atm_stats
+          command would be
+   atm_stats
+     all   0.20 0.00010 0.000   ! Unit m/sqrt(sec) -> 0.0001 = 0.03 m/sqrt(day)
+     cit1  0.00 0.00000 0.000
+
+If mixed antenna and receiver types are used  
+ANTE_OFF: To specify the antenna heights and types and receiver types
+ANTMOD_FILE: Must be given to get the antenna phase center models
+RCV_TYPE: Needed for mixed receiver types (entry can be specified in
+          ANTE_OFF also and this command would not be needed).
+DCB_FILE: Up to date, data code bias (DCB) file (part of GAMIT ftp area).
+
+Including
+UPDATE_FILE is useful so that trackRT can be controlled on the fly.
+ 
+
+COMMANDS
+--------
+Input/Output commands
+---------------------
+
+@ SP3_DIR <Directory> <center>
+<Directory> -- Directory where sp3 files are stored
+<center>    -- Center for orbits (default igs, igr and igu also tested)
+
+@ POS_ROOT <root> <duration>
+Set the root part of the name for the outout files.
+<root>     Root part of name.  When ? included in the <root>, the ? is 
+           replaced with the -n string.
+<duration> Duration of data in each file.  The designations of d, h, or m
+           may be used to specify the units of days, hours, minutes. 
+           Default is d.
+The position file names take the form: (see commands below)
+<root>.<outtype>.<site>.<start time>.<datatype>
+The resolution of the <start time> which is modulo the outout interval
+depends on the output duration.  For output durations greater than or
+equal to 1-day, the time is given as YYYYMMDD.  For intervals shorter
+than 1-day, it is YYYYMMDD:HHMN.  Minium output interval is 1 minute.
+
+@ SUM_FILE <root>
+Sets the root part of the summary file name.  Using ? in the name
+with be replaced by the -n string.  (Default if command is not given
+is trackRT or the -n string when -n used).  File names are time tagged
+according to the pos_root output interval.
+
+@ CSV_ROOT <root>
+Set the root part of the name for comma separated values (CSV) output
+file.  These files are used for AmCharts web plots.
+
+@ DCB_FILE <file name>
+Set the name of the data-code-bias (DCB) file.  This file is part of the 
+GAMIT tables directory and should be updated regularly.  It is used to
+remove biases in the Melbourne-Wubbena widelanes.  The receiver type can
+be specified with the RCV_TYPE or ANTE_OFF comamnds.
+
+@ ANTMOD_FILE <file name>
+Sets the name of a standard IGS antex file with phase center models for
+the GPS ground antennas.  Antenna types at specific sites are given with
+the ANTE_OFF command. This command my be used multiple times for site
+specific model with new models replacing previously read ones. 
+
+@ UPDATE_FILE <file name>
+Allows new trackRT commands to be issued during a run.  Once the file is 
+read it needs to be deleted before the trackRT will re-read it.  File is 
+only read if it exists.  NOTE: File should be removed before trackRT is
+run or else it will be read when the command file is read (ie., it will
+overwrite the commands in the command file.
+
+@ OUT_TYPE <NEU+GEOD+XYZ+DHU>
+Specifies types of output coordinates.  All types can specified in a 
+single string with no spaces.  The types are
+NEU   -- North, East, Up differences from the reference site or from the
+         coordinates given in the REF_NEU command. 
+GEOD  -- Geodetic latitude, longitude and height (in the GEOD format, the
+         total atmosheric delay is given, while in the other formats the 
+         adjustment to the apriori delay is given).
+XYZ   -- Cartersian XYZ coordinates
+DHU   -- Delta horizontal and Up coordinates from the apriori coordinates
+         of each site (default output type)
+
+@ OUT_SIG_LIMIT <sigma (m)> 
+Sets the maximum sigma of a position estimate for it to be output.
+If pseudorange data types are used, the default value of 1 m needs
+to increased to 10-100 meters. 
+
+
+Analysis commands
+-----------------
+
+@ DATA_NOISE <L1 (m)> <L2 (m)> <P1 (m)> <P2 (m)> <Elev Weight> [PRN]
+Allows specificiation of the noise in the L1 phase, L2 phase,
+P1 range and P2 range, and the weight given to elevation angle
+depepence (at ver 1.20); variance is scale by (1+(W/sin(el))^2) 
+where W is the <Elev Weight>.  These values affect the sigmas printed for
+the position determinations 
+Optional: PRN may be added and noise assigned to that PRN (if
+non-PRN form is used, this will replace all PRN specific values
+so use the non-PRN first followed by specific PRN values
+
+
+@ DATA_TYPE <type>
+Specifies type of data to process.  Types supported are L1 L2 LC P1 P1 PC
+which can be combined in a contigous string. Files names include this
+string at the end.
+Vers 1.0: Only LC, LCPC and PC have been tested.  Specifially L1 only data
+have not been fully implemented yet.
+
+@ USE_GPTGMF
+Set the used of the GPT temperature pressure model and the GPT dry and wet
+mapping functions.  Default is the older MTT atmospheric model.
+
+Site and Antenna information
+
+Site information is entered by first giving the command and then the
+information by site on the subsequent lines
+
+@ SITE_POS
+@   Site <X (m)>  <Y (m)>  <Z (m)> <Vx (m)>  <Vy (m)>  <Vz (m)>  <Epoch (yrs)>
+Site is the four character name of the site (more characters can be included 
+but only the first 4 are checked).  Site names that do not appeat in the list
+of sites to be processed are ignored).  The remainder of the line contains 
+positon and velocity and the epoch in deciminal years to which the position 
+refers.
+    
+@ ANTE_OFF   
+@   Site   <ARP dN (m)> <ARP dE (m)> <ARP dU (m)> <Antenna Name> <Receiver Code>
+Specifies the type of antenna and its position of antena reference point (ARP) 
+at each site.  The antenna name including radome should be specified with the
+official IGS name for a standard ANTEX file or with a unique name that appears
+in the ANTEX file for site specific calibrations.  (Note: There is one
+additional character in the station.info long antenna and this extra character
+before the radome name must be removed.  The antenna name and radome can be 
+copied directly from the rinex file if present.  One more ANTEX files must be
+specified with the ANTMOD_FILE command for the antenna names to be useful. 
+The receiver type DCB code can be optionally specified here as well (See RCV_TYPE 
+command). 
+
+
+@ RCV_TYPE
+@   Site  <Receiver code N/P/C>
+Specifies the type of data-code-bias (DCB) correction needed for the receiver.  
+Code specifies the type of L1 and L2 ranges being measures.  The choices are
+P -- Pcode, C -- C/A and N C/A with cross corelation for L2 range.  The codes
+can be found in gamit/tables/rcvant.dat.  These codes can also be given in the
+ante_off command.  An up-to-date DCB_FILE command must be used to specify the
+DCB biases. The files are available from the MIT ftp site and update once per
+month.
+
+@ SITE_STATS
+@   Site  <Apriori Sigmas in XYZ (m)>  <RW noises in XYZ (m/sqrt(sec))> 
+Gives statistics to assign to the kinematic station positions.  The 
+<Apriori Sigma in XYZ> are the three sigmas in XYZ for the initial postion and
+<RW noise in XYZ> are the three sigmas for the random walk in position.  Units
+of the ransom walk are m/ssqrt(s).
+ALL can be used for the station name and the same statistics will be applied
+to all kinematic sites (NOTE: the fixed site do not change position).
+e.g.
+  site_stats
+    all    1.0  1.0 1.0   0.010 0.010 0.010
+    base   0.0  0.0 0.0   0.000 0.000 0.000
+(1 meters apriori sigmas and changes 10 mm/sqrt(s)=600 mm/sqrt(hr)).
+NOTE: One station should always set to zero sigmas and random walk otherwise all
+station positions will be estimated and noramlly drift by large amounts.
+The fixed station does NOT need to be the reference site.
+
+@ ATM_STATS
+@   Site  <Apriori Zenith delay sigma> <RW noise in Zenith delay> <RW dH/dt noise>
+Gives the statistics for the atmospheric delays by site. A random walk process's 
+moise increases as sqrt(time) where time is time in seconds.  The values
+are the initial sigma in meters, RW changes in meters per sqrt(second) and (added
+verion 1.2) a dH/dt variance term so that during rapid height changes more 
+process noise can be added to zenith delay estimate.  The process noise variance is
+(<RW dH/dt noise)*abs(dh/dt)>^2 per sqrt(sec) where dh/dt is m/s.  The default vale
+is 0.00023 m^2/sqrt(s). (Term only needed for aircraft processing). 
+e.g.,
+  atm_stats
+     all      0.10  0.0001  0.00000
+     t39a     0.10  0.0001  0.00023
+     base     0.00  0.0000  0.00000
+Sets the apriori sigma as 10cm and allows the delay to change 6 mm/sqrt(hr) and 
+2.3 mm/sqrt(s) when height is changing at 10 m/s (fast ascent or desent) for the
+site t39a (aircraft).  In the case, here "base" is a reference station at which
+the atmospheric delay is not estimated (other stations absorbe the atmospheric
+delays at the base station).  With kinematic positioning over few hundred km site
+separations, the atmospheric delay at one site is normally fixed.
+
+Ambiguity resolution/data control commands.
+-------------------------------------------
+
+trackRT uses a combination of the Melbourne-Wubbena widelane (MW-WL), the extra
+widelane (EX-WL) and the floating point estimates of the ionospheric free ambiquity (LC)
+to resolve integer ambiquities.  If we denote the number of integer cycle ambiguties
+at L1 and L2 by N1 and N2,  The MW-WL is an estimate of N1-N2 based on phase and range
+data; EX-WL = N1 - f1/f2 N2 and is an integer for L1 cycles, but 1.283 N2 for L2 cycles;
+LC = 2.546 N1 - 1.984 N2.  The EX-WL is unaffected by geometric ranges changes, but does 
+depend on the ionospheric delay.  For short baselines, the EX-WL should be near zero for
+correct choices of N1 and N2.  The LC residual should also be near zero when N1 and N2
+are correct.  The problem in ambiguity resolution is that difference choices of N1 and
+N2 can make different linear combinations small.  For example, errors in N1 and N2 of 
+3 and 4 cycles will change LC by 0.298 cycles (56.6 mm), MW-WL by 1 cycle and EX-WL by
+2.132 cycles (405 mm).  On long baselines, at low elevation angles, ionospheric delays 
+of 400 mm are common.  The most common error is a N1=N2=1 cycle error.  For this
+combination, the MW-WL is unaffected and LC chnages by 0.562 cyc (107 mm) and EX-WL by
+0.283 cyc (54 mm).  Even on relative short baselines, 54 mm ionspheric delays are common
+The follow commands are use to control the ambiguity resolution.  
+
+@ AMB_SET <RelRank> <FloatSigma (2)> <MWWL Fact> <EXWL Fact> <Min AmbSig>  <MaxChi>
+Sets parameters for ambiguity resolution.  The input parameters are:
+<RelRank>
+<WL min>          Minumum of values need to allow bias fixing
+<WL avN>          Maximum number to be used in computing sigma of mean MW-WL
+<FloatSigma (2)>  Minimum sigma for LC and MW-WL for ambiguity fixinf
+<MWWL Fact>       Weighting factor for MW-WL in chi**2
+<EXWL Fact>       Weighting factor for extra-wide lange
+<Min AmbSig>      Minimum sigma to assigned to float estimates of ambiguities.
+<MaxChi>          Max chi**2 value allowed for ambiguity to be resolved.
+
+@ EXWL_SET   <Jump> <Min Sigma> <Scale> <Elev Fact>
+<Jump>      -- magnitude of jump in EX-WL to have cycle slip added (default 0.10)
+<Min Sigma> -- minimum sigma for mean ex-wl (cycles, default 0.02 cycles)
+<Scale>     -- Scaling factor for length. Scale 0.1 results in 0.1 cycles
+               over 100 km (default)
+<Elev Factor> -- Elevation angle factor that increases sigma as (1 + factor/sin(elev))
+
+@ MWWL_SET   <Jump> <Min Sigma> <Max Averaging number> <Min number>
+<Jump>      -- magnitude of jump in MW-WL to have cycle slip added (default 5.0)
+<Min Sigma> -- minimum sigma for mean MW-WL (cycles, default 0.10 cycles)
+<Max Averaging number> -- Maximum number of values to use to compute mean sigma
+<Min number> -- Minimum number needed to resolve ambiguity
+
+@ DD_SET <Jump (cycle)> <Min Number> 
+Sets parameters for double difference processing.
+<Jump (cycle)> -- Magnitude of jump in double differences on bias fixed data that
+               will introduce a cycle slip
+<Min Number>   -- Minumum number of double differences for epoch to be processed.
+               (If too few than errors in the data can be detected than this can
+                cause large position errors, default of 4 double differences allows
+                redunancy).
+
+@ RMS_EDIT_TOL <n-sigma Tolerance> <min sigma> <Reset number>
+<n-sigma tolerance> is an n-sigma condition where sigma is based on data noise model.
+<min sigma> Minimum phase sigma to use to that no phase residual less than
+       <<min sigma>*<n-sigma tolerance> are deleted
+<Reset number> number of sequential delete data, before ambigity and cycle slips
+        are reset (assumed missed cycle slip).
+
+Testing and evaluting commands
+
+@ STATUS <type> <# epoch>
+Writes status information to the current summary file at <# epoch> intervals
+The types of reports are given by "type"
+P -- Parameter estimates
+A -- Ambiguity resolution report (shows resolved and unresolved)
+W -- Widelanes (Melbourne-Wubbena and Extra-widelanes)
+R -- Postfit residuals are current epoch
+C -- Report current A and W entries only 
+type PAWR will output all reports.
+
+@ NUM_EPOCHS <number>
+<number> is the number of epochs of data to be processed before stopping. When short
+duraton files are output (POS_ROOT command) the number of epochs may not be reached
+becuase the epoch counter is reset with each new file.
+
+@ START_TIME <yy mm dd hh min sec.>
+Used to set the start time.  Useful with trackRTr to have the processing start at the
+same time as the realtime stream.
+
+@ DEBUG <Up to 10 epoch numbers in pairs>
+Sets which epochs will report detailed debug and status information (see STATUS command
+as well).  The pairs are used as:
+1,2   -- Mostly model information.  Useful if data are generating large
+         residuals
+3,4   -- Parameter estimates, widelanes, residuals
+5,6   -- One-way OMC and single differences
+7,8   -- Not Used 
+9,10  -- When 9 is non-zero, antenna model and SP3 information.
+
+@ RESET <ALL/list of sites>
+Reset command.  Resets the filter state vector and resolved ambiquities for a
+list of sites or ALL sites (generally used in the update_file to fix problems)
+
+@ EXCLUDE_SVS <list of PRN numbers to be excluded>
+Excludes satellites from being processed.  Useful when a satellite is not
+in an SP3 file or not available during the times there are data.
+Example: exclude_svs 26 22 13
+
+@ BNC_VERS <BNC version*100>
+Allows the version of BNC to be specified.  Noramlly this is automatically detected
+and the command shoule no be need. Example BNC_Vers 2120
+
+Output types
+------------
+
+The output position files have two header lines that explain the columns in the
+file.  The output in the summary and output files contain the following basic
+blocks are written to the summary file.  The time in these files is given by
+an epoch number which is a count of the number of epochs of data (at the reference
+site) since the start of the current data files.  The output position files give
+this counter and the corresponding GPS times and deciminal days.   
+CSLIP line are cycle slip detections
+CSLIP Ep    540 Site THMG G 29 DMW-WL/Tol         4.31  4.00 DEX-WL/Tol         1.78  0.20 cyc, Elev 10.00 deg
+Indicates the jump in the MW-WL and EW-WL (and the tolerance for the detection)
+that caused the slip to be detected.
+CSLIP Ep    961 Site THMG G 12 DD RESID         2.18  Tol  0.50 cyc, Elev  63.85 deg
+Indicates a slip added due to repeated double difference residuals.
+
+When ambiguities are resolved, three lines are output giving the statistics
+AMBFIX WMAP PRN29 EP    599 RelRank   101.76  FC ------   dL12   4  3 Dchi    6.54 691.02 AMB  36
+AMBWLS WMAP PRN29 EP    599 RG     133    599 FX   3      iL12   0  0 Means   -0.16  -0.05 RMS   0.74  0.06 #    467 eN12    -0.54   -0.38 AzEl 274.32 12.35
+AMBCON WMAP PRN29 EP    599 NCont 3  MW Res -0.159  0.185 Chi2   0.74 EX Res -0.051  0.068 Chi2   0.55 LC Res -0.046  0.020 Chi2   5.25
+AMBFIX gives the epoch number, relative rank, the Fix Code (always ------ when fixed), the
+changes to the number of L1 and L2 cycles from the intially asigned values, the
+changes in chi**2 for the best and second best choices of ambiguities and the
+number of the ambiguity resolved.  When the status feature is used, ambiguities 
+not resolved yet are listed as AMBFREE entries.
+AMBWLS gives the mean values and RMS scatters of the MW-WL and EX-WL (cycles).
+The iL12 estimate here is the changes in L1 and L2 cycles implied by just
+the widelanes with no contribution from the LC estimates.  On short baselines, 
+these values are expected to be zero.
+AMBCON gives the contributiond to chi**2 from each of the input type.  Ncont
+is the number of contributions (3 for LC data type).  Values given are 
+the residal (Res) with its sigmas and Chi**2 (Chi2) contribution,  
+
+When STATUS output is requested the following output types are possible.
+STATUS REPORT Epoch   1800  Date 2010 05 06 08 36  47.000 Type PAWR    
+PARAMETER ESTIMATES Epoch   1800 for NP   16 Type P STATUS REPORT
+...
+PARAMETER Ep   1800 NP   1 MSCG dATM       -0.0466 +-     0.0001 m   Var     0.681E-08
+PARAMETER Ep   1800 NP   2 PSDM dATM       -0.0001 +-     0.0001 m   Var     0.436E-08
+...
+PARAMETER Ep   1800 NP   7 LJRN G 27 1      0.1281 +-     0.0253 cyc Var     0.639E-03
+PARAMETER Ep   1800 NP   8 LJRN G 05 1      6.1172 +-     0.0011 cyc Var     0.112E-05
+Parameter values for position adjustments (XYZ), atmospheric delay adjustements
+and float ambiguities are given.
+ 
+Ambiguity report for both both fixed and free ambiquities.  ResEpoch is the epoch when
+the ambiquity was fixed (if fixed in previous data file block, may be greater than
+current count).
+AMBIGUITY Report Ep   1800 Number of ambiquities   59
+AMBFIXD  #  11 MSCG PRN10 RelRank   616.27  FCode ------   dL12   -1  -1 Dchi      1.01   776.94 Elev  72.02 deg; ResEpoch    156
+AMBFIXD  #  12 MSCG PRN27 RelRank   135.91  FCode ------   dL12   -1  -1 Dchi      5.39   766.54 Elev  29.86 deg; ResEpoch    156
+..
+AMBFREE  #  41 LJRN PRN27 RelRank    11.37  FCode RW----   dL12    0   0 Dchi     25.69   294.89 Elev  30.60 deg; ResEpoch      0
+AMBFREE  #  42 LJRN PRN05 RelRank    11.76  FCode R----C   dL12    7   6 Dchi    106.15  1251.17 Elev  36.16 deg; ResEpoch      0
+The FCode gives the reason for not being fixed the entries are: RWSSSC
+R - Relative rank
+W - Widelane sigma too large or not enough data yet (see MWWWL_set command)
+S - LC sigma too large
+S - L1 sigma too large when L1+L2 data type used (not tested)
+S - L2 sigma too large when L1+L2 data type used (not tested)
+C - Chi**2 increment too large.
+
+Widelane report shows status of average values of widelanes and current LC estimate. X means fixed, R ambiguity is still free. 
+WIDELANE Report Ep   1800 Number of ambiquities   59
+WIDELANE  11 MSCG PRN10 EP   1800 Range       2   1800 #   1799 NC 3 X MW Res   0.06   0.10 Chi2   0.30 EX Res  -0.18   0.19 Chi2   0.82 LC Res  -0.01   0.02 Chi2   0.10
+...
+WIDELANE  19 MSCG PRN29 EP   1800 Range     421   1800 #   1380 NC 3 R MW Res  -0.09   0.15 Chi2   0.35 EX Res   0.07   0.26 Chi2   0.07 LC Res   0.17   0.02 Chi2  74.30
+
+Postfit residuals for data types being used.
+POSTFIT RESIDUAL Report Ep   1800 Number of DD   76
+POST   1 Ep   1800 MSCG PRN10 - CIT1 PRN02  Res    -0.0945 +-  0.0381 LC AMB  11 Elev  37.31 deg
+POST   2 Ep   1800 MSCG PRN27 - CIT1 PRN02  Res    -0.1040 +-  0.0441 LC AMB  12 Elev  22.17 deg
+...
+POST  41 Ep   1800 MSCG PRN04 - CIT1 PRN02  Res     2.9712 +-  1.8988 PC AMB  13 Elev  30.60 deg
+POST  42 Ep   1800 MSCG PRN30 - CIT1 PRN02  Res    -0.2485 +-  1.8116 PC AMB  14 Elev  36.16 deg
+..
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+EXAMPLE COMMAND FILE:
+--------------------
+* FILE trackRT_pbo.cmd
+* Example TrackRT command file to process some PBO sites. 
+* Run BNC with rtgpsout.unavco.org as the TCP/IP port (login information
+* can be obtained from rtgps@unavco.org.) and select sites P496, P497, 
+* P498, P505 to be cast on specific port (port 3765 for example).
+* Run trackRT as
+* trackRT -p 3765 -r p497 -d p496 p498 p505 -f trackRT_pbo.cmd -n P497 &
+* (if BNC is run on another machine used -m <machine name> as well.
+* A relative directory ../sp3_files is assumed to contain up to date
+* sp3 file.
+
+ sp3_dir ../sp3_files
+  
+* These positions are post April 4, Baja earthquake (extracted from
+* globk output with sh_exglk -f <globk org file> -apr <apr file> 
+* entries from  apr_file
+* Nore: Additional sites can be given here
+
+ site_pos
+ P498_GGU -2313650.15153 -4835550.43945  3444474.55150   -0.00658    0.02008    0.01478 2010.259  0.0033  0.0059  0.0042  -1.0000 -1.0000 -1.0000
+ P497_GGU -2315937.74208 -4838712.09671  3438545.10828   -0.00945    0.01927    0.01884 2010.259  0.0035  0.0063  0.0044  -1.0000 -1.0000 -1.0000
+ P496_GGU -2319722.10265 -4842511.39340  3430709.79068   -0.01697    0.02370    0.02587 2010.259  0.0050  0.0089  0.0062  -1.0000 -1.0000 -1.0000
+ P503_GGU -2325056.31018 -4826758.67413  3449209.09091   -0.01167    0.01951    0.01660 2010.259  0.0033  0.0059  0.0042  -1.0000 -1.0000 -1.0000
+ P505_AGU -2309739.55681 -4802072.50955  3493258.58085   -0.00377    0.00608    0.00160 2010.404  0.0033  0.0057  0.0040 
+
+* PBO sites antenna and receiver information (all are NetRS and thus C type)
+* Again more sites can given). (Note: If antenna information extracted from
+* gamit station.info, one space must be removed before radome string).
+* Antenna/Radom combination must be in antmod_file for model to be used).
+   ante_off
+     p475   0.00 0.00 0.0083   TRM29659.00     SCIT  C
+     p066   0.00 0.00 0.0083   TRM29659.00     SCIT  C 
+     p472   0.00 0.00 0.0083   TRM29659.00     SCIT  C 
+     p478   0.00 0.00 0.0083   TRM29659.00     SCIT  C 
+     p494   0.00 0.00 0.0083   TRM41249.00     SCIT  C 
+     p496   0.00 0.00 0.0083   TRM29659.00     SCIT  C  
+     p497   0.00 0.00 0.0083   TRM29659.00     SCIT  C  
+     p498   0.00 0.00 0.0083   TRM41249.00     SCIT  C 
+     p500   0.00 0.00 0.0083   TRM29659.00     SCIT  C 
+     p503   0.00 0.00 0.0083   TRM29659.00     SCIT  C 
+     p505   0.00 0.00 0.0083   TRM29659.00     SCIT  C 
+     p510   0.00 0.00 0.0083   TRM29659.00     SCIT  C 
+
+* Change path as needed.
+   antmod_file /home/tah/gg/tables/antmod.dat
+
+   dcb_file    /home/tah/gg/tables/dcb.dat
+
+   data_type LCPC
+
+   site_stats
+     all   0.1 0.1 0.1   0.025 0.025 0.025
+     p497  0.0 0.0 0.0   0.0 0.0 0.0
+
+   atm_stats
+     all   0.20 0.00010 0.000   ! Unit m/sqrt(sec) -> 0.0001 = 0.03 m/sqrt(day)
+     p497  0.00 0.00000 0.000
+
+    pos_root ? 1h
+
+# Used at MIT for web output. Results can be viewed at
+# http://chandler.mit.edu/kmeduna/
+#    csv_root /net/chandler/var/www/kmeduna/trackrt_view/data/P497
+ 
+
+# Useful to have this option.  Note file should be removed before trackRT
+# is run and created when needed.
+    update_file upd_app.cmd
+
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+INSTALLATION
+------------
+
+trackRT requires the BKG NTRIP Client (BNC) and QT Ver 4.8 libraries and include files.
+Ntrip is the Networked Transport of RTCM via Internet Protocol and the client 
+program BNC provides access to the realtime data streams and casts the date 
+via an internet port GNSS raw data in a structure that is decoded by trackRT.
+Currently trackRT only uses the GPS data streams.  TheNTRIP system is discussed
+at http://igs.bkg.bund.de/ntrip/.  The BNC program can be downloaded from
+http://igs.bkg.bund.de/ntrip/download.  The BNC documentation constains the 
+instructions for obtaining the QT libraries and includes needed for its 
+installation from source files.  trackRT only needs the executable version of
+BNC.  
+
+The QT software can be obtained directly from download.qt.io at the site
+https://download.qt.io/archive/qt/4.8/
+Qt version 4.8 needs to be downloaded (version 5.x will not work due to changes
+to the calls in Qt.)  Any 4.8.x version should be fine.  
+For trackRT, the libraries and include files are needed and these are contained
+in Frameworks libraries 4.8.x for your platform (linux or Mac).  Earlier version 
+should also work.  For Linux and Max OSX, QT can be downloaded directly from
+For Linux
+https://download.qt.io/archive/qt/4.8/4.8.6/qt-everywhere-opensource-src-4.8.6.tar.gz
+For MaxOSX
+https://download.qt.io/archive/qt/4.8/4.8.6/qt-opensource-mac-4.8.6-1.dmg
+
+QT takes several hours to install.
+On linux systems, other tools that can be needed are:
+sudo app-get install gfortran
+sudo app-get install g++
+sudo app-get build-dep qt4-qmake
+(The last app-get may be need if the qt install can not find X11 libraries and
+includes.)
+For MacOSX follow the install instructions when the disk image file is mounted.
+
+Once QT is installed, the Makefile in the trackRT directory should be modified 
+to include the directories for the libraries and includes.  Example entries are
+given in the Makefile.  The actual entries are for the MIT QT installation (which
+is not quite standard).
+
+For systems with Qt4 already installed try:
+locate QtCore | grep lib
+locate QTcpSocket
+to find the library and include file directories. 
+MacOSX needs -m64 option in all the gfortran, gcc and g++ calls.
+
+To run trackRT, bnc is run first and the desired stations added the mountpoints.
+Once bnc streaming is started, trackRT is started with the machine name (if 
+different from the bnc machine) and port (given in the bnc FEED tab) given.  From
+the stations being cast by bnc, one is selected as reference (-r option) and the
+4-character codes of the other stations to be processed are given wiht the -d
+option.  Not all stations being cast need to processed.
+When BNC is started make sure that the streams are sending data (bytes columns).
+The most reliable station should be selected for the reference station. 
+Most streams require log-in information which needs to be obtained from the stream
+supplier.  Dummy user names and passwords are included in the default 
+~/.config/BKG/BNC.ini file.  This file can be saved if new stream mount points
+are used.  (The -conf <BNC.inc> can be used when BNC is run to specify the name
+of a user specific configuration file).  The -nw (no window) option can be used
+when running BNC so that there is no GUI (useful for batch operations).
+
+TrackRT has been used for BNC version 2.5,2.7 and 2.9 and greater (current version
+is 2.12.)
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+SP3 ORBIT FILES
+--------------- 
+
+TrackRT needs realtime orbits and defaults to IGS ultra-rapid orbits (trackRTr will
+use the most accurate robit it can find the SP3 file directory).  The csh script 
+below when run from a crontab can be used download up-to-date ultrarapid sp3 files
+ every 6-hrs.
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+CRON CSH file for keeping the ultra-rapid orbits upto date
+caputo[152] cat /home/tah/cron.sp3u
+#!/bin/csh -f
+# 6-hourly cron to download IGS ultra-rapid orbits from cddis
+# The cron should run UTC 3:01, 9:01, 15:01, and 21:01
+# Cron below is for Boston daylight savings time (our crons
+#   run on local time).  The script test for UTC time and 
+#   delays as needed).
+# 01 4-23/6 * * * csh /home/tah/cron.sp3u > /dev/null 2>&1
+#
+# Change directory name to local specific
+set sp3_dir = /net/chandler/raid8/tah/RealTime/sp3_files
+#
+cd $sp3_dir >&! /dev/null
+if( ! -e cron_sp3u.log ) then
+  echo `date` "Creating sp3 ultrapid download log" >! cron_sp3u.log
+  echo "--------------------------------------------------------------" >> cron_sp3u.log
+endif
+#
+# Get current UTC time 
+set time = `date -u +"%Y %m %d %H %M"`
+# Generate the name of sp3 file needed and see if we should
+# wait for it to arrive (i.e., EST versus EDT).
+set wait = `echo $time[4] | awk '{print int(($1-3)/6)*6-$1+3}' | awk '{if( $1 < 0 ) {print $1+6} else {print $1}}'`
+#
+# Generate the name of SP3 file needed
+set wd = `doy $time[1] $time[2] $time[3]| head -2 | tail -n -1 | awk '{printf("%4d %d",$3,$7)}'`
+# Normally $wait should 0 during EST and 1hr when EDT in effect (line below can have problems if delay is too long)
+set sp3f = `echo $wd $time[4] $wait | awk '{if($3+$4-3 < 24 ) {printf("igu%4.4d%1d_%2.2d.sp3",$1,$2,$3+$4-3)} else {printf("igu%4.4d%1d_%2.2d.sp3.Z",$1,$2,$3+$4-3-24)}}'`
+echo STATUS: `date +"%Y%m%d-%H%M"` : Getting $sp3f wait $wait hrs >> cron_sp3u.log
+
+# See if we need to sleep
+if( $wait > 0 ) then
+  sleep ${wait}h
+endif
+# Try to download file from cddis
+set pw = `whoami`@`hostname`
+while ( ! -e  $sp3f )
+    ftp -ivn cddis.gsfc.nasa.gov <<! >&! /dev/null
+user anonymous $pw
+cd pub/gps/products/$wd[1]
+ls $sp3f.Z
+get $sp3f.Z
+!
+#   Try to uncompress
+    if( -e  ${sp3f}.Z ) then
+       uncompress ${sp3f}.Z
+    else
+       echo STATUS: `date +"%Y%m%d-%H%M"` : Getting $sp3f wait 1 minute >> cron_sp3u.log
+       sleep 1m
+    endif
+end
+#
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+

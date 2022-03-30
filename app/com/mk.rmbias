@@ -1,0 +1,21 @@
+#!/bin/csh -f 
+if ( $#argv == 0 ) then
+
+	echo "enter the 6th character of c-file"
+	set six = $<
+else
+	set six = $1
+endif
+
+ls c????$six.??? | awk '{print "rmbias",$1,substr($0,1,5) "x" substr($0,7,10)}' >! rmbias.bat
+
+set tt = `wc rmbias.bat | awk '{print $1}'`
+
+if ( $tt == 0 ) then
+	echo "rmbias.bat is empty (bad 6th character)"
+else
+	chmod +x rmbias.bat
+	echo "run rmbias.bat"
+	echo ""
+	echo "the output c-files will be in: c????x.day"
+endif

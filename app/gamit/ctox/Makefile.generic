@@ -1,0 +1,13 @@
+# Generic Makefile for ctox - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King  April 19, 2016
+
+#LABELS: ctox:ctox:ctox_lib:ctox 
+
+#SHARELIB: ../lib:gamit_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+  
+#OBJ_ctox_lib 	cdtred	chdred    cversn
+#OBJ_ctox_lib	raddeg	
+#OBJ_ctox_lib	xdtrit	xhdrit
+
+

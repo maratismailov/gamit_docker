@@ -1,0 +1,111 @@
+c---------------------------------------------------------------
+      subroutine chi2_dis(n,alfa,up_bound,lo_bound)
+c
+c     Given number of freedom (n), and confidence level (alfa),
+c     calculate the upper bound and lower bound of the chi square 
+c     based on the probability distribution function
+c                                   Dong 04/05/93
+      integer i,i1,i2,itmax,jtmax,n,ft,
+      real alfa,up_bound,lo_bound,step,t1,q
+      
+      itmax = 1000
+      jtmax = 1000
+      step = 1.0
+      t1 = 0.001-step
+      ft = 0.5*n
+      i1 = 0
+      i2 = 0
+c     upper bound
+      do 20 i = 1,itmax
+        t1 = t1+step
+        q = gammq(ft,0.5*t1)
+        if (q.gt.1.0-alfa) i1 = i
+        if (q.le.1.0-alfa) i2 = i
+        if (i2.gt.0) goto 10
+ 20   continue
+ 10   t1 = step*(i1-1)-0.099
+      step = 0.1
+      i1 = 0
+      i2 = 0
+c     do 40 i = 1,itmax
+c----------------------------------------------------------------
+      FUNCTION BETACF(A,B,X)
+      PARAMETER (ITMAX=100,EPS=3.E-7)
+      AM=1.
+      BM=1.
+      AZ=1.
+      QAB=A+B
+      QAP=A+1.
+      QAM=A-1.
+      BZ=1.-QAB*X/QAP
+      DO 11 M=1,ITMAX
+        EM=M
+        TEM=EM+EM
+        D=EM*(B-M)*X/((QAM+TEM)*(A+TEM))
+        AP=AZ+D*AM
+        BP=BZ+D*BM
+        D=-(A+EM)*(QAB+EM)*X/((A+TEM)*(QAP+TEM))
+        APP=AP+D*AZ
+        BPP=BP+D*BZ
+        AOLD=AZ
+        AM=AP/BPP
+        BM=BP/BPP
+        AZ=APP/BPP
+        BZ=1.
+        IF(ABS(AZ-AOLD).LT.EPS*ABS(AZ))GO TO 1
+11    CONTINUE
+      PRINT*, 'A or B too big, or ITMAX too small'
+1     BETACF=AZ
+      RETURN
+      END
+c----------------------------------------------------------------
+      FUNCTION BETAI(A,B,X)
+      IF(X.LT.0..OR.X.GT.1.)PAUSE 'bad argument X in BETAI'
+      IF(X.EQ.0..OR.X.EQ.1.)THEN
+        BT=0.
+      ELSE
+        BT=EXP(GAMMLN(A+B)-GAMMLN(A)-GAMMLN(B)
+     *      +A*ALOG(X)+B*ALOG(1.-X))
+      ENDIF
+      IF(X.LT.(A+1.)/(A+B+2.))THEN
+        BETAI=BT*BETACF(A,B,X)/A
+        RETURN
+      ELSE
+        BETAI=1.-BT*BETACF(B,A,1.-X)/B
+        RETURN
+      ENDIF
+      END
+c----------------------------------------------------------------
+      SUBROUTINE AVEVAR(DATA,N,AVE,VAR)
+      DIMENSION DATA(N)
+      AVE=0.0
+      VAR=0.0
+      DO 11 J=1,N
+        AVE=AVE+DATA(J)
+11    CONTINUE
+      AVE=AVE/N
+      DO 12 J=1,N
+        S=DATA(J)-AVE
+        VAR=VAR+S*S
+12    CONTINUE
+      VAR=VAR/(N-1)
+      RETURN
+      END
+c----------------------------------------------------------------
+      SUBROUTINE FTEST(DATA1,N1,DATA2,N2,F,PROB)
+      DIMENSION DATA1(N1),DATA2(N2)
+      CALL AVEVAR(DATA1,N1,AVE1,VAR1)
+      CALL AVEVAR(DATA2,N2,AVE2,VAR2)
+      IF(VAR1.GT.VAR2)THEN
+        F=VAR1/VAR2
+        DF1=N1-1
+        DF2=N2-1
+      ELSE
+        F=VAR2/VAR1
+        DF1=N2-1
+        DF2=N1-1
+      ENDIF
+      PROB = BETAI(0.5*DF2,0.5*DF1,DF2/(DF2+DF1*F))
+     *    +(1.-BETAI(0.5*DF1,0.5*DF2,DF1/(DF1+DF2/F)))
+      RETURN
+      END

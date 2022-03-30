@@ -1,0 +1,23 @@
+XYZ_TO_GAZ: Generates geodetic azimuths from XYZ coordinates
+
+      Program xyz_to_gaz
+ 
+Program to convert XYZ coordinates of stations to Geodetic
+azimuths of baselines.  The runstring for the program is
+
+% xyz_to_gaz <input site list> [max length]
+
+where <input site list> is a list of site cartesian coordinates
+      of the form:
+
+ site_name  X  Y  Z  sigN  sigE sig U
+
+    site_name may be upto 16 characters and but must not have
+       any internal blanks.
+    all Units are meters; and
+    a character in column 1 treats the line as a comment.
+    [max_len] optional maximum length of baseline to output
+        the azimuth (default 100 km). (Units km)
+ 
+Output is to stdout.
+

@@ -1,0 +1,38 @@
+SIMSLR: Simulates simultaneous SLR measurements
+
+SIMSLR: Program to simulate SSLR measurements
+
+Runstring:
+% simslr <command file> <out root>
+
+where command file is name of command file
+      out root is the root of the output name. Site names will be 
+            appended to this name for output file name.
+
+COMMANDS:
+
+SITE_DEF <name> <latitude> <longitude> <height> <sX> <sY> <sZ> <Data sig> <Clock bias>
+
+where name is site name
+      latitude and longitude (degs)
+      height (m), 
+      <sX> <sY> <sZ> are the apriori sigmas for site postions (mm)
+      data sigma (mm) and 
+      clock bias is in seconds.  The clock biases are added sequential
+          for all stations in the order they are read.
+
+SVS_DEF <a> <i> <Omega> <M0> <Markov noise> <max seq>
+      <a> is semi-major axis (m)
+      <i> is inclination (deg)
+       <Omega> RA of ascending node (deg)
+      <M0> Mean anomaly for equator at t=1 (deg)
+      <Markov noise> Process noise for satellite position (mm*2/s)
+      <Max seq> max number of measurements before trying another 
+           satellite.
+ 
+SIM_DEF <start> <stop> <step>
+      start, stop times (hrs)
+      step (hrs)  (1 second approx 0.0003 seconds)
+
+MIN_ELEV  <min elevation angle> (deg)
+ 

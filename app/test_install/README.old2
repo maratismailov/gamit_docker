@@ -1,0 +1,286 @@
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+* README for the GAMIT/GLOBK test installation
+*   Last updated by M. Floyd 200309 21:53 UTC
+
+This example serves the dual purpose of testing your installation and guiding a
+new user through the basic steps to get time series and velocities from
+GAMIT/GLOBK processing. In the latter sense, it replaces the southern California
+example from earlier releases in order to add GNSS other than GPS. If you are an
+experienced user, you may want to simply execute the batch file "runtest" to
+complete all steps without intervention in about 90 minutes. In fact, running
+just one day or one GNSS for 2018 will likely confirm a correct installation. If
+you are a novice, however, we strongly recommend that you read this file
+thoroughly, execute each of the commands manually and peruse the results until
+you understand what that step accomplished. As noted in the installation README,
+you will need to download otl_FES2004.grid to a GRIDS/ directory at the same
+level as your master installation or edit the sestbl. to omit ocean tidal
+loading.
+
+The example is set up to: (1) download RINEX 3 files from CDDIS for ten
+continuous stations in Europe and environs for three days in 2016, 2017, and
+2018 (note that if long names were used for the RINEX 3 files, they will be
+renamed to the older short-names as part of the download); (2) conduct phase
+processing (sh_gamit) for GPS-only or GPS, GLONASS, Galileo and Beidou; (3)
+compute and plot daily repeatabilities (sh_glred) for each year and combine the
+daily h-files (.glx) into a single H-file for each year (.GLX); and (4) compute
+repeatabilities and velocities for the three years together (globk/glorg). The
+only input file provided in the example is sites.defaults, which is always
+specific to the network one is processing. All of the others are copied or
+linked from gg/tables and will work for most networks.
+ 
+The structure established by this test of the installation has three GAMIT
+processing directories, named (arbitrarily) by year (2014/, 2016/, 2018/), each
+of which has below it a rinex/, tables/ and gsoln/ directory specific to that
+year. At the top level there is a processing directory (vsoln/) and a tables/
+directory for the multi-year GLOBK solution. The steps described assume that you
+have downloaded ocean tidal loading grid (e.g. otl_FES2004.grid) to a gg/GRIDS/
+directory ("mkdir ~/gg/GRIDS" if it doesn't exist already) and have internet
+access while processing; if you do not have these, see Notes 3 and 4 below. In
+directory check_files/ are saved copies of the q-files and .org files for each
+day, and the .org files and PostScript files for the multi-year repeatablities
+and velocities.
+
+Before you start, make sure that you have constructed the paths and aliases
+described in the installation README. The example may be run from any directory
+on your system, preferably the place you intend to process your own data, not
+under gg.
+
+STEP 1: Run GAMIT for three days from 2018
+
+In the test_install/2018/ directory type
+
+  sh_setup -yr 2018
+
+The 2018/tables/ directory will now contain links to most standard files in
+gg/tables/ and copies of these files for process.defaults, sestbl., station.info
+(complete MIT version), and autcln.cmd. The sites.defaults file was written for
+this test (ordinarily one would construct this station list) and already in the
+directory, and therefore not overwritten by sh_setup.
+
+Examine tables/sites.defaults to note that it has been set up to download from a
+remote archive (CDDIS by default) RINEX files for ten IGS stations and "xstinfo"
+is set to avoid any automatic update of station.info during processing. Note
+also that the sittbl. copied from gg/tables/ is set up to impose moderate
+constraints on IGS core stations to support ambiguity resolution in GAMIT; the
+four included in test_install are more than sufficient.
+
+Edit tables/process.defaults to change the "mailto" to your own email address to
+receive the sh_gamit summary file. (If left null, it reverts to "whoami", so
+this change may not be needed.) Note that "aprf", used to initialize the lfile.
+for GAMIT points to igs14_comb.apr, which has been copied by sh_setup to the
+2018/tables/ directory.
+
+If you have not downloaded or copied from an earlier distribution the (large)
+grid file for ocean tidal loading and do not wish to use it, change "Tides
+applied" in tables/sestbl. from "31" to "23".
+
+Construct a small, experiment-specific station.info file by using the following
+procedure in the 2018/tables directory:
+
+  sh_upd_stnfo -l sd
+
+will create "station.info.new", using from the MIT station.info only the sites
+listed in sites.defaults. (This step will take a while since the MIT global
+station.info file is so long.) After checking, rename it to "station.info"
+(overwriting the no-longer-useful MIT station.info). (In your own processing, if
+you have stations that are not in the MIT station.info file, you can add their
+entries from the RINEX headers by running in tables/
+"sh_upd_stnfo -files ../rinex/*.18o". (See Section 2.4 of the Intro manual for
+what to do if the RINEX header entries are non-standard.)
+
+GAMIT currently supports processing of each GNSS separately, with the day
+directories for each created with a single-letter added to designate the system,
+e.g. 095G, 095R, 095E, 095C. If you wish to test full GNSS capability, type at
+the 2018/ level
+
+  sh_gamit -expt eura -gnss G -s 2018 095 097 -pres ELEV -orbit igsf -copt x k p -dopts c ao >& sh_gamit_2018G.log
+  sh_gamit -expt eura -gnss R -s 2018 095 097 -jclock sp3 -pres ELEV -orbit codm -copt x k p -dopts c ao >& sh_gamit_2018R.log
+  sh_gamit -expt eura -gnss E -s 2018 095 097 -pres ELEV -orbit codm -copt x k p -dopts c ao >& sh_gamit_2018E.log
+  sh_gamit -expt eura -gnss C -lfreq 7 -s 2018 095 097 -pres ELEV -orbit codm -copt x k p -dopts c ao >& sh_gamit_2018C.log
+
+For GPS-only, omit the -gnss so that the day directory names will be the day-of-
+year only.
+
+A summary file should be emailed to you as each day completes execution. Check
+these files for number of stations (6), Postfit RMS (3-15 mm, none 0), postfit
+nrms (~0.2), ambiguity resolution and coordinate adjustments (< 30 cm). For
+this large network, the 2018 ambiguity resolution is 80-90% for GPS and Galileo,
+40-50% for Beidou, but near zero for GLONASS due to poor orbits), a condition
+also reflected in the sky plots in the figs/ directory. Allowing the GLONASS
+orbits to adjust (RELAX mode in the sestbl.) will improve the fit signficantly.
+To view the result of the fit of GAMIT's orbit model to the input orbit, see the
+rms files in igs/. To view the complete editing statistics see autcln.prefit.sum
+and autcln.post.sum in the day directories; for the least-squares adjustment,
+see qeuraa.[ddd].
+
+Optionally, remove the x, k, and p files from the day directories to save space:
+
+ sh_cleanup -d 2018 095 096 097 -dopts x k p
+
+Notes:
+
+1. For large or complex data sets, the utility sh_get_times can be helpful in
+determining the days and session spans to be processed.
+
+2. In creating station.info for your own experiments, it is important to check
+it after updating from the RINEX headers unless you are sure these headers are
+correct. In processing, the station.info entries always override whatever is in
+the RINEX header or the x-files. An alternative way of creating entries for
+survey-mode sites is to use interactive program "make_stnfo", then use
+sh_up_stnfo to merge this file with the one created from the MIT station.info
+file for continuous sites. The survey-mode file will have a shorter form of the
+station.info format, but this will be converted when it is merged with the
+continuous file, which should be listed as the reference (-ref) in the call to
+sh_upd_stnfo.
+
+3. The example is set up to use ocean tidal loading ("Use otl.grid = Y" in the
+sestbl.), which requires you to have previously downloaded into gg/GRIDS/ an
+OTL file from the anonymous ftp directory on everest.mit.edu and to have verify
+this file is linked to gg/tables/otl.grid. The IERS/IGS standard model is
+otl_FES2004.grid (730 Mb). You may, however, substitute the smaller (45 Mb)
+otl_CSR4.grid, or you may turn off ocean tidal loading by setting
+"Tides applied = 23" and "Use otl.grid = N" in the sestbl. (Note that the links
+to the other grid and list files (met.grid, met.list, map.grid, etc.) can remain
+empty for running the example and for most processing.
+
+4. If you want or need to run the example without having internet access while
+running, you can pre-load the RINEX, navigation, and orbit files into the
+rinex/, brdc/, and igs/ directories, respectively.
+
+
+STEP 2: Run GLOBK to get repeatabilities and a combined H-file for the span
+
+At 2018/:
+
+  sh_glred -cmd
+
+to get the globk.cmd and glorg.cmd files copied from gg/tables to 2018/gsoln,
+then
+
+  sh_glred -s 2018 095 2018 097 -expt eura -gnss G R E C -opt R H G T >& sh_glred.log
+
+The script as commanded will translate the GAMIT ascii h-files in each day
+directory to GLOBK binary h-files (.glx) and put them into the glbf/ directory
+(H option); create a gdl file for each day listing the h-file, run GLOBK for
+each day (G option) using globk.cmd and glorg.cmd; and generate time series
+plots (T option using pos files, program tssum and sh_plot_pos).
+
+For this test the globk/glred and glorg command files created in gsoln/ by
+"sh_glred -cmd" will work without editing; however, in general there are changes
+you may need to make, for example, to define the reference frame with
+translation-only rather than tranlsation and rotation, and to change the list of
+reference (stabilization) sites.
+
+The daily plots combining the GNSS measurements for each day, may be found in
+gsoln/plots_2018_095-2018_097. You can view the *.org files to see what globk
+did, paying attention to the stabilization iteration (what sites were removed),
+the chi2 increments in the "EXPERIMENT LIST", and the statitics of the
+stabilization ("POS STATISTICS"). In your own runs processing many days, it is
+convenient to get a quick summary by grep'ing on *.org with "USED" (from the
+chi2 list) and "POS STAT".
+
+Next combine the days to get a single H-file for the 3-day span to use for the
+multi-year repeatabilities (time series) and velocities.
+
+ sh_glred -s 2018 095 2018 097 -expt eura -netext G R E C -ncomb 3 -globk_cmd_prefix COMB -opt G >& sh_glred_comb.log
+
+
+STEP 3: Repeat Steps 1 and 2 for 2016 and 2014:
+
+  At 2016/: sh_setup -yr 2016
+  At 2016/tables/, edit process.defaults for mailto
+  At 2016/tables/: sh_upd_stnfo -l sd ; mv station.info.new station.info
+  At 2016/:
+   sh_gamit -expt eura -gnss G -s 2016 101 102 -pres ELEV -orbit igsf -copt x k p -dopts c ao >& sh_gamit_2016G.log
+   sh_gamit -expt eura -gnss R -s 2016 101 102 -jclock sp3 -pres ELEV -orbit codm -copt x k p -dopts c ao >& sh_gamit_2016R.log
+   sh_gamit -expt eura -gnss E -s 2016 101 102 -pres ELEV -orbit codm -copt x k p -dopts c ao >& sh_gamit_2016E.log
+   sh_gamit -expt eura -gnss C -lfreq 7 -s 2016 101 102 -pres ELEV -orbit codm -copt x k p -dopts c ao >& sh_gamit_2016C.log
+   sh_glred -cmd
+   sh_glred -s 2016 101 2016 102 -expt eura -opt H G T >& sh_glred_2016.log
+   sh_glred -s 2016 101 2016 102 -expt eura -netext G R E C -ncomb 2 -globk_cmd_prefix COMB -opt G >& sh_glred_comb.log
+
+  At 2014/: sh_setup -yr 2014
+  At 2014/tables/: edit process.defaults for mailto
+  At 2014/tables/: sh_upd_stnfo -l sd ; mv station.info.new station.info
+  At 2014/
+   sh_gamit -expt eura -gnss G -s 2014 113 114 -pres ELEV -orbit igsf -copt x k p -dopts c ao >& sh_gamit_2014G.log
+   sh_gamit -expt eura -gnss R -s 2014 113 114 -jclock sp3 -pres ELEV -orbit comf -copt x k p -dopts c ao >& sh_gamit_2014R.log
+   sh_glred -cmd
+   sh_glred -s 2014 113 2014 114 -expt eura -opt H G T >& sh_glred_2014.log
+   sh_glred -s 2014 113 2014 114 -expt eura -netext G R -ncomb 2 -globk_cmd_prefix COMB -opt G >& sh_glred_comb.log
+
+We've specified only 2 days in 2016 and 2014 to save run time, and we've
+included only GPS and GLONASS for 2014 since there were too few Beidou and
+Galileo satellites available at that time to obtain an accurate solution.
+
+
+STEP 4: Run GLOBK to get 3-epoch (4-yr) repeatabilities and velocities
+
+The key user-specific controls for this step (also incorporated in the sh_glred
+runs within each year) are the list of sites to be used in defining the
+reference frame, and the a priori coordinates for these sites. Here we use the
+same sites and coordinate file (igs14_comb.apr) as in the single-year solutions,
+but this may not always be the case. For the multi-year repeatabilities, we will
+use the combined H-files (.GLX) created in the year gsoln/ directories. So
+create a solution directory at the top level
+
+  mkdir vsoln
+
+then cd vsoln and get create a list of combined h-files for globk:
+
+ ls ../????/gsoln/H*GLX > eura.gdl
+
+For large or complex data sets, it's helpful at this point to run glist which
+will check for blunders and give you a list of all the sites used and their
+spans. Program glist2cmd can then be helpful in establishing a use_site list. It
+may also be desirable to aggregate the data within each year, both to save time
+in the multi-year combination and to provide more representative long-term
+statistics. The procedure for doing this is given in the file sGPS_recipe.txt in
+the documentation directory in the ftp area or web site.
+
+ \rm globk_replong.org globk_replong.log
+ glred 6 globk_replong.prt globk_replong.log eura.gdl globk.cmd >& glred.out
+
+Unlike in sh_glred, the rm command may be needed here since glred will
+concatenate the new log and org files with any previous files of the
+same name. The globk_replong.prt will not be created since we have set
+"prt_opt NOPR" in globk.cmd.
+
+Create the pos files for plotting:
+
+tssum . mit.final.igs14 -R globk_replong.org
+
+Create the multi-year plots:
+
+sh_plot_pos -f *.pos -r -t NONE -u -t1 2014-001 -t2 2018-180
+
+Get velocities from the 4-year span:
+
+ \rm globk_vel.org globk_vel.log
+ globk 6 globk_vel.prt globk_vel.log eura.gdl globk.cmd VEL >& globk.out
+
+where the "VEL" token at the end tells globk to uncomment the lines in globk.cmd
+that begin with "VEL".
+
+Check the globk_vel.org file under EXPERIMENT LIST for the chi2 increments
+(< 1.0) in stacking the 3 H-files and the stabilization statistics in the "VEL
+STATISTICS" and "POS STATISTICS" lines. For this network and the IGS14
+(ITRF2014) apr file, the 9 stabilization stations fit the reference frame in
+velocity at the level of ~1 mm/yr horizontal and 5 mm/yr vertical with
+uncertainties about half of the rms.
+
+Plot the velocities using
+
+ sh_plotvel -ps euratest -f globk_vel.org -R-60/50/-5/55 -factor 0.5 -arrow_value 10 -page L
+
+(Type "sh_plotvel" without arguments to see the full range of options for
+producing more attractive maps.)
+
+------------
+
+To start over from scratch, run sh_clean_test, once for each year and once for
+the velocity solution. (Type the name of the script without arguments to see the
+documentation.)
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890

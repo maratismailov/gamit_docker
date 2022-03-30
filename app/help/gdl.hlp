@@ -1,0 +1,19 @@
+GDL: Directory list of binary H-files
+
+GDL: directory program for GLOBAL files 
+  
+RUNSTRING:
+CI> GDL mask <O=option> <l=filename>
+  
+where:
+mask is a file mask to be used when seaching for GLOBAL files.  The 
+      conventions for the mask are the same as those for CI dl command. 
+      e.g., G@I::53 -- find all IRIS GLOBAL files on cart 53
+O=    is an option specification.  The options are: 
+      O=s -- short output.   Gives the GLOBAL file name and number of 
+             sites, sources, and parameters 
+      O=l -- long output. Not implemented.
+L=    allows specification of output device.  May be an LU or a file. 
+      If the file exists the output will be appended to the end of the
+      file. (Default is user's terminal)
+ 

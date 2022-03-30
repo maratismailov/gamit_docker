@@ -1,0 +1,15 @@
+EDIT_VAL: removes duplicates from GLOBK values files
+
+EDIT_VAL
+ 
+This program will edit a values file generated with local and
+global h-files by removing the duplicate entry associated with
+global file.  The tolerance on the day match is 1 day.
+
+% edit_val [sigma limit] <inputs .... >
+
+where [sigma limit] is the largest sigma that will be output
+    <inputs ... > is a list of file to be operated on.  These
+    files are first renamed (to orgininal name with .org extent)
+    and then lines with matching dates have a * placed in column
+    one.

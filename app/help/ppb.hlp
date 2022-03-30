@@ -1,0 +1,15 @@
+PPB: Computes parts-per-billion repeatability of baseline length estimates
+
+PROGRAM ppb
+-----------
+Program to compute the average and site dependent average
+values for the horizontal and vertical rms scatters from
+baseline length repeatibilty results (obtained from blsum)
+
+Runstring:
+% ppb <sum_file> <min_number> <max_len>
+
+where <sum_file> is the name of a blsum summary file, and
+      <min_number> is the minimum number of determinations to
+            to consider in the computation.
+      <max_len> maximum baseline length to be considered (km).

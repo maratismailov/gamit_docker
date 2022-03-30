@@ -1,0 +1,26 @@
+#!/bin/csh
+#           
+# doc Script to remove extra header lines within a RINEX file that has been spliced together
+# doc from many smaller files.   M. Kogan  LDEO   20 June 2011.
+
+if (! -e Nospl) mkdir Nospl
+foreach inf (*d.Z)
+set outf = `echo $inf | awk '{ print substr($1,1,11)"o" }'`
+echo "outf: "$outf
+sh_crx2rnx -d n -c n -f $inf
+#
+set endhd = `awk '{ if ( $1 == "END" && $2 == "OF" && $3 == "HEADER" ) print NR }' $outf`
+#echo "endhd: "$endhd
+#
+awk '{ if ( NR > var && ( ( NF == 2 && $1 == 4) || $3 == "SPLICE" || $1 == "teqc" || $1 == "BIT" || $6 == "XYZ" || $1 == "Forced" || $1 == "SNR" || $1 == "L1" || substr($0,61,7) == "COMMENT" || $4 == "ANT" || $5 == "DELTA" || NF == 3 && $2 == "MARKER" || NF == 3 && $2 == "LEAP") ) NR; else print $0 }' var=$endhd $outf > out.tmp
+#
+mv out.tmp Nospl/$outf
+cd Nospl
+rnx2crx $outf
+rm $outf
+compress $inf:r
+cd ..
+rm $outf
+#
+end
+

@@ -1,0 +1,31 @@
+# Generic Makefile for kf/glsave - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King July 23, 1996
+
+#LABELS: glsave:glsave_main:glsave_lib:glsave
+ 
+#SHARELIB: ../globk:globk_lib
+#SHARELIB: ../glfor:glfor_lib
+#SHARELIB: ../Khandlers:KalObs_hndl_lib  
+#SHARELIB: ../gen_util:gen_util_lib
+#SHARELIB: ../../libraries/matrix:kinv_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+
+#OBJ_glsave_lib   glsave
+#OBJ_glsave_lib   gw_glb_codes
+#OBJ_glsave_lib   glb_apr_code
+#OBJ_glsave_lib   glb_coeff_co
+#OBJ_glsave_lib   glb_glb_code
+#OBJ_glsave_lib   glb_svs_code
+#OBJ_glsave_lib   glb_tot_solu
+#OBJ_glsave_lib   gw_glb_heade
+#OBJ_glsave_lib   gw_glb_names
+#OBJ_glsave_lib   gw_glb_full
+#OBJ_glsave_lib   gw_descripti
+#OBJ_glsave_lib   gw_codes
+#OBJ_glsave_lib   gw_mul_ep
+#OBJ_glsave_lib   gw_aprioris
+#OBJ_glsave_lib   glb_save_apr
+#OBJ_glsave_lib   gw_soln
+#OBJ_glsave_lib   gw_cons
+#OBJ_glsave_lib   list_soln
+

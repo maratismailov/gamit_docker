@@ -1,0 +1,18 @@
+#!/bin/csh 
+# delete irrelevant files
+if (-e core) then
+   RM core
+endif
+/bin/rm  tmp.* >&! /dev/null
+/bin/rm fort.* >&! /dev/null
+/bin/rm *junk* >&! /dev/null
+/bin/rm *~  >&! /dev/null
+/bin/rm gmeta  >&! /dev/null
+
+
+
+
+
+
+
+

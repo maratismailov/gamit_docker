@@ -1,0 +1,381 @@
+1                                                    NATIONAL GEODETIC SURVEY
+ PROGRAM DYNAP                                    GEODYNAMIC ADJUSTMENT PROGRAM                                            PAGE   1
+                                               MIT modified VERSION 1.3 of 88/11/02 10:48:48
+
+
+0******************************** A-FILE CONTENTS ********************************
+
+     ** Clark Ellipsoid for NAD27                                                    
+     AA6378206400 0.006768657997291                                                  
+     ** constrain LOSPE 1875                                                         
+     CC        590                               34533755992N120361867279W 49920     
+     DD2                                                                             
+     II10                1                                                           
+     ** DO scale by variance of unit weight                                          
+     MM3Y                                                                            
+     TT59019500101                                                                   
+                                                                                     
+                                                                                     
+0********************************* END OF A-FILE *********************************
+1                                                    NATIONAL GEODETIC SURVEY
+ PROGRAM DYNAP                                    GEODYNAMIC ADJUSTMENT PROGRAM                                            PAGE   2
+                                               MIT modified VERSION 1.3 of 88/11/02 10:48:48
+
+
+ ***************** ADJUSTMENT FILE OPTIONS **********
+
+ ELLIPSOID SEMI-MAJOR AXIS = 6378206.400 METERS
+ ELLIPSOID SQUARE FLATTENING =0.006768657997291000
+ DEFAULT MEAN SEA LEVEL =   0.000 METERS
+ DEFAULT GEOID HEIGHT =   0.000 METERS
+ ADJUST ORTHOMETRIC ELEVATIONS
+ SCALE SIGMAS BY A-POSTERIORI SIGMA OF UNIT WEIGHT
+ DO NOT UPDATE *80* RECORDS
+ COMPUTE A 2-DIMENSIONAL ADJUSTMENT
+ COMPUTE NO MORE THAN   10 ITERATIONS
+ COMPUTE AT LEAST     0 ITERATIONS
+ DO NOT DISPLAY STATISTICS IF SOLUTION SLOWLY CONVERGES
+ ABORT IF MISCLOSURE EXCEEDS 3.E+02 SIGMA
+ PRINT WHEN MISCLOSURES EXCEED 3.E+01 SIGMA
+ CONVERGE IF RMS SUM OF SHIFTS BELOW   0.003 METERS
+ COMPUTE NORMALIZED RESIDUALS AND INVERSE
+ ECHO BLUE BOOK FILE
+ BYPASS ALL ZENITH DISTANCES
+ ECHO GPS DATA TRANSFER FILE
+ DISPLAY CONSTRAINTS
+ DISPLAY ALL RESIDUALS/SD GREATER OR EQUAL TO  0.0
+ DISPLAY DIRECTION RESIDUALS
+ DISPLAY ANGLE RESIDUALS
+ DO NOT DISPLAY ZENITH DISTANCE RESIDUALS
+ DISPLAY DISTANCE RESIDUALS
+ DISPLAY ASTRO-AZIMUTH RESIDUALS
+ DISPLAY GPS RESIDUALS
+ DISPLAY CONSTRAINED RESIDUALS
+ DISPLAY RESIDUALS GROUPED AROUND INTERSECTION STAS
+ DISPLAY POSITION SHIFTS
+ DISPLAY POSITION GOOGE NUMBERS
+1                                                    NATIONAL GEODETIC SURVEY
+ PROGRAM DYNAP                                    GEODYNAMIC ADJUSTMENT PROGRAM                                            PAGE   3
+                                               MIT modified VERSION 1.3 of 88/11/02 10:48:48
+
+
+ ******** CONSTRAINTS *************
+0 OBS #
+
+      6   CC        590                               34533755992N120361867279W 49920     
+0************ END OF CONSTRAINTS *************
+1                                                    NATIONAL GEODETIC SURVEY
+ PROGRAM DYNAP                                    GEODYNAMIC ADJUSTMENT PROGRAM                                            PAGE   4
+                                               MIT modified VERSION 1.3 of 88/11/02 10:48:48
+
+
+ ************ BLUE BOOK ************
+0 OBS #
+
+              10*10*SANDP 1880 1924 B                                                     
+              10*10*ALL DIRECTIONS WEIGHTED AT 0.7 SECONDS                                
+      7   200010*20* 33  1  118  3        001  19251117     590       1  000000000      70
+      8   200020*22* 33  1                                   64       1  050015907      70
+      9   200030*22* 33  1                                  391       1  111450855      70
+     10   200070*20* 33 1457312  3        001  18760100     590       1  244075534      70
+     11   200080*22* 33 14                                   64       1  294095570      70
+     12   200090*22* 33 14                                  391       1  355530280      70
+     13   200100*20*391  1  118  2        001  19251113      33       1  000000000      70
+     14   200110*22*391  1                                   64       1  076120764      70
+     15   200210*20*391 2457312  3        001  18750100      33       1  215264732      70
+     16   200220*22*391 24                                  590       1  249425727      70
+     17   200230*22*391 24                                   64       1  291385777      70
+     18   200240*20*590  1  118  3        001  19251217      64       1  086041583      70
+     19   200250*22*590  1                                  391       1  138083850      70
+     20   200260*22*590  1                                   33       1  172072429      70
+     21   200340*20*590 1357303  3        001  18830100      64       1  000000000      70
+     22   200350*22*590 13                                  391       1  052042190      70
+     23   200360*22*590 13                                   33       1  086030841      70
+     24   200370*20* 64  1  118  3        001  19251216     391       1  000000000      70
+     25   200380*22* 64  1                                   33       1  042044659      70
+     26   200390*22* 64  1                                  590       1  085594171      70
+     27   200460*20* 64  957304  3        001  18820100     590       1  000000000      70
+     28   200470*22* 64  9                                  391       1  274001770      70
+     29   200480*22* 64  9                                   33       1  316050427      70
+                *10* PHONY OBSERVATION  ARGUELLO to GAVIOTA +/- 500 mm                    
+                *10* 33                   18800101     391               344852460     500
+                *10* 33                   19240101     391               344852460     500
+                *10* PHONY OBSERVATION  ARGUELLO to GAVIOTA +/- 3.0"                      
+                *10* 33                        19240101     391          10459392N     300
+                *10* 33    0E                  19570101     391          10459392N     300
+                *10* comment out real asto azimuths                                       
+          600010*10*391    0E             005  19241107      64       1  18124090S     140
+          600020*10*590    0E             005  19230814      64       1  26709537S     140
+          600030*10*590    0E             005  18830515      64       1  26709518S     150
+          600040*10* 64    0E             005  18821215     590       1   8724122S     150
+                *10* CONSTRAIN LOSP-GAVI dist and azimuth GAVIOTA +/- 1"                  
+     30        C*52*590                   18790101     391               573089620X    576
+     31        C*52*590                   19240101     391               573089620X    576
+     32        C*60*590    0E                  18790101     391          13914141N     100
+     33        C*60*590    0E                  19240101     391          13914141N     100
+                *10* station coordinates from CALIB4                                      
+                *80* 33 ARGUELLO 1875                 34345804393N120333770329W 65960     
+                *80* 64 TEPUSQUET 1875                34543654755N120110837521W 99000     
+                *80*391 GAVIOTA 1873                  34300655745N120115210283W 74891     
+                *80*590 LOSPE 1875                    34533755991N120361867278W 49920     
+                *10* heights of geoid above ellipsoid in 1/10ths of meters                
+                *84* 33 RAPP                                                      -332  10
+                *84* 64 RAPP                                                      -315  10
+1                                                    NATIONAL GEODETIC SURVEY
+ PROGRAM DYNAP                                    GEODYNAMIC ADJUSTMENT PROGRAM                                            PAGE   5
+                                               MIT modified VERSION 1.3 of 88/11/02 10:48:48
+
+
+                *84*391 wcpt                                                      -321  10
+                *84*590 wcpt                                                      -326  10
+                *10* deflections of the vertical in 1/100ths of seconds                   
+                *85* 33                                                   319S1    762W1  
+                *85* 64                                                  1045S1   1420W1  
+                *85*391                                                  1197S1    891W1  
+                *85*590                                                   427S1    619W1  
+ ******** END OF BLUE BOOK ********
+1                                                    NATIONAL GEODETIC SURVEY
+ PROGRAM DYNAP                                    GEODYNAMIC ADJUSTMENT PROGRAM                                            PAGE   6
+                                               MIT modified VERSION 1.3 of 88/11/02 10:48:48
+
+
+0*** OBSERVATIONAL SUMMARY ***
+   SSN   STATION NAME                     DIR         ANG         AZI         DIS         ZD          GPS
+                                        FRM   TO    FRM   TO    FRM   TO    FRM   TO    FRM   TO    FRM   TO
+
+    33   ARGUELLO 1875                    6    6      0    0      0    0      0    0      0    0      0    0
+    64   TEPUSQUET 1875                   6    6      0    0      0    0      0    0      0    0      0    0
+   391   GAVIOTA 1873                     5    6      0    0      0    2      0    2      0    0      0    0
+   590C  LOSPE 1875                       6    5      0    0      2    0      2    0      0    0      0    0
+1                                                    NATIONAL GEODETIC SURVEY
+ PROGRAM DYNAP                                    GEODYNAMIC ADJUSTMENT PROGRAM                                            PAGE   7
+                                               MIT modified VERSION 1.3 of 88/11/02 10:48:48
+
+
+0*********** COMMENCING ADJUSTMENT ***********
+0ITERATION # 0 THE RMS CORRECTION IS 0.23230677     METERS --- VTPV  =       3.7374877      DF=     9  VARIANCE =       0.4152764    
+0 MAXIMUM SHIFT - STATION: TEPUSQUET 1875                          LONGITUDE SHIFT=      0.502 METERS
+0ITERATION # 1 THE RMS CORRECTION IS 0.13676439E-05 METERS --- VTPV  =       3.7374831      DF=     9  VARIANCE =       0.4152759    
+0 MAXIMUM SHIFT - STATION: TEPUSQUET 1875                          LATITUDE SHIFT =       0.000 METERS
+0*********** ADJUSTMENT CONVERGED *************
+1                                                    NATIONAL GEODETIC SURVEY
+ PROGRAM DYNAP                                    GEODYNAMIC ADJUSTMENT PROGRAM                                            PAGE   8
+                                               MIT modified VERSION 1.3 of 88/11/02 10:48:48
+
+
+0*** JOB STATISTICS ***
+
+0A.) BLUE-BOOK STATISTICS
+         NO. *80* CONTROL RECORDS         4
+         NO. *84* GEOID HT. RECORDS       4
+         NO. *85* DEFLECTION RECORDS      4
+         NO. *86* ASTRO. COORD. RECORDS   0
+         NO. DIRECTIONS                  23
+         NO. ANGLES                       0
+         NO. GPS VECTORS                  0
+         NO. ZENITH DISTANCES             0
+         NO. DISTANCES                    2
+         NO. AZIMUTHS                     2
+ B.) NO. CONSTRAINTS                      6
+ C.) NO. ACCURACIES                       0
+ D.) NO. REJECTED OBS.                    0
+1                                                    NATIONAL GEODETIC SURVEY
+ PROGRAM DYNAP                                    GEODYNAMIC ADJUSTMENT PROGRAM                                            PAGE   9
+                                               MIT modified VERSION 1.3 of 88/11/02 10:48:48
+
+
+0NORMALIZED RESIDUALS
+                 COMPUTED        OBSERVED         V=C-O         SDV   V/SDV     MDE      RN  FROM STATION
+                                              SEC     METER                   3-SIGMA          TO STATION(S)
+ 
+    1 EH       626.400          626.400               0.000    0.00    0.00    0.0000  0.00  ARGUELLO 1875                 
+ 
+    2 EH       958.500          958.500               0.000    0.00    0.00    0.0000  0.00  TEPUSQUET 1875                
+ 
+    3 EH       716.810          716.810               0.000    0.00    0.00    0.0000  0.00  GAVIOTA 1873                  
+ 
+    4 EH       466.600          466.600               0.000    0.00    0.00    0.0000  0.00  LOSPE 1875                    
+    5 LA  34 53 37.55992N  34 53 37.55992N  0.00000   0.000    0.00    0.00    0.0000  0.00  LOSPE 1875                    
+    6 LO 120 36 18.67279W 120 36 18.67279W  0.00000   0.000    0.00    0.00    0.0000  0.00  LOSPE 1875                    
+ 
+                                                                                             ARGUELLO 1875                 
+    7 HD   0  0  0.08       0  0  0.00      0.08               0.41    0.20    3.55    0.35    LOSPE 1875                    
+    8 HD  50  1 59.20      50  1 59.07      0.13               0.40    0.32    3.65    0.33    TEPUSQUET 1875                
+    9 HD 111 45  8.34     111 45  8.55     -0.21               0.42   -0.50    3.51    0.36    GAVIOTA 1873                  
+   10 HD 244  7 55.52     244  7 55.34      0.18               0.43    0.43    3.45    0.37    LOSPE 1875                    
+   11 HD 294  9 55.53     294  9 55.70     -0.17               0.42   -0.40    3.54    0.35    TEPUSQUET 1875                
+   12 HD 355 53  2.79     355 53  2.80     -0.01               0.41   -0.03    3.60    0.34    GAVIOTA 1873                  
+ 
+                                                                                             GAVIOTA 1873                  
+   13 HD 359 59 59.65       0  0  0.00     -0.35               0.36   -0.95    4.06    0.27    ARGUELLO 1875                 
+   14 HD  76 12  7.99      76 12  7.64      0.35               0.36    0.95    4.06    0.27    TEPUSQUET 1875                
+   15 HD 215 26 47.88     215 26 47.32      0.56               0.45    1.26    3.30    0.41    ARGUELLO 1875                 
+   16 HD 249 42 56.95     249 42 57.27     -0.32               0.50   -0.64    2.95    0.51    LOSPE 1875                    
+   17 HD 291 38 57.53     291 38 57.77     -0.24               0.43   -0.57    3.43    0.37    TEPUSQUET 1875                
+ 
+                                                                                             LOSPE 1875                    
+   18 HD  86  4 15.90      86  4 15.83      0.07               0.42    0.18    3.49    0.36    TEPUSQUET 1875                
+   19 HD 138  8 38.67     138  8 38.50      0.17               0.49    0.35    2.98    0.50    GAVIOTA 1873                  
+   20 HD 172  7 24.04     172  7 24.29     -0.25               0.46   -0.53    3.17    0.44    ARGUELLO 1875                 
+   21 HD 359 59 59.86       0  0  0.00     -0.14               0.43   -0.32    3.39    0.38    TEPUSQUET 1875                
+   22 HD  52  4 22.07      52  4 21.90      0.17               0.50    0.33    2.92    0.52    GAVIOTA 1873                  
+   23 HD  86  3  8.38      86  3  8.41     -0.03               0.47   -0.06    3.15    0.45    ARGUELLO 1875                 
+ 
+                                                                                             TEPUSQUET 1875                
+   24 HD 359 59 59.83       0  0  0.00     -0.17               0.44   -0.39    3.35    0.39    GAVIOTA 1873                  
+   25 HD  42  4 46.23      42  4 46.59     -0.36               0.45   -0.80    3.24    0.42    ARGUELLO 1875                 
+   26 HD  85 59 42.24      85 59 41.71      0.53               0.43    1.24    3.43    0.37    LOSPE 1875                    
+   27 HD 359 59 59.52       0  0  0.00     -0.48               0.44   -1.09    3.38    0.39    LOSPE 1875                    
+   28 HD 274  0 17.76     274  0 17.70      0.06               0.44    0.14    3.35    0.39    GAVIOTA 1873                  
+   29 HD 316  5  4.69     316  5  4.27      0.42               0.48    0.87    3.09    0.46    ARGUELLO 1875                 
+ 
+                                                                                             LOSPE 1875                    
+   30 DIST   57308.9620       57308.9620              0.000    0.00    0.22  312.7049  0.00    GAVIOTA 1873                  
+   31 DIST   57308.9620       57308.9620              0.000    0.00   -0.22  312.7028  0.00    GAVIOTA 1873                  
+   32 AZ 139 14 14.10N    139 14 14.10N     0.00               0.00    0.00 5771.84    0.00    GAVIOTA 1873                  
+1                                                    NATIONAL GEODETIC SURVEY
+ PROGRAM DYNAP                                    GEODYNAMIC ADJUSTMENT PROGRAM                                            PAGE  10
+                                               MIT modified VERSION 1.3 of 88/11/02 10:48:48
+
+
+0NORMALIZED RESIDUALS
+                 COMPUTED        OBSERVED         V=C-O         SDV   V/SDV     MDE      RN  FROM STATION
+                                              SEC     METER                   3-SIGMA          TO STATION(S)
+   33 AZ 139 14 14.10N    139 14 14.10N     0.00               0.00    0.00 5735.34    0.00    GAVIOTA 1873                  
+1                                                    NATIONAL GEODETIC SURVEY
+ PROGRAM DYNAP                                    GEODYNAMIC ADJUSTMENT PROGRAM                                            PAGE  11
+                                               MIT modified VERSION 1.3 of 88/11/02 10:48:48
+
+
+0RESIDUAL STATISTICS
+
+ OBSERVATION NUMBERS OF 20 GREATEST STANDARDIZED RESIDUALS (V/SD)
+
+     15    26    27    14    13    29    25    16    17    20     9    10    11    24    19    22    21     8    31    30
+
+  TOTAL=   33        NO-CHECK=  0
+  MAX V=  5.6E-01    MAX V/SD=    1.952
+  MIN V= -4.8E-01    MIN V/SD=   -1.696
+ MEAN V= -1.5E-08   MEAN V/SD=    0.000
+
+
+               N      VTPV      RMS       RN        VTPV/RN      MEAN ABS
+                               VTPV                              RESIDUAL
+ DELTA X       0       0.0     0.00     0.00           0.00      0.000 (METERS)
+ DELTA Y       0       0.0     0.00     0.00           0.00      0.000 (METERS)
+ DELTA Z       0       0.0     0.00     0.00           0.00      0.000 (METERS)
+ DIRECTION    23       3.7     0.40     9.00           0.42      0.236 (SECONDS)
+ H ANGLE       0       0.0     0.00     0.00           0.00      0.000 (SECONDS)
+ ZEN DIST      0       0.0     0.00     0.00           0.00      0.000 (SECONDS)
+ DISTANCE      2       0.0     0.00     0.00           0.05      0.000 (METERS)
+ AZIMUTH       2       0.0     0.00     0.00           0.27      0.000 (SECONDS)
+ OTHER         6       0.0     0.00     0.00           0.00      0.000
+ TOTAL        33       3.7     0.34     9.00           0.42
+
+0DEGREES OF FREEDOM      =                9
+ VARIANCE SUM            =                3.7
+ STD.DEV.OF UNIT WEIGHT  =                0.64
+ VARIANCE OF UNIT WEIGHT =                0.42
+1                                                    NATIONAL GEODETIC SURVEY
+ PROGRAM DYNAP                                    GEODYNAMIC ADJUSTMENT PROGRAM                                            PAGE  12
+                                               MIT modified VERSION 1.3 of 88/11/02 10:48:48
+
+
+0ADJUSTED CRUSTAL DYNAMIC PARAMETERS
+
+
+ # 1 CRUSTAL DYNAMIC PARAMETERS FOR REFERENCE STATION #590     REFERENCE TIME 1950 01 01
+     REFERENCE LATITUDE 34 53 37.55992N     REFERENCE LONGITUDE 120 36 18.67279W
+
+ Strain rate (1) (rad/min)          8.81798E-14 +/-          8.79402E-14
+ Strain rate (2) (rad/min)          8.49218E-14 +/-          1.72892E-13
+ Strain rate (3) (rad/min)         -3.00060E-13 +/-          2.45325E-13
+ Strain rate (4) (rad/min)         -2.88554E-13 +/-          9.79609E-14
+
+ Correlation matrix for strain rates:
+
+      1.00000      0.42564     -0.16361     -0.27893 
+      0.42564      1.00000     -0.89839     -0.19093 
+     -0.16361     -0.89839      1.00000      0.36936 
+     -0.27893     -0.19093      0.36936      1.00000 
+
+
+                      ENN (1/YR)     ENE (1/YR)     EEN (1/YR)     EEE (1/YR)
+
+          VALUE     4.63791E-08    5.42073E-08   -1.30039E-07   -1.51768E-07
+   SCALED SIGMA     4.62530E-08    1.10361E-07    1.06318E-07    5.15235E-08
+         VAL/SD     1.00273E+00    4.91184E-01   -1.22311E+00   -2.94561E+00
+          GOOGE     3.39E-01       6.02E-02       1.60E-01       4.80E-01
+
+                                                                  SCALED
+          PARAMETER                            VALUE               SIGMA               VAL/SD       UNITS
+
+ AREAL DILATATION RATE                      -1.05389E-07         5.88606E-08        -1.79048E+00  UNITLESS PER YEAR
+
+ CLOCKWISE ROTATION RATE                    -9.21233E-02         1.05552E-01        -8.72774E-01  MICRORADIANS PER YEAR
+
+ (EEE - ENN) COMPONENT OF SHEAR RATE        -1.98147E-07         7.82525E-08        -2.53215E+00  RADIANS PER YEAR
+
+ (EEN + ENE) COMPONENT OF SHEAR RATE        -7.58320E-08         4.89987E-08        -1.54763E+00  RADIANS PER YEAR
+
+ (EEN+ENE) v (EEE-ENN) CORRELATION          -1.12263E-01                                          UNITLESS
+
+ MAXIMUM SHEAR RATE                          2.12162E-07         7.32155E-08         2.89777E+00  RADIANS PER YEAR
+
+ DIRECTION OF MINIMUM EXTENSION             79.52894             7.59506             1.04711E+01  DEGREES
+
+ EXTENSION IN ABOVE DIRECTION               -1.58775E-07         5.34695E-08        -2.96946E+00  UNITLESS PER YEAR
+
+ EXTENSION PERPENDICULAR TO ABOVE            5.33866E-08         3.94151E-08         1.35447E+00  UNITLESS PER YEAR
+
+ EXT. CORR (PARALLEL v.  PERP.)             -2.24904E-01                                          UNITLESS
+1                                                    NATIONAL GEODETIC SURVEY
+ PROGRAM DYNAP                                    GEODYNAMIC ADJUSTMENT PROGRAM                                            PAGE  13
+                                               MIT modified VERSION 1.3 of 88/11/02 10:48:48
+
+
+0ADJUSTED POSITIONS
+
+     SSN NAME                             LATITUDE         LONGITUDE          M.S.L.  G. HT.    E. HT.
+0  1  33 ARGUELLO 1875                  34 34 58.03754N  120 33 37.69544W   659.600 -33.200   626.400
+                             SHIFTS (M.)       0.197S            0.200E                         0.000  AZ=135  HOR=  0.3  TOT=  0.3
+                      SCALED SIGMAS (M.)       0.091             0.197                          0.001
+                             GOOGES            1.5E-01           1.4E-01                        1.0E+00
+0  2  64 TEPUSQUET 1875                 34 54 36.55782N  120 11  8.39500W   990.000 -31.500   958.500
+                             SHIFTS (M.)       0.317N            0.502W                         0.000  AZ=303  HOR=  0.6  TOT=  0.6
+                      SCALED SIGMAS (M.)       0.229             0.119                          0.001
+                             GOOGES            4.3E-01           4.4E-01                        1.0E+00
+0  3 391 GAVIOTA 1873                   34 30  6.55734N  120 11 52.10326W   748.910 -32.100   716.810
+                             SHIFTS (M.)       0.003S            0.011W                         0.000  AZ=255  HOR=  0.0  TOT=  0.0
+                      SCALED SIGMAS (M.)       0.197             0.229                          0.001
+                             GOOGES            5.4E-01           7.4E-01                        1.0E+00
+0  4 590 LOSPE 1875                     34 53 37.55992N  120 36 18.67279W   499.200 -32.600   466.600
+                             SHIFTS (M.)       0.000N            0.000W                         0.000  AZ=  0  HOR=  0.0  TOT=  0.0
+                      SCALED SIGMAS (M.)       0.000             0.000                          0.001
+                             GOOGES            1.0E+00           1.0E+00                        1.0E+00
+1                                                    NATIONAL GEODETIC SURVEY
+ PROGRAM DYNAP                                    GEODYNAMIC ADJUSTMENT PROGRAM                                            PAGE  14
+                                               MIT modified VERSION 1.3 of 88/11/02 10:48:48
+
+
+0CORRELATIONS OF STATION COORDINATES WITH STRAIN PARAMETERS GREATER THAN 0.4
+ ARGUELLO 1875                  LAT ENE    -0.6774
+ ARGUELLO 1875                  LON ENN     0.8058
+ ARGUELLO 1875                  LON EEN    -0.8860
+ TEPUSQUET 1875                 LAT ENN     0.8994
+ TEPUSQUET 1875                 LAT EEN    -0.8107
+ TEPUSQUET 1875                 LON EEE     0.7831
+ GAVIOTA 1873                   LAT ENN     0.8029
+ GAVIOTA 1873                   LAT EEN    -0.8299
+ GAVIOTA 1873                   LON ENN     0.8048
+ GAVIOTA 1873                   LON EEN    -0.8319
+1                                                    NATIONAL GEODETIC SURVEY
+ PROGRAM DYNAP                                    GEODYNAMIC ADJUSTMENT PROGRAM                                            PAGE  15
+                                               MIT modified VERSION 1.3 of 88/11/02 10:48:48
+
+
+0LENGTH RELATIVE ACCURACIES   (USING A-POSTERIORI WEIGHTS)
+0************ END OF ACCURACY PROCESSING **********
+0END OF DYNAP PROCESSING
+ HAVE A NICE DAY!
+Fortran STOP 

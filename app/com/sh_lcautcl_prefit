@@ -1,0 +1,60 @@
+#!/bin/csh -f
+# Shell script to convert standard prefit quick solution to prefit lc_autcln.
+# Script assumes that LC_AUTCLN is set in the autcln.cmd file.
+#
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "==========================================================================================="
+  echo " Convert LC_ONLY prefit solve run to LC_AUTCLN run" 
+  echo " This conversiion is useful when running short sessions (3hr) on global"
+  echo " networks"
+  echo " "
+  echo "   Usage: sh_lcautcln_prefit -f <batch file name>"
+  echo " "           
+  echo "   Executed from the day processing directory normally"
+  echo " "
+  echo "==========================================================================================="
+  exit
+endif 
+##################### DECIPHER COMMAND LINE #######################
+set file = NONE
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -f*:
+      set file  = $input[2]  
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+#
+if( $file == NONE ) then
+   echo "SH_LCAUTCLN_PREFIT -f option must be used"
+   exit
+endif
+
+echo "SH_LCAUTCLN_PREFIT: Updating batch file $file"
+set dir = $file:h
+set doy = `grep yawtab $file | awk '{print(substr($2,8,3))}'`
+#
+# Steps:
+# (1) Get the solve batch file
+set solvebat = `grep solve $file | head -1 | awk '{print $3}'`
+# 
+\mv $solvebat ${solvebat}.org
+set nfile = `echo $solvebat $doy | awk '{printf("n%sa.%3.3d",substr($1,2,4),$2)}'`
+cat ${solvebat}.org | awk -v nf="noise file name:  $nfile" '{gsub("LC_ONLY","LC_AUTCLN")} {gsub("noise file name:",nf)} {print $0}' >! ${solvebat}
+#
+# (2) Now modify the .bat file to add call to sh_sigelv using the -noelv option before the solve call.
+#
+set sline = `nl $file | grep solve | head -1 | awk '{print $1-1}'`
+@ snext = $sline + 1
+\mv $file ${file}.org 
+head -$sline  ${file}.org > $file
+echo "sh_sigelv -nfile $nfile -noelv -acmd autcln.cmd.prefit" >> $file
+tail -n +$snext ${file}.org >> $file
+#
+# Done:
+echo "Run solution: csh $file" 
+
+

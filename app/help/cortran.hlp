@@ -1,0 +1,30 @@
+CORTRAN: Coordinate transformation (type and system)
+
+CORTRAN : Coordinate transformation
+
+General coordinate system transformation program with
+datum shifts
+
+Runstring:
+% cortran <infile> <outfile/6> <intype> <insys> <outtype> <outsys>
+where <infile> is a globk style coordinate file with the input 
+      coordiates of type <intype>. Minimum entries are 
+       SiteName 3-coordinates in free format unless the intype is
+      UTM in which case the zone and hemisphere (N/S) must follow
+      the coordinates
+      <outfile/6> is the output coordinate file of <outtype>
+                If 6 is used for the output name, the output comes to the screen.
+      <intype> is the type of input coordintes.  The choices are
+	 XYZ  -- Cartesian coordinates
+	 GEOD -- Geodetic latitude, longitude (+ve East) and Height
+	 UTM  -- UTM coordinates with geodtic height as the 3rd enty
+		 (Zone and Hemisphere are included in this output)
+      <insys> is the input system.  The allowable systems are defined
+	 in kf/gen_util/datum_def.f.  They currently are
+	 WGS84 -- WGS84
+	 NAD27 -- North American Datum 1927
+	 OMAN  -- Oman geodetic system
+	 (Note: the system includes both the ellipsoid and any 
+		translation with respect to ITRF2000)
+      <outtype> is the output coordinate type
+      <outsys> is the output system.

@@ -1,0 +1,242 @@
+#!/bin/csh -f
+# 
+#doc Creates GMT plots of position trajectory from mb_*.dat? files
+#
+#
+#
+if ( $#argv == 0  || `echo $1 | cut -c2-` == "help"   ) then
+echo " "    
+echo " Shell script for plotting station trajectories  "
+echo " Input: mb_xxx.dat[12] files extracted from a GLRED prt file or GLOBK bak file by "
+echo " sh_globk_scatter and multibase. "
+echo " "
+echo " Basic usage : "     
+echo " "
+echo "    sh_trajectory -f mb*  "
+echo " "    
+echo "        -f     :  Files from multibase to be plotted; all begin with mb_ "  
+echo " "
+echo "    or  -F <filename>  where <filename> is a file containing a list of specific mb_ "
+echo "                       files (baselines/stations)"
+echo "  "     
+echo " Type 'sh_trajectory -help' to get a full list of options "  
+echo " "
+echo " Type 'sh_globk_scatter' or see the GLOBK manual for examples of a full sequence "
+echo " of runs to go from GLOBK files to station or baseline repeatabilities."
+echo " "      
+if ( $argv == "-help" )  then 
+echo "--------------------------------------------------------------------------------"
+echo " "
+echo " Extended sh_trajectory features for producing publishable plots"
+echo " " 
+echo " -u                   : Scale factor for uncertainties; default = 1."
+echo " "
+echo " -V                   : Turn ON verbose debugging output [default is OFF]" 
+echo "  " 
+echo " -l        fontsize    : Size of letters on axes [12]" 
+echo "  " 
+echo " -f        value       : Magic scaling factor for vectors [0.05]" 
+echo "  " 
+echo " -t                    : Plot time tags on trajectories [OFF]" 
+echo "  " 
+echo " -conf     percentage  : Confidence limit for ellipses (0 will draw no elipses) [95]" 
+echo "  " 
+
+endif
+exit 0
+endif
+
+##################### SET UP DEFAULTS ############################################################
+set files    = ""
+set FILE     = ""
+set comment  = " " 
+set psfile   = "pstraj"
+set xmin     =  0
+set xmax     =  0
+set ymin     =  0
+set ymax     =  0
+set order    =  0
+set ADD      = ""
+set debugit = 0
+set factor   = 0.05
+set iround = "0.1"
+set tfont = "0"
+set fsize = "12"
+set conf = "0.95"
+
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+echo " "
+echo " Running sh_trajectory to create GMT plots of station trajectories"
+echo " "
+
+# decipher command line
+while ($#argv > 0 )
+set input = ( $argv )
+switch($input[1])
+        case -conf:
+                set conf        = `echo $input[2] | awk '{print $1/100.}'`
+                breaksw
+        case -u:
+        case -unc:
+        case -unc_scale:
+                set unc_scale     =  $input[2]
+	echo ">>>>>> scaling uncertainties by : "  $unc_scale 
+                breaksw
+        case -ps:
+                set psfile       =  pstraj_$input[2]
+                breaksw
+        case -l:
+        case -lett:
+        case -letter:
+                set fsize        = $input[2]
+                breaksw
+        case -m:
+                set factor       = $input[2]
+                breaksw
+        case -v:
+                set debugit   =  1
+                breaksw
+        case -t:
+                set tfont   =  "9"
+                breaksw
+	case -f:
+        case -file:
+                set files        =  (  $input[2-] )
+		echo $files >! tmp.files1
+		breaksw
+endsw
+shift argv
+end
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+if ($debugit) echo COMMENT : $comment
+
+set psfile = $psfile$ADD
+
+# need this to avoid exponential notation
+gmt gmtset FORMAT_FLOAT_OUT %.4lf
+if ($debugit) gmt gmtset GMT_VERBOSE TRUE
+gmt gmtset FONT_LABEL ${fsize}p
+gmt gmtset FONT_ANNOT_PRIMARY ${fsize}p
+
+if (-e tmp.dis) \rm tmp.dis
+if (-e tmp.minmax) \rm tmp.minmax
+\rm -f *.traj
+
+touch tmp.dis tmp.minmax
+foreach file ( $files )
+
+  if ($debugit) echo Working on $file
+
+  # Careful, the next set of lines must be identical in both loops!
+  set mbfe = $file:r.dat1 
+  set mbfn = $file:r.dat2
+  set mbft = $file:r.tmp
+
+  # get average coordinates to use as starting point
+  set x0 = `awk 'NR == 2{print $7}' $mbfe`  
+  set y0 = `awk 'NR == 2{print $7}' $mbfn`
+
+  # extract unedited data
+  grep -v '^..[A-Z,a-z]' $mbfe | grep -v \* | awk 'NF == 3{print $1,$2,$3}' >! tmp.x
+  grep -v '^..[A-Z,a-z]' $mbfn | grep -v \* | awk 'NF == 3{print $1,$2,$3}' >! tmp.y
+
+  # get position at first epoch
+  set x1 = `awk 'NR == 1{print $2}' tmp.x`
+  set y1 = `awk 'NR == 1{print $2}' tmp.y`
+
+  if ($debugit) echo $x1, $y1
+
+  # put X and Y coordinates together, checking that epochs are identical.
+  paste tmp.x tmp.y \
+  | awk -v x0=$x0 -v y0=$y0 -v x1=$x1 -v y1=$y1 \
+  '$1 == $4 {printf("%20.4f %20.4f %10.4f %10.4f %10.4f %10.4f %10.4f\n",x0,y0,$2-x1,$5-y1,$3,$6,$1)}'\
+  >! $mbft
+
+  if ($debugit) head $mbft
+
+  # accumulate length of cumulative displacement  
+  cat $mbft | awk '{sum += sqrt($3*$3 + $4*$4)} END {print $1,$2,sum}' >> tmp.minmax
+end # for
+
+
+# figure out how to scale the vectors
+if ( $#files > 1 ) then
+   # scale by ratio of length(disp) / length(map_diagonal)
+   set vscale = "1.0"
+   set vscale = `gmt gmtinfo -C -I$iround. tmp.minmax | awk -v f=$factor '{OFMT="%.20f";print  f*$6 /sqrt(($2-$1)*($2-$1) + ($4-$3)*($4-$3))}'`
+else
+  set vscale = "1."
+endif
+
+if ($debugit) echo Vector scale is $vscale inches per meter
+
+if (-e tmp.minmax2) \rm -f tmp.minmax2
+touch tmp.minmax2
+# rescale and accumulate displacements
+foreach file ( $files )
+    set mbft = $file:r.tmp
+    set mbfd = $file:r.traj
+
+    # get position at first epoch
+    set x1 = `awk 'NR == 1{print $1}' $mbft`
+    set y1 = `awk 'NR == 1{print $2}' $mbft`
+    set t1 = `awk 'NR == 1{print $7}' $mbft`
+    #echo $x1,$y1,$t1
+
+    # THIS IS THE TRICKY LINE
+   cat $mbft | awk -v s=$vscale -v x1=$x1 -v y1=$y1 -v t1=$t1\
+'{OFMT="%.4f"}{dx=$3-dx1;dy=$4-dy1;print x1, y1,dx/s,dy/s,$5/s,$6/s,0.,t1;x1+=dx/s;y1+=dy/s;dx1=$3;dy1=$4;t1=$7}END{print x1,y1,0.0001,0.0001,0.,0.,0.,t1}'\
+   >! $mbfd
+
+   if ($debugit) echo Head of $mbfd
+   if ($debugit) head $mbfd
+   cat $mbfd >> tmp.minmax2   
+end # for loop over files
+
+# set up the plot
+set ranges = `gmt gmtinfo -I$iround tmp.minmax2`
+gmt gmtinfo -C -I$iround tmp.minmax2 >! tmp.minmax3
+set rx    = `awk '{print $2-$1}' tmp.minmax3`
+set ry    = `awk '{print $4-$3}' tmp.minmax3`
+set xmin  = `awk '{print $1}' tmp.minmax3`
+set ymin  = `awk '{print $3}' tmp.minmax3`
+if ($debugit) echo Axes are $rx $ry units long
+set scale = `echo $rx $ry | awk '{print 6./sqrt($1*$1 + $2*$2)}'`i
+set xticks = `gmt gmtinfo -C -I$iround tmp.minmax2 | awk '{printf ("a%.2ff%.2f\n",($2-$1)/2.,($2-$1)/10.)}'`
+set yticks = `gmt gmtinfo -C -I$iround tmp.minmax2 | awk '{printf ("a%.2ff%.2f\n",($4-$3)/2.,($4-$3)/10.)}'`
+set pscale = $scale
+
+# make a scale arrow
+echo $xmin $ymin $vscale $rx $ry $conf\
+| awk '{OFMT="%.4f";print $1+$4/3.,$2+$5/20.,0.010/$3, 0., 0.001/$3, 0.001/$3, 0.1, "10 +/- 1 mm"$6*100."%"}' >! tmp.vscale
+
+if ($debugit) echo Ranges is $ranges
+if ($debugit) echo Scale is $scale inches per meter
+if ($debugit) echo Ticks are $xticks and $yticks
+
+
+# ******************* BEGIN TO DRAW THE PLOT ********************
+
+gmt psxy /dev/null $ranges -Jx$scale -P -K -X2i -Y2i   \
+-Bx$xticks+l'Easting (m)' -By$yticks+l'Northing (m)' -BWS >! $psfile 
+
+foreach file ( $files )
+  set mbfd = $file:r.traj
+  set site = `echo $file:r | sed 's/mb_//'`
+  gmt psvelo $mbfd -Se$pscale/$conf/$tfont $ranges -Jx$scale -P -K -O -N >> $psfile 
+#  gmt pstext <<eof  $ranges -Jx$scale -F+f9p,1+jMR -P -K -O -N >> $psfile
+#      -0.05 0.  $site
+#eof
+end # loop over files
+
+if ($debugit) cat tmp.vscale
+gmt psvelo tmp.vscale -Se$pscale/$conf/$fsize $ranges -Jx$scale  \
+-N -O -P -U/0i/-1.5i/"trajectory $user" >> $psfile 
+
+gs  -sPAPERSIZE=letter $psfile 
+
+
+
+
+

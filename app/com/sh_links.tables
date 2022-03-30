@@ -1,0 +1,216 @@
+#!/bin/csh -f      
+
+#  Script links.tables to link from an experiment tables directory to global gg/tables
+
+if ($#argv == 0) then
+   echo ' '
+   echo '    LINKS.TABLES creates standard GAMIT links in an experiment /tables directory'
+   echo "    gg/tables where 'gg' is a link or alias for your local GAMIT/GLOBK path"
+   echo ' ' 
+   echo '       It differs from LINKS.COM in not linking the L-file '
+   echo ' '
+   echo ' FORMAT' 
+   echo ' '
+   echo '    links.tables -frame <frame> -year <year> -eop <ut1/pole>'
+   echo ' '
+   echo ' REQUIRED'               
+   echo ' '  
+   echo '    -frame    = B1950 or J2000  (for soltab, luntab)'
+   echo ' '
+   echo '    -year     = 1986-2000   (for nutabl, soltab, luntab, if used)'  
+   echo ' '
+   echo '    Default with 2 arguments:   ut1.usno   pole.usno'
+   echo ' '
+   echo ' OPTIONAL'
+   echo ' '        
+#  echo '    -eop   =   bull_b_      IERS Bulletin B      (1-day interval)   valid  1 Jan 1992 - current '
+#  echo '               bull_b_5day  IERS Bulletin B_5day (5-day interval)   valid  1 Sep 1987 - 25 Nov 1993 '
+   echo '    -eop   =   usno         IERS Bulletin A      (rapid-service)    valid  1 Jan 1992 - current '  
+   echo '               vlbi         IRIS                                    valid  5 Jan 1984 - 28 Jun 95'
+   echo ' '
+   echo '    -topt defines the list of table files to be relinked if they already exist'
+   echo '  none all nutabl. soltab. luntab. gdetic.dat guess_rcvant.dat leap.sec svnav.dat svs_exclude.dat'
+   echo '  tform.dat antmod.dat rcvant.dat dcb.dat otl.list otl.grid otlcmc.dat atml.list atml.grid '
+   echo '   map.list map.grrid '
+   echo '  core pole ut1 [Default = none]' 
+   echo ' '
+   echo ' EXAMPLES'                               
+   echo '    links.tables -frame J2000 -year 1994 '
+   echo '    links.tables -frame J2000 -year 1994 -eop vlbi'
+   echo '    links.tables -frame J2000 -year 1994 -eop vlbi -topt pole ut1'
+   echo '  '    
+   echo " NOTES 1. If the link to 'nbody' is empty, indicating the absence of a PEP or JPL ephemeris, "
+   echo "          then arc, model, and ngstot will revert to the old luntab., soltab., and nutabl. "
+   echo "          Otherwise, the nbody ephemeris will be read and the nutation computed by calling "
+   echo "          gamit/lib/MHB_2000 (copy of routine of same name in kf/gen_util/precess.f). "
+   echo '  '   
+   echo '       2. Now links to a read-only "core" file in gg/tables '
+   echo '          to block HP machines from dumping core '
+   echo '  '
+   echo ' CURRENT LINKS:'
+   echo '  '
+
+else      
+##################### SET UP DEFAULTS #############################   
+  set yr = ''
+  set eop = ''
+  set frame = ''
+  set topts = ''
+##################### DECIPHER COMMAND LINE #######################
+  while ($#argv > 0 )
+    set input = ( $argv )
+    switch($input[1])
+      case -f*:
+        set frame  = $input[2]  
+      breaksw 
+      case -y*:
+        set year = $input[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+        set yr = `sh_year -year $year`
+      breaksw 
+      case -e*:
+        set eop = $input[2]  
+      breaksw 
+      case -t*:
+        set topts =  (`echo $argv | cut -d- -f2`); shift topts 
+      breaksw 
+    endsw
+    if ( $#argv > 0 ) shift argv
+  end
+alldone:
+##################### GET THE JOB DONE ############################         
+#
+# Remove broken links
+   if ( ! -e nutabl.	       )    \rm -r   nutabl.	       >& /dev/null
+   if ( ! -e soltab.	       )    \rm -r   soltab.	       >& /dev/null
+   if ( ! -e luntab.	       )    \rm -r   luntab.	       >& /dev/null     
+   if ( ! -e nbody 	       )    \rm -r   nbody  .	       >& /dev/null
+   if ( ! -e gdetic.dat        )    \rm -r   gdetic.dat        >& /dev/null
+   if ( ! -e guess_rcvant.dat  )    \rm -r   guess_rcvant.dat  >& /dev/null   
+   if ( ! -e hi.dat            )    \rm -r   hi.dat            >& /dev/null
+   if ( ! -e leap.sec	       )    \rm -r   leap.sec	       >& /dev/null
+   if ( ! -e svnav.dat         )    \rm -r   svnav.dat	       >& /dev/null
+   if ( ! -e svs_exclude.dat   )    \rm -r   svs_exclude.dat   >& /dev/null
+   if ( ! -e tform.dat         )    \rm -r   tform.dat	       >& /dev/null
+   if ( ! -e antmod.dat        )    \rm -r   antmod.dat        >& /dev/null
+   if ( ! -e rcvant.dat        )    \rm -r   rcvant.dat        >& /dev/null
+   if ( ! -e dcb.dat	       )    \rm -r   dcb.dat	       >& /dev/null     
+   if ( ! -e eq_rename	       )    \rm -r   eq_rename	       >& /dev/null 
+   if ( ! -e otlcmc.dat	       )    \rm -r   otlcmc.dat        >& /dev/null
+   if ( ! -e otl.grid	       )    \rm -r   otl.grid	       >& /dev/null  
+   if ( ! -e otl.list	       )    \rm -r   otl.list	       >& /dev/null  
+   if ( ! -e atl.grid	       )    \rm -r   atl.grid	       >& /dev/null  
+   if ( ! -e atl.list	       )    \rm -r   atl.list	       >& /dev/null  
+   if ( ! -e atml.grid	       )    \rm -r   atml.grid	       >& /dev/null  
+   if ( ! -e atml.list	       )    \rm -r   atml.list	       >& /dev/null  
+   if ( ! -e met.grid          )    \rm -r   met  .grid	       >& /dev/null  
+   if ( ! -e met.list          )    \rm -r   met  .list	       >& /dev/null  
+   if ( ! -e map.grid	       )    \rm -r   map.grid	       >& /dev/null  
+   if ( ! -e map.list	       )    \rm -r   map.list	       >& /dev/null      
+   if ( ! -e gpt.grid	       )    \rm -r   gpt.grid	       >& /dev/null 
+   if ( ! -e eq_rename        )    \rm -r   eq_rename	       >& /dev/null      
+   if ( ! -e core              )    \rm -r   core              >& /dev/null
+   
+# Remove links listed in topts.
+
+  foreach i ( $topts)
+    if ( $i == all ) then
+      \rm -r   nutabl.	     >& /dev/null
+      \rm -r   soltab.	     >& /dev/null
+      \rm -r   luntab.	     >& /dev/null     
+      \rm -r   nbody.	     >& /dev/null
+      \rm -r   gdetic.dat    >& /dev/null
+      \rm -r   guess_rcvant.dat  >& /dev/null     
+      \rm -r   hi.dat 	     >& /dev/null
+      \rm -r   leap.sec	     >& /dev/null
+      \rm -r   svnav.dat     >& /dev/null
+      \rm -r   svs_exclude.dat   >& /dev/null
+      \rm -r   tform.dat     >& /dev/null
+      \rm -r   antmod.dat    >& /dev/null
+      \rm -r   rcvant.dat    >& /dev/null
+      \rm -r   dcb.dat	     >& /dev/null  
+      \rm -r   eq_rename     >& /dev/null  
+      \rm -r   otlcmc.dat    >& /dev/null
+      \rm -r   otl.grid	     >& /dev/null     
+      \rm -r   otl.list	     >& /dev/null     
+      \rm -r   atl.grid	     >& /dev/null     
+      \rm -r   atl.list	     >& /dev/null     
+      \rm -r   atml.grid     >& /dev/null     
+      \rm -r   atml.list     >& /dev/null     
+      \rm -r   met.grid	     >& /dev/null     
+      \rm -r   met.list	     >& /dev/null     
+      \rm -r   map.grid	     >& /dev/null     
+      \rm -r   map.list	     >& /dev/null   
+      \rm -r   gpt.grid	     >& /dev/null  
+      \rm -r   eq_rename	     >& /dev/null     
+      \rm -r   core 	     >& /dev/null
+     else
+      \rm -r   $i >& /dev/null
+     endif
+  end
+  
+  if ( $yr[1] != `ls -l nutabl.  | awk '{print $NF}' | awk -F"." '{print $NF}'` )    \rm  nutabl.  >&! /dev/null   
+  if ( $yr[1] != `ls -l soltab.  | awk '{print $NF}' | awk -F"." '{print $(NF-1)}'` )  \rm  soltab.  >&! /dev/null   
+  if ( $yr[1] != `ls -l luntab.  | awk '{print $NF}' | awk -F"." '{print $(NF-1)}'` )  \rm  luntab.  >&! /dev/null   
+  if ( $yr[1] != `ls -l atml.grid.????  | awk '{print $NF}' | awk -F"." '{print $NF}'` )  \rm  atml.grid.????  >&! /dev/null   
+  if ( $yr[1] != `ls -l vmf1.grid.????  | awk '{print $NF}' | awk -F"." '{print $NF}'` )  \rm  vmf1.grid.????  >&! /dev/null   
+          
+# Make new links if necessary
+
+  ln -s  ~/gg/tables/nutabl.${yr[1]}        nutabl.           >& /dev/null
+  ln -s  ~/gg/tables/soltab.${yr[1]}.$frame soltab.           >& /dev/null
+  ln -s  ~/gg/tables/luntab.${yr[1]}.$frame luntab.           >& /dev/null      
+  ln -s  ~/gg/tables/nbody                  nbody             >& /dev/null
+  ln -s  ~/gg/tables/gdetic.dat             gdetic.dat        >& /dev/null
+  ln -s  ~/gg/tables/guess_rcvant.dat       guess_rcvant.dat  >& /dev/null  
+  ln -s  ~/gg/tables/hi.dat                 hi.dat            >& /dev/null
+  ln -s  ~/gg/tables/leap.sec               leap.sec          >& /dev/null
+  ln -s  ~/gg/tables/svnav.dat              svnav.dat         >& /dev/null
+  ln -s  ~/gg/tables/svs_exclude.dat        svs_exclude.dat   >& /dev/null
+  ln -s  ~/gg/tables/tform.dat              tform.dat         >& /dev/null
+  ln -s  ~/gg/tables/antmod.dat             antmod.dat        >& /dev/null
+  ln -s  ~/gg/tables/rcvant.dat             rcvant.dat        >& /dev/null
+  ln -s  ~/gg/tables/dcb.dat                dcb.dat           >& /dev/null  
+  ln -s  ~/gg/tables/eq_rename              eq_rename         >& /dev/null
+  ln -s  ~/gg/tables/otlcmc.dat             otlcmc.dat        >& /dev/null
+  ln -s  ~/gg/tables/otl.grid               otl.grid          >& /dev/null    
+  ln -s  ~/gg/tables/otl.list               otl.list          >& /dev/null    
+  ln -s  ~/gg/tables/atl.grid               atl.grid          >& /dev/null    
+  ln -s  ~/gg/tables/atl.list               atl.list          >& /dev/null 
+  if ( -e ~/gg/tables/atml.grid.${yr[1]} ) then
+    ln -s  ~/gg/tables/atml.grid.${yr[1]}     atml.grid         >& /dev/null    
+  else if ( -e ~/gg/tables/atmdisp_cm.${yr[1]} ) then
+    ln -s  ~/gg/tables/atmdisp_cm.${yr[1]}    atml.grid         >& /dev/null    
+  endif
+  ln -s  ~/gg/tables/atml.list.${yr[1]}     atml.list         >& /dev/null    
+  if ( -e ~/gg/tables/map.grid.${yr[1]} ) then
+    ln -s  ~/gg/tables/map.grid.${yr[1]}      map.grid          >& /dev/null    
+  else if ( -e ~/gg/tables/vmf1grd.${yr[1]} ) then
+    ln -s  ~/gg/tables/vmf1grd.${yr[1]}       map.grid          >& /dev/null    
+  endif
+  ln -s  ~/gg/tables/map.list.${yr[1]}      map.list          >& /dev/null    
+  if ( -e ~/gg/tables/met.grid.${yr[1]} ) then
+    ln -s  ~/gg/tables/met.grid.${yr[1]}      met.grid          >& /dev/null    
+  else if ( -e ~/gg/tables/vmf1grd.${yr[1]} ) then
+    ln -s  ~/gg/tables/vmf1grd.${yr[1]}       met.grid          >& /dev/null    
+  endif
+  ln -s  ~/gg/tables/met.list.${yr[1]}      met.list          >& /dev/null         
+  ln -s  ~/gg/tables/gpt.grid               gpt.grid          >& /dev/null    
+  ln -s  ~/gg/tables/core                   core              >& /dev/null
+
+# Setup EOP links if necessary
+  if ($eop == '') then
+    ln -s  ~/gg/tables/ut1.usno ut1.     >& /dev/null  
+    ln -s  ~/gg/tables/pole.usno pole.   >& /dev/null 
+  else 
+     if ( $eop != `ls -l ut1.  | awk '{print $NF}' | awk -F"." '{print $NF}'` )  \rm  ut1.  >&! /dev/null 
+     if ( $eop != `ls -l pole. | awk '{print $NF}' | awk -F"." '{print $NF}'` )  \rm  pole. >&! /dev/null
+     ln -s  ~/gg/tables/ut1.$eop    ut1.   >& /dev/null  
+     ln -s  ~/gg/tables/pole.$eop   pole.  >& /dev/null
+  endif
+
+endif
+
+#List the links in the tables directory
+if ( `find  . -type l -print | wc | awk '{print $1}'` > 0 ) ls -l `find  . -type l -print`
+

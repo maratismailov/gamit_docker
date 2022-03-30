@@ -1,0 +1,15 @@
+#!/bin/csh -f
+ 
+# substitute of command 'colrm' on UCB unix system
+ 
+# by pfang@ucsd.edu May 96
+ 
+if ($#argv == 1) then
+        set bgn = $1; @ bgn--
+        cat - | cut -c-$bgn
+else
+        set bgn = $1; @ bgn--
+        set end = $2; @ end++
+        cat - | cut -c-$bgn,$end-
+endif
+

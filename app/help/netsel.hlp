@@ -1,0 +1,63 @@
+NETSEL: Subnetting program for regional GPS networks
+
+NETSEL: Automatic sub-netting of rinex files.  Generates a sites.default file
+output to screen (normally redirected into file).  All rinex files to be processed
+are assumed to be already in rinex directory and must be downloaded first.
+
+MOD TAH 150512: Upgraded to allow a sh_gen_stats rw file for input to give the list
+of sites to make networks from and to limit the rw magnitude of sites in the solutions.
+When the -rw option is used, GLOBK use_site list with the globk OPTION selection.
+
+Usage:
+netsel <options>
+Options are
+-f <file> -- List of rinex files generated with ls -s <rinex files>
+-v <file> -- Globk velocity file with site coordinates
+-n <number> -- Desired number of sites in each network (will be adjusted to make all
+               networks about the same size)
+-t <number> -- Number of tie sites per network (must be >0)
+-s <file>   -- Name of station.info file to use (default ../tables/station.info)
+-c <code>   -- Specifies network code (2-characters).  Default ne so that 
+               networks will be ne01, ne02 .... neNN
+NEW: 150512
+-rw <file> <maxuse> -- sh_gen_stats .rw random walk file name and maximum horizontal
+               random walk value to be used.  Output will be GLOBK use_site commands.
+               Default for <maxuse> 2 mm^2/yr
+
+EXAMPLE: Normally run from control directory.
+In this case we have 484 sites so about 13 networks will be formed.  With -t 2, the overarching network will
+have 26 sites (2x13).  
+
+ls -s ../rinex/*3280.13o > list.2013.328
+netsel -f list.2013.328 -v ../tables/TVN_US_2010.vel -n 40 -t 2 -c tr > & ! ../tables/sites.defaults.2013.328
+
+Output: ../tables/sites.defaults.2013.328
+
+Site Range Long   231.8650  307.3222 Latitude    24.6594   62.4809 deg
+NETSEL: For  484 sites, with nominal   40 sites per network, final selection is:
+NETSEL: Fin   38 sites in   13 networks with   28 sites in one network
+NETSEL: Number of tie sites   2
+#NETWORK Number 001 with  38 sites
+# NN    #      Long         Lat     Name  RK
+# 001   1    272.49850     33.16800 AL50  19
+# 001   2    272.38440     32.71150 AL55  15
+...
+# 001  37    271.32690     31.67870 MSWY  21
+# 001  38    269.58800     32.84640 MSYZ  14
+#NETWORK Number 002 with  38 sites
+# NN    #      Long         Lat     Name  RK
+# 002   1    270.62340     38.37820 API1  10
+# 002   2    268.81050     39.33390 BWGR  15
+....
+# 013   1    271.51280     32.82960 MSSB 13
+# 013   6    262.66600     41.43910 NECB 13
+# 013   2    270.31170     38.74750 TKCH 13
+ acso_gps   tr05  xstinfo 
+ acu5_gps   tr13  xstinfo 
+ ... xcty_gps   tr07  xstinfo 
+ yell_gps   tr13  xstinfo 
+ zphr_gps   tr07  xstinfo 
+ zphr_gps   tr06  xstinfo 
+
+(Note here zphr is used in two networks.  No site should be used more than twice).
+

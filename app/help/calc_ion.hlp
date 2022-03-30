@@ -1,0 +1,22 @@
+CALC_ION: VLBI program to compute ionoepheric delays
+
+ Proper runstring is
+  
+ CI> calc_ion <KalObs1> <KalObs2> <obs_code>
+  
+ where <KalObs1> and <KalObs2> are the KalObs files corresponding 
+ to the different frequency bands, and <obs_code> tells the 
+ program which contributions to calculate.  <obs_code> may be 
+ any combination of:
+  
+         'P'   for phase delays 
+         'G'   for group delays 
+         'R'   for phase delay rates
+  
+ For example, 
+  
+ CI> calc_ion KalObs_X.kal KalObs_S.kal gr
+  
+ tells the program to use the two files KalObs_X.kal and KalObs_S.kal 
+ to calculate the group and phase delay rate ionospheric contribtion. 
+ 

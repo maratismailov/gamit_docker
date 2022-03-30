@@ -1,0 +1,383 @@
+#!/bin/csh -f
+#
+#doc Create a GMT map of California (used by sh_plotvel)
+#doc
+#
+echo " " 
+echo "Arguments for sh_map_calif: " $argv 
+#
+# This shell script for creating a GMT map of California, designed to serve as
+# a template for other regions, is based on sh_map_turkey written by M.Burc Oral 
+# and stored in /contributions/oral/com_globk.  The modest list of arguments 
+# interface easily with sh_plotvel, which can use this or a similar script to
+# create the maps onto which station velocities are plotted.  Enhancements to
+# the maps can be accomplished to some extent with direct input to sh_plotvel
+# (i.e., without calling this script) or by customizing this script.
+#  R. King and S. McClusky   November 1995.   Last changed by S. McClusky 970908
+# 
+if ( $#argv == 0   ) then
+echo "  "
+echo " Called sh_map_calif to create a GMT map."
+echo " "
+echo " Usage: "
+echo "  "
+echo "      sh_map_calif -ps <file> -o <options> -page <option> -color <option> "   
+echo " "           
+echo "      Required: "
+echo " "       
+echo "        -ps  file     : Name of output postscript file"  
+echo " "  
+echo "      Required if called from another script that will continue mapping (e.g. sh_plotvel):"
+echo " "
+echo "         -c     "
+echo " " 
+echo "      Optional:   "
+echo " "
+echo "        -o  options   : GMT projection options < size range borders > "
+echo " " 
+echo "        -page  option : Page orientation   P for portrait (default),  L for landscape "          
+echo " "
+echo "        -color option : yes or no (default)    "
+echo " "
+echo "   Example:  sh_map_calif -ps calmap.ps  -o -R-122/-114/32/38 -Jm0.8i -Bxf1a2 -Byf1a2 -BWSen -color yes "
+echo "   Example:  sh_map_calif -ps calmap.ps "
+echo " "
+echo "   Requirement:   The location of the maps on your system must be set as 'root_map'."
+echo "                  The default is '~/gg/maps' where 'gg' is an alias in your home    "
+echo "                  directory pointing to the level above 'gamit' and 'kf'."
+echo " "
+exit
+endif
+
+##################### Set up the defaults ##################################################### 
+
+set root_map = ~/gg/maps  
+
+# Input variables   
+set OPTION = ""
+set PAGE = -P
+set color = no
+set called = no  
+
+# Hardwired mapping options
+set topo       = yes
+set psscale    = yes
+set labels     = no
+set labels2    = no
+set labels3    = no
+set nuvel1     = no
+set boundary   = yes    
+set cafaults   = no
+set cafaults2  = no
+set cafaults3  = yes
+set baja_faults = yes
+set calif_lakes = no
+set socalfold  = no
+set caboundary = no
+set cacoast    = no
+set baja_coast = no
+set coso_faults = no
+set nawc_border = yes
+set pattern    = no
+set ocean_blue = yes
+set regions    = no 
+set fault_model    = no
+# set the minimum area of features like lakes or islands to be plotted
+set min_area   = 100
+set coast_res  = i
+#set palette    =  $root_map/color4.cpt
+#set topo_file  =  $root_map/etopo5.grd
+#set topo_file  =  $root_map/terrainbase5.grd
+#set illu_file  =  "none"
+#set palette    =  $root_map/color5.cpt
+#set topo_file  =  $root_map/03.grd
+#set illu_file  =  $root_map/03i.grd
+#set palette    =  $root_map/color5.cpt
+#set palette    =  $root_map/tien_color.cpt
+set palette    =  $root_map/miller.cpt
+#set topo_file  =  $root_map/W140N40.grd
+#set illu_file  =  "none"
+#set illu_file  =  $root_map/W140N40i.grd
+#set illu_file  =  $root_map/W140N40iN.grd
+#set illu_file  =  $root_map/topo62i.grd
+#set topo_file  =  $root_map/topo62.grd
+set illu_file  =  $root_map/pacifico_elko.intens.grd
+set topo_file  =  $root_map/pacifico_elko.grd
+#set illu_file  =  $root_map/ecsz_3sec_intens.grd
+#set illu_file  =  /data13/rwk/topo_maps/ecsz_3sec_i.grd
+#set topo_file  =  $root_map/ecsz_3sec.grd
+#set illu_file  =  $root_map/58570799i.grd
+#set topo_file  =  $root_map/58570799.grd
+#set palette    =  $root_map/land.cpt
+
+
+# Internal controls 
+set border       = '-Bxa2f1 -Bya2f1 -BWSen'
+set projection   = "-Jm.8i"
+set range        = "-R238/246/32/38 "
+set raster       = ""
+#set raster       = -0
+set c = "0/0/0" 
+set text_color = "-G0/0/0"
+set blue  = "030/144/254"  
+# light ocean_blue -S230/240/255
+# dark  ocean_blue -S030/144/255
+if ( $topo == yes ) then  
+  set yshift       = '1.0i'
+  set xshift       = '0i'
+#  set xshift       = '1.0i'
+else 
+  set yshift       = '1.5i'
+endif    
+set V            = " "
+set V            = -V
+
+##################### Decipher the command line ##############################################
+
+while ($#argv > 0 ) 
+set input = ( $argv ) 
+switch($input[1])
+	case -ps:
+		set psfile       =  $input[2]
+		breaksw  
+	case -R*: 
+ 		set  range      =  $input[1]
+		breaksw 
+	case -J*: 
+ 		set  projection =  $input[1]
+		breaksw
+	case -B*: 
+ 		set border      =  $input[1]
+		breaksw
+	case -page:
+		set PAGE         =  -$input[2]  
+       echo " PAGE " $PAGE
+       if ( "$PAGE" == "-L" ) set PAGE = " "
+		breaksw  
+   case -c
+       set called  = yes
+       breaksw
+	case -color:
+		if (  $input[2] == yes ) then 
+	    	set c = "10/255/175" 
+	    	set text_color = "-G0/0/0"
+		endif 
+		breaksw	
+endsw 
+shift argv 
+end
+
+# set GMT defaults
+if ( $called != yes ) then
+  gmt gmtdefaults -Du >! gmt.conf
+  gmt gmtset GMT_COMPATIBILITY 5
+  gmt gmtset FONT_LABEL 10p \
+             FONT_ANNOT_PRIMARY 10p \
+             FONT_TITLE 10p \
+             MAP_FRAME_WIDTH 0.03i \
+             PROJ_LENGTH_UNIT i \
+             FORMAT_GEO_MAP +ddd:mm:ss \
+#            FORMAT_GEO_MAP ddd:mm:ssF
+endif 
+
+# If the projection options are not input, set them now from the script defaults
+
+if ( $#OPTION != 3 )   set OPTION       =   ( $range $projection $border ) 
+echo " "
+echo "SH_MAP_CALIF - range, projection, borders : "  $OPTION  
+
+# Set options for enhanced maps
+
+set OPTION2   = (   $PAGE " -h0  -K -O " ) 
+
+##################### Create the map ##############################################
+
+# Coastlines or topography from GMT
+  
+if ( $topo != yes ) then  
+  if ( $cacoast != yes ) then
+    echo " "                    
+    echo "Plotting socal coast: gmt pscoast"
+    if ( $boundary != yes ) then 
+      if ( $pattern != yes ) then
+        if ( $ocean_blue != yes ) then 
+          gmt pscoast  $OPTION  -W1p   $PAGE -K  -D$coast_res  -A$min_area  -Y$yshift                   >! $psfile
+        else 
+          gmt pscoast  $OPTION  -W1p   $PAGE -K  -S$blue  -D$coast_res   -A$min_area  -Y$yshift   >! $psfile 
+        endif
+      else  
+        if ( $ocean_blue != yes ) then
+          gmt pscoast  $OPTION  -W1p   $PAGE -K  -Gp0.25/31    -D$coast_res  -A$min_area  -Y$yshift     >! $psfile
+        else  
+          gmt pscoast  $OPTION  -W1p   $PAGE -K  -Gp0.25/31  -S$blue  -D$coast_res  -A$min_area  -Y$yshift >! $psfile
+        endif
+      endif
+    else
+      if ( $pattern != yes ) then
+        if ( $ocean_blue != yes ) then
+          gmt pscoast  $OPTION  -W1p   $PAGE -K  -Na -D$coast_res  -A$min_area  -Y$yshift                 >! $psfile
+        else 
+          gmt pscoast  $OPTION  -W1p   $PAGE -K  -Na -S$blue  -D$coast_res  -A$min_area -Y$yshift   >! $psfile
+        endif 
+      else                                                
+        if ( $ocean_blue != yes ) then
+          gmt pscoast  $OPTION  -W1p   $PAGE -K  -Na -Gp0.25/31 -D$coast_res  -A$min_area  -Y$yshift      >! $psfile 
+        else
+          gmt pscoast  $OPTION  -W1p   $PAGE -K  -Na -Gp0.25/31 -S$blue -D$coast_res -A$min_area  -Y$yshift >! $psfile
+        endif 
+      endif     
+    endif
+  else
+      echo " "                    
+      echo "Plotting socal coast: "$root_map/calif_coast
+      gmt psxy  $root_map/calif_coast  $OPTION  -W3p,0/0/0  $V  $PAGE -K  -Y$yshift  -:  >! $psfile
+  endif
+else  
+  echo " "                    
+  echo "Plotting topography: "$topo_file
+  if ( $psscale == yes ) then
+#    set paletteXY  = (  -D3i/1i/6i/0.25ih -L   -B+t'TOPOGRAPHY'  ) 
+#     set paletteXY  = (  -D4.0i/0.125i/6.0i/0.125ih -L   -B+t'TOPOGRAPHY'  ) 
+    set paletteXY  = (  -D3.0i/0.5i/6.0i/0.125ih -L -Bxa1000+l'ELEVATION' -By+l'm'  ) 
+    gmt psscale   -C$palette  $paletteXY             $V  $PAGE  -K                 $raster >! $psfile
+    if ( $illu_file == "none" ) then
+      gmt grdimage  -C$palette  $topo_file               $OPTION  $V  $PAGE  -K  -O -Y$yshift -X$xshift  $raster >> $psfile
+    else   
+      gmt grdimage  -C$palette  $topo_file -I$illu_file  $OPTION  $V  $PAGE  -K  -O -Y$yshift -X$xshift  $raster >> $psfile
+    endif   
+  else
+    if ( $illu_file == "none" ) then
+      gmt grdimage  -C$palette  $topo_file               $OPTION  $V  $PAGE  -K     -Y$yshift -X$xshift  $raster >! $psfile   
+    else   
+      gmt grdimage  -C$palette  $topo_file -I$illu_file  $OPTION  $V  $PAGE  -K     -Y$yshift -X$xshift  $raster >! $psfile   
+    endif   
+  endif
+  if ( $cacoast != yes ) then 
+    echo "Plotting Coastlines"
+    if ( $boundary != yes ) then
+      if ( $ocean_blue != yes ) then
+        gmt pscoast                        -W3p  $OPTION  $V  $PAGE  -K  -O  -D$coast_res -A$min_area     >> $psfile 
+      else  
+        gmt pscoast                        -W3p  $OPTION  $V  $PAGE  -K  -O -S$blue -D$coast_res -A$min_area     >> $psfile
+      endif 
+    else
+      if ( $ocean_blue != yes ) then
+        gmt pscoast                        -W3p  $OPTION  $V  $PAGE  -K  -O  -Na  -D$coast_res -A$min_area >> $psfile
+      else   
+        gmt pscoast                        -W3p  $OPTION  $V  $PAGE  -K  -O  -Na -S$blue -D$coast_res -A$min_area >> $psfile 
+      endif
+    endif
+  else
+    echo " "                    
+    echo "Plotting socal coast: "$root_map/calif_coast
+    gmt psxy  $root_map/calif_coast  $OPTION  $OPTION2  -W3p,0/0/0  $V   -:    >> $psfile
+  endif
+endif 
+
+# Optional enhancements - edit for your own use
+  
+#major faults
+if ( $cafaults  == yes )  then
+echo " "                    
+echo "Plotting  socal faults1: "$root_map/calif_faults $root_map/calif_sandreas
+ gmt psxy  $root_map/calif_faults        $V    $OPTION $OPTION2  -W2p,$c   -:  >> $psfile
+ gmt psxy  $root_map/calif_sandreas      $V    $OPTION $OPTION2  -W3p,$c  -:  >> $psfile
+endif 
+
+#secondary faults:
+if ( $cafaults2  == yes )  then
+echo " "                    
+echo "Plotting socal faults2: "$root_map/calif_faults2
+gmt psxy  $root_map/calif_faults2     $OPTION $OPTION2  -W1p,$c  -:     >> $psfile
+endif
+
+if ( $cafaults3  == yes )  then
+echo " "                    
+echo "Plotting socal faults3: "$root_map/calif_faults3
+#gmt psxy  $root_map/calif_faults3     $OPTION $OPTION2  -W1p,$c  -:     >> $psfile   
+gmt psxy  $root_map/all_quat.gmt     $OPTION $OPTION2  -W1p,$c      >> $psfile   
+endif 
+
+if ( $coso_faults  == yes )  then
+echo " "                    
+echo "Plotting COSO faults: "$root_map/calif_faults_coso
+gmt psxy  $root_map/calif_faults_coso    $OPTION $OPTION2  -W1p,$c  -:     >> $psfile
+endif
+
+if ( $baja_faults  == yes )  then
+echo " "                    
+echo "Plotting baja faults: "$root_map/calif_baja_flt
+gmt psxy  $root_map/calif_baja_flt     $OPTION $OPTION2  -W1p,$c  -:     >> $psfile
+endif 
+
+if ( $baja_coast  == yes )  then
+echo " "                    
+echo "Plotting baja coast: "$root_map/calif_baja_coast
+gmt psxy  $root_map/calif_baja_coast    $OPTION $OPTION2  -W3p,0/0/0  $V     >> $psfile
+endif
+
+if ( $calif_lakes  == yes )  then
+echo " "                    
+echo "Plotting calif lakes: "$root_map/calif_lakes 
+gmt psxy  $root_map/calif_lakes     $OPTION  $OPTION2  -W2p,0/0/0  $V   -:    >> $psfile
+endif
+
+if ( $nawc_border  == yes )  then
+echo " "                    
+echo "Plotting NAWC Border: "$root_map/calif_nwc_border 
+gmt psxy  $root_map/calif_nwc_border    $OPTION  $OPTION2  -W2p,0/0/0  $V   -:    >> $psfile
+endif
+ 
+if ( $caboundary == yes )  then
+echo " "                    
+echo "Plotting socal boundary: "$root_map/calif_boundary
+gmt psxy  $root_map/calif_boundary      $V   $OPTION $OPTION2  -W1,$c,50_10:0  -:  >> $psfile
+endif
+
+if (  $socalfold == yes )  then
+echo " "                    
+echo "Plotting socal folds: "$root_map/calif_folds
+gmt psxy  $root_map/calif_folds         $V   $OPTION $OPTION2  -W1p,$c,10:0  -:  >> $psfile
+endif
+ 
+if ( $labels == yes ) then         
+echo " "                    
+echo "Plotting labels: "$root_map/calif_labels
+set r = `echo $range | cut -c3- | awk '{FS="/"} {print $1, $2, $3, $4}'`   
+awk '$1 > lonmin/1 && $1 < lonmax/1 && $2 > latmin/1 && $2 < latmax/1 {print $1,$2,$3"p,"$5,$4,$6,$7,$8,$9,$10,$11}' lonmin=$r[1] lonmax=$r[2] latmin=$r[3] latmax=$r[4] $root_map/calif_labels >! tmp.labels
+gmt pstext tmp.labels $OPTION -F+f+a+j -O  -K  $PAGE  $text_color    >> $psfile  
+endif   
+   
+if ( $regions == yes ) then
+  echo " "                    
+  echo "Plotting regions: "$root_map/regions
+  gmt psxy    $root_map/regions   $OPTION $OPTION2  -W5p,0/0/0 -L -:  >> $psfile
+#  gmt psxy    $root_map/regions   $OPTION $OPTION2  -W5p,0/0/0 -L -:  >> $psfile
+endif   
+
+if (  $fault_model == yes )  then
+echo " "                    
+echo "Plotting fault_model: "/data21/simon/strc/plots/model.gmt
+#echo "Plotting fault_model: "$root_map/model.gmt
+gmt psxy  /data21/simon/strc/plots/model.gmt   $V   $OPTION $OPTION2  -W7p,$c  -:  >> $psfile
+endif
+
+# Terminate the plot if not called by another script 
+if ( $called == no ) then
+  echo "Created  postscript file    :" $psfile
+  echo "  "
+  echo "To view  postript file      : gs" $psfile  
+  echo "  "
+  echo "Hardcopy   postript file    :  lpr "$psfile  
+  # mark the end of ps file
+  gmt pstext <<ENDD      $OPTION  -O   $PAGE -N   -U   >> $psfile  
+ENDD
+
+# Otherwise print a message and return to the calling script
+else
+  echo " "
+  echo " sh_map_calif produced plot: " $psfile
+  echo " " 
+endif  
+
+exit

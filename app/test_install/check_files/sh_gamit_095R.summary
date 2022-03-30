@@ -1,0 +1,31 @@
+ 
+Input options -expt eura -gnss R -s 2018 095 097 -jclock sp3 -pres ELEV -orbit codm -copt x k p -dopts c ao
+ 
+Processing 2018 095 GPS week 1995 4 Using node: prey Started at: 18_06_04_09:42:35
+ 
+Processing directory: /net/chandler/data30/rwk/stdrel/test_install/2018/095R
+Disk Usage:  252641  Free  214513 Mbyte. Used 55%
+  
+Number of stations used 10 Total xfiles 10
+Sites excluded by xsite command 
+  
+Postfit RMS rms, total and by satellite
+RMS  IT Site   All   01   02   03   04   05   06   07   08   09   10   11   13   14   15   16   17   18   19   20   21   22   23   24
+RMS  16 ALL   12.3  147  136  146  156  138  121  122  135   99  102  110  127  120  101  110  121   97  133  145  104   98  120  104
+Best and Worst two sites:
+RMS  16 BRST   8.1    7    8   10   10    8    8    8    9    7    8    8    9    8    7    7    9    7    9   10    8    7    8    7
+RMS  16 BOR1   8.2    7    7    8   10    7    8    8    9    8    8    7    8    8    7    9    8    8    8    9    7    9    8   11
+RMS  16 DJIG  15.7   22   22   23   14   12   11   15   17    9   12   17   18   12   10   11   12   10   22   19   10   15   17    8
+RMS  16 KOUR  23.1   27   23   33   33   37   27   28   16   16   17   17   23   18   18   23   21   15   12   26   25   17   19   23
+ 
+Double difference statistics
+ Prefit nrms:  0.89677E+03    Postfit nrms: 0.23307E+00
+ Prefit nrms:  0.89675E+03    Postfit nrms: 0.23316E+00
+ Prefit nrms:  0.89677E+03    Postfit nrms: 0.23274E+00
+ Prefit nrms:  0.89675E+03    Postfit nrms: 0.23285E+00
+ Number of double differences:  28352
+ 
+ Phase ambiguities (Total  WL-fixed   NL-fixed): 198 147 1  AUTCLN (Total Expected)  198 198
+ Phase ambiguities WL fixed  74.2% NL fixed   0.5% 
+ 
+Processing 2018 095 GPS week 1995 4 Using node: prey Finished at: 18_06_04_09:46:37

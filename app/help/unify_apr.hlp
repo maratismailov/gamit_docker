@@ -1,0 +1,78 @@
+UNIFY_APR: Unifies coordinates in GLOBK apr files
+
+ UNIFY_APR:
+ 
+ This program is used to ensure that their are no duplicate station
+ coordinates and that sites which have different names but are the
+ same site have the same coordinates.  By selecting VEL_MODE, only
+ the velocity will be forced to be the same.
+
+ Runstring:
+ % unify_apr [Names file] [input apr] <output apr>
+
+ where [Names file] contains the primary site name followed by all
+                    site names that should have the same coordinate
+       [input apr] is a standard globk apriori site coordinate file
+       [output apr] is the output apr file name.
+ 
+ Special lines in the Name files changes mode between making position
+ and velocity equal to just velocity being the same (and visa versa).
+ The mode change is done using POS_MODE and VEL_MODE lines. (Must be
+ fully spelled out).  Program starts in POS_MODE. POS_MODE and VEL_MODE
+ should be preceeded by at least one blank character.   The characters 
+! or # can be used at the end of line to add comments.   Comments may 
+also be inserted in the file with lines wiht non-blank  first characters.
+
+ If the coordinates of the primary site are not found in the file then
+ then first site in the apr file that is affiliated with the site will
+ used.  The primary site name should be the same between the POS_MODE
+ and VEL_MODE.
+
+ If a site occurrs more than once in the [input apr] file a note saying
+ that a duplicate entry has been found will be printed.  The coordinates
+ and velocity from the FIRST occurrance will be used.  A problem can
+ arise if a site name for a secondary site is found in the apriori file
+ before the primary site entry is found.  In this case the secondary
+ site's coordinates will be used rather than the primary.
+
+NOTES on ordering of lines: 
+
+Some care should be taken in ordering the lines in the names files.  
+Problems can arise for nearby sites and renamed sites when the velocities
+are to be equated at all sites and positions equated at some sites.
+The sequence to do this correctly is: Select the primary site that will 
+be used for velocities at all the affiliated sites.  The first POS_MODE
+entry should use this primary site and the cluster of sites which will be 
+given the same position (and velocity).  Next select a primary site
+for a second cluster of sites that will share positions with each other
+and velocities with the first cluster.  The next line should give this
+cluster with its primary site first.  Subsequent lines may give other clusters
+in which the sites within the cluster share positions with each other and
+velocities with the preceeding clusters. Finally, in the VEL_MODE section, 
+the line tying together the velocities for these clusters should begin 
+with the primary site for the first cluster, followed by the primary sites 
+for additional clusters sharing the same velocity, and any secondary sites 
+which will share the same velocity and are not listed at all in the 
+POS_MODE list.  You should not repeat in this line the secondary sites 
+from the POS_MODE clusters.  
+
+Example: Say PIN1 and PIN2 have been renamed multiple times and it is
+desired that all positions are to be equal at each of the sites.  Also
+there is a nearby site PIN3 that should have the same velocity.  Assume 
+PIN1_CHT will be the primary site and that sites PIN1_GPS, PIN1_GLA, PIN1_ALA
+and PIN1_CLA are all to be given the same position and velocity.
+At PIN2, PIN2_AHT will be primary position and there are sites PIN2_GPS,
+PIN2_CPS, PIN2_CLA and PIN2_ALA all exist.  In addition, sites PIN3_GLA
+and PINY_GPS are to be assigned the velocity of PIN1_CHT.  The commands in
+names file would be:
+  POS_MODE
+  PIN1_CHT PIN1_GPS PIN1_GLA PIN1_ALA PIN1_CLA
+  PIN2_AHT PIN2_GPS PIN2_CPS PIN2_CLA PIN2_ALA
+... Other POS_MODE lines
+  VEL_MODE
+  PIN1_CHT PIN2_AHT PIN3_GLA PINY_GPS ! Note: Only primary site for POS_MODE
+*                                     ! lines are used.
+
+                           
+
+

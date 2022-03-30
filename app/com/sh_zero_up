@@ -1,0 +1,44 @@
+#!/bin/csh -f              
+#
+#doc Make the UP rates for all sites in an .apr file zero
+#doc
+#
+# Written by Simon McClusky  May 1998
+######################## INSTRUCTIONS #############################
+if ( $#argv == 0 ) then
+  echo "==========================================================="
+  echo "Make the UP rates for all sites in an .apr file zero"
+  echo "  "
+  echo "USAGE:  sh_zero_up -file <apr> "
+  echo "  "
+  echo "        <apr> input .apr file name"
+  echo "  "
+  echo "EXAMPLE: sh_zero_up -file emed88_97.apr"
+  echo "  "
+  echo "OUTPUT: New .apr file with .0up extention "
+  echo "==========================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+set file  = " "
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+       case -file:
+                set file      =   $input[2]  
+		breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+######################## GET THE JOB DONE #########################
+~/ga/utils/convertc XYZ XYZ XYZ NEU < $file >! $file.NEU
+cat $file.NEU | awk '{print " ", $1, $2, $3, $4, $5, $6, "0.0000", $8}' >! $file.NEU0
+~/ga/utils/convertc XYZ XYZ NEU XYZ < $file.NEU0 >! $file.0up  
+############################# ALL DONE ############################
+echo "Input file: " $file
+echo "Output file: " $file.0up
+######################## CLEAN UP THE MESS ########################
+\rm -r $file.NEU $file.NEU0
+exit

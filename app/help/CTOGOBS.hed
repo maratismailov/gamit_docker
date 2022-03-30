@@ -1,0 +1,46 @@
+
+CTOGOBS  Version 2.02 HELP
+
+This is the pre-processor program for the SOLVG GPS Kalman
+filter program.  Its main task is merge a set of user specified
+c-files and generate the Gobs_file for SOLVG.  The runstring for
+the program is:
+
+% ctogobs <command file> <Gobs_file> <descp> <cf series> [....list of cfiles...] or
+                                                         [Dfile name] <in series>
+
+where <command file> is an optional command file (commands are
+        given in the ctogobs.hlp file).   If no command file is
+        given (default file generation) then '' should be used
+        as a place holder in the runstring. If DEFAULTS is given
+        as the command file then the defaults willl be printed. The
+        program will not act on the rest of the runstring.   
+    <Gobs_file> is the optional name for the output (binary)
+        Gobs_file.  The options here are
+         (1) If no name is given (just '' in runstring)
+             then file will not be generated.
+         (2) if . is given the default gobs file name 
+             will be generated as gYYMMDDS.gobs
+             where yymmdd is the year, month, day of the data from
+             c-files and S is the series character from the cfile.
+         (3) A single character is given, and it will used as the
+             series designator
+         (4) A full arbitary file name (along with directory
+             information is given).
+  <descp> is the experiment description enclosed in single
+          quotes e.g. 'TREX00 Day 1'
+  <cf series> is a single characater to denote the new cfile
+          series to be written out.  If no character given (i.e., ' '
+          used) then no updated cfiles will be written.  Special
+          characters that can be used are:
+          .   -- Overwrite the input cfiles
+          +   -- Increment the cfile series letter, converting 
+                 numeric series values to a.
+*NOTE*  Unless, . is used existing cfiles will not be overwritten.
+
+    [....list of cfiles...] is the list of cfiles to be merged.
+OR
+    [dfile name] will give a dfile for list of cfiles
+    <<in series> is an optional series over-ride from that in the 
+                 dfile.
+

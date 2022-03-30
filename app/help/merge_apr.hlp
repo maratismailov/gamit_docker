@@ -1,0 +1,22 @@
+MERGE_APR: Merge multiple GLOBK apr files
+
+ MERGE_APR:
+ 
+ This program is used to merge 2 .apr file together, where all 
+ entries from the primary file (first) are included in the 
+ output along with any unique entries from the secondary (second)
+ file.
+
+# MOD TAH 161003: Added mapping to epoch and evaluating EXTENDED terms
+ 
+ Runstring:
+ % merge_apr [reference file] [secondary apr] [output apr] <yr> <doy>
+
+ where [reference apr] Is the primary or reference apr file name.
+       [secondary apr] Is the apr file to be checked for unique 
+                       entries against the reference file.
+       [output apr] is the output apr file name.
+OPTIONAL (but recommended for GAMIT when EXTENDED entries are used)
+       <yr> <doy> compute coordinates in primary file at this epoch
+           and evaluare the EXTENDED terms at this same time.
+           If not given, megre_apr behaves as it did in the past.

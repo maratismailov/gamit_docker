@@ -1,0 +1,4 @@
+#!/bin/csh
+#
+# usage:  gmtellipse lon lat major minor angle
+nawk 'BEGIN {a = '$5' * 0.0174532925; print "> Ellipse"; for (i = 0; i <= 360; i += 5) {x = '$3' * cos(i*0.0174532925); y = '$4' *sin(i*0.0174532925); print x * cos (a) - y * sin (a), x * sin (a) + y * cos (a)}}' /dev/null | mapproject -R0/360/-90/90 -JE$1/$2/1 -Fk -C -I -H1

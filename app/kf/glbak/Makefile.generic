@@ -1,0 +1,37 @@
+# Generic Makefile for kf/glbak - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King July 23, 1996
+# MOD TAH 960809: Removed solvk_lib from SHARELIB
+
+#LABELS: glbak:glbak_main:glbak_lib:glbak
+ 
+#SHARELIB: ../glorg:glorg_lib
+#SHARELIB: ../glout:glout_lib
+#SHARELIB: ../glfor:glfor_lib
+#SHARELIB: ../glsave:glsave_lib      
+#SHARELIB: ../globk:globk_lib
+#SHARELIB: ../Khandlers:KalObs_hndl_lib  
+#SHARELIB: ../gen_util:gen_util_lib
+#SHARELIB: ../../libraries/matrix:kinv_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+
+#OBJ_glbak_lib     glbak
+#OBJ_glbak_lib     glb_bak_filt
+#OBJ_glbak_lib     glb_bak_writ
+#OBJ_glbak_lib     set_mar_prt
+#OBJ_glbak_lib     glb_average
+#OBJ_glbak_lib     init_bak_cov
+#OBJ_glbak_lib     glb_residual
+#OBJ_glbak_lib     write_bak_he
+#OBJ_glbak_lib     write_loc_pa
+#OBJ_glbak_lib     out_glbl
+#OBJ_glbak_lib     check_est
+#OBJ_glbak_lib     clear_loc_pa
+#OBJ_glbak_lib     get_bak_apr
+#OBJ_glbak_lib     parm_to_obs
+#OBJ_glbak_lib     correct_obs
+#OBJ_glbak_lib     glb_inc_post
+#OBJ_glbak_lib     inc_bak_stat
+#OBJ_glbak_lib     keep_loc
+#OBJ_glbak_lib     glb_inc_bak
+#OBJ_glbak_lib     read_glbak_orgcmd
+#OBJ_glbak_lib     decode_glbak_run

@@ -1,0 +1,58 @@
+# Generic Makefile for kf/htoglb - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King   June 2, 2009
+
+#LABELS: htoglb_lib:NONE:htoglb_lib:NONE
+#LABELS: htoglb:htoglb:NONE:htoglb
+#LABELS: glbtosnx:glbtosnx:NONE:glbtosnx
+#LABELS: hfupd:hfupd:NONE:hfupd
+#LABELS: mstinf:mstinf:NONE:mstinf
+#LABELS: chkstinf:chkstinf:NONE:chkstinf  
+#LABELS: eqfupd:eqfupd:NONE:eqfupd
+
+
+#SHARELIB: .:htoglb_lib
+#SHARELIB: ../Khandlers:KalObs_hndl_lib  
+#SHARELIB: ../gen_util:gen_util_lib     
+#SHARELIB: ../../gamit/lib/:gamit_lib 
+#SHARELIB: ../../libraries/matrix:kinv_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+ 
+#OBJ_htoglb_lib    htog_ut     
+#OBJ_htoglb_lib    glbsx_ut
+#OBJ_htoglb_lib    hfupd_ut
+#OBJ_htoglb_lib    hw_util     
+#OBJ_htoglb_lib    hread_util  
+#OBJ_htoglb_lib    init_qparn  
+#OBJ_htoglb_lib    init_qapr_co
+#OBJ_htoglb_lib    write_ephem 
+#OBJ_htoglb_lib    get_indx_q  
+#OBJ_htoglb_lib    compress_svs
+#OBJ_htoglb_lib    compress_sit
+#OBJ_htoglb_lib    read_orient 
+#OBJ_htoglb_lib    read_apr_cov
+#OBJ_htoglb_lib    skip_htoh   
+#OBJ_htoglb_lib    get_gps_hext
+#OBJ_htoglb_lib    get_svs_inf 
+#OBJ_htoglb_lib    gsfc_vlbi    
+#OBJ_htoglb_lib    ut_slr      
+#OBJ_htoglb_lib    make_ctog   
+#OBJ_htoglb_lib    decsnx_file 
+#OBJ_htoglb_lib    decsnx_input
+#OBJ_htoglb_lib    decsnx_site 
+#OBJ_htoglb_lib    decsnx_sat
+#OBJ_htoglb_lib    decsnx_soln 
+#OBJ_htoglb_lib    decode_snxb 
+#OBJ_htoglb_lib    make_snx    
+#OBJ_htoglb_lib    preread_snx 
+#OBJ_htoglb_lib    snx_finbl   
+#OBJ_htoglb_lib    create_snx  
+#OBJ_htoglb_lib    cresnx_file 
+#OBJ_htoglb_lib    cresnx_input
+#OBJ_htoglb_lib    cresnx_site 
+#OBJ_htoglb_lib    cresnx_sat 
+#OBJ_htoglb_lib    cresnx_soln 
+#OBJ_htoglb_lib    gen_snxname   
+#OBJ_htoglb_lib    jacobi 
+#OBJ_htoglb_lib    SMod_to_full 
+#OBJ_htoglb_lib    remove_neq 
+#OBJ_htoglb_lib    pack_neq 

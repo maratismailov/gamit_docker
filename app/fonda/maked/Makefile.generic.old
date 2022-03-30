@@ -1,0 +1,18 @@
+# Generic Makefile for MAKED  
+# Created by M King 000328 from a makefile created
+# by D Dong; modified by R King and G Ferhat
+ 
+#LABELS: maked:maked:maked_lib:maked 
+
+#SHARELIB: ../com:foncom
+
+#OBJ_maked_lib basazm chk_quake_list cmodel compress_dat fonda_out_compress
+#OBJ_maked_lib frmobs fmtsft_dat fmtsft_net getcnt getnet grep_data merge_list
+#OBJ_maked_lib museum net_head outdat read_bbook_dat read_fondah_dat read_free_net
+#OBJ_maked_lib read_gipsy_dat read_glbk_dat read_glbk_full_dat read_glbk_full_net
+#OBJ_maked_lib read_hfile_dat read_ipgp_dat read_newbb_dat read_ofile_dat 
+#OBJ_maked_lib read_ucsd_dat read_usgs_dat read_bbook_net read_glbk_net
+#OBJ_maked_lib read_gipsy_net read_ipgp_net read_lfile read_newbb_net read_ref_net
+#OBJ_maked_lib read_ucsd_net read_usgs_net redinf read_driv unique_nam1 unique_name
+#OBJ_maked_lib upperc vmodel 
+

@@ -1,0 +1,11 @@
+# Generic Makefile for kf/extract - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King August 1, 1996
+
+#LABELS: extract:extract:NONE:extract 
+#LABELS: exbrk:extract:extract_lib:exbrk
+
+
+#SHARELIB: ../gen_util:gen_util_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+   
+#OBJ_extract_lib nobrk

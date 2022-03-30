@@ -1,0 +1,154 @@
+#!/bin/csh -f
+#
+#         C-shell script : sh_rnx2crx
+#             (frontend of rnx2crx)
+# 1996.12.19  created by HATANAKA, Y. e-mail: hata@gsi-mc.go.jp
+# 2001.7.5 modified by McClusky S. email: simon@wegener.mit.edu
+# 2020/11/30 modified by M. Floyd to add latest acceptable extensions
+#
+#--------------------------------------------------------------------
+if($#argv < 1) then
+more << EOF
+
+sh_rnx2crx is a C-shell script which reduces RINEX files to Compact RINEX files.
+
+                Convert standard RINEX into GSI compact RINEX   
+
+Usage: sh_rnx2crx -c <y/n> -d <y/n> -f <files>
+
+where   -c = y indicates that both the old and new
+             files are to be compressed (default yes)
+
+        -d = y indicates that the original files are to be deleted (default yes)
+
+        -f = files to be compacted. Wildcard can be used.
+             Compact RINEX files are created into current directory.
+
+example sh_rnx2crx -c y -d y -f ????325?.99d.Z ????325?.99d
+
+          RINEX           -->    CRINEX      --> compressed RINEX/CRINEX
+                               ????????.??d  -->    ????????.??d.gz
+       ????????.??o       --> (????????.??d) -->    ????????.??d.gz
+       ????????.??o.Z(gz) --> (????????.??d) -->    ????????.??d.gz
+       ????????.??n                          -->    ????????.??n.gz
+       ????????.??g                          -->    ????????.??g.gz
+       ????????.??l                          -->    ????????.??l.gz
+       ????????.??p                          -->    ????????.??p.gz
+       ????????.??h                          -->    ????????.??h.gz
+       ????????.??b                          -->    ????????.??b.gz
+       ????????.??m                          -->    ????????.??m.gz
+       ????????.??c                          -->    ????????.??C.gz
+       *.?O.rnx                              -->    *.?O.crx.gz
+       *.?[NM].rnx                           -->    *.[NM]?.rnx.gz
+
+EOF
+
+exit
+endif
+#--------------------------------------------------------------------
+
+set PROGRAM = rnx2crx
+set compress = "y" 
+set delete = "y" 
+while ( $#argv > 0 )
+   set input = ($argv)
+   switch($input[1])
+     case -c:
+       set compress = $input[2]   
+     breaksw
+     case -d:
+       set delete = $input[2]  
+     breaksw
+     case -f:
+       set files =  (`echo $argv | cut -d- -f2`); shift files
+     breaksw 
+   endsw         
+   if ( $#argv > 0 ) shift argv
+ end 
+
+foreach file (`echo $files`)
+    set file2 = $file:t
+    if( $file2:e == 'Z')  set file2 = $file2:r 
+    if( $file2:e == 'gz') set file2 = $file2:r 
+
+    set body = $file2:r
+    set extension = $file2:e
+    set yy = `echo $extension | cut -c1-2`
+
+    if( $file =~ *.??b) then
+        gzip -f $file
+
+    else if( $file =~ *.??c) then
+        gzip -f $file
+
+    else if( $file =~ *.??g) then
+        gzip -f $file
+
+    else if( $file =~ *.??h) then
+        gzip -f $file
+
+    else if( $file =~ *.??l) then
+        gzip -f $file
+
+    else if( $file =~ *.??m) then
+        gzip -f $file
+
+    else if( $file =~ *.??n) then
+        gzip -f $file
+
+    else if( $file =~ *.??p) then
+        gzip -f $file
+
+    else if( $file =~ *.??d) then
+        gzip -f $file
+
+    else if( $file =~ *.??o) then
+        $PROGRAM $file
+        if( $status == 1 ) then
+           \rm $body.$yy'd'
+           echo 'Error creating Hatanaka compact rinex for file: '$file
+           continue
+        else
+           if ( $delete == "y" ) then
+             \rm $file >& /dev/null
+           endif
+           if ( $compress == "y" ) then
+             gzip -f $body.$yy'd' >& /dev/null
+             gzip -f $file >& /dev/null
+           endif
+        endif
+
+    else if( $file =~ *.??o.Z) then
+        gzip -d -c $file | $PROGRAM - > $body.$yy'd'
+        if( $status == 1 ) then
+           \rm $body.$yy'd'
+           echo 'Error creating Hatanaka compact rinex for file: '$file
+           continue
+        else
+           if ( $delete == "y" ) then
+             \rm $file >& /dev/null
+           endif
+           if ( $compress == "y" ) then
+             gzip -f $body.$yy'd' >& /dev/null
+             gzip -f $file >& /dev/null
+           endif
+        endif
+	
+    else if( $file =~ *.??o.gz) then
+        gzip -d -c $file | $PROGRAM - > $body.$yy'd'
+        if( $status == 1 ) then
+           \rm $body.$yy'd'
+           echo 'Error creating Hatanaka compact rinex for file: '$file
+           continue
+        else
+           if ( $delete == "y" ) then
+             \rm $file >& /dev/null
+           endif
+           if ( $compress == "y" ) then
+             gzip -f $body.$yy'd' >& /dev/null
+             gzip -f $file >& /dev/null
+           endif
+        endif
+	
+    endif
+end

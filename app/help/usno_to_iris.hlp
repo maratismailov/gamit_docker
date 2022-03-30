@@ -1,0 +1,18 @@
+USNO_TO_IRIS: Converts IERS EOP format to IRIS format
+
+      program usno_to_iris
+ 
+This program will read a IERS eop format file and convert
+it to NGS format iris format for use in update_pmu.
+The runstring for the program is:
+
+% usno_to_iris [input file] [output file] <units>
+
+The output file must not already exist (Error message will be
+generated.
+
+<units> is optional and will divide the values in the file by
+  the value given (default 1; if 1000 is specified, then mas and mts in
+  the input will be converted to arcseconds and time seconds in the
+  output.  (These are the units for iris pmu file).
+

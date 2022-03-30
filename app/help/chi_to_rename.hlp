@@ -1,0 +1,38 @@
+CHI_TO_RENAME:  Generates GLOBK renames a TSFIT rename file 
+
+chi_to_rename
+
+ Program to read either a TSFIT rename file or a GLORG RNRP list to determine what
+ renames, equates, or unequates are needed and write these out in files to be 
+ used with GLOBK  (RNRP feature not yet implemented)
+
+Runstring:
+
+chi2rename -org <org-file> -tsrn <ts_file> -chi <chi-value> -rmrn -xps
+
+    Requires either
+        org_file   Glorg print file written with the RNRP option on;  OR 
+                    (not yet implemented)
+        ts_file    Edit file from tsfit
+
+    Optional:
+        eq_file    If given will read the file and write a new file with unneeded renames commented
+        chi-value  Maximum sqrt(chi^2) allowed for equate (default 3.0)
+        -rmrn      Comment out any renames that have both horizontal and vertical chi < chimax
+        -xps       Write a separate file for XPS renames from tsfit (default is to skip these 
+                    altogether)
+           
+    Output files:
+         rename.out     Renames filtered by chi check 
+         xps.out        'xps' renames for edits, filtered by 
+         constrain.out  'Constrain' commands for sites equated in glorg
+
+    The chi-test leads to three cases:
+      1) If the horizontal chi > chimax, then create rename and no constraint commands
+      2) If the horizontal chi < chimax but the vertical chi > chimax, then create a rename
+           and also position constraint commands for the horizontal components
+      3) If both the horizontal and vertical chi < chimax, then either write the rename
+           command as a comment (if 'remove_rename' is true) or write the rename and
+           also position constraints for all three components.
+         ts_file    Rename file from tsfit
+

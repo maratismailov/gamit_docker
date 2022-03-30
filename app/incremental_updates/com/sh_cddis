@@ -1,0 +1,239 @@
+#!/bin/csh -f
+#
+#doc Get an sp3 file from CDDIS 
+#doc                                               
+#
+# R. King 180423
+# T. Herring 180531: Added "DOWNLOADED " line to say what was downloaded.  Changed $ufname
+#                    setting by removing extent from compressed name.
+# MOD MAF 210628: Added long name if-test for GFZ, GRG and Wuhan MGEX SP3 files
+
+# Help if no arguments passed
+if( $#argv == 0 ) then
+  cat << END && exit 1
+=====================================================================================
+ Get an sp3 file from CDDIS
+
+ Usage: sh_cddis -orbt <orbt> -yr <yr> -doy <doy>
+
+ Where: <orbt> 4-character orbit product (e.g. 'igsf')
+        <yr> 4 char year of nav data requested
+        <doy> 3 char day of year of nav data requested
+
+=====================================================================================
+END
+endif
+
+# Decode the command line
+
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -orbt:
+      set orbt = $input[2] 
+    breaksw
+    case -yr:
+      set year = $input[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+      set yr = `sh_year -year $year`
+    breaksw 
+    case -doy:
+      set doy = `echo $input[2] | awk '{printf" %03d \n", $1}'`
+    breaksw 
+ endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+ 
+echo "Getting requested orbit files from CDDIS"
+
+# Set timestamp hostname variable
+set ts = "`hostname`:`date +"%H%M%S"`"
+
+#Check required fields
+if ( ${year} == '' || ${doy} == '' ) then
+  echo "Required fields not complete:- yr: $year doy: $doy --Stop "
+  exit
+endif 
+                        
+# Test which program to use for download
+if ( -e `which curl` ) then  # curl exists (preferred due to better directory listing and wget is not native on macOS)
+  set prog = 'curl -s -f -L'
+else if ( -e `which wget` ) then  # wget exists
+  set prog = 'wget -nv'
+else  # Neither curl nor wget available
+  echo 'Neither curl nor wget available to download SP3 files from CDDIS.' && exit 1
+endif
+                                                                    
+# Construct the file name (ACs use different extents, compression type, and short- or long names)
+#  sfname : conventional lowercase short name with extent sp3 (no compression) 
+#  wfname : name as stored on CDDIS for wget 
+#  ufname : wfname without the compression extent
+          
+
+# Set the 3-character sp3 ID and 1-character latency  
+#  if finals, use the 3-character AC name except for CODE, for which codf -> cof,
+#  and GFZ, for which gfzm -> gbm 
+set pre = `echo $orbt | cut -c 4`
+if ( $pre == 'f' ) then
+  set prod = `echo $orbt | cut -c 1-3`   
+  if( $prod == 'cod' ) then   
+    set prod = `echo $orbt | cut -c 1-2,4` 
+  endif               
+else if ( $orbt == 'code' ) then
+    set prod = 'cod' 
+else if ( $orbt == 'gfzm' ) then
+    set prod = 'gbm'  
+else
+  set prod = `echo $orbt | cut -c 1-2,4`
+endif
+        
+# Set the GPS week and day-of-week
+set gpsw = `doy ${yr[1]} ${doy} | tail -n -2 | head -n 1 | awk '{printf "%04d \n", $3}'`
+set gpsd = `doy ${yr[1]} ${doy} | tail -n -2 | head -n 1 | awk '{printf "%1d  \n", substr($7,1,1)}'`
+# Set the file name according to the product name (source and type) 
+set repro = 'N'
+if( $prod == igs ) then 
+  set gpswx = `echo $gpsw | sed "s/^0//"`
+# we want repro2 orbits if available
+  if(  $gpswx >= 658 && $gpswx <= 1831 ) then   
+    set repro = 'Y'
+    set sfname = igs$gpsw$gpsd.sp3      
+    set wfname = ig2$gpsw$gpsd.sp3.Z  
+    set rename = 'Y'   
+   else
+    set sfname = $prod$gpsw$gpsd.sp3      
+    set wfname = $prod$gpsw$gpsd.sp3.Z
+    set rename = 'N'      
+  endif 
+else if ( $prod == igr  ) then 
+  set sfname = $prod$gpsw$gpsd.sp3      
+  set wfname = $prod$gpsw$gpsd.sp3.Z
+  set rename = 'N' 
+else if( $prod == cod || $prod == cof ) then 
+  set sfname = $prod$gpsw$gpsd.sp3  
+  set wfname = $prod$gpsw$gpsd.eph.Z    
+  set rename = 'Y'  
+else if( $prod == com  ) then
+#  switch from short to long names on CDDIS at week 1961
+  @ week = $gpsw
+  if( $week < 1961 ) then
+    set sfname = $prod$gpsw$gpsd.sp3 
+    set wfname =  $prod$gpsw$gpsd.sp3.Z
+    set rename = 'N'
+  else  
+    set sfname = com$gpsw$gpsd.sp3      
+    set wfname = COD0MGXFIN_${year}${doy}0000_01D_05M_ORB.SP3.gz
+    set rename = 'Y'
+  endif        
+else if ( $prod == gbm  ) then
+#  switch from short to long names on CDDIS at week 2038
+  @ week = $gpsw
+  if( $week < 2038 ) then
+    set sfname = $prod$gpsw$gpsd.sp3 
+    set wfname =  $prod$gpsw$gpsd.sp3.Z
+    set rename = 'N'
+  else  
+    set sfname = gbm$gpsw$gpsd.sp3      
+    set wfname = GFZ0MGXFIN_${year}${doy}0000_01D_05M_ORB.SP3.gz
+    set rename = 'Y'
+  endif        
+else if ( $prod == grm  ) then
+#  switch from short to long names on CDDIS at week 2025
+  @ week = $gpsw
+  if( $week < 2025 ) then
+    set sfname = $prod$gpsw$gpsd.sp3 
+    set wfname =  $prod$gpsw$gpsd.sp3.Z
+    set rename = 'N'
+  else  
+    set sfname = grm$gpsw$gpsd.sp3      
+    set wfname = GRG0MGXFIN_${year}${doy}0000_01D_15M_ORB.SP3.gz
+    set rename = 'Y'
+  endif        
+else if ( $prod == jam ) then     
+#  switch from short to long names on CDDIS at week 1945
+  @ week = $gpsw
+  if( $week < 1945 ) then
+    set sfname = $prod$gpsw$gpsd.sp3 
+    set wfname =  $prod$gpsw$gpsd.sp3.Z
+    set rename = 'N'
+  else  
+    set sfname = jam$gpsw$gpsd.sp3      
+    set wfname = JAX0MGXFIN_${year}${doy}0000_01D_05M_ORB.SP3.gz
+    set rename = 'Y'
+  endif      
+else if ( $prod == wum ) then     
+#  switch from short to long names on CDDIS at week 2034
+  @ week = $gpsw
+  if( $week < 2034 ) then
+    set sfname = $prod$gpsw$gpsd.sp3 
+    set wfname =  $prod$gpsw$gpsd.sp3.Z
+    set rename = 'N'
+  else  
+    set sfname = wum$gpsw$gpsd.sp3      
+    set wfname = WUM0MGXFIN_${year}${doy}0000_01D_15M_ORB.SP3.gz
+    set rename = 'Y'
+  endif      
+else if( $prod == emr || $prod == esa || $prod == gfz || $prod == gfm || $prod == grm || $prod == jpl || $prod == mit || $prod == ngs || $prod == sio || $prod == sir || $prod == tum ) then
+  set sfname = $prod$gpsw$gpsd.sp3              
+  set wfname = $prod$gpsw$gpsd.sp3.Z
+  set rename = 'N'
+endif   
+
+# MOD TAH 180531: Generate if uncompressed name by removing extent from compressed name.
+set ufname = $wfname:r        
+         
+# Set the directory depending on whether standard IGS or MGEX and repro or not 
+set mtype = `echo $orbt | cut -c 4`
+if( "$mtype" == 'm' ) then 
+  set sdir = "gnss/products/mgex/$gpsw"
+else if ( $repro == 'Y' ) then 
+  set sdir = "gnss/products/$gpsw/repro2"
+  echo "Get repro2 orbits and rename to igs"
+else
+  set sdir = "gnss/products/$gpsw"
+endif              
+
+# Get the file and uncompress it 
+set ftp_info = ( `sh_get_ftp_info -archive cddis -type sp3` )
+set log = `date "+get_orbits_cddis_%Y%m%d%H%M%z.log"`
+echo "Download command:"
+#echo "$prog ftp://cddis.gsfc.nasa.gov/$sdir/$wfname"
+#$prog ftp://cddis.gsfc.nasa.gov/$sdir/$wfname
+if ( `echo $prog | awk '{print $1}'` == 'curl' ) then
+  if ( -e ~/.netrc ) then  # Use authenticated secure HTTP
+    echo "$prog -b .urs_cookies -c .urs_cookies -n -R -O 'https://cddis.nasa.gov/archive/$sdir/$wfname'"
+    $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -b .urs_cookies -c .urs_cookies -n -R -O "https://cddis.nasa.gov/archive/$sdir/$wfname" >> $log ||\
+     $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -b .urs_cookies -c .urs_cookies -n --ciphers 'DEFAULT@SECLEVEL=1' -R -O "https://cddis.nasa.gov/archive/$sdir/$wfname" >> $log
+  else if ( `curl --version | awk '{if (NR == 1) print substr($2,1,4)}' | sed 's/\.//g'` >= 711 ) then  # Use anonymous secure FTP (requires curl version >= 7.11.0)
+    if ( `curl --version | awk '{if (NR == 1) print substr($2,1,4)}' | sed 's/\.//g'` >= 720 ) then  # Use newer "--ssl" option
+      set ssl_opt = '--ssl'
+    else  # Use older "--ftp-ssl" option
+      set ssl_opt = '--ftp-ssl'
+    endif
+    echo "$prog -u anonymous:$ftp_info[5] $ssl_opt -R -O 'ftp://gdc.cddis.eosdis.nasa.gov/$sdir/$wfname'"
+    $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -u anonymous:$ftp_info[5] $ssl_opt -R -O "ftp://gdc.cddis.eosdis.nasa.gov/$sdir/$wfname" >> $log ||\
+     $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -u anonymous:$ftp_info[5] $ssl_opt --ciphers 'DEFAULT@SECLEVEL=1' -R -O "ftp://gdc.cddis.eosdis.nasa.gov/$sdir/$wfname" >> $log
+  endif
+else if ( `echo $prog | awk '{print $1}'` == 'wget' ) then
+  if ( -e ~/.netrc ) then  # Use authenticated secure HTTP
+    echo "$prog -a $log --load-cookies .urs_cookies --save-cookies .urs_cookies --keep-session-cookies --auth-no-challenge -N 'https://cddis.nasa.gov/archive/$sdir/$wfname'"
+    $prog -a $log --load-cookies .urs_cookies --save-cookies .urs_cookies --keep-session-cookies --auth-no-challenge -N "https://cddis.nasa.gov/archive/$sdir/$wfname"
+  else if ( `wget --version | awk '{if (NR == 1) print substr($3,1,4)}' | sed 's/\.//g'` >= 118 ) then  # Use anonymous secure FTP (requires wget version >= 1.18)
+    echo "$prog -a $log --ftp-user anonymous --ftp-password $ftp_info[5] -N 'ftps://gdc.cddis.eosdis.nasa.gov/$sdir/$wfname'"
+    $prog -a $log --ftp-user anonymous --ftp-password $ftp_info[5] -N "ftps://gdc.cddis.eosdis.nasa.gov/$sdir/$wfname"
+  endif
+endif
+sh_uncompress $wfname  
+
+# Rename the file to the standard lowercase short name (ig2-->igs; no compression extents; sp3 rather than eph or orb)
+echo "TEST: $rename $sfname $ufname ${wfname}"
+if( $rename == 'Y' ) then
+  \mv $ufname $sfname 
+   # Explicitly say the downloaded file.
+  if( -e $sfname ) echo "DOWNLOADED $sfname"
+else
+  # Explicitly say the downloaded file.
+  if( -e $ufname ) echo "DOWNLOADED $ufname"
+endif 
+

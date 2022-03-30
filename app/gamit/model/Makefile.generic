@@ -1,0 +1,29 @@
+# Generic Makefile for model - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King  20 March 2018
+
+#LABELS: model:model:model_lib:model
+
+#SHARELIB: ../lib:gamit_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+#SHARELIB: ../lib:libsofa
+
+#OBJ_model_lib get_atmdel avclck az_elev call_mag callppt cfout chdred check_met
+#OBJ_model_lib corsim cortyp dchao dipole_comp eopart epoch_clk etide 
+#OBJ_model_lib gdetic get_antinfo get_antpcv  get_svantpcv get_dcb get_dcb2 get_met_source svbody_coords gmf iono_corr iondel 
+#OBJ_model_lib height iers2003_etide iers2010_etide imfh1p0 imfw2              
+#OBJ_model_lib lininterp nmfw2 obsmod obsred open mversn nmfh2p1 
+#OBJ_model_lib mag mag_dipole mag11 mag12 mag13 igrf_util
+#OBJ_model_lib partl phasecc pierce_pt poly_clk	ptide read_batch readi read_ionex readu read_metrnx
+#OBJ_model_lib setup shftor simred sitcor slant_tec  
+#OBJ_model_lib svant update_coords vec_xyz vmf1 wchao whdred wpress
+#OBJ_model_lib wrthed
+
+
+
+
+
+
+
+
+
+

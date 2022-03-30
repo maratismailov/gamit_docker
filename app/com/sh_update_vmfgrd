@@ -1,0 +1,92 @@
+#!/bin/csh -f
+#
+#doc Get daily VMF1 grid files from TU Vienna and update the current grid file.
+#doc 
+#
+# Script to get daily VMF1 grid files from TU Vienna 
+# and update the MIT binary grid file.  Works one day at a time.
+# assuming that the previous file has the name of the day prior
+# to the day requested; e.g.
+#
+#   sh_update_vmfgrd -yr 2007 -doy 227  ( -erase -noftp )
+#
+#     will download ascii files for day 227 using sh_wget_vmf1g,
+#     open vmf1grd.2007_226, and create vmf1grd.2007_227. 
+#
+#   If -erase is specified, both the ascii files and the previous
+#   grid file will be erased.  If -noftp is specified, the ascii
+#   files are assumed to be present locally.
+#     
+# Written by R King 20 September 2007; last modified 5 March 2008
+
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "===================================================================================="
+  echo " Update the MIT VMF1 grid files with daily VMF1 files from TU Vienna  "
+  echo "  "
+  echo " Usage: sh_update_vmfgrd -yr <yr> -doy <doy> [-erase] [-noftp]  "
+  echo " "                                                            
+  echo "  where -erase erases the ascii files for each day and the previous grid file"
+  echo "   ---for caution, run the first day of a sequence without the erase option"
+  echo "  " 
+  echo "  -noftp skips the download skip (implies ascii files already present)"
+  echo "===================================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS #############################   
+set year = ''
+set yr = ''
+set doy = ''
+set log = ''         
+set erase = 'n'   
+set ftp = 'y'
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -y*:
+      set year = $input[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+      set yr = `sh_year -year $year`
+    breaksw 
+    case -doy:
+      set doy = $input[2]  
+    breaksw  
+    case -erase:
+      set erase = 'y'   
+    breaksw
+    case -noftp:
+      set ftp = 'n'
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+              
+touch sh_update_vmfgrd.out                                   
+#  @ doylast = $doy - 1   
+ @ doylast = `echo "ibase=10; ${doy} - 1" | bc`
+set doy = `echo $doy |  awk '{printf "%03d \n", $1}'`
+set doylast = `echo $doylast |  awk '{printf "%03d \n", $1}'`
+if ( $ftp == 'y' ) then         
+  echo " Downloading ascii VMF1 files for day " $doy "from TU Vienna web site ... "
+  sh_wget_vmf1g -yr $year -doy $doy  >>& sh_update_vmfgrd.out  
+  set yr = `sh_year -year $year`  
+  echo " Download complete, updating vmf1grd.$year""_""$doylast to  vmf1grd.$year""_"$doy ...   
+  update_vmfg vmf1grd.{$year}_$doylast $yr[2]$doy vmf1grd.{$year}_$doy  >>& sh_update_vmfgrd.out 
+  echo " See sh_update_vmfgrd.out for record " 
+else
+  echo "noftp set, assume ascii files available "   
+  update_vmfg vmf1grd.{$year}_$doylast $yr[2]$doy vmf1grd.{$year}_$doy    
+endif
+              
+if( $erase == 'y' ) then
+ echo " Erasing Vienna ascii files and previous grid file" 
+ \rm  ah* aw* zh*
+ \rm vmf1grd.{$year}_{$doylast}
+endif 
+ls -l vmf1grd.*  
+
+exit

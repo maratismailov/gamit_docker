@@ -1,0 +1,153 @@
+**MPROJECT
+Command sets the map projection to be used in plotting maps and
+vector fields superimposed on these maps.
+Form:
+   MPROJECT <type> <lat> <long> <rotate>
+where <type> is according to the code given below, 
+      <lat> and <long> define the tangent point of the projection
+and   <rotate> is a rotation angle for the plot
+
+WARNING: Bug in NCAR graphics.  For some projections, giving a non-zero
+rotation angle causes the mapping routine to go into infinite loops.
+Use with caution.  (Test first with rotate equal to zero). (LC does NOT
+work with rotate non-zero)
+
+Map projections are of three types, conical, plane (azimuthal) and 
+Cyclindrical.  The lat and long values entered determine where the 
+projection surface touches the Earth, and where the surface is cut.
+Below R is the distance on the projection surface, a is the angular
+separation, and u,v are the xy coordinates on the plane surface.
+
+The map projections available are:
+Code  Name               Type and description
+----  ----               --------------------
+ LC - Lambert conformal: Conical projection, the cone is tangent to the 
+      Earth at the latitide given and is cut 180 deg away from the 
+      longitude given. 
+
+ ST - Stereographic:      Azimuthal projection: R=tan(a/2).
+ OR - Orthographic:       Azimuthal projection: R=sin(a)
+ LE - Lamber equal area:  Azimuthal projection: 
+                          R=2 sin(a)/sqrt(2(1+cos(a))
+ GN - Gnomonic:           Azimuthal projection: R=tan(a)
+ AE - Azimuthal Equidist: Azimuthal projection: R=a*pi/180.
+ SV - Satellite view    : Azimuthal projection: 
+                          R=sqrt(sa**2-1)*sin(a)/(sa-cosa) where sa is
+                          satellite altitude in Earth radii.
+
+ CE - Cylindrical Equidist: Cyclindrical Proj.: u = long, v=latitude
+ ME - Mercator:             Cyclindrical Proj : u = long*pi/180,
+                             v = alog(cot(45-lat/2))
+ MO - Mollweide:             Cyclindrical Proj: u = long/90, 
+                            v=cos(90-lat)
+
+**MSET
+Set the limits of the map to be shown on the plot.
+Form
+  MSET <type> <.... Upto 8 values defining the limits .. >
+where <type> is the type of limit (see below)
+and   <... > are the numerical values for the limits.  The number of
+             of values depends on the type limit.  Most forms take 8
+             values.
+
+The following limit types can be set (some make more sense for different
+projections: (Where required values are entered in order latitude and 
+then longitude)
+Code  Name              Description
+----  ----------        ------------
+ MA - Maximinal:        The largest possible area is shown 
+ CO - Cornors:          The limits are the latitude and longitude of the
+                        opposite cornors of the map. (Lower L, Upper R)
+ PO - Points:           The limits are pairs of latitude and longitudes
+                        of the four cornors of the map. For cylindrical
+                        projections the first point should be on left
+                        edge and second on right edge.
+ AN - Angles:           The limits are the angular distances (measured
+                        at the center of the Earth to the left, right,
+                        bottom and top edges of the map.
+ LI - Limits:           Set the min and max values of u(x) and v(y). 
+                        (This requires knowledge of the mapping from lat
+                        and long to u and v coordinates on the plot.)
+
+**MDRAW
+Actually draws the map with the following options be passed after
+the command.
+Form:
+
+    MDRAW <code value> <code value> ....
+
+The options which can be passed in MDRAW are always in pairs of the form
+<code> <value>.  The following options can be set
+Code  Type        Description
+----  -------     ------------------------
+ OU - Outline     Possible choices of CO-continental only, US-United
+                  States, PO-Political boundarys.
+ GR - Grid spacing Spacing in degrees between grid lines on the plot.
+                  If zero is entered, then no grid will be drawn
+ SA - Satellite Alt.  Altitude of the satellite in Earth radii. Only
+                  usefull for the SV projection (see MPROJECT)
+ LA - Labels      value either y or n depending on if the poles, 
+                  equator, and Greenwich meridian are to be labelled.
+
+**MRESET
+Reset PLOT to run in normal mode are maps have been plotted. 
+Form:
+   MRESET
+After a map has been drawn (on any parameters of a map set), PLOT
+will expect its x and y coordinates as longitude and latitude (instead
+of normal user coordinates)
+
+
+**V_FIELD
+Allows the association between parameters needed to draw vectors and their error ellipses and the columns in the data file. (Data file name
+is given with the FILE command). Any of the columns can be set to zero
+and these quantities will not be read from the file.
+
+Form:
+   V_FIELD <x pos> <y pos> <vx> <vy> <sig vx> <sig vy> <rho> <name>
+where <x pos> is the column for the x coordinate of the base of the 
+              vector. When in mapping mode, x pos is longitude.
+      <y pos> y coordinate or latitude column
+      <vx>    x component of vector (velocity).  East component in 
+              mapping mode.  The scaling of this vector to the plot
+              is set in VDRAW command.
+      <vy>    y or north component of vector.
+      <sig vx> Sigma on vx (same units as vx)
+      <sig vy> Sigma on vy (same units as vy)
+      <rho>    Correlation between sig vx and sig vy.
+      <name>   Name to be written at the base of vector.
+NOTES: See also VDRAW
+  P_FIELD is used to set point type plotted at the base of vector.
+  ERRBAR set to zero will stop the error ellipses being drawn.
+  The default V_FIELD is 1 2 3 4 5 6 7 8.
+
+
+**VREAD
+Reads the data file given in the FILE command using the current
+arguments (for the columns) set with the V_FIELD command.  The 
+scales on the plot will be reset unless the RESET OFF command
+has been given.
+Form:
+    VREAD
+(no arguments, must issue FILE and V_FIELD commands before hand)
+
+**VDRAW
+Tells plot to plot the vector data read with VREAD after FILE command
+has been given.
+Form:
+  VREAD  <scale> <confidence>
+where <scale> is a scale factor from the numerical values given for 
+               vx and vy to mm on a laser printer plot. Thus if vx is 10
+               and scale is 1 then the vector will have an x component 
+               10 mm long, if scale is 5 then it will be 50 mm long.
+               The dimensions of laser printer plot is 200x200 mm when
+               ctrans -d ps.mono is used to convert the meta file to 
+               postscript.
+      <confidence> is the condifence interval of the error ellipses in
+               units 0.0 to 1.0.  Some usefull values are:
+               confidence 0.393 - 1 sigma error ellipse.
+			confidence 0.864 - 2 sigma error ellipse
+			confidence 0.989 - 3 sigma error ellipse
+               The expression used is R=sqrt(-2*ln(1.0-confidence)) or
+               confidence = 1 - exp(-R**2/2)
+

@@ -1,0 +1,30 @@
+* STINF_to_RENAME:     1 Sites found in s.in
+* STINF_to_RENAME:    34 entries found in s.info
+ rename WES2_GPS WES2_APS 1994  7  8  0  0 1994  8  3  0  0  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_BPS 1994  8  3  0  0 1994 11 23  0  0  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_BPS 1994 11 23  0  0 1995  1  5  0  0  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_BPS 1995  1  5  0  0 1995  1  5 18 40  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_BPS 1995  1  5 18 40 1995  8  8  0  0  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_CPS 1995  8  8  0  0 1995  9  6  0  0  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_DPS 1995  9  6  0  0 1995 11 17  0  0  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_DPS 1995 11 17  0  0 1996  3 29  0  0  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_EPS 1996  3 29  0  0 1996  6  4  0  0  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_FPS 1996  6  4  0  0 1996  7  1  0  0  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_HPS 1996  7  1  0  0 1997  5 22  0  0  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_IPS 1997  5 22  0  0 1997  5 23  0  0  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_IPS 1997  5 23  0  0 1997  6 30 22  6  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_JPS 1997  6 30 22  6 1997 10 22 18 50  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_JPS 1997 10 22 18 50 1998  2  5 13 24  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_JPS 1998  2  5 13 24 1998  6  1 15  3  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_KPS 1998  6  1 15  3 1998  6 22 18 45  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_KPS 1998  6 22 18 45 1999  6  1 14 27  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_KPS 1999  6  1 14 27 1999  8  6 15  3  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_KPS 1999  8  6 15  3 2000  7 26 13  5  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_LPS 2000  7 26 13  5 2000  8 22 17 46  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_MPS 2000  8 22 17 46 2000  8 30 17  0  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_MPS 2000  8 30 17  0 2001  7 27  0  0  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ROGUE SNR-8000       Dome NONE  to NONE
+ rename WES2_GPS WES2_NPS 2001  7 27  0  0 2002  6  7 18  0  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ASHTECH UZ-12        Dome NONE  to NONE
+ rename WES2_GPS WES2_NPS 2002  6  7 18  0 2002 10 10  0  0  ! Antenna  swap     AOAD/M_T         to     AOAD/M_T         Receiver ROGUE SNR-8000       to ASHTECH UZ-12        Dome NONE  to NONE
+ rename WES2_GPS WES2_2PS 2002 10 10  0  0 2007  9 21  0  0  ! Receiver swap ASHTECH UZ-12        to ROGUE SNR-8000       Antenna      AOAD/M_T         to     AOAD/M_T         Dome NONE  to NONE
+ rename WES2_GPS WES2_3PS 2007  9 21  0  0 2009  4  9 12 55  ! Receiver swap ROGUE SNR-8000       to ASHTECH UZ-12        Antenna      AOAD/M_T         to     AOAD/M_T         Dome NONE  to NONE
+ rename WES2_GPS WES2_3PS 2009  4  9 12 55 2100  1  1  0  0  ! Receiver swap ROGUE SNR-8000       to ASHTECH UZ-12        Antenna      AOAD/M_T         to     AOAD/M_T         Dome NONE  to NONE

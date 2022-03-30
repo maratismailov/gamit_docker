@@ -1,0 +1,834 @@
+#!/bin/csh -f                                                       
+#
+#doc Make a histogram of position/velocity wrms/nrms from GLOBK bc/en/bl/sum component file
+#doc
+#
+if ( $#argv == 0 ) then
+  echo " Use GMT to make a histogram of any file or scatter/velocity wrms/nrms from GLOBK bc/en/bl/sum component file"
+  echo "     can delete several sites' all/some components from statistics and plots "
+  echo " "
+  echo " USAGE: sh_tshist -f <file> -prog <name> -type <type> "
+  echo "  "
+  echo " OPTIONS: "
+  echo " -f[ile]      file  : Input GLOBK bcsum/ensum/blsum Summary (SUM.) file. [Required] "
+  echo " -p[rog]      name  : Program used to generate input file. [Required] "
+  echo "                    : ensum  " 
+  echo "                    : bcsum  " 
+  echo "                    : blsum  "  
+  echo "                    : tsfit  "  
+  echo " -t[ype]      type  : If not issued histogram of a vector. [Required] "
+  echo "                    : wrms           : wrms scatter about the weighted  mean "
+  echo "                    : nrms           : nrms scatter about the weighted  mean " 
+  echo "                    : vel_wrms       : wrms scatter about the best fitting straight line (velocity)" 
+  echo "                    : vel_nrms       : nrms scatter about the best fitting straight line (velocity)" 
+  echo " -vert              : Reverse velocity scatter to scatter about the mean for vertical component. " 
+  echo " -stat_short        : Mean and # of observations. [Default yes] " 
+  echo " -stat_long         : Mean and # of observations, wrms and nrms about the mean. Overrides -stat_short." 
+  echo " -perc_print        : Print 70% 90% 95%  values." 
+  echo " -bin         val   : Bin width. Default is 0.25 wrms, 0.25 nrms " 
+  echo " -ubin        val   : Bin width. Default is 0.50 wrms, 0.25 nrms " 
+  echo " -xframe      val   : Tick marks for x axis.  Default is 1." 
+  echo " -xname       word  : X-axis label"
+  echo " -yframe      val   : Tick marks for y axis.  Default is 5." 
+  echo " -max_nscale  val   : Maximum N x-axis value to be plotted. Defualt is max N rms" 
+  echo " -max_escale  val   : Maximum E x-axis value to be plotted  Defualt is max E rms" 
+  echo " -max_uscale  val   : Maximum U x-axis value to be plotted  Defualt is max U rms" 
+  echo " -max_lscale  val   : Maximum L x-axis value to be plotted  Defualt is max L rms" 
+  echo " -sk[ill]     site  : SOFT kill. Deletes ALL components from temporary files. These sites will be ignored "
+  echo "                      in statistics and plots. The original file is untouched."
+  echo " -uk[ill]     site  : SOFT kill. Deletes UP components from temporary files. These sites will be ignored "
+  echo "                      in statistics and plots. The original file is untouched."
+  echo " -nk[ill]     site  : SOFT kill. Deletes NORTH components  from temporary files. These sites will be ignored "
+  echo "                      in statistics and plots. The original file is untouched."
+  echo " -ek[ill]     site  : SOFT kill. Deletes EAST components  from temporary files. These sites will be ignored "
+  echo "                      in statistics and plots. The original file is untouched."
+  echo " -lk[ill]     site  : SOFT kill. Deletes LENGTH components  from temporary files. These sites will be ignored "
+  echo "                      in statistics and plots. The original file is untouched."
+  echo " -u           val   : Scale uncretainties by this factor " 
+  echo " -factor      value : Scale the internally defined vertical max. Default is 0.5."
+  echo " -binfactor   value : Scale the internally defined bin. Default is 1."
+  echo " -c[omment]   text  : Comment entry. Anything other than - as first character of a word. "
+  echo "                      Use _  instead. ( \> for > )" 
+  echo " -keep_tmp          : Do not rm tmp files after execution. Deafult is remove them all." 
+  echo " -inc         file  : List of sites to be included in the histograms " 
+  echo " -exc         file  : List of sites to be excluded from the histograms " 
+  echo "  " 
+  echo " EXAMPLES:   sh_tshist -f SUM.global_mit.org -prog ensum -type wrms -c 1993 experiment "
+  echo "             sh_tshist -f com.bak.BAKC02  -prog bcsum  -type vel_wrms -c 1988-1992 Turkey Experiments "
+  echo "  " 
+  exit
+endif
+
+##################### SET UP DEFAULTS ############################################################ 
+set ps = ""
+set prog = ""
+set inc = "none"
+set exc = "none"
+set xname = "."
+set factor = .5 
+set binfactor = 1
+set max_nscale  = ""
+set max_escale  = ""
+set max_uscale  = ""
+set max_lscale  = ""
+set file = ""
+set comment = ""
+set skill   = ""
+set lkill   = ""
+set nkill   = ""
+set ekill   = ""
+set ukill   = ""
+set type    =  ""
+set xframe = ""
+set yframe = 5 
+set uncscl = 1.0
+set vert     =  unknown
+set stat_short = yes 
+set stat_long  = no 
+set perc_print  = yes 
+set keep_tmp = no  
+set bin = ""
+set ubin = ""
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+# decipher command line 
+while ($#argv > 0 ) 
+set input = ( $argv ) 
+switch($input[1])
+	case -t:
+	case -type: 
+		set type             = $input[2]
+		breaksw
+	case -factor:
+		set factor           =  $input[2]
+		breaksw
+	case -binfactor:
+		set binfactor        =  $input[2]
+		breaksw
+	case -max_nscale:
+		set max_nscale       =  $input[2]
+		breaksw
+	case -max_escale:
+		set max_escale       =  $input[2]
+		breaksw
+	case -max_uscale:
+		set max_uscale       =  $input[2]
+		breaksw
+	case -max_lscale:
+		set max_lscale       =  $input[2]
+		breaksw
+	case -f:
+	case -file:
+		set file             =  $input[2]
+		breaksw
+	case -p:
+	case -prog:
+		set prog             =  $input[2]
+		breaksw
+   case -vert:
+       set vert             =  no
+		set vert_note        = "*"
+       breaksw
+   case -stat_long:
+       set   stat_long      =  yes
+       set   stat_short     =  no
+       breaksw
+   case -perc:
+   case -perc_print:
+       set   perc_print     = no
+       breaksw
+   case -c*:
+      set comment = (`echo $argv | cut -d- -f2`); shift comment
+   breaksw
+#        case -c:
+#        case -comment:
+#		if  ( $#input > 1 )  set comment   =   ( $comment $input[2] ) 
+#			if  ( $#input > 0 ) then 
+#				shift input;shift input;
+#			else 
+#				breaksw
+#			endif
+#		 while (   $#input > 0  &&  `echo  $input[1]  | cut -c1 ` != "-" ) 
+#			set inarg =  $input[1]
+#			if ( `echo  $inarg | cut -c1 ` != "-" ) then
+#				set comment    =   ( $comment $inarg ) 
+#					shift input
+#					if  ( $#input == 0  ) goto outofrange
+#			endif
+#		end
+#		outofrange:
+#		breaksw
+   case -sk*:
+      set skill = (`echo $argv | cut -d- -f2`); shift skill
+   breaksw
+   case -lk*:
+      set lkill = (`echo $argv | cut -d- -f2`); shift lkill
+   breaksw
+   case -uk*:
+      set ukill = (`echo $argv | cut -d- -f2`); shift ukill
+   breaksw
+   case -ek*:
+      set ekill = (`echo $argv | cut -d- -f2`); shift ekill
+   breaksw
+   case -nk*:
+      set nkill = (`echo $argv | cut -d- -f2`); shift nkill
+   breaksw
+	case -u:
+		set uncscl        = $input[2]
+		breaksw
+	case -inc:
+		set inc           = $input[2]
+		breaksw
+	case -exc:
+		set exc           = $input[2]
+		breaksw
+	case -bin:
+		set bin           =  $input[2]
+		breaksw
+	case -ubin:
+		set ubin          =  $input[2]
+		breaksw
+	case -xframe:
+		set xframe        =  $input[2]
+		breaksw
+	case -yframe:
+		set yframe        =  $input[2]
+		breaksw
+	case -xname:
+		set xname         =  $input[2]
+		breaksw
+	case -ps:
+		set ps            =  "."$input[2]
+		breaksw
+	case -keep_tmp:
+		set keep_tmp      =  yes
+		breaksw
+endsw 
+shift argv 
+end
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+# scaling/title  information   REconfigure defaults 
+# MOD TAH 131223: Added u to -Du to get US units
+#gmt gmtdefaults -Du             >! gmt.conf
+#echo "FONT_LABEL = 12p" >> gmt.conf
+#echo "FONT_ANNOT_PRIMARY = 12p" >> gmt.conf
+# MOD TAH 140131: Changed to use gmtset
+gmt gmtset GMT_COMPATIBILITY 5
+gmt gmtset FONT_LABEL 12p
+gmt gmtset FONT_ANNOT_PRIMARY  12p
+gmt gmtset PROJ_LENGTH_UNIT i
+gmt gmtset GMT_VERBOSE l
+
+# Check all required info given.
+if ( ${file} == '' ||  ${prog} == '' || ${type} == '' ) then
+  echo "Not all required fields given -- file: $file prog: $prog type: $type --Stop"
+  exit
+endif
+
+if ( ! -e $file )  then
+  echo $file "does not exist. Exiting ......."
+  exit
+endif
+
+#cleanup
+\rm -rf tmp.$file  tmp[1neul].$file  tmp.[neul][NEUL]  tmp.[NEUL]  >& /dev/null
+
+set infile = tmp.$file
+\cp $file $infile
+set pshistfile  = pshist_$type.$file$ps
+ 
+#Set default xframe values
+if ( $xframe == "" ) then
+  if ( $type == vel_wrms || $type == wrms ) then
+    set xframe = 0.5
+  else if ( $type == vel_nrms || $type == nrms ) then
+    set xframe = 0.25
+  endif
+endif
+
+#Set default bin factors
+if ( $bin == "" ) then
+  if ( $type == vel_wrms || $type == wrms ) then
+    set bin = 0.25
+  else if ( $type == vel_nrms || $type == nrms ) then
+    set bin = 0.25
+  endif
+endif
+if ( $ubin == "" ) then
+  if ( $type == vel_wrms || $type == wrms ) then
+    set ubin = 1
+  else if ( $type == vel_nrms || $type == nrms ) then
+    set ubin = 0.25
+  endif
+endif
+# Check input file for bad records
+echo "Checking for bad records in input file $file"
+grep '\*\*' $infile >! tmp.bad 
+if ( ! -z tmp.bad ) then
+  echo "Bad records found, removing the following records from histogram:"
+  cat tmp.bad
+  grep -v \* $infile >! tmp1.$file
+  \mv  tmp1.$file  tmp.$file
+endif
+\rm tmp.bad
+echo " "
+
+if ( $type != none ) then 
+
+ if ( $#skill > 0 ) then 
+   echo "Soft kill :" $skill
+   foreach i ( $skill )
+	grep -v  $i tmp.$file  >!  tmp1.$file
+	\mv  tmp1.$file  tmp.$file
+   end 
+ endif    
+
+if ( $exc != "none" ) then
+   echo "Excluding sites given in: $exc"
+   foreach i ( `cat $exc` )
+	  grep -v  $i tmp.$file  >!  tmp1.$file
+  	  \mv  tmp1.$file  tmp.$file
+   end 
+endif    
+
+if ( $inc != "none" ) then
+   echo "Including only sites given in: $inc"
+   touch tmp1.$file
+   foreach i ( `cat $inc` )
+#	  grep -i $i tmp.$file  >>  tmp1.$file
+	  grep -i $i tmp.$file | awk 'tolower(substr($1,1,4)) == tolower(i) {print $0}' i=$i  >>  tmp1.$file
+   end 
+   \mv  tmp1.$file  tmp.$file
+endif    
+
+########################### 
+# MOD TAH 080812 for FC5: Cols increased by 1, removed + and -k added.
+ set colsort1 = 7 
+ set colsort2 = 8 
+ 
+ if ( $type == vel_wrms || $type == vel_nrms ) set colsort1 = 11
+ if ( $type == vel_wrms || $type == vel_nrms ) set colsort2 = 12 
+
+# Sort ensum SUM. file
+ if ( -e tmp_cp_wrms ) \rm tmp_cp_wrms ;  touch tmp_cp_wrms
+ if ( -e tmp_cp_nrms ) \rm tmp_cp_nrms ;  touch tmp_cp_nrms
+ grep "mean length" $file >! SUM.tmp.sort1
+ grep "(m)" $file         >> SUM.tmp.sort1
+ grep "mean length" $file >! SUM.tmp.sort2
+ grep "(m)" $file         >> SUM.tmp.sort2
+ grep "mean length" $file >! SUM.tmp
+ grep "(m)" $file         >> SUM.tmp
+ cat  $file | grep " N " | sort -r -n -k $colsort1 >> SUM.tmp.sort1
+ cat  $file | grep " N " | sort -r -n -k $colsort2 >> SUM.tmp.sort2
+ echo "# 50 worst North wrms" >> tmp_cp_wrms
+ cat  $file | grep " N " | sort -r -n  -k $colsort1 | head -n 50 | awk '{print "cp -f mb_"substr($1,1,4)"* worst_sites"}' >> tmp_cp_wrms
+ echo "# 50 worst North nrms" >> tmp_cp_nrms
+ cat  $file | grep " N " | sort -r -n  -k $colsort2 | head -n 50 | awk '{print "cp -f mb_"substr($1,1,4)"* worst_sites"}' >> tmp_cp_nrms
+ cat  $file | grep " N " | sort -r -n  -k 6 >> SUM.tmp
+ grep "mean length" $file >> SUM.tmp.sort1
+ grep "(m)" $file         >> SUM.tmp.sort1
+ grep "mean length" $file >> SUM.tmp.sort2
+ grep "(m)" $file         >> SUM.tmp.sort2
+ grep "mean length" $file >> SUM.tmp
+ grep "(m)" $file         >> SUM.tmp
+ cat  $file | grep " E " | sort -r -n  -k $colsort1 >> SUM.tmp.sort1
+ cat  $file | grep " E " | sort -r -n  -k $colsort2 >> SUM.tmp.sort2
+ echo "# 50 worst East wrms" >> tmp_cp_wrms
+ cat  $file | grep " E " | sort -r -n  -k $colsort1 | head -n 50 | awk '{print "cp -f mb_"substr($1,1,4)"* worst_sites"}' >> tmp_cp_wrms
+ echo "# 50 worst East nrms" >> tmp_cp_nrms
+ cat  $file | grep " E " | sort -r -n  -k $colsort2 | head -n 50 | awk '{print "cp -f mb_"substr($1,1,4)"* worst_sites"}' >> tmp_cp_nrms
+ cat  $file | grep " E " | sort -r -n  -k 6 >> SUM.tmp
+ grep "mean length" $file >> SUM.tmp.sort1
+ grep "(m)" $file         >> SUM.tmp.sort1
+ grep "mean length" $file >> SUM.tmp.sort2
+ grep "(m)" $file         >> SUM.tmp.sort2
+ grep "mean length" $file >> SUM.tmp
+ grep "(m)" $file         >> SUM.tmp
+ cat  $file | grep " U " | sort -r -n  -k $colsort1 >> SUM.tmp.sort1
+ cat  $file | grep " U " | sort -r -n  -k $colsort2 >> SUM.tmp.sort2
+ echo "# 50 worst Up wrms" >> tmp_cp_wrms
+ cat  $file | grep " U " | sort -r -n  -k $colsort1 | head -n 50 | awk '{print "cp -f mb_"substr($1,1,4)"* worst_sites"}' >> tmp_cp_wrms
+ echo "# 50 worst Up nrms" >> tmp_cp_nrms
+ cat  $file | grep " U " | sort -r -n  -k $colsort2 | head -n 50 | awk '{print "cp -f mb_"substr($1,1,4)"* worst_sites"}' >> tmp_cp_nrms
+ cat  $file | grep " U " | sort -r -n  -k 6 >> SUM.tmp
+ grep "mean length" $file >> SUM.tmp.sort1
+ grep "(m)" $file         >> SUM.tmp.sort1
+ grep "mean length" $file >> SUM.tmp.sort2
+ grep "(m)" $file         >> SUM.tmp.sort2
+ grep "mean length" $file >> SUM.tmp
+ grep "(m)" $file         >> SUM.tmp
+ cat  $file | grep " L " | sort -r -n  -k $colsort1 >> SUM.tmp.sort1
+ cat  $file | grep " L " | sort -r -n  -k $colsort2 >> SUM.tmp.sort2
+ echo "# 50 worst Length wrms" >> tmp_cp_wrms
+ cat  $file | grep " L " | sort -r -n  -k $colsort1 | head -n 50 | awk '{print "cp -f mb_"substr($1,1,4)"* worst_sites"}' >> tmp_cp_wrms
+ echo "# 50 worst Length nrms" >> tmp_cp_nrms
+ cat  $file | grep " L " | sort -r -n  -k $colsort2 | head -n 50 | awk '{print "cp -f mb_"substr($1,1,4)"* worst_sites"}' >> tmp_cp_nrms
+ cat  $file | grep " L " | sort -r -n  -k 6 >> SUM.tmp
+ \mv  SUM.tmp.sort1  $file".sort.wrms"
+ \mv  SUM.tmp.sort2  $file".sort.nrms"
+ \mv  SUM.tmp  SUMNEW.$file
+######################***************************
+
+ if ( $prog == "ensum" || $prog == "tsfit" ) then
+	grep 'N  1'  tmp.$file >! tmpn.$file
+	grep 'E  1'  tmp.$file >! tmpe.$file
+	grep 'U  1'  tmp.$file >! tmpu.$file
+ else
+	grep '1 L'  tmp.$file >! tmpl.$file
+	grep '2 N'  tmp.$file >! tmpn.$file
+	grep '3 E'  tmp.$file >! tmpe.$file
+	grep '4 U'  tmp.$file >! tmpu.$file 
+ endif
+
+ if ( $#lkill > 0 ) then 
+   echo "Soft kill LENGTH only :" $lkill
+   foreach i ( $lkill )
+	grep -v  $i tmpl.$file  >!  tmp1.$file
+	\mv  tmp1.$file  tmpl.$file
+   end 
+ endif
+
+ if ( $#ekill > 0 ) then 
+   echo "Soft kill EAST   only :" $ekill
+   foreach i ( $ekill )
+	grep -v  $i tmpe.$file  >!  tmp1.$file
+	\mv  tmp1.$file  tmpe.$file
+   end 
+ endif
+
+ if ( $#nkill > 0 ) then 
+   echo "Soft kill NORTH  only :" $nkill
+   foreach i ( $nkill )
+	grep -v  $i tmpn.$file  >!  tmp1.$file
+	\mv  tmp1.$file  tmpn.$file
+   end 
+ endif
+
+ if ( $#ukill > 0 ) then 
+   echo "Soft kill UP     only :" $ukill
+   foreach i ( $ukill )
+	grep -v  $i tmpu.$file  >!  tmp1.$file
+	\mv  tmp1.$file  tmpu.$file
+   end 
+ endif
+
+ if ( $prog == "ensum" || $prog == "tsfit" ) then
+   cat  tmpn.$file  tmpe.$file  tmpu.$file >!  tmp.$file
+ else
+   cat  tmpl.$file  tmpn.$file  tmpe.$file  tmpu.$file >!  tmp.$file
+ endif
+endif
+
+if ( $prog == "ensum" || $prog == "tsfit" ) then
+ if ( $type == vel_wrms ) then
+# WRMS about le is  12th column =======>  velocity
+	grep 'N  1' $infile | awk '{print $11}' >! tmp.N
+	grep 'E  1' $infile | awk '{print $11}' >! tmp.E
+	grep 'U  1' $infile | awk '{print $11}' >! tmp.U
+	if ( $vert == no )  then 
+	   grep 'U  1' $infile | awk '{print $7}' >! tmp.U
+	endif
+	set label = ( "Velocity-Wrms Histogram : " )
+	set bin  = ` echo $binfactor | awk '{print b * $1}' b=$bin` 
+	set ubin = ` echo $binfactor | awk '{print u * $1}' u=$ubin` 
+	set xlabel = `echo $xframe | awk  '{print "xa"2*$1"f"$1}'`
+	set xxlabel = `echo $xframe | awk  '{print "xa"4*$1"f"$1}'`
+ else if ( $type == vel_nrms ) then
+# NRMS about le is  13th column =======>  velocity
+	grep 'N  1' $infile | awk '{print $12/unc}' unc=$uncscl >! tmp.N
+	grep 'E  1' $infile | awk '{print $12/unc}' unc=$uncscl >! tmp.E
+	grep 'U  1' $infile | awk '{print $12/unc}' unc=$uncscl >! tmp.U
+	if ( $vert == no )  then
+		grep 'U  1' $infile | awk '{print $8}' >! tmp.U
+	endif
+	set label = ( "Velocity-Nrms Histogram : " )
+	set bin  = ` echo $binfactor | awk '{print b * $1}' b=$bin` 
+	set ubin = ` echo $binfactor | awk '{print u * $1}' u=$ubin` 
+	set xlabel = `echo $xframe | awk  '{print "xa"4*$1"f"$1}'`
+	set xxlabel = `echo $xframe | awk  '{print "xa"4*$1"f"$1}'`
+ else if ( $type == wrms ) then
+# WRMS about le is  8th column =======>  velocity 
+	grep 'N  1' $infile | awk '{print $7}' >! tmp.N
+	grep 'E  1' $infile | awk '{print $7}' >! tmp.E
+	grep 'U  1' $infile | awk '{print $7}' >! tmp.U
+	set label = ( "Scatter-Wrms Histogram : " )
+	set  bin = ` echo $binfactor | awk '{print b * $1}' b=$bin` 
+	set ubin = ` echo $binfactor | awk '{print u * $1}' u=$ubin` 
+	set xlabel = `echo $xframe | awk  '{print "xa"2*$1"f"$1}'`
+	set xxlabel = `echo $xframe | awk  '{print "xa"4*$1"f"$1}'`
+ else if ( $type == nrms ) then
+# NRMS about le is  9th column =======> scatter
+	grep 'N  1' $infile | awk '{print $8/unc}' unc=$uncscl >! tmp.N
+	grep 'E  1' $infile | awk '{print $8/unc}' unc=$uncscl >! tmp.E
+	grep 'U  1' $infile | awk '{print $8/unc}' unc=$uncscl >! tmp.U
+	set label = ( "Scatter-Nrms Histogram : " )
+	set bin  = ` echo $binfactor | awk '{print b * $1}' b=$bin` 
+	set ubin = ` echo $binfactor | awk '{print u * $1}' u=$ubin` 
+	set xlabel = `echo $xframe | awk  '{print "xa"4*$1"f"$1}'`
+	set xxlabel = `echo $xframe | awk  '{print "xa"4*$1"f"$1}'`
+ endif 
+else
+ if ( $type == vel_wrms ) then
+# WRMS about le is  12th column =======>  velocity
+	grep '1 L' $infile | awk '{print $12}' >! tmp.L
+	grep '2 N' $infile | awk '{print $12}' >! tmp.N
+	grep '3 E' $infile | awk '{print $12}' >! tmp.E
+	if ( $vert == no )  then 
+	   grep '4 U' $infile | awk '{print $8}' >! tmp.U
+	endif
+	set label = ( "Velocity-Wrms Histogram : " )
+	set bin  = ` echo $binfactor | awk '{print b * $1}' b=$bin` 
+	set ubin = ` echo $binfactor | awk '{print u * $1}' u=$ubin` 
+	set xlabel = `echo $xframe | awk  '{print "xa"2*$1"f"$1}'`
+	set xxlabel = `echo $xframe | awk  '{print "xa"4*$1"f"$1}'`
+ else if ( $type == vel_nrms ) then
+# NRMS about le is  13th column =======>  velocity
+	grep '1 L' $infile | awk '{print $13/unc}' unc=$uncscl >! tmp.L
+	grep '2 N' $infile | awk '{print $13/unc}' unc=$uncscl >! tmp.N
+	grep '3 E' $infile | awk '{print $13/unc}' unc=$uncscl >! tmp.E
+	grep '4 U' $infile | awk '{print $13/unc}' unc=$uncscl >! tmp.U
+	if ( $vert == no )  then
+		grep '4 U' $infile | awk '{print $9}' >! tmp.U
+	endif
+	set label = ( "Velocity-Nrms Histogram : " )
+	set bin  = ` echo $binfactor | awk '{print b * $1}' b=$bin` 
+	set ubin = ` echo $binfactor | awk '{print u * $1}' u=$ubin` 
+	set xlabel = `echo $xframe | awk  '{print "xa"4*$1"f"$1}'`
+	set xxlabel = `echo $xframe | awk  '{print "xa"4*$1"f"$1}'`
+ else if ( $type == wrms ) then
+# WRMS about le is  8th column =======>  velocity 
+	grep '1 L' $infile | awk '{print $8}' >! tmp.L
+	grep '2 N' $infile | awk '{print $8}' >! tmp.N
+	grep '3 E' $infile | awk '{print $8}' >! tmp.E
+	grep '4 U' $infile | awk '{print $8}' >! tmp.U
+	set label = ( "Scatter-Wrms Histogram : " )
+	set  bin = ` echo $binfactor | awk '{print b * $1}' b=$bin` 
+	set ubin = ` echo $binfactor | awk '{print u * $1}' u=$ubin` 
+	set xlabel = `echo $xframe | awk  '{print "xa"2*$1"f"$1}'`
+	set xxlabel = `echo $xframe | awk  '{print "xa"4*$1"f"$1}'`
+ else if ( $type == nrms ) then
+# NRMS about le is  9th column =======> scatter
+	grep '1 L' $infile | awk '{print $9/unc}' unc=$uncscl >! tmp.L
+	grep '2 N' $infile | awk '{print $9/unc}' unc=$uncscl >! tmp.N
+	grep '3 E' $infile | awk '{print $9/unc}' unc=$uncscl >! tmp.E
+	grep '4 U' $infile | awk '{print $9/unc}' unc=$uncscl >! tmp.U
+	set label = ( "Scatter-Nrms Histogram : " )
+	set bin  = ` echo $binfactor | awk '{print b * $1}' b=$bin` 
+	set ubin = ` echo $binfactor | awk '{print u * $1}' u=$ubin` 
+	set xlabel = `echo $xframe | awk  '{print "xa"4*$1"f"$1}'`
+	set xxlabel = `echo $xframe | awk  '{print "xa"4*$1"f"$1}'`
+ endif
+endif
+set ylabel = `echo $yframe | awk  '{print "ya"2*$1"f"$1}'`
+
+if ( $type == none )  then 
+	set label = ( " Histogram : " )
+	set xlabel = `echo $xframe | awk  '{print "xa"2*$1"f"$1}'`
+	set ylabel = `echo $yframe | awk  '{print "ya"2*$1"f"$1}'`
+	cat -n $infile > ! tmp.nN
+   set RANGE = `gmt gmtinfo  -I1/1  tmp.nN`
+	set r = ( `echo $RANGE/$factor | cut -c3- | awk -F/ '{print $3,$4*1.1,$1,$2 * $5}'` ) 
+   if ( $max_nscale == "" ) then
+	  set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4] 
+   else
+     set r = `echo $r $max_nscale | awk '{print $1, $5, $3, $4}'` 
+	  set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4] 
+   endif
+   set Jscalex =  `echo $r[2] | awk '{print 2.8 / $1 }' `i
+   set Jscaley =  `echo $r[4] | awk '{print 2.8 / $1 }' `i
+   set JSCALE  = "-Jx$Jscalex/$Jscaley" 
+   gmt pshistogram  $infile     -Y7i      -K -P -W$bin $RANGE $JSCALE  -G200 -L -B$xlabel+l"$xname" -B$ylabel+l" N " -BWS >! $pshistfile
+   set xunit = ""
+   set stats =   ( `vector_stat 0 0 < $infile  | awk 'NR == 1 {printf "%4.1f %4.1f %4d\n",$2,$9,$5}'` )
+	set perc = ""
+# MOD TAH 021007: Changed to the percentages
+	foreach percent ( 50 70 95 )
+	  set l  = `cat $infile | sort -n | wc | cut -c1-9`
+	  set p = ` echo $l $percent | awk '{printf" %6d \n", $1 * $2 / -100  }'`
+	  set last = `cat   $infile | sort -n | \head $p | tail -n -1 |awk '{printf"%10.2f\n",$1}' `
+	  set perc = ( $perc $percent $last )
+	end
+	echo  "VECTOR :  "$perc[1]\% \< $perc[2]$xunit"    "$perc[3]\% \< $perc[4]$xunit"    "$perc[5]\% \< $perc[6]$xunit
+	echo  "VECTOR :  "Mean$xunit : $stats[1]"        "Sigma$xunit : $stats[2]"      "Baselines: $stats[3]
+   if ( $stat_short  == yes ) then 
+     gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.65    Mean$xunit : $stats[1]           Baselines: $stats[3]
+ENDD
+   else if   ( $stat_long   == yes ) then 
+     gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.65    Mean$xunit : $stats[1]        @~s@~$xunit : $stats[2]         Baselines: $stats[3]
+ENDD
+   endif
+   if ( $perc_print  == yes ) then 
+     gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.80    $perc[1]\% \< $perc[2]$xunit     $perc[3]\% \< $perc[4]$xunit     $perc[5]\% \< $perc[6]$xunit 
+ENDD
+   endif
+
+   gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f8p+jTL -N  -O -P   >>   $pshistfile
+.1 -1   $label FILE: $file    $comment
+ENDD
+
+else 
+#	MOD TAH 990216: Get just first field rather then -c1-9 (repeated below for other tmp files).
+	if ( `cat  tmp.N | wc | awk '{print $1}'` > 0 ) then  
+	  cat -n tmp.N > ! tmp.nN
+     set RANGE = `gmt gmtinfo -I1/1  tmp.nN`  
+  	  set r = ( `echo $RANGE/$factor | cut -c3- | awk -F/ '{print $3,$4*1.1,$1,$2 * $5}'` )
+     if ( $max_nscale == "" ) then
+	    set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4] 
+     else
+       set r = `echo $r $max_nscale | awk '{print $1, $5, $3, $4}'` 
+	    set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4] 
+     endif
+     set Jscalex =  `echo $r[2] | awk '{print 2.8 / $1 }' `i
+     set Jscaley =  `echo $r[4] | awk '{print 2.8 / $1 }' `i
+     set JSCALE  =  -Jx$Jscalex/$Jscaley  
+     set xunit = "" 
+     if ( $prog == "ensum" || $prog == "tsfit" ) then
+       if ( $type == "wrms" || $type == "vel_wrms" ) set xunit =  ( " "\(mm\) )
+       gmt pshistogram tmp.N       -Y7i       -K -P -W$bin $RANGE $JSCALE  -G200 -L -B$xlabel+l" NORTH $type$xunit" -B${ylabel}+l"Number of Stations" -BWS  >! $pshistfile
+     else
+       if ( $type == "wrms" || $type == "vel_wrms" ) set xunit =  ( " "\(mm\) )
+       gmt pshistogram tmp.N       -Y7i       -K -P -W$bin $RANGE $JSCALE  -G200 -L -B$xlabel+l" NORTH $type$xunit" -B${ylabel}+l"Number of baselines" -BWS >! $pshistfile
+     endif
+     set stats =   ( `vector_stat 0 0 < tmp.N | awk 'NR == 1 {printf "%4.1f %4.1f %4d\n",$2,$9,$5}'` )
+	  set perc = ""
+	  foreach percent ( 50 70  95 )
+	    set l  = `cat tmp.N | sort -n | wc | cut -c1-9`
+	    set p = ` echo $l $percent | awk '{printf" %6d \n", $1 * $2 / -100  }'`
+	    set last = `cat  tmp.N  | sort -n | \head $p | tail -n -1 | awk '{printf"%5.1f \n", $1}' `
+	    set perc = ( $perc $percent $last )
+	  end
+	  echo  "NORTH   :  "$perc[1]\% \< $perc[2]$xunit"    "$perc[3]\% \< $perc[4]$xunit"    "$perc[5]\% \< $perc[6]$xunit
+     if ( $prog == "ensum" || $prog == "tsfit" ) then
+	    echo  "NORTH   :  "Mean$xunit : $stats[1]"    "Sigma$xunit : $stats[2]"      "Stations: $stats[3]
+     else
+	    echo  "NORTH   :  "Mean$xunit : $stats[1]"    "Sigma$xunit : $stats[2]"      "Baselines: $stats[3]
+     endif
+     if ( $stat_short  == yes ) then 
+       if ( $prog == "ensum" || $prog == "tsfit" ) then
+         gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.65    Mean$xunit : $stats[1]   Sigma$xunit : $stats[2]   Stations: $stats[3]
+ENDD
+       else
+         gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.65    Mean$xunit : $stats[1]   Sigma$xunit : $stats[2]   Baselines: $stats[3]
+ENDD
+       endif
+     else if   ( $stat_long   == yes ) then 
+       if ( $prog == "ensum" || $prog == "tsfit" ) then
+         gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.65    Mean$xunit : $stats[1]        @~s@~$xunit : $stats[2]         Stations: $stats[3]
+ENDD
+       else
+         gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.65    Mean$xunit : $stats[1]        @~s@~$xunit : $stats[2]         Baselines: $stats[3]
+ENDD
+       endif
+     endif
+     if ( $perc_print  == yes ) then 
+       gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.80    $perc[1]\% \< $perc[2]$xunit     $perc[3]\% \< $perc[4]$xunit     $perc[5]\% \< $perc[6]$xunit 
+ENDD
+     endif
+	endif
+
+	if ( ` cat tmp.E | wc | awk '{print $1}'`  > 0  ) then  
+	  cat -n tmp.E > ! tmp.nE
+     set RANGE = `gmt gmtinfo -I1/1  tmp.nE`
+	  set r = ( `echo $RANGE/$factor | cut -c3- | awk -F/ '{print $3,$4*1.1,$1,$2 * $5}'` )
+     if ( $max_escale == "" ) then
+	    set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4] 
+     else
+       set r = `echo $r $max_escale | awk '{print $1, $5, $3, $4}'` 
+	    set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4] 
+     endif
+     set Jscalex =  `echo $r[2] | awk '{print 2.8 / $1 }' `i
+     set Jscaley =  `echo $r[4] | awk '{print 2.8 / $1 }' `i
+     set JSCALE  =  -Jx$Jscalex/$Jscaley  
+     set xunit = ""
+     if ( $prog == "ensum" || $prog == "tsfit" ) then
+       if ( $type == "wrms" || $type == "vel_wrms" ) set xunit =  ( " "\(mm\) )
+       gmt pshistogram tmp.E -X3.9i          -O -K -P -W$bin $RANGE $JSCALE  -G200 -L -B$xlabel+l" EAST  $type$xunit" -B${ylabel}+l"Number of Stations" -BWS >> $pshistfile
+     else
+       if ( $type == "wrms" || $type == "vel_wrms" ) set xunit =  ( " "\(mm\) )
+       gmt pshistogram tmp.E -X3.9i          -O -K -P -W$bin $RANGE $JSCALE  -G200 -L -B$xlabel+l" EAST  $type$xunit" -B${ylabel}+l"Number of baselines" -BWS >> $pshistfile
+     endif
+     set stats =   ( `vector_stat 0 0 < tmp.E | awk 'NR == 1 {printf "%4.1f %4.1f %4d\n",$2,$9,$5}'` )
+	  set perc = ""
+	  foreach percent ( 50 70 95 )
+	    set l  = `cat tmp.E | sort -n | wc | cut -c1-9`
+	    set p = ` echo $l $percent | awk '{printf" %6d \n", $1 * $2 / -100  }'`
+	    set last = `cat  tmp.E  | sort -n | \head $p | tail -n -1 | awk '{printf"%5.1f \n", $1}' `
+	    set perc = ( $perc $percent $last )
+	  end
+	  echo  "EAST    :  "$perc[1]\% \< $perc[2]$xunit"    "$perc[3]\% \< $perc[4]$xunit"    "$perc[5]\% \< $perc[6]$xunit
+     if ( $prog == "ensum" || $prog == "tsfit" ) then
+	    echo  "EAST    :  "Mean$xunit : $stats[1]"    "Sigma$xunit : $stats[2]"      "Stations: $stats[3]
+     else
+	    echo  "EAST    :  "Mean$xunit : $stats[1]"    "Sigma$xunit : $stats[2]"      "Baselines: $stats[3]
+     endif
+     if ( $stat_short  == yes ) then 
+       if ( $prog == "ensum" || $prog == "tsfit" ) then
+         gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.65    Mean$xunit : $stats[1]   Sigma$xunit : $stats[2]   Stations: $stats[3]
+ENDD
+       else
+         gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.65    Mean$xunit : $stats[1]   Sigma$xunit : $stats[2]   Baselines: $stats[3]
+ENDD
+       endif
+     else if   ( $stat_long   == yes ) then 
+       if ( $prog == "ensum" || $prog == "tsfit" ) then
+         gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.65    Mean$xunit : $stats[1]        @~s@~$xunit : $stats[2]         Stations: $stats[3]
+ENDD
+       else
+         gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.65    Mean$xunit : $stats[1]        @~s@~$xunit : $stats[2]         Baselines: $stats[3]
+ENDD
+       endif
+     endif
+     if ( $perc_print  == yes ) then 
+       gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.80    $perc[1]\% \< $perc[2]$xunit     $perc[3]\% \< $perc[4]$xunit     $perc[5]\% \< $perc[6]$xunit 
+ENDD
+     endif
+
+	endif
+
+	if ( `cat  tmp.U | wc | awk '{print $1}'` > 0  ) then  
+	  cat -n tmp.U > ! tmp.nU
+     set RANGE = `gmt gmtinfo -I1/1  tmp.nU`
+	  set r = ( `echo $RANGE/$factor | cut -c3- | awk -F/ '{print $3,$4*1.1,$1,$2 * $5}'` )
+     if ( $max_uscale == "" ) then
+	    set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4] 
+     else
+       set r = `echo $r $max_uscale | awk '{print 0, $5, $3, $4}'` 
+	    set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4] 
+     endif
+     set Jscalex =  `echo $r[2] | awk '{print 2.8 / $1 }' `i
+     set Jscaley =  `echo $r[4] | awk '{print 2.8 / $1 }' `i
+     set JSCALE  =  -Jx$Jscalex/$Jscaley  
+     set xunit = ""
+     if ( $prog == "ensum" || $prog == "tsfit" ) then
+       if ( $type == "wrms" || $type == "vel_wrms" ) set xunit =  ( " "\(mm\) )
+       gmt pshistogram  tmp.U -X-3.9i  -Y-4.5i -O -K -P -W$ubin $RANGE $JSCALE  -G200 -L -B$xxlabel+l"  UP  $type$xunit" -B${ylabel}+l"Number of Stations" -BWS >> $pshistfile
+     else
+       if ( $type == "wrms" || $type == "vel_wrms" ) set xunit =  ( " "\(mm\) )
+       gmt pshistogram  tmp.U -X-3.9i  -Y-4.5i -O -K -P -W$ubin $RANGE $JSCALE  -G200 -L -B$xxlabel+l"  UP  $type$xunit" -B${ylabel}+l"Number of baselines" -BWS >> $pshistfile
+     endif
+     set stats =   ( `vector_stat 0 0 < tmp.U |  awk 'NR == 1 {printf "%4.1f %4.1f %4d\n",$2,$9,$5}'` )
+	  set perc = ""
+	  foreach percent ( 50 70 95 )
+	    set l  = `cat tmp.U | sort -n | wc | cut -c1-9`
+	    set p = ` echo $l $percent | awk '{printf" %6d \n", $1 * $2 / -100  }'`
+	    set last = `cat  tmp.U  | sort -n | \head $p | tail -n -1 | awk '{printf"%5.1f \n", $1}' `
+	    set perc = ( $perc $percent $last )
+	  end
+	  echo  "UP     :  "$perc[1]\% \< $perc[2]$xunit"    "$perc[3]\% \< $perc[4]$xunit"    "$perc[5]\% \< $perc[6]$xunit
+     if ( $prog == "ensum" || $prog == "tsfit" ) then
+ 	    echo  "UP     :  "Mean$xunit : $stats[1]"    "Sigma$xunit : $stats[2]"      "Stations: $stats[3]
+     else
+ 	    echo  "UP     :  "Mean$xunit : $stats[1]"    "Sigma$xunit : $stats[2]"      "Baselines: $stats[3]
+     endif
+     if ( $stat_short  == yes ) then 
+       if ( $prog == "ensum" || $prog == "tsfit" ) then
+         gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.65    Mean$xunit : $stats[1]   Sigma$xunit : $stats[2]   Stations: $stats[3]
+ENDD
+       else
+         gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.65    Mean$xunit : $stats[1]   Sigma$xunit : $stats[2]   Baselines: $stats[3]
+ENDD
+       endif
+     else if   ( $stat_long   == yes ) then 
+       if ( $prog == "ensum" || $prog == "tsfit" ) then
+         gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.65    Mean$xunit : $stats[1]        @~s@~$xunit : $stats[2]         Stations: $stats[3]
+ENDD
+       else
+         gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.65    Mean$xunit : $stats[1]        @~s@~$xunit : $stats[2]         Baselines: $stats[3]
+ENDD
+       endif
+     endif
+     if ( $perc_print  == yes ) then 
+       gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.80    $perc[1]\% \< $perc[2]$xunit     $perc[3]\% \< $perc[4]$xunit     $perc[5]\% \< $perc[6]$xunit 
+ENDD
+     endif
+
+	endif
+   if ( -e tmp.L ) then
+	  if (`cat  tmp.L | wc | awk '{print $1}'` > 0  ) then  
+  	    cat -n tmp.L > ! tmp.nL
+       set RANGE = `gmt gmtinfo -I1/1  tmp.nL`
+	    set r = ( `echo $RANGE/$factor | cut -c3-  | awk -F/ '{print $3,$4*1.1,$1,$2 * $5}'` )
+       if ( $max_lscale == "" ) then
+	      set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4] 
+       else
+         set r = `echo $r $max_lscale | awk '{print $1, $5, $3, $4}'` 
+	      set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4] 
+       endif
+       set Jscalex =  `echo $r[2] | awk '{print 2.8 / $1 }' `i
+       set Jscaley =  `echo $r[4] | awk '{print 2.8 / $1 }' `i
+       set JSCALE  =  -Jx$Jscalex/$Jscaley  
+       set xunit = ""
+       if ( $type == "wrms" || $type == "vel_wrms" ) set xunit =  ( " "\(mm\) )
+       gmt pshistogram tmp.L -X3.9i          -O -K -P -W$bin $RANGE $JSCALE  -G200 -L -B$xlabel+l"LENGTH $type$xunit" -B${ylabel}+l"Number of baselines" -BWS >> $pshistfile
+       set stats =   ( `vector_stat 0 0 < tmp.L |  awk 'NR == 1 {printf "%4.1f %4.1f %4d\n",$2,$9,$5}'` )
+	    set perc = ""
+	    foreach percent ( 50 70 95 )
+	      set l  = `cat tmp.L | sort -n | wc | cut -c1-9`
+	      set p = ` echo $l $percent | awk '{printf" %6d \n", $1 * $2 / -100  }'`
+	      set last = `cat  tmp.L  | sort -n | \head $p | tail -n -1 | awk '{printf"%5.1f \n", $1}' `
+	      set perc = ( $perc $percent $last )
+	    end
+	    echo  "LENGTH  :  "$perc[1]\% \< $perc[2]$xunit"    "$perc[3]\% \< $perc[4]$xunit"    "$perc[5]\% \< $perc[6]$xunit 
+	    echo  "LENGTH  :  "Mean$xunit : $stats[1]"    "Sigma$xunit : $stats[2]"      "Baselines: $stats[3]
+       if ( $stat_short  == yes ) then 
+         gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.65    Mean$xunit : $stats[1]   Sigma$xunit : $stats[2]   Baselines: $stats[3]
+ENDD
+       else if   ( $stat_long   == yes ) then 
+         gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.65    Mean$xunit : $stats[1]        @~s@~$xunit : $stats[2]         Baselines: $stats[3]
+ENDD
+       endif
+       if ( $perc_print  == yes ) then 
+         gmt pstext << ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f10p+jTL -N  -O -P -K  >>   $pshistfile
+-0.3 -.80    $perc[1]\% \< $perc[2]$xunit     $perc[3]\% \< $perc[4]$xunit     $perc[5]\% \< $perc[6]$xunit 
+ENDD
+       endif
+	  endif
+   endif
+endif
+
+gmt pstext <<ENDD  -R0/8.5/0/11 -Jx1i/1i -F+f+jBL -N  -O -P    >>   $pshistfile
+-0.5 -1.2       12p   $label FILE: $file    $comment
+-0.5 -1.40       10p   Ignore ALL    components of : - $skill
+-0.5 -1.55       10p   Ignore UP     components of : - $ukill
+-0.5 -1.70       10p   Ignore NORTH  components of : - $nkill
+-0.5 -1.85       10p   Ignore EAST   components of : - $ekill
+ENDD
+
+endif
+
+# Save the tmp.$file (which is the data actually plotted.
+\cp tmp.$file $file.hist_data
+
+#cleanup
+if ( $keep_tmp == no ) \rm -rf tmp.$file  tmp[1neul].$file  tmp.[neul][NEUL]  tmp.[NEUL] 
+
+echo " "
+echo "Created postscript file : "  $pshistfile
+echo " "
+echo " To view      : gs " $pshistfile
+echo " "
+echo " To print     : lpr -s "  $pshistfile
+echo " "
+if ( $vert == no )  echo "-vert issued. Read U component x-axis accordingly."
+
+# gs  $pshistfile

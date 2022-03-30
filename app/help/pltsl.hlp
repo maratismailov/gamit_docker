@@ -1,0 +1,512 @@
+PLTSL: VLBI plotting program of SOLVK binary back solution files
+  
+  
+PLTSL : General plotting program for SOLVK binary Back files
+  
+Runstring 
+  
+CI> PLTSL, <control file/LU>, <plot LU>, <data file>
+  
+where <control_file/LU> is the name of control file with commands or the LU 
+          from which commands will be read. Optional defaults to LU 1.
+      <plot LU> is the LU to which plots will be sents (must be a graphics
+          device). Optional, defaults to LU 1 
+      <data file> name of a SOLVK Binary back file to be plotted. Optional, 
+          default to no data file.  (File is then given by the FILE command 
+          in PLTSL) 
+  
+Use ? HELP (or help help) in PLTSL for more information about running program 
+  
+The following text discusses each of the commands in PLTSL.  May be acessed 
+from within PLTSL using the ? <command> option. 
+  
+**END 
+      END is used to end the plotting session using PLTSL.  The 
+ use of this command will terminate the GRAPHICS 1000/II plotting package 
+ smoothly.
+  
+**DRAW
+      DRAW will draw the data which has been read from the user
+ specified file.  The data will be drawn with the currently selected point
+ type (see POINT, default 'O'), the current error bar type (see ERRBARS,
+ default type 1), the current line type (See LINE, default type 1), and
+ the current pen type or color (see PEN, default 1).  The start data location
+ and number to skip may also be passed.  The form of the command is
+ ? DRAW <step> <start>
+ where <step> is the number of data to skip at each step (1 will skip no
+              no data,
+       <start> is the data point to start with. (1 will start with first)
+ If no values are given, the values will be reset to 1 for each of them.
+      The command must be preceeded by the 'FILE' (unless the file name
+ was passed through the runstring) and the 'READ' command.
+ 
+**ERASE 
+      ERASE will clear the whole graphics screen on terminal type devices.
+ It has no effect on plotters and printers. 
+  
+**FILE
+      FILE allows the user to specify the name the data file to be plotted. 
+ This command will open the file and read the header records and copy 
+ the remaining records into memory. This file must be a back file generated 
+ by SOLVK (using the BCK_FILE command)
+ Usage: 
+ ?  FILE <name of file> -- file name may be 62 characters long. 
+ The X/Y_Field commands are then used to plot the desired information.
+  
+**READ
+      READ will read the data from the selected file using the X_FIELD, 
+ Y_FIELD. The field types default to time for X_FIELD and no default for
+ the Y_FIELD.  The read command must be used before data the DRAW or
+ the AXES commands. 
+  
+**X_FIELD 
+      X_FIELD allows the user to specify the type of information to be
+ be plotted allong the X axis. The form of the command is:
+  
+ ? X_FIELD <information type> [site/source name[ [site source name] 
+  
+ where information type is the name of quantity to be plotted. (Use HELP
+ or STATUS to get the possibilities.
+      [site/source name] is the name of a site or source which may be 
+ required. (See expamples below).  For baseline dependent information 
+ two site names are required. 
+ EXAMPLES:
+  
+ ? X_FIELD Time             ! Sets time as axes (Default) 
+ ? X_FIELD atm_off haystack ! Markov zenith atmospheric variations at 
+                            ! haystack
+ ? X_FIELD del_res haystack onsala60   ! Postfit delay residuals for the
+                            ! Haystack to Onsala60 baseline.
+ ? X_F del_r ha on          ! Abbriviated version of above command (which 
+                            ! will work if HA and ON are unqiue among the 
+                            ! station names 
+  
+**Y_FIELD 
+      Y_FIELD allows the user to specify the information to be
+ plotted along the Y axis. The form of is the same as X_FIELD 
+  
+**VIEW
+      VIEW  sets the limits of the plot on the plotting area.  The comand 
+ takes 4 values all in the range 0-1.  The axes will be drawn on the
+ boundaries defined by the view command.  The values are given as:
+ VIEW min x, max x, min y, max y  e.g., 
+       ^y axis
+     (0,1)                            (1,1) 
+       ---------------------------------
+       |             (.6,.7)   (.8,.7) |
+       |                ----------     |
+       |                |        |  <----- This area would be used for
+       |                |        |     |   VIEW 0.6 0.8  0.4 0.7
+       |                ----------     |
+       |             (.6,.4)   (.8,.4) |
+       |                               |
+       --------------------------------- >x  whole screen/plotting area 
+     (0,0)                           (1,0)
+ EXAMPLES:
+ ? VIEW 0 1 0 1     -- will draw using the whole plotting area.  In this case 
+                       there will be no room for labels on the axes 
+ ? VIEW .1 .9 .1 .5 -- will use the lower half of the screen with room
+                       for axis labels
+  
+**SCALE 
+      SCALE is used to enter both the x and y scales simultaneously.  For 
+ time axes (field(1)=0), the julian date range must be entered.  In this
+ case the use of the X_SCALE or Y_SCALE commands are preferred.  For these
+ commands the calender dates are entered. 
+ Use: ? SCALE  min x, max x, min y, max y 
+  
+**XMN_AXIS
+      XMN_AXIS is used to draw an X axis with labels at y min.  The format
+ of the command is: 
+ ? XMN_AXIS <tic spacing> <label spacing> <title> 
+ where
+ <tic spacing> controls the spacing of the tic marks: 
+      = 0               -- no tic marks 
+      = positive number -- spacing of the tic marks in the units of the axis
+                           (days for calender time axes)
+      = -1              -- compute "optimum" spacing.  If the view is very
+                           small the optimum spacing will be cramped. 
+ <label spacing> controls the positioning of the labels on the axis:
+      = 0               -- no labels
+      = positive number -- multiples of the tic marks to be use.
+ <title> gives the (optional) title to be placed below the axis.  The form
+      may be either:
+      "<title>"   -- <title> will be used (must be surrounded by "'s) 
+  
+**XMX_AXIS
+      XMX_AXIS is used to draw an X axis with labels at y max.  The format
+ of the command is: 
+ ? XMX_AXIS <tic spacing> <label spacing> <title> 
+ where the arguments are explained in the help for XMN_AXIS.
+  
+**YMN_AXIS
+      YMN_AXIS is used to draw an Y axis with labels at x min.  The format
+ of the command is: 
+ ? YMN_AXIS <tic spacing> <label spacing> <title> 
+ where the arguments are explained in the help for XMN_AXIS 
+  
+**YMX_AXIS
+      YMX_AXIS is used to draw an Y axis with labels at x max.  The format
+ of the command is: 
+ ? YMX_AXIS <tic spacing> <label spacing> <title> 
+ where the arguments are explained in the help for XMN_AXIS.
+  
+**LINE
+      LINE selects the line type to be used in plotting.  The specific line
+ type will depend on the graphics device used. Type 1 line is solid.
+ Line_type has two argumnent.  The first sets
+ line style and the second the type of point to be connected with a
+ line.  If the first argument is negative then, decreasing x coordinate
+ will cause a line break.  If the second argument is negative then
+ all points of differenct types will be connected with a separate line
+ for each.
+ Use:
+ ? LINE <number> <point>
+ where <number> sets the line type, thichness and what to do if x coordinate
+       reverses sign.  The line type is modulo 10, and the tens digits set the
+       the thichness of the line (if possible, mainly for laser printers).  if
+       the <number> is negative then the line will break for all negative
+       increments in the x data values.
+       <point> allows the specification of the point to be connected.  If the
+       the value is negative then all point types upto the absolute value given
+       will be connected with SEPARATE lines.
+ If LINE = 0 then plotted points will not be connected be a line and all
+ other lines in the plot will be solid. Use:
+
+**POINT 
+      POINT selects the point type to be used in plotting. Use: 
+? POINT <number>  -- selects point type <number>. 
+There are four types of numbers which can be selected:
+number >  0 -- Use GRAPHICS 1000/II point type. These values are
+      1 = .,  2 = +,  3 = *, 4 = O, 5 = X, 6 = triangle, 7 = rectangle, 
+      8 = diamond,    9 = rect. w/cross  , 10 - 19 = digits 0 - 9 
+number =  0 -- no points output.
+number = -1 -- Character will be output dependent on the value read from
+               the data file in the P_FIELD(1) column.  The translation 
+               is 1-26 = A-Z. If P_FIELD(2) is > 0 then if the value in 
+               the P_FIELD(2) column is non-zero then letters will be 
+               converted to lower case. 
+number = -2 -- Similar to number = -1 except that the Graphics 1000/II
+               point types are used.
+The use of POINT -1 or POINT -2 along with P_FIELD allows different types 
+of data from the one file to be differentiated on the plot. 
+  
+**ERRBARS
+      ERRBARS selects the error bar type to be used on the plot. Use:
+ ? ERRBARS <number> <x scale> <y scale>
+ where <number> defines the type of error bar,
+ There are three type of errors:
+ <number> = 0  -- No error bars will be drawn even if X_/Y_FIELD(3) are
+                  non-zero i.e., sigmas have been read.
+ <number> = 1  -- A single line error bar will be drawn for the normal
+                  data fields (FIELD(1)=1) for which a sigma column has
+                  has been given.
+ <number> = 2  -- Similar to <number>=1 except cross bars are put at the
+                  end of the error bars.
+ <x scale> and <y scale> are multipliers used to scale the error bars before
+       ploting.  Default is 1.0 if no values are given (reset for each call).
+       If only x scale given then y scale is set equal to x scale value.
+  
+**LABEL 
+      LABEL allows the user to put labels on the plot.  It may also be
+ be used to suspend the program for a pen or paper change for example.
+ ? LABEL <position> <orientation> <optional label>
+ where
+ <position> -- defines the start position of the label relative to the
+               lower left hand cornor of the view area.  Position may be
+               entered in one of two forms: 
+               <x> <y> -- gives the postions of the label or
+               <?>     -- allows the user to select the postion graphically 
+                          The cursor will be turned on, and should be moved 
+                          to the dersired position and any key hit. 
+ <orientation> -- defines the orientation of the label relative to the X
+               axis.  Orientation may be entered in one of two forms: 
+               <delX> <delY> -- gives orientation of label or 
+               <?>     -- allows the to select the orientation graphically
+                          relative to the position of the start of the label. 
+ <option label> -- the label to be output.  May be in one of two forms: 
+                "<string>" -- <string> will be the label or 
+                :H<number> -- the number'th header record from the file will
+                          be used.
+                :P<number> -- the number'th line from the output of FIT_POLY
+                          will be used
+                :F         -- Current data file name
+                :T         -- Current date and time
+  
+ The label will be output using the current FONT, PEN and CHARSZ. 
+  
+**CHARSZ
+      CHARSZ allows the user to given the character size for labels when
+ FONT is >0.  The character size will be used for all characters output 
+ to the graphics device.
+ ? CHARSZ <width mm> <height mm>
+ where <width mm> and <height mm> are the width and the height of characters
+ in mm.  The size of characters relative to plot size will depend on the
+ specific plotting device.  This dependence does not normally cause any 
+ problems. A label which may not fit on a small screen device (e.g. HP150)
+ but will fit on a larger screen device is the normal problem.
+ This device dependence can be removed by the use of the PS_SIZE command. 
+  
+**SIGN_X
+      ** ADVANCED FEATURE ** use with caution 
+      SIGN_X allows the sign of Y axis to be reversed.  This feauture is
+ normally not allowed in GRAPHICS 1000/II.  The effect of setting SIGN_X
+ to -1 is to allow a 90 degree rotation of the plot when the X_FIELD and
+ Y_FIELD commands are exchanged.
+ ? SIGN_X <+1 or -1>
+  
+**SIGN_Y
+      ** ADVANCED FEATURE ** use with caution 
+      SIGN_Y allows the sign of the Y axis to be reversed.  See SIGN_X
+ for more details.  This feature is not supported.
+  
+**PEN 
+      PEN selects the pen or colour on multi-pen or colour output devices 
+ ? PEN <number>  -- selects pen/color <number 1-20>. 
+
+ There are 20 choices of pens (in release 3.1 the color map is still
+ subject to change.  The final selection will be based on print quality.)
+ The first time you issue the pen command, the back ground color is set.
+ (Pen 1 will give a black background, and pen 20 a white background).
+ Before issuing any drawing commands issue the pen command again
+ with your choice of pen. (Otherwize you will draw in the background
+ color).
+
+  
+**FONT
+      FONT selects the character font to be used on labels. Use:
+ ? FONT <number> -- where 
+ <number> = 0  -- uses the internal character set of the device.
+          = 1  -- GRAPHICS/1000 II Simplex font (default) 
+          = 3  -- GRAPHICS/1000 II Times roman font 
+          = 5  -- GRAPHICS/1000 II Greek letters/symbol font
+ If FONT 0 is selected some labeling routines will not work correctly 
+ because of orientation problems. 
+  
+**PS_SIZE 
+      ** ADVANCED FEATURE ** use with caution 
+      PS_SIZE allows the user enter a psuedo paper size for the device
+ currently being used so that the characters will the same size, relative 
+ to the plot area, as on some other device. 
+ ? PS_SIZE <x length mm> <y length mm>
+ where
+ <x length mm> is the physical length in the X direction of the 
+               simulated device.
+ <y length mm> is the 'virtual' length in the Y direction of the
+               simulated device. <y length mm>*aspect ratio (see STATUS)
+               yields the phyical length in the y direction.  By making 
+               this value different to <x length mm> differences in 
+               aspect ratios between devices can be accomadated.
+ EXAMPLE: 
+ ? PS_SIZE 274 274 -- on a HP150 will produce characters in the correct 
+                      portion for the HP2602 line printer. (The normal
+                      size of HP150 is 215 mm and the aspect ratios are 
+                      about the same. 
+ The PS_SIZE command should be removed (or commented out, put a character 
+ in column one) when the plot is made using the real device.
+  
+**X_SCALE 
+      X_SCALE allows the entry of the minimun and maximun values of 
+ the X axis scale.  For time data a pair of calender dates should 
+ be entered with the same time resolution as the X_FIELD(3) entry.
+ ? X_SCALE  <min x> <max x> 
+ EXAMPLES 
+ if X_FIELD is a time field (Default) 
+ then 
+ ? X_SCALE  84 10 12 12  84 10 13 14 would set the scales to 84/10/12 12:00 
+                                     to 84/10/13 14:00. 
+ if X_FIELD is non-time field 
+ then 
+ ? X_FIELD  22.00  50.00             would set the scales to 22.0 to 55.0 
+  
+ A GRAPHICS 1000/II error will occur if the maximun value is less than the
+ minimum value. 
+  
+**Y_SCALE 
+      Y_SCALE allows the entry of the mimimum and maximun values of 
+ the Y axis scale.  See HELP X_SCALE for details. 
+ ? Y_SCALE  <min y> <max Y> 
+  
+**P_FIELD 
+      This is NOT a command in PLTSL.  Included for compatability with
+ PLOT. DO NOT USE.
+  
+**RESET_SC
+      RESET_SC allows the users to set whether the plot scales will be
+ automatically reset when new data is read (i.e., when ever the READ command
+ is used. 
+ ? RESET_SC  ON/OFF 
+ will turn scale resetting on or off. 
+  
+**AXES
+      AXES allows all axes to drawn and labelled with one command.  This
+ command is equivalent to:
+ ? XMN_AXIS -1 1 <x axis label as given in the X_FIELD command> 
+ ? YMN_AXIS -1 1 <y axis label as given in the Y_FIELD command> 
+ ? XMX_AXIS -1 0
+ ? YNX_AXIS -1 0
+  
+**HELP
+      HELP allows the user to obtain HELP information on the PLTSL commands 
+ ? HELP <command> 
+ If you really need help, here is a brief description of the use of PLTSL.
+ More detailed information can be obtained under the help for individual
+ commands.
+ PLTSL is a command driven program with no particular order for the commands
+ to be given.  PLTSL will plot the data in a SOLVK back solution file.
+ The variables to be plotted as specified with the X_FIELD and the Y_FIELD
+ commands.
+ The name of the data file to be plotted is given using the FILE command. 
+ Any number of files may be accessed during the PLTSL run.
+  
+ PLTSL may be run interactively or in batch mode using a file which 
+ contains PLTSL commands.  The name of the command file is passed as the
+ first runstring parameter.  If a command file name is passed in the
+ runstring then the PLTSL will take not need any user interaction.
+  
+ The graphics device is passed as the second runstring parameter. If
+ no value is entered, then the default device is the users terminal.
+  
+ The name of the data file may be passed as the third runstring 
+ parameter. 
+  
+ All commands must be preceeded by a blank character.  A character in 
+ the first column indicates a comment which will be echoed on the users 
+ terminal.  Commands may be upper or lower case and be truncated to their 
+ smallest unique length.
+  
+ A TYPICAL SESSION -- to get a plot 
+ ? FILE <name>  ! give file name. File will be read and its contents
+                ! summarized. 
+ ? X_FIELD <information>           ! Define X data.  If time is to be used
+                                   ! then this command can be skipped.
+ ? Y_FIELD <information>           ! Define Y data
+ ? READ         ! read data using current field information 
+ ? DRAW         ! will draw the data
+ ? AXES         ! will put the axes on the plot with title <x label>
+                ! and <y label> 
+ ? END          ! terminates PLTSL
+  
+**????? 
+      See ? HELP HELP.  This help will discuss the operation of the program 
+  
+**HEADERS 
+      This is NOT a PLTSL command.  Included for compatbility with PLOT.
+ DO NOT USE.
+  
+**STATUS
+      STATUS allow the user the determine the current setting for various 
+ parameters in the plot program e.g., current point type, line type,
+ current data file, scales etc. 
+  
+**PAUSE 
+      Pauses the program for a number of seconds.  For example: 
+  PAUSE 32    ! Pause program for 32 seconds
+  
+WARNING: The maximum value which can be used in pause is 32766 seconds
+         (9 hours).  For longer pauses multiple pause commands can be 
+         used.
+  
+**WINDOW
+      Allows the selection of a window of data for fitting a polynomial 
+ to.  The command has two modes, either 
+  WINDOW ?
+ or 
+  WINDOW <lower left x and y> <upper right x and y> 
+ If the first form is used, then the user will be prompted to inter-
+ actively select the window using the cursor on the graphics device.
+ The cursor is located at the lower left hand cornor of the plot and
+ any key hit, and the moved to the upper right hand cornor and again
+ any key hit. 
+ If the second form is used, then the users gives four values.  The 
+ first two are the lower left hand cornor of the polynomial window
+ relative to the lower left hand cornor of the plot.  The second
+ pair of values is the upper right hand cornor of the window relative 
+ to the lower left hand cornor of the plot. 
+ For calender fields on the x axis, the values are given and reported 
+ in days. 
+ The window is automatically set the size of the plot when the data 
+ is first read, and the corresponding component of the window will be 
+ reset each time the scales are changed, UNLESS the RESET OFF command 
+ has been used, in which case the window will not be changed. 
+  
+**FIT_POLY
+      This command will cause a polynomial to fitted to the Y data as 
+ a function of the X data. The form of the command is 
+  FIT_POLY nn 
+ where nn is the order of the polynomial.  If nn is not given then a
+ first order polynomial will be estimated. If nn is larger than the 
+ maximum value allowed, then the maximum value will be used.
+ (See also POLY_UNI to set the units of the polynomial, and LABEL 
+ for outputting the polynomial coefficients and statistics on the 
+ plot.
+  
+**POLY_UNI
+      This commands allows the units of the polynomial estimates to be
+ given and changed relative to the intrinsic units of the plotted data. 
+ Form of the command is 
+  POLY_UNI <x unit label> <y unit label> <x conversion> <y converion> 
+ where <x unit label> is a string of up to 5 characters which specify 
+          units of the x data,
+       <y unit label> is a string of up to 5 characters which specify 
+          units of the y data,
+       <x conversion> is a conversion factor for the X data e.g., if the
+          x data is calender date, then the intrinsic units are days.  To 
+          convert to years 365.25 would used (Note: the program automat-
+          ically divides by the x conversion) 
+       <y conversion> is the same as x conversion except that the y data
+          is multiplied by the conversion.
+  
+ EXAMPLE: 
+  POLY_UNI  years mm  365.25 1000.0 
+ would output labels as  mm/year**n and convert days to years and meters
+ to millimeters.
+  
+**PDRAW 
+      This command will plot the estimated polynomial on the plot within
+ the window selected.  The current line type is used, unless none has been
+ selected in which case type 1 (solid line) will be used.  The window 
+ may be reselected before PDRAW is given so that the polynomial will be 
+ extrapolated.
+ PDRAW has no arguments 
+  
+**MARKWIND
+      This command will plot a box around the polynomial window using the 
+ current line type or a solid line if no line is selected.
+  
+  
+**IDENTIFY
+      This command allows the values of a plotted point to be displayed.
+The form of the command is: 
+ IDENTIFY <outputfile name> 
+where the outputfile name is optional (Defaults to users LU). 
+  
+When this command is given, the graphics cursor will appear and the user
+moves it to the desired point.  If R is pressed, then the cursor will 
+remain displayed and another point may be identified.  Any other key
+will cause control to return to the command file.  All points within
+the current character size of the cursor will be identified. (Thus by 
+using a character size the size of the screen, all points will be 
+identified. 
+If the output is sent to a file, the results are appended to the file.
+  
+**XDIFF 
+      XDIFF allows simple differencing to be carried out using the plot 
+data itself.  The quantities to be differenced must be in the EXACT 
+same order and in the same units.  The error bar information is 
+summed in a root-sum-square sense.  The command is used by saying 
+?  XDIFF
+immediately before the READ command for the new data is issued.  When 
+the new data is read it is differenced from the data used for the 
+previous plot.  There is no attempt made to match the data in any 
+way.  XDIFF will difference the x data field information. Most of the 
+time users will want to use YDIFF.
+WARNING -- Do NOT use reset off command with this feature.  The scales
+will not be presersed correctly.
+  
+**YDIFF 
+      YDIFF allows differencing of the y_field information between
+plot data sets.  This is SIMPLE differencing.  SEE XDIFF for use and
+restrictions. 
+  
+ 

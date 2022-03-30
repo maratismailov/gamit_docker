@@ -1,0 +1,296 @@
+Input options -s 1994 126 1994 186 -expt emed -local -net MIT -opt H LB LC G E
+No process.defaults file found at: /net/chandler/data30/rwk/active/kf/htoglb/tables/process.defaults
+Running sh_glred under default configuration
+No sites.defaults file found at: /net/chandler/data30/rwk/active/kf/htoglb/tables/sites.defaults 
+Running sh_glred using default site configuration
+Checking and making required directories
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/126/h????a.94126 ) within this combination span: 1994 126 --> 1994 126
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/127/h????a.94127 ) within this combination span: 1994 127 --> 1994 127
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/128/h????a.94128 ) within this combination span: 1994 128 --> 1994 128
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/129/h????a.94129 ) within this combination span: 1994 129 --> 1994 129
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/130/h????a.94130 ) within this combination span: 1994 130 --> 1994 130
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/131/h????a.94131 ) within this combination span: 1994 131 --> 1994 131
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/132/h????a.94132 ) within this combination span: 1994 132 --> 1994 132
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/133/h????a.94133 ) within this combination span: 1994 133 --> 1994 133
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/134/h????a.94134 ) within this combination span: 1994 134 --> 1994 134
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/135/h????a.94135 ) within this combination span: 1994 135 --> 1994 135
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/136/h????a.94136 ) within this combination span: 1994 136 --> 1994 136
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/137/h????a.94137 ) within this combination span: 1994 137 --> 1994 137
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/138/h????a.94138 ) within this combination span: 1994 138 --> 1994 138
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/139/h????a.94139 ) within this combination span: 1994 139 --> 1994 139
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/140/h????a.94140 ) within this combination span: 1994 140 --> 1994 140
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/141/h????a.94141 ) within this combination span: 1994 141 --> 1994 141
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/142/h????a.94142 ) within this combination span: 1994 142 --> 1994 142
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/143/h????a.94143 ) within this combination span: 1994 143 --> 1994 143
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/144/h????a.94144 ) within this combination span: 1994 144 --> 1994 144
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/145/h????a.94145 ) within this combination span: 1994 145 --> 1994 145
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/146/h????a.94146 ) within this combination span: 1994 146 --> 1994 146
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/147/h????a.94147 ) within this combination span: 1994 147 --> 1994 147
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/148/h????a.94148 ) within this combination span: 1994 148 --> 1994 148
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/149/h????a.94149 ) within this combination span: 1994 149 --> 1994 149
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/150/h????a.94150 ) within this combination span: 1994 150 --> 1994 150
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/151/h????a.94151 ) within this combination span: 1994 151 --> 1994 151
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/152/h????a.94152 ) within this combination span: 1994 152 --> 1994 152
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/153/h????a.94153 ) within this combination span: 1994 153 --> 1994 153
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/154/h????a.94154 ) within this combination span: 1994 154 --> 1994 154
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/155/h????a.94155 ) within this combination span: 1994 155 --> 1994 155
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/156/h????a.94156 ) within this combination span: 1994 156 --> 1994 156
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/157/h????a.94157 ) within this combination span: 1994 157 --> 1994 157
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/158/h????a.94158 ) within this combination span: 1994 158 --> 1994 158
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/159/h????a.94159 ) within this combination span: 1994 159 --> 1994 159
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/160/h????a.94160 ) within this combination span: 1994 160 --> 1994 160
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/161/h????a.94161 ) within this combination span: 1994 161 --> 1994 161
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/162/h????a.94162 ) within this combination span: 1994 162 --> 1994 162
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/163/h????a.94163 ) within this combination span: 1994 163 --> 1994 163
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/164/h????a.94164 ) within this combination span: 1994 164 --> 1994 164
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/165/h????a.94165 ) within this combination span: 1994 165 --> 1994 165
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/166/h????a.94166 ) within this combination span: 1994 166 --> 1994 166
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/167/h????a.94167 ) within this combination span: 1994 167 --> 1994 167
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/168/h????a.94168 ) within this combination span: 1994 168 --> 1994 168
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/169/h????a.94169 ) within this combination span: 1994 169 --> 1994 169
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/170/h????a.94170 ) within this combination span: 1994 170 --> 1994 170
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/171/h????a.94171 ) within this combination span: 1994 171 --> 1994 171
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/172/h????a.94172 ) within this combination span: 1994 172 --> 1994 172
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/173/h????a.94173 ) within this combination span: 1994 173 --> 1994 173
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/174/h????a.94174 ) within this combination span: 1994 174 --> 1994 174
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/175/h????a.94175 ) within this combination span: 1994 175 --> 1994 175
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/176/h????a.94176 ) within this combination span: 1994 176 --> 1994 176
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/177/h????a.94177 ) within this combination span: 1994 177 --> 1994 177
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/178/h????a.94178 ) within this combination span: 1994 178 --> 1994 178
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/179/h????a.94179 ) within this combination span: 1994 179 --> 1994 179
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/180/h????a.94180 ) within this combination span: 1994 180 --> 1994 180
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/181/h????a.94181 ) within this combination span: 1994 181 --> 1994 181
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/182/h????a.94182 ) within this combination span: 1994 182 --> 1994 182
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/183/h????a.94183 ) within this combination span: 1994 183 --> 1994 183
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/184/h????a.94184 ) within this combination span: 1994 184 --> 1994 184
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/185/h????a.94185 ) within this combination span: 1994 185 --> 1994 185
+Skipping this combination...
+ls: No match.
+No local h-file ( /net/chandler/data30/rwk/active/kf/htoglb/186/h????a.94186 ) within this combination span: 1994 186 --> 1994 186
+Skipping this combination...
+Creating time series between: 1994 126 --> 1994 186
+/net/chandler/data30/rwk/active/kf/htoglb/gsoln ~/active/kf/htoglb 
+cat: globk_emed_94126.org: No such file or directory
+cat: globk_emed_94127.org: No such file or directory
+cat: globk_emed_94128.org: No such file or directory
+cat: globk_emed_94129.org: No such file or directory
+cat: globk_emed_94130.org: No such file or directory
+cat: globk_emed_94131.org: No such file or directory
+cat: globk_emed_94132.org: No such file or directory
+cat: globk_emed_94133.org: No such file or directory
+cat: globk_emed_94134.org: No such file or directory
+cat: globk_emed_94135.org: No such file or directory
+cat: globk_emed_94136.org: No such file or directory
+cat: globk_emed_94137.org: No such file or directory
+cat: globk_emed_94138.org: No such file or directory
+cat: globk_emed_94139.org: No such file or directory
+cat: globk_emed_94140.org: No such file or directory
+cat: globk_emed_94141.org: No such file or directory
+cat: globk_emed_94142.org: No such file or directory
+cat: globk_emed_94143.org: No such file or directory
+cat: globk_emed_94144.org: No such file or directory
+cat: globk_emed_94145.org: No such file or directory
+cat: globk_emed_94146.org: No such file or directory
+cat: globk_emed_94147.org: No such file or directory
+cat: globk_emed_94148.org: No such file or directory
+cat: globk_emed_94149.org: No such file or directory
+cat: globk_emed_94150.org: No such file or directory
+cat: globk_emed_94151.org: No such file or directory
+cat: globk_emed_94152.org: No such file or directory
+cat: globk_emed_94153.org: No such file or directory
+cat: globk_emed_94154.org: No such file or directory
+cat: globk_emed_94155.org: No such file or directory
+cat: globk_emed_94156.org: No such file or directory
+cat: globk_emed_94157.org: No such file or directory
+cat: globk_emed_94158.org: No such file or directory
+cat: globk_emed_94159.org: No such file or directory
+cat: globk_emed_94160.org: No such file or directory
+cat: globk_emed_94161.org: No such file or directory
+cat: globk_emed_94162.org: No such file or directory
+cat: globk_emed_94163.org: No such file or directory
+cat: globk_emed_94164.org: No such file or directory
+cat: globk_emed_94165.org: No such file or directory
+cat: globk_emed_94166.org: No such file or directory
+cat: globk_emed_94167.org: No such file or directory
+cat: globk_emed_94168.org: No such file or directory
+cat: globk_emed_94169.org: No such file or directory
+cat: globk_emed_94170.org: No such file or directory
+cat: globk_emed_94171.org: No such file or directory
+cat: globk_emed_94172.org: No such file or directory
+cat: globk_emed_94173.org: No such file or directory
+cat: globk_emed_94174.org: No such file or directory
+cat: globk_emed_94175.org: No such file or directory
+cat: globk_emed_94176.org: No such file or directory
+cat: globk_emed_94177.org: No such file or directory
+cat: globk_emed_94178.org: No such file or directory
+cat: globk_emed_94179.org: No such file or directory
+cat: globk_emed_94180.org: No such file or directory
+cat: globk_emed_94181.org: No such file or directory
+cat: globk_emed_94182.org: No such file or directory
+cat: globk_emed_94183.org: No such file or directory
+cat: globk_emed_94184.org: No such file or directory
+cat: globk_emed_94185.org: No such file or directory
+cat: globk_emed_94186.org: No such file or directory
+sh_plotcrd -f tmp.ensum_input -s short -o 1 -cols 1 -e emed 
+DEBUG expt emed
+DEBUG edit
+
+
+ ENSUM: Program to extract ENU components from GLOBK solution
+ ------------------------------------------------------------
+
+ Reading stations from tmp.ensum_input                                                                                                                 
+ Solution:                                                                                                                                                                 
+ There are        0 baseline entries between    0 sites
+ Generating solution summary
+Checking for bad records in input file SUM.emed
+ 
+Soft kill LENGTH only :
+Soft kill EAST   only :
+Soft kill NORTH  only :
+Soft kill UP     only :
+ 
+Created postscript file :  pshist_wrms.SUM.emed
+ 
+ To view      : gs  pshist_wrms.SUM.emed
+ 
+ To print     : lpr -s  pshist_wrms.SUM.emed
+ 
+Checking for bad records in input file SUM.emed
+ 
+Soft kill LENGTH only :
+Soft kill EAST   only :
+Soft kill NORTH  only :
+Soft kill UP     only :
+ 
+Created postscript file :  pshist_nrms.SUM.emed
+ 
+ To view      : gs  pshist_nrms.SUM.emed
+ 
+ To print     : lpr -s  pshist_nrms.SUM.emed
+ 
+ select ALL
+Limiting output sigmas to   0.0000 m Horizontal and   0.0000 m height
+sh_baseline -n 3 -cols 1 -o 1 -ps emed  -u 1    -f mb_*
+sh_baseline: No match.
+rm: No match.
+~/active/kf/htoglb 

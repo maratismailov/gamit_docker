@@ -1,0 +1,615 @@
+#!/bin/bash
+
+version='2019/03/12'
+#2345678901234567890123456789012345678901234567890123456789012345678901234567890
+# Edit history (only recorded from 2015/12/02 onwards):
+#
+# 2019/03/12: MAF added support for [t]defnode block boundary files (-d option).
+# 2016/05/27: MAF added optional argument to "-h" option to allow constant to be
+#             added to height to account for difference between reference
+#             ellipoid (used for track "GEOD" output) and mean sea level (used
+#             by Google Earth).
+# 2015/12/02: MAF corrected parsing of options using 'echo "$@"' to 'echo "$*"'
+#             to avoid echo erroneously evaluating elements of $@ as options
+#             (e.g. "-e", "-n").
+#
+#2345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+
+# Redirect standard error to /dev/null
+#exec 2>/dev/null
+
+
+flags='abcdghikloprstvwz'  # Command line option flags
+
+
+# Set program defaults
+ll=( -180 360 -90 90 )           # All-encompassing region, irrespective of longitude convention
+wgs84=( 6378137 298.257223563 )  # Major radius and inverse flattening of WGS84 ellipsoid
+col='ff0000ff'                   # KML opaque red
+icon='http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png'
+scale='1.0'                      # Unit scale
+width='3'                        # 3pt path width
+altmode=( clampToGround 107 1 )  # Altitude mode, dH (maximum difference between WGS84 ellipsoid and EGM2008 geoid) and "tessellate" value
+extrude=0                        # Do not extrude kinematic paths to ground
+timespan=0                       # Do not include time spans in KML from glist summary file(s)
+z=0                              # Do not zip output KML file
+
+
+# Null input test
+if [ $# -eq 0 ]; then
+
+  cat << END && exit 1
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+  Program:      sh_kml
+  Written by:   Michael A Floyd (2012/10/30, MIT)
+  Last updated: Michael A Floyd ($version, MIT)
+
+  Usage: sh_kml -l|-a|-g|-o|-v|-b|-k|-v <input file(s)> -w <KML file> [options]
+
+  Description: sh_kml will read any number of GAMIT/GLOBK .apr-files, glist
+               summary files, glorg output (".org") files, ".vel"-format files,
+               track summary files and/or track "GEOD"-format output files, as
+               well as block boundary files from [t]defnode, and write a KML
+               file for viewing in, for example, Google Earth. The various
+               options may be used to tailor the look of the KML file.
+
+  Required:
+    -w <KML file> : Output KML file name.
+  AND one or more of:
+    -l <file(s)> : File containing two columns of geodetic coordinates
+                   (longitude,latitude), an optional 3rd column with label and
+                   an optional 4th column with elevation (m). Alternatively,
+                   if file contains three numeric columns, they are interpreted
+                   to be Cartesian coordinates (x,y,z / m) with an optional 4th
+                   column with label.
+    -a <file(s)> : apr-file(s) from which to read site position data.
+    -g <file(s)> : glist summary file(s) from which to read site position data.
+    -o <file(s)> : glorg output file(s) from which to read site position data
+                   (requires "GEOD" or "PBOP" output flag to have been set when
+                   running glorg).
+    -v <file(s)> : ".vel"-format file(s) from which to read site position data.
+    -b <file(s)> : track summary file from which to read (static base) site
+                   position data.
+    -k <file(s)> : track "GEOD"-format output file from which to read position
+                   data for (kinematic) site tracks (requires "GEOD" flag to
+                   have been set for "out_type" option in track command file).
+    -d <file(s)> : [t]defnode "*_blk<N>.gmt" from which to read block
+                   boundaries.
+
+  N.B. The -l, -g, -o, -v and/or -b options produce a KML file with placemarks.
+       The -k and -d options produce a KML file with paths.
+
+  Options:
+    -h [dH/m]  : Use absolute altitude mode for kinematic tracks (input with -k
+                 option), rather than clamped to ground [default]. Useful for
+                 flight tracks. Optional argument "dH/m" [default 107 m] may be
+                 used to specify a local height difference between the ellipsoid
+                 and the geoid. This value is added to the ellipsoid heights so
+                 that the data are plotted correctly in Google Earth, which uses
+                 height above mean sea level in absolute altitude mode.
+    -r <args>  : Region boundaries min. lon., max. lon., min. lat., max. lat.
+    -c <col>   : Color for icon in hexadecimal "alphaBGR" format [default
+                 $col = alpha:100%;B:0;G:0;R:255]. For more information, see
+                 https://developers.google.com/kml/documentation/kmlreference#color
+    -i <icon>  : URL for icon [default
+                 $icon].
+    -s <scale> : Scale factor for icons [default $scale].
+    -p <width> : Width for paths [default $width].
+    -e         : Extrude kinematic paths to ground, e.g. for flight tracks.
+    -t         : Include time span information for sites read from glist summary
+                 file(s) (note that this is then controlled by the time slider
+                 in Google Earth and may not appear as expected when first
+                 loaded).
+    -z         : Compress KML (to KMZ).
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+END
+
+fi
+
+
+# Print version
+echo "sh_kml version $version"
+
+
+# Set local variables
+tmp='.'  #tmp='/tmp'
+
+
+# Parse command line options and write input files to temporary KML
+while [ $# -gt 0 ]; do
+
+  case $1 in
+
+    -a* )  # apr-file(s)
+
+      a_files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-a[^ ]* //') )
+      if [ ${#a_files[@]} -eq 0 ]; then
+        echo '! Warning ! No apr-file(s) given with -a option. Ignoring...'
+      fi
+      ;;
+
+    -b* )  # track summary file(s)
+
+      b_files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-b[^ ]* //') )
+      if [ ${#b_files[@]} -eq 0 ]; then
+        echo '! Warning ! No track summary file(s) given with -b option. Ignoring...'
+      fi
+      ;;
+
+    -c* )  # Placemark icon or path colour
+
+      c_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-c[^ ]*//') )
+      if [ ${#c_args[@]} -eq 0 ]; then
+        echo '! Warning ! No arguments given with -c option. Using default.'
+      elif [ ${#c_args[@]} -gt 1 ]; then
+        col="${c_args[0]}"
+        echo '! Warning ! Multiple arguments given with -c option. Using first argument.'
+      else
+        col="${c_args[0]}"
+      fi
+      ;;
+
+    -d* )  # [t]defnode "*_blk<N>.gmt" block boundary output file(s)
+
+      d_files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-d[^ ]* //') )
+      if [ ${#d_files[@]} -eq 0 ]; then
+        echo '! Warning ! No [t]defnode "*_blk<N>.gmt" block boundary output file(s) given with -d option. Ignoring...'
+      fi
+      ;;
+
+    -e* )  # Extrude kinematic paths to ground
+
+      extrude=1
+      ;;
+
+    -g* )  # glist summary file(s)
+
+      g_files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-g[^ ]* //') )
+      if [ ${#g_files[@]} -eq 0 ]; then
+        echo '! Warning ! No glist summary file(s) given with -g option. Ignoring...'
+      fi
+      ;;
+
+    -h* )  # Use absolute altitude mode
+
+      h_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-h[^ ]*//') )
+      if [ ${#h_args[@]} -eq 0 ]; then
+        altmode=( absolute ${altmode[1]} ${altmode[2]} )
+        echo '! Warning ! No argument given with -h option. Using default.'
+      elif [ ${#h_args[@]} -gt 1 ]; then
+        altmode=( absolute ${h_args[0]} 1 )
+        echo '! Warning ! Multiple arguments given with -h option. Using first argument.'
+      else
+        altmode=( absolute ${h_args[0]} 1 )
+      fi
+      ;;
+
+    -i* )  # Placemark icon type
+
+      i_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-i[^ ]*//') )
+      if [ ${#i_args[@]} -eq 0 ]; then
+        echo '! Warning ! No arguments given with -i option. Using default.'
+      elif [ ${#i_args[@]} -gt 1 ]; then
+        icon="${i_args[0]}"
+        echo '! Warning ! Multiple arguments given with -i option. Using first argument.'
+      else
+        icon="${i_args[0]}"
+      fi
+      ;;
+
+    -k* )  # track "GEOD" output file(s)
+
+      k_files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-k[^ ]* //') )
+      if [ ${#k_files[@]} -eq 0 ]; then
+        echo '! Warning ! No track "GEOD" output file(s) given with -k option. Ignoring...'
+      fi
+      ;;
+
+    -l* )  # Text file(s) with lon,lat[,label,elev] or x,y,z[,label]
+
+      l_files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-l[^ ]* //') )
+      if [ ${#l_files[@]} -eq 0 ]; then
+        echo '! Warning ! No text file(s) given with -l option. Ignoring...'
+      fi
+      ;;
+
+    -o* )  # org-file(s)
+
+      o_files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-o[^ ]* //') )
+      if [ ${#o_files[@]} -eq 0 ]; then
+        echo '! Warning ! No org-file(s) given with -o option. Ignoring...'
+      fi
+      ;;
+
+    -p* )  # Path line width
+
+      p_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-p[^ ]*//') )
+      if [ ${#p_args[@]} -eq 0 ]; then
+        echo '! Warning ! No arguments given with -p option. Using default.'
+      elif [ ${#p_args[@]} -gt 1 ]; then
+        width="${p_args[0]}"
+        echo '! Warning ! Multiple arguments given with -p option. Using first argument.'
+      else
+        width="${p_args[0]}"
+      fi
+      ;;
+
+    -r* )  # Region boundaries
+
+      r_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-r[^ ]*//') )
+
+      if [ ${#r_args[@]} -eq 4 ]; then
+        ll=( ${r_args[@]} )
+      else
+        echo '! Warning ! Incorrect number of arguments (${#r_args[@]}) with -r option (must be 4).'
+        echo '            Using all sites.'
+      fi
+      ;;
+
+    -s* )  # Placemark icon scale
+
+      s_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-s[^ ]*//') )
+      if [ ${#s_args[@]} -eq 0 ]; then
+        echo '! Warning ! No arguments given with -s option. Using default.'
+      elif [ ${#s_args[@]} -gt 1 ]; then
+        scale="${s_args[0]}"
+        echo '! Warning ! Multiple arguments given with -s option. Using first argument.'
+      else
+        scale="${s_args[0]}"
+      fi
+      ;;
+
+    -t* )  # Add time spans to KML from glist summary file(s)
+
+      timespan=1
+      ;;
+
+    -v* )  # vel-file(s)
+
+      v_files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-v[^ ]* //') )
+      if [ ${#v_files[@]} -eq 0 ]; then
+        echo '! Warning ! No vel-file(s) given with -v option. Ignoring...'
+      fi
+      ;;
+
+    -w* )  # Output KML to write
+
+      w_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-w[^ ]*//') )
+      if [ ${#w_args[@]} -eq 0 ]; then
+        echo '! Error ! No output file name given with -w option. Exiting...' && exit 1
+      elif [ ${#w_args[@]} -eq 0 ]; then
+        out="${w_args[0]}"
+        echo '! Warning ! Multiple arguments given with -w option. Using first argument.'
+      else
+        out="${w_args[0]}"
+      fi
+      ;;
+
+    -z* )  # Zip KML to KMZ file
+
+      z=1
+      ;;
+
+  esac
+
+  shift
+
+done
+
+
+# Read input files to temporary KML file
+test -f $tmp/.temp.kml && rm -f $tmp/.temp.kml
+
+
+if [ ${#l_files[@]} -gt 0 ]; then  # Plain text files given
+
+  # Loop over input text files
+  for file in ${l_files[@]}; do
+    cat << END >> $tmp/.temp.kml
+        <Folder>
+                <name>${file##*/}</name>
+END
+    # N.B. Conversion of Cartesian to geodetic coordinates follows one iteration of Bowring's (1985) algorithm:
+    # Bowring, B. R. (1985), The accuracy of geodetic latitude and height equations, Survey Review, 28, 202-206, doi:10.1179/sre.1985.28.218.202.
+    awk -v a=${wgs84[0]} -v invf=${wgs84[1]} -v lon1=${ll[0]} -v lon2=${ll[1]} -v lat1=${ll[2]} -v lat2=${ll[3]} 'BEGIN {
+      pi=4*atan2(1,1); f=1/invf; b=a*(1-f); e1=f*(2-f); e2=e1/(1-e1)
+     }; {
+      if (NF == 2) {
+       if ($1 > 180) lon=$1-360; else lon=$1;
+       if (lon >= lon1 && lon <= lon2 && $2 >= lat1 && $2 <= lat2) printf "                <Placemark>\n                        <styleUrl>#sh_kml</styleUrl>\n                        <Point>\n                                <altitudeMode>clampToGround</altitudeMode>\n                                <coordinates>%.9f,%.9f</coordinates>\n                        </Point>\n                </Placemark>\n",lon,$2
+      } else if (NF == 3 && $1 >= -180 && $1 <= 360 && $2 >= -90 && $2 <= 90) {
+       if ($1 > 180) lon=$1-360; else lon=$1;
+       if (lon >= lon1 && lon <= lon2 && $2 >= lat1 && $2 <= lat2) printf "                <Placemark>\n                        <name>%s</name>\n                        <styleUrl>#sh_kml</styleUrl>\n                        <Point>\n                                <altitudeMode>clampToGround</altitudeMode>\n                                <coordinates>%.9f,%.9f</coordinates>\n                        </Point>\n                </Placemark>\n",$3,lon,$2
+      } else if (NF == 3 && $1 > -7e7 && $1 < 7e7 && $2 > -7e7 && $2 < 7e7 && $3 > -7e7 && $3 < 7e7) {
+       if ($1 == 0 && $2 == 0 && $3 == 0) {lon=0; lat=0; h=0}
+       else if ($1 == 0 && $2 == 0) {lon=0; lat=($3/sqrt($3))*90; h=sqrt($3^2)-b}
+       else if ($3 == 0) {lon=atan2($2,$1); lat=0; h=sqrt($1^2+$2^2)-a}
+       else {p=sqrt($1^2+$2^2); r=sqrt(p^2+$3^2); tanu=(1-f)*($3/p)*(1+e2*b/r); cos2u=1/(1+tanu^2); cos3u=cos2u*sqrt(cos2u); sinu=tanu*sqrt(cos2u); sin2u=1-cos2u; sin3u=sin2u*sinu; tanlat=($3+e2*b*sin3u)/(p-e1*a*cos3u); cos2lat=1/(1+tanlat^2); sinlat=tanlat*sqrt(cos2lat); lon=atan2($2,$1)*180/pi; lat=atan2(tanlat,1)*180/pi; h=p*sqrt(cos2lat)+$3*sinlat-a*sqrt(1-e1*sinlat^2)}
+       printf "                <Placemark>\n                        <styleUrl>#sh_kml</styleUrl>\n                        <Point>\n                                <altitudeMode>clampToGround</altitudeMode>\n                                <coordinates>%.9f,%.9f,%.4f</coordinates>\n                        </Point>\n                </Placemark>\n",lon,lat,h
+      } else if (NF == 4 && $1 >= -180 && $1 <= 360 && $2 >= -90 && $2 <= 90) {
+       if ($1 > 180) lon=$1-360; else lon=$1;
+       if (lon >= lon1 && lon <= lon2 && $2 >= lat1 && $2 <= lat2) printf "                <Placemark>\n                        <name>%s</name>\n                        <styleUrl>#sh_kml</styleUrl>\n                        <Point>\n                                <altitudeMode>clampToGround</altitudeMode>\n                                <coordinates>%.9f,%.9f,%.4f</coordinates>\n                        </Point>\n                </Placemark>\n",$3,lon,$2,$4
+      } else if (NF == 4 && $1 > -7e7 && $1 < 7e7 && $2 > -7e7 && $2 < 7e7 && $3 > -7e7 && $3 < 7e7) {
+       if ($1 == 0 && $2 == 0 && $3 == 0) {lon=0; lat=0; h=0}
+       else if ($1 == 0 && $2 == 0) {lon=0; lat=($3/sqrt($3))*90; h=sqrt($3^2)-b}
+       else if ($3 == 0) {lon=atan2($2,$1); lat=0; h=sqrt($1^2+$2^2)-a}
+       else {p=sqrt($1^2+$2^2); r=sqrt(p^2+$3^2); tanu=(1-f)*($3/p)*(1+e2*b/r); cos2u=1/(1+tanu^2); cos3u=cos2u*sqrt(cos2u); sinu=tanu*sqrt(cos2u); sin2u=1-cos2u; sin3u=sin2u*sinu; tanlat=($3+e2*b*sin3u)/(p-e1*a*cos3u); cos2lat=1/(1+tanlat^2); sinlat=tanlat*sqrt(cos2lat); lon=atan2($2,$1)*180/pi; lat=atan2(tanlat,1)*180/pi; h=p*sqrt(cos2lat)+$3*sinlat-a*sqrt(1-e1*sinlat^2)}
+       printf "                <Placemark>\n                        <name>%s</name>\n                        <styleUrl>#sh_kml</styleUrl>\n                        <Point>\n                                <altitudeMode>clampToGround</altitudeMode>\n                                <coordinates>%.9f,%.9f,%.4f</coordinates>\n                        </Point>\n                </Placemark>\n",$4,lon,lat,h
+      }
+     }' $file >> $tmp/.temp.kml
+    cat << END >> $tmp/.temp.kml
+          </Folder>
+END
+  done  # END: Loop over input text files
+
+fi
+
+
+if [ ${#g_files[@]} -gt 0 ]; then  # glist summary files given
+
+  # Loop over input glist summary files
+  for file in ${g_files[@]}; do
+    cat << END >> $tmp/.temp.kml
+        <Folder>
+                <name>${file##*/}</name>
+END
+    if [ $timespan -eq 1 ]; then  # Add time spans to KML
+      grep '^ .* P$' $file |
+       sort -k2.1,2.4 |
+       awk -v lon1=${ll[0]} -v lon2=${ll[1]} -v lat1=${ll[2]} -v lat2=${ll[3]} '{split("31 28 31 30 31 30 31 31 30 31 30 31",days); t1=$5; y1=int(t1); t2=$6; y2=int(t2); if (y1 % 4 == 0 && (y1 % 100 != 0 || y1 % 400 == 0)) {dpy1=366; days[2]=29} else dpy1=365; doy1=int((t1-y1)*dpy1+1); for (i = 1; doy1 > days[i]; i++) doy1 -= days[i]; split("31 28 31 30 31 30 31 31 30 31 30 31",days); if (y2 % 4 == 0 && (y2 % 100 != 0 || y2 % 400 == 0)) {dpy2=366; days[2]=29} else dpy2=365; doy2=int((t2-y2)*dpy2+1); for (j = 1; doy2 > days[j]; j++) doy2 -= days[j]; if ($1 > 180) lon=$1-360; else lon=$1; if (lon >= lon1 && lon <= lon2 && $2 >= lat1 && $2 <= lat2) printf "                <Placemark>\n                        <name>%s</name>\n                        <TimeSpan>\n                                <begin>%4d-%02d-%02d</begin>\n                                <end>%4d-%02d-%02d</end>\n                        </TimeSpan>\n                        <styleUrl>#sh_kml</styleUrl>\n                        <Point>\n                                <altitudeMode>clampToGround</altitudeMode>\n                                <coordinates>%.9f,%.9f,%.4f</coordinates>\n                        </Point>\n                </Placemark>\n",substr($8,1,4),y1,i,doy1,y2,j,doy2,lon,$2,$3*1e3}' >> $tmp/.temp.kml
+    else
+      grep '^ .* P$' $file |
+       sort -k2.1,2.4 |
+       awk -v lon1=${ll[0]} -v lon2=${ll[1]} -v lat1=${ll[2]} -v lat2=${ll[3]} '{if ($1 > 180) lon=$1-360; else lon=$1; if (lon >= lon1 && lon <= lon2 && $2 >= lat1 && $2 <= lat2) printf "                <Placemark>\n                        <name>%s</name>\n                        <styleUrl>#sh_kml</styleUrl>\n                        <Point>\n                                <altitudeMode>clampToGround</altitudeMode>\n                                <coordinates>%.9f,%.9f,%.4f</coordinates>\n                        </Point>\n                </Placemark>\n",substr($8,1,4),lon,$2,$3*1e3}' >> $tmp/.temp.kml
+    fi
+    cat << END >> $tmp/.temp.kml
+          </Folder>
+END
+  done  # END: Loop over input glist summary files
+
+fi
+
+
+if [ ${#o_files[@]} -gt 0 ]; then  # org-files given
+
+  # Loop over input org-files
+  for file in ${o_files[@]}; do
+    cat << END >> $tmp/.temp.kml
+        <Folder>
+                <name>${file##*/}</name>
+END
+    if [ $(grep -c '^pbo\. ' $file) -gt 0 ]; then  # "PBOP" option output available
+      grep '^pbo\. ' $file |
+       sort -k2.1,2.4 |
+       awk -v lon1=${ll[0]} -v lon2=${ll[1]} -v lat1=${ll[2]} -v lat2=${ll[3]} '{lat=substr($0,156,14)+0; lon=substr($0,171,15)+0; if (lon > 180) lon=lon-360; if (lon >= lon1 && lon <= lon2 && lat >= lat1 && lat <= lat2) printf "                <Placemark>\n                        <name>%s</name>\n                        <styleUrl>#sh_kml</styleUrl>\n                        <Point>\n                                <altitudeMode>clampToGround</altitudeMode>\n                                <coordinates>%.9f,%.9f,%.4f</coordinates>\n                        </Point>\n                </Placemark>\n",substr($0,6,4),lon,lat,substr($0,187,10)}' >> $tmp/.temp.kml
+    elif [ $(grep -c '^pbr\. ' $file) -gt 0 ]; then  # "PBOP" option output available
+      grep '^pbr\. ' $file |
+       sort -k2.1,2.4 |
+       awk -v lon1=${ll[0]} -v lon2=${ll[1]} -v lat1=${ll[2]} -v lat2=${ll[3]} '{lat=substr($0,105,14)+0; lon=substr($0,120,15)+0; if (lon > 180) lon=lon-360; if (lon >= lon1 && lon <= lon2 && lat >= lat1 && lat <= lat2) printf "                <Placemark>\n                        <name>%s</name>\n                        <styleUrl>#sh_kml</styleUrl>\n                        <Point>\n                                <altitudeMode>clampToGround</altitudeMode>\n                                <coordinates>%.9f,%.9f,%.4f</coordinates>\n                        </Point>\n                </Placemark>\n",substr($0,6,4),lon,lat,substr($0,136,10)}' >> $tmp/.temp.kml
+    elif [ $(grep -c '^GEOD ' $file) -gt 0 ]; then  # "GEOD" option output available
+      grep '^GEOD ' $file |
+       sort -k2.1,2.4 |
+       awk -v lon1=${ll[0]} -v lon2=${ll[1]} -v lat1=${ll[2]} -v lat2=${ll[3]} '{if ($4 > 180) lon=$4-360; else lon=$4; if (lon >= lon1 && lon <= lon2 && $3 >= lat1 && $3 <= lat2) printf "                <Placemark>\n                        <name>%s</name>\n                        <styleUrl>#sh_kml</styleUrl>\n                        <Point>\n                                <altitudeMode>clampToGround</altitudeMode>\n                                <coordinates>%.9f,%.9f,%.4f</coordinates>\n                        </Point>\n                </Placemark>\n",substr($2,1,4),lon,$3,$5}' >> $tmp/.temp.kml
+    else
+      cat << END
+! Error ! No geodetic coordinate information available in $file.
+          Use "GEOD" and/or "PBOP" options in glorg. Skipping file...
+END
+    fi
+    cat << END >> $tmp/.temp.kml
+        </Folder>
+END
+  done  # END: Loop over input org-files
+
+fi
+
+
+if [ ${#v_files[@]} -gt 0 ]; then  # vel-files given
+
+  # Loop over input org-files
+  for file in ${v_files[@]}; do
+    cat << END >> $tmp/.temp.kml
+        <Folder>
+                <name>${file##*/}</name>
+END
+    grep '^ ' $file |
+     sort -k13.1,13.4 |
+     awk -v lon1=${ll[0]} -v lon2=${ll[1]} -v lat1=${ll[2]} -v lat2=${ll[3]} '{lon=$1; lat=$2; if (lon > 180) lon=lon-360; if (lon >= lon1 && lon <= lon2 && lat >= lat1 && lat <= lat2) printf "                <Placemark>\n                        <name>%s</name>\n                        <styleUrl>#sh_kml</styleUrl>\n                        <Point>\n                                <altitudeMode>clampToGround</altitudeMode>\n                                <coordinates>%.9f,%.9f</coordinates>\n                        </Point>\n                </Placemark>\n",substr($NF,1,4),lon,lat}' >> $tmp/.temp.kml
+    cat << END >> $tmp/.temp.kml
+        </Folder>
+END
+  done  # END: Loop over input vel-files
+
+fi
+
+if [ ${#t_files[@]} -gt 0 ]; then  # track summary files given
+
+  # Loop over input track summary files (for static site)
+  for file in ${t_files[@]}; do
+
+    cat << END >> $tmp/.temp.kml
+        <Folder>
+                <name>${file##*/}</name>
+END
+    awk -v lon1=${ll[0]} -v lon2=${ll[1]} -v lat1=${ll[2]} -v lat2=${ll[3]} '/Position Estimates/,/^$/ {if (NF == 19) {if ($14 > 180) lon=$14-360; else lon=$14; if (lon >= lon1 && lon <= lon2 && $11 >= lat1 && $11 <= lat2) printf "%s %.9f,%.9f,%.4f\n",$1,lon,$11,$17}}' $file |
+     tr '[:lower:]' '[:upper:]' |
+     sort -u |
+     awk '{printf "                <Placemark>\n                        <name>%s</name>\n                        <styleUrl>#sh_kml</styleUrl>\n                        <Point>\n                                <altitudeMode>clampToGround</altitudeMode>\n                                <coordinates>%s</coordinates>\n                        </Point>\n                </Placemark>\n",$1,$2}' >> $tmp/.temp.kml
+    cat << END >> $tmp/.temp.kml
+        </Folder>
+END
+
+  done  # END: Loop over input track summary files (for static site)
+
+fi
+
+
+if [ ${#k_files[@]} -gt 0 ]; then  # track "GEOD" output files given
+
+  # Loop over input track summary files (for kinematic site)
+  for file in ${k_files[@]}; do
+    cat << END >> $tmp/.temp.kml
+        <Placemark>
+                <name>$(basename $file | awk -v FS='.' '{print $(NF-1)}' | tr '[:lower:]' '[:upper:]')</name>
+END
+    #grep '^ ' $file |
+    # head -n 1 |
+    # awk '{split("31 28 31 30 31 30 31 31 30 31 30 31",days);
+    #       if ($1 % 4 == 0 && ($1 % 100 != 0 || $1 % 400 == 0)) days[2] = 29;
+    #       for (i = 1; $2 > days[i]; i++) $2 -= days[i];
+    #       printf "                <LookAt>\n                        <gx:TimeSpan>\n                                <begin>%4d-%02d-%02dT%02d:%02d:%02dZ</begin>\n",$1,i,$2,int($3/3600),int($3%3600/60),($3%3600)%60}' >> $tmp/.temp.kml
+    #grep '^ ' $file |
+    # tail -n 1 |
+    # awk '{split("31 28 31 30 31 30 31 31 30 31 30 31",days);
+    #       if ($1 % 4 == 0 && ($1 % 100 != 0 || $1 % 400 == 0)) days[2] = 29;
+    #       for (i = 1; $2 > days[i]; i++) $2 -= days[i];
+    #       printf "                                <end>%4d-%02d-%02dT%02d:%02d:%02dZ</end>\n                        </gx:TimeSpan>\n                </LookAt>\n",$1,i,$2,int($3/3600),int($3%3600/60),($3%3600)%60}' >> $tmp/.temp.kml
+    grep '^ ' $file |
+     awk -v extrude=$extrude -v altmode=${altmode[0]} -v dH=${altmode[1]} -v tessellate=${altmode[2]} 'BEGIN {printf "                <styleUrl>#sh_kml</styleUrl>\n                <LineString>\n                        <extrude>%d</extrude>\n                        <tessellate>%d</tessellate>\n                        <altitudeMode>%s</altitudeMode>\n                        <coordinates>",extrude,tessellate,altmode}; {if ($5 > 180) lon=$5-360; else lon=$5; printf " %.9f,%.9f,%.4f",lon,$4,$6+dH}; END {printf " </coordinates>\n                </LineString>\n"}' >> $tmp/.temp.kml
+    cat << END >> $tmp/.temp.kml
+        </Placemark>
+        <Folder>
+                <name>$(basename $file | awk -v FS='.' '{print $(NF-1)}' | tr '[:lower:]' '[:upper:]')</name>
+                <visibility>0</visibility>
+END
+
+    grep '^ ' $file |
+     awk -v extrude=$extrude -v altmode=${altmode[0]} -v dH=${altmode[1]} -v tessellate=${altmode[2]} '{
+      split("31 28 31 30 31 30 31 31 30 31 30 31",days);
+      y=$1; d=$2; h=int($3/(60*60)); m=int(($3-h*(60*60))/60); s=int($3-h*(60*60)-m*60+0.5);
+      if (y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)) days[2] = 29;
+      for (i = 1; d > days[i]; i++) d=d-days[i];
+      printf "                <Placemark>\n                        <name>%4d-%02d-%02dT%02d:%02d:%02dZ</name>\n                        <visibility>0</visibility>\n                        <TimeStamp>\n                                <when>%4d-%02d-%02dT%02d:%02d:%02dZ</when>\n                        </TimeStamp>\n                        <styleUrl>#sh_kml</styleUrl>\n                        <Point>\n                                <extrude>%d</extrude>\n                                <tessellate>%d</tessellate>\n                                <altitudeMode>%s</altitudeMode>\n                                <coordinates>",y,i,d,h,m,s,y,i,d,h,m,s,extrude,tessellate,altmode; if ($5 > 180) lon=$5-360; else lon=$5; printf "%.9f,%.9f,%.4f",lon,$4,$6+dH; printf "</coordinates>\n                        </Point>\n                </Placemark>\n"
+      }' >> $tmp/.temp.kml
+    cat << END >> $tmp/.temp.kml
+        </Folder>
+END
+
+  done  # END: Loop over input track summary files (for kinematic site)
+
+fi
+
+
+if [ ${#d_files[@]} -gt 0 ]; then  # track "GEOD" output files given
+
+  # Loop over input [t]defnode block boundary output files
+  for file in ${d_files[@]}; do
+
+    if [ -s "$file" ]; then
+
+      cat << END >> $tmp/.temp.kml
+        <Folder>
+                <name>${file##*/}</name>
+END
+      awk -v tessellate=${altmode[2]} '{if (NR == 1) printf "        <Placemark>\n                <name>%s</name>\n                <styleUrl>#sh_kml</styleUrl>\n                <LineString>\n                        <tessellate>%d</tessellate>\n                        <coordinates>",$2,tessellate; else if ($0 ~ /^>/) printf " </coordinates>\n                </LineString>\n        </Placemark>\n        <Placemark>\n                <name>%s</name>\n                <styleUrl>#sh_kml</styleUrl>\n                <LineString>\n                        <tessellate>%d</tessellate>\n                        <coordinates>",$2,tessellate; else {if ($1 > 180) lon=$1-360; else lon=$1; printf " %.9f,%.9f,0",lon,$2}}; END {printf " </coordinates>\n                </LineString>\n        </Placemark>\n"}' $file >> $tmp/.temp.kml
+      cat << END >> $tmp/.temp.kml
+        </Folder>
+END
+
+    fi
+
+  done  # END: Loop over input [t]defnode block boundary output files
+
+fi
+
+
+if [ ${#a_files[@]} -gt 0 ]; then  # apr-file(s) given
+
+  # Loop over input apr-file(s)
+  for file in ${a_files[@]}; do
+
+    cat << END >> $tmp/.temp.kml
+        <Folder>
+                <name>${file##*/}</name>
+END
+    awk -v a=${wgs84[0]} -v invf=${wgs84[1]} 'BEGIN {pi=4*atan2(1,1); f=1/invf; b=a*(1-f); e1=f*(2-f); e2=e1/(1-e1)}; {
+      if ($0 ~ /^ /) {
+       if ($2 == 0 && $3 == 0 && $4 == 0) {lon=0; lat=0; h=0}
+       else if ($2 == 0 && $3 == 0) {lon=0; lat=($4/sqrt($4))*90; h=sqrt($4^2)-b}
+       else if ($4 == 0) {lon=atan2($3,$2)*180/pi; lat=0; h=sqrt($2^2+$3^2)-a}
+       else {p=sqrt($2^2+$3^2); r=sqrt(p^2+$4^2); tanu=(1-f)*($4/p)*(1+e2*b/r); cos2u=1/(1+tanu^2); cos3u=cos2u*sqrt(cos2u); sinu=tanu*sqrt(cos2u); sin2u=1-cos2u; sin3u=sin2u*sinu; tanlat=($4+e2*b*sin3u)/(p-e1*a*cos3u); cos2lat=1/(1+tanlat^2); sinlat=tanlat*sqrt(cos2lat); lon=atan2($3,$2)*180/pi; lat=atan2(tanlat,1)*180/pi; h=p*sqrt(cos2lat)+$4*sinlat-a*sqrt(1-e1*sinlat^2)}
+       printf "%s %.9f %.9f %.4f\n",$1,lon,lat,h
+      }
+     }' $file |
+     tr '[:lower:]' '[:upper:]' |
+     awk -v lon1=${ll[0]} -v lon2=${ll[1]} -v lat1=${ll[2]} -v lat2=${ll[3]} '{
+       if (lon >= lon1 && lon <= lon2 && lat >= lat1 && lat <= lat2) printf "                <Placemark>\n                        <name>%s</name>\n                        <styleUrl>#sh_kml</styleUrl>\n                        <Point>\n                                <altitudeMode>clampToGround</altitudeMode>\n                                <coordinates>%.9f,%.9f,%.4f</coordinates>\n                        </Point>\n                </Placemark>\n",$1,$2,$3,$4
+     }' >> $tmp/.temp.kml
+    cat << END >> $tmp/.temp.kml
+        </Folder>
+END
+
+  done  # END: Loop over input apr-file(s)
+
+fi
+
+
+# Calculate mean longitude and latitude, and approximate range for initial view
+ll0=( $(grep '<coordinates>.*</coordinates>' .temp.kml | sed 's/<\/*coordinates>//g; s/^ *//; s/ *$//' | tr ' ' '\n' | awk -v lon1=${ll[0]} -v lon2=${ll[1]} -v lat1=${ll[2]} -v lat2=${ll[3]} -v FS=',' 'BEGIN {lon=0; lat=0}; {if ($1 > 180) l=$1-360; else l=$1; if (l >= lon1 && l <= lon2 && $2 >= lat1 && $2 <= lat2) {lon=lon+l; lat=lat+$2}}; END {printf "%.5f %.5f",lon/NR,lat/NR}') )
+rms="$(grep '<coordinates>.*</coordinates>' .temp.kml | sed 's/<\/*coordinates>//g; s/^ *//; s/ *$//' | tr ' ' '\n' | awk -v lon0=${ll0[0]} -v lat0=${ll0[1]} -v f=6 -v FS=',' 'BEGIN {sslon=0; sslat=0}; {if ($1 > 180) sslon=sslon+($1-360-lon0)^2; else sslon=sslon+($1-lon0)^2; sslat=sslat+($2-lat0)^2}; END {rmslon=111e3*sqrt(sslon/NR); rmslat=111e3*sqrt(latss/NR); if (rmslon > rmslat) printf "%.5f",f*rmslon; else printf "%.5f",f*rmslat}')"
+
+
+# Write KML header
+cat << END >| $out
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Document>
+        <name>$(basename ${out%.km*})</name>
+END
+
+
+# Write KML styles
+cat << END >> $out
+        <Style id="sh_kml">
+                <IconStyle>
+                        <color>$col</color>
+                        <scale>$scale</scale>
+                        <Icon>$icon</Icon>
+                </IconStyle>
+                <LineStyle>
+                        <color>$col</color>
+                        <width>$width</width>
+                </LineStyle>
+                <PolyStyle>
+                        <color>7f${col:2:6}</color>
+                        <fill>1</fill>
+                </PolyStyle>
+        </Style>
+END
+
+
+# Write KML location
+cat << END >> $out
+        <LookAt>
+                <longitude>${ll0[0]}</longitude>
+                <latitude>${ll0[1]}</latitude>
+                <altitude>0</altitude>
+                <heading>0</heading>
+                <tilt>0</tilt>
+                <range>$rms</range>
+        </LookAt>
+END
+
+
+# Write KML body
+cat $tmp/.temp.kml >> $out &&
+ rm -f $tmp/.temp.kml
+
+
+# Write KML footer
+cat << END >> $out
+</Document>
+</kml>
+END
+
+
+# Create KMZ if requested
+if [ $z -eq 1 ]; then
+  rm -f ${out%l}z
+  zip -q ${out%l}z $out &&
+   rm -f $out
+fi
+

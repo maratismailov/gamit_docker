@@ -1,0 +1,147 @@
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals htog_ut.f
+ar rv htoglb_lib.a *.o
+a - htog_ut.o
+rm -f htog_ut.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals glbsx_ut.f
+ar rv htoglb_lib.a *.o
+a - glbsx_ut.o
+rm -f glbsx_ut.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals hfupd_ut.f
+ar rv htoglb_lib.a *.o
+a - hfupd_ut.o
+rm -f hfupd_ut.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals hw_util.f
+ar rv htoglb_lib.a *.o
+a - hw_util.o
+rm -f hw_util.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals hread_util.f
+ar rv htoglb_lib.a *.o
+a - hread_util.o
+rm -f hread_util.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals init_qparn.f
+ar rv htoglb_lib.a *.o
+a - init_qparn.o
+rm -f init_qparn.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals init_qapr_co.f
+ar rv htoglb_lib.a *.o
+a - init_qapr_co.o
+rm -f init_qapr_co.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals write_ephem.f
+ar rv htoglb_lib.a *.o
+a - write_ephem.o
+rm -f write_ephem.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals get_indx_q.f
+ar rv htoglb_lib.a *.o
+a - get_indx_q.o
+rm -f get_indx_q.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals compress_svs.f
+ar rv htoglb_lib.a *.o
+a - compress_svs.o
+rm -f compress_svs.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals compress_sit.f
+ar rv htoglb_lib.a *.o
+a - compress_sit.o
+rm -f compress_sit.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals read_orient.f
+ar rv htoglb_lib.a *.o
+a - read_orient.o
+rm -f read_orient.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals read_apr_cov.f
+ar rv htoglb_lib.a *.o
+a - read_apr_cov.o
+rm -f read_apr_cov.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals skip_htoh.f
+ar rv htoglb_lib.a *.o
+a - skip_htoh.o
+rm -f skip_htoh.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals get_gps_hext.f
+ar rv htoglb_lib.a *.o
+a - get_gps_hext.o
+rm -f get_gps_hext.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals get_svs_inf.f
+ar rv htoglb_lib.a *.o
+a - get_svs_inf.o
+rm -f get_svs_inf.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals gsfc_vlbi.f
+ar rv htoglb_lib.a *.o
+a - gsfc_vlbi.o
+rm -f gsfc_vlbi.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals ut_slr.f
+ar rv htoglb_lib.a *.o
+a - ut_slr.o
+rm -f ut_slr.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals make_ctog.f
+ar rv htoglb_lib.a *.o
+a - make_ctog.o
+rm -f make_ctog.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals decsnx_file.f
+ar rv htoglb_lib.a *.o
+a - decsnx_file.o
+rm -f decsnx_file.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals decsnx_input.f
+ar rv htoglb_lib.a *.o
+a - decsnx_input.o
+rm -f decsnx_input.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals decsnx_site.f
+ar rv htoglb_lib.a *.o
+a - decsnx_site.o
+rm -f decsnx_site.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals decsnx_soln.f
+ar rv htoglb_lib.a *.o
+a - decsnx_soln.o
+rm -f decsnx_soln.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals decode_snxb.f
+ar rv htoglb_lib.a *.o
+a - decode_snxb.o
+rm -f decode_snxb.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals make_snx.f
+ar rv htoglb_lib.a *.o
+a - make_snx.o
+rm -f make_snx.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals preread_snx.f
+ar rv htoglb_lib.a *.o
+a - preread_snx.o
+rm -f preread_snx.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals snx_finbl.f
+ar rv htoglb_lib.a *.o
+a - snx_finbl.o
+rm -f snx_finbl.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals create_snx.f
+ar rv htoglb_lib.a *.o
+a - create_snx.o
+rm -f create_snx.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals cresnx_file.f
+ar rv htoglb_lib.a *.o
+a - cresnx_file.o
+rm -f cresnx_file.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals cresnx_input.f
+ar rv htoglb_lib.a *.o
+a - cresnx_input.o
+rm -f cresnx_input.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals cresnx_site.f
+ar rv htoglb_lib.a *.o
+a - cresnx_site.o
+rm -f cresnx_site.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals cresnx_soln.f
+ar rv htoglb_lib.a *.o
+a - cresnx_soln.o
+rm -f cresnx_soln.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals gen_snxname.f
+ar rv htoglb_lib.a *.o
+a - gen_snxname.o
+rm -f gen_snxname.o
+g77  -c -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals jacobi.f
+ar rv htoglb_lib.a *.o
+a - jacobi.o
+rm -f jacobi.o
+ranlib htoglb_lib.a
+g77  -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals htoglb.f  ./htoglb_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a ../../gamit/lib//gamit_lib.a  -o htoglb
+rm -f htoglb.o
+g77  -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals glbtosnx.f  ./htoglb_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a ../../gamit/lib//gamit_lib.a  -o glbtosnx
+rm -f glbtosnx.o
+g77  -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals hfupd.f  ./htoglb_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a ../../gamit/lib//gamit_lib.a  -o hfupd
+rm -f hfupd.o
+g77  -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals mstinf.f  ./htoglb_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a ../../gamit/lib//gamit_lib.a  -o mstinf
+rm -f mstinf.o
+g77  -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals mstinf2.f  ./htoglb_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a ../../gamit/lib//gamit_lib.a  -o mstinf2
+rm -f mstinf2.o

@@ -1,0 +1,142 @@
+c     solvem.fti     
+      integer maxnet,maxobs,maxsit,nnet
+      parameter (maxnet=410,maxobs=5000,maxsit=410)
+      integer maxprm,maxnrm
+      parameter (maxprm=maxnet*6)
+      parameter (maxnrm=maxprm*(maxprm+1)/2)
+c     maximum number of fixed sites in the network
+      integer maxfix   
+      parameter (maxfix=50)
+c
+c     often used constants
+      real*8 pi,rtod,dtor
+      parameter (pi = 3.14159265358979312d0)
+      parameter (rtod = 180.0d0/pi)
+      parameter (dtor = pi/180.0d0)
+
+c     <gtable> -- datum information
+      real*8 radius,finv,tx,ty,tz
+      common/gtable/radius,finv,tx,ty,tz
+
+      integer inedim,ntype,listyp(10)  
+      common/market/inedim,ntype,listyp
+
+c     <iomod> -- i/o controller
+      integer iomode(20),smode,pmode,fcode
+      integer id_frame
+      common/iomod/iomode,smode,pmode,fcode,id_frame
+
+      character*8 sname(maxnet)
+      character*6 frame
+      real*8 rtime
+      character*24 label(18)
+      common/scode/rtime,frame,sname,label
+
+c     <snrm> -- normal matrix and right hand term
+      real*8 anorm(maxnrm),bnorm(maxprm)
+      common/snrm/anorm,bnorm
+
+c     <aprmx> -- apriori covariance matrix (compressed)
+      real*8 aprm(maxprm*6)
+      common/aprmx/aprm
+
+c     <sltn> -- velocity solution and its covariance matrix
+      integer maxvnm
+      parameter (maxvnm=3*maxnet*(3*maxnet+1)/2)
+      real*8 solutn(maxprm),cova(maxvnm),chi2
+      common/sltn/solutn,cova,chi2
+c     raw observations
+      real*8 raw_obs(maxprm)
+      equivalence (solutn,raw_obs)
+
+c     <usa> -- auxiliary matrix and minimum obs threshold
+      real*8 scale(maxprm)
+      integer jobs,minic,miniv
+      common/usa/scale,jobs,minic,miniv
+
+c     <sited> -- priori coordinate and velocity (geocentric)
+      real*8 x(maxnet),y(maxnet),vx(maxnet),vy(maxnet) 
+      real*8 z(maxnet),vz(maxnet) 
+      common/sited/x,y,z,vx,vy,vz,nnet
+
+c     <coord> -- priori coordinate and velocity (geodetic)
+      integer comode
+      real*8 slat(maxnet),slon(maxnet),srad(maxnet)
+      real*8 ve(maxnet),vn(maxnet),vu(maxnet)
+      common/coord/slat,slon,srad,ve,vn,vu,comode
+
+      integer nexc,iexc(maxnet),iesit(maxnet)
+      real*8 azio
+      common/exclu/azio,nexc,iexc,iesit
+ 
+      integer ncht
+      common/cheght/ncht
+
+      integer iexp,nsit
+      common/expd/iexp,nsit
+
+c     <live> -- index arrays and fix status index
+      integer fix(maxprm),nlive,map(maxprm),itoj(maxnet)
+      integer jtoi(maxnet),fixsit(maxfix),gdsit,nvsit,fixcnt
+      common/live/nlive,fix,map,itoj,jtoi,fixsit,gdsit,
+     .       fixcnt,nvsit
+
+      integer icnum
+      integer ibnum
+      common/bcos/icnum,ibnum
+    
+      real*8 strat(maxnet*6)
+      common/strad/strat
+
+c     assistant arrays for inner, outer and model coordinate
+      real*8 cnew(maxvnm),vnew(maxprm)
+      equivalence (vnew,strat)
+      equivalence (cnew,anorm(1))
+
+c     <iom> -- assistant arrays
+      integer maxgvm
+      parameter (maxgvm=21*maxnet)
+      real*8 gvm(maxgvm),gmvm(maxgvm),gmgm(49)
+      common/iom/gvm,gmvm,gmgm
+
+c     <vfield> -- postfit velocity solution
+      real*8 slnvx(maxnet),slnvy(maxnet),slnvz(maxnet)
+      real*8 slnve(maxnet),slnvn(maxnet),slnvu(maxnet)
+      common/vfield/slnvx,slnvy,slnvz,slnve,slnvn,slnvu
+
+c     <deflect> -- deflection correction array
+      real*8 defe(maxnet),defn(maxnet)
+      common/deflct/defe,defn
+ 
+c     <addp> -- auxiliary parameter counter
+      integer iaux,jaux,jeaux
+      common/addp/iaux,jaux,jeaux
+ 
+c     <quake> -- earthquake correction related arrays
+      integer nquake,iq_sit,iq_optn,quake_sit(maxnet)
+      integer iq_ind(50),quake_use(maxnet)
+      real*8  quake_time(50)
+      common/quake/nquake,iq_sit,iq_optn,quake_sit,iq_ind
+      common/quake2/quake_time,quake_use
+
+c     <cutoff> -- outlier checking criteria
+      real*8 cril,cria,crid,cric,criv
+      common/cutoff/cril,cria,crid,cric,criv
+
+c     <loosw> -- loose constraint on coor and velo
+      real*8 wcoe,wcon,wcou,wvee,wven,wveu
+      common/loosw/wcoe,wcon,wcou,wvee,wven,wveu
+
+c     <idxpr> -- index array 
+      integer indx_row(maxprm),indx_ele(maxprm*6)
+      common/idxpr/indx_row,indx_ele
+
+c     <file_name> name of gmt sketch file and a priori file,
+c                 lambert file= xy and h from a map
+      character*64 gmt_sketch_file,priori_coord,lambert
+      common/file_name/gmt_sketch_file,priori_coord,lambert
+
+c     fullname of site
+
+      character*12 fullnm(maxsit)
+      common/site_name/fullnm

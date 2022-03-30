@@ -1,0 +1,219 @@
+#!/bin/csh -f
+#
+#doc Outputs statistics for radiation parameter estimates 
+#doc
+#
+# sh_rad_stat
+#
+# Purpose      Outputs statistics for radiation parameter estimates and
+#              makes suggestions for process noise to be used
+#
+# Required     List of daily .org files with orbits
+#
+# Output       sites.default file with the list of sites to use in each
+#              network
+#
+# sh_rad_stat -w <week> -r <root> -f <list of .org files>
+# where <week> is optional extent to the file names.  Needed for 
+#              parallel runs.  Week normally prefixed with .
+#              ie. -w .1650
+#       <root> Lead character for names (default rad)
+#       <<list of .org files> list of .org files
+#
+# MOD TAH 190610: Updated for the ECOMC model with 2U and 4U direct terms.
+#
+# by Tom Herring 02/01/2003
+#
+
+if ($#argv < 1) then
+        sed -e "1d" -e "/by Tom/q" -e "s/#//" $0
+        exit
+endif
+
+# Get the list of files passed
+set list = ""
+set root = "rad"
+set week = ""
+
+# Decode commmand line
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+       breaksw 
+       case -f*:
+           set list    =   ( $list $input[2] )
+           shift input; shift input
+           while ( $#input > 0 &&   `echo  $input[1]  | cut -c1` != "-" )
+               set inarg =  $input[1]
+               if ( `echo  $inarg | cut -c1` != "-" ) then
+                  set list   =   ( $list $inarg )
+                  if ( $#input == 1 ) goto alldone
+                  shift input
+               endif
+           end
+           if ( $#input == 0 ) goto alldone
+           breaksw 
+       case -r*:
+           set root = $input[2]  
+           breaksw 
+       case -w*:
+           set week = $input[2]  
+           breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+echo "Files "$list
+echo "Root $root Week $week"
+#
+# First extract the nodes of the orbits and rank PRN's by orbital plane
+set PRNS = `grep -h 'RA Node' $list | sort -u -k 2,2 | awk '{print $2,int($8/60)}' | sort -n -k 2 | awk '{print $1}'`
+set planes = `grep -h 'RA Node' $list | sort -u -k 2,2 | awk '{print $2,int($8/60)}' | sort -n -k 2 | awk '{print $2}'`
+
+# OK: loop over PRNS and extract Rad parameters
+set i = 0
+echo "Mean Radiation Parameters from $list" >! ${root}.mean${week}
+echo "PRN     P  #   Direct    Y axis    B axis     Cos D     Sin D     Cos Y     Sin Y     Cos B    Sin B   Cos 2UD   Sin 2UD   Cos 4UD    Sin 4UD " >> ${root}.mean${week}
+echo "WRNS scatter Radiation Parameters from $list" >! ${root}.wrms${week}
+echo "PRN     P  #   Direct    Y axis    B axis     Cos D     Sin D     Cos Y     Sin Y     Cos B    Sin B   Cos 2UD   Sin 2UD   Cos 4UD    Sin 4UD " >> ${root}.wrms${week}
+echo "NRMS  scatter Radiation Parameters from $list" >! ${root}.nrms${week}
+echo "PRN     P  #   Direct    Y axis    B axis     Cos D     Sin D     Cos Y     Sin Y     Cos B    Sin B   Cos 2UD   Sin 2UD   Cos 4UD    Sin 4UD " >> ${root}.nrms${week}
+echo "Estimate sig nificance radation Parameters from $list" >! ${root}.sigl${week}
+echo "PRN     P  #   Direct    Y axis    B axis     Cos D     Sin D     Cos Y     Sin Y     Cos B    Sin B   Cos 2UD   Sin 2UD   Cos 4UD    Sin 4UD " >> ${root}.sigl${week}
+echo "* Radiation Process Noise from $list" >! ${root}.mar${week}
+echo "*           PRN     Direct    Y axis    B axis     Cos D     Sin D     Cos Y     Sin Y     Cos B     Sin B   Cos 2UD   Sin 2UD   Cos 4UD   Sin 4UD" >> ${root}.mar${week}
+
+foreach pn (`echo $PRNS`)
+   @ i = $i + 1
+   echo "Processing $pn Planes $planes[$i]"
+   echo -n "$pn $planes[$i]" >> ${root}.mean${week}
+   echo -n "$pn $planes[$i]" >> ${root}.wrms${week}
+   echo -n "$pn $planes[$i]" >> ${root}.nrms${week}
+   echo -n "$pn $planes[$i]" >> ${root}.sigl${week}
+   echo -n " mar_rad $pn "   >> ${root}.mar${week}
+#
+#  Now for each radiation parameter extract the estimated values
+# MOD TAH 160512: Removed extra space before 'Direct Rad'.  Script was not finding values.
+   grep -h "^.......$pn " $list | grep 'Direct Rad    (none)' |  awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100}' >! t.r${week}
+   poly01r yes 0 no no 0 < t.r${week} | awk '{print $2/100, $15/100,$13,$11}' >! t.f${week}
+   awk '{printf(" %2d %8.5f ",$4,$1)}' t.f${week} >> ${root}.mean${week}
+   awk '{printf(" %2d %8.5f ",$4,$2)}' t.f${week} >> ${root}.wrms${week}
+   awk '{printf(" %2d %8.2f ",$4,$3)}' t.f${week} >> ${root}.nrms${week}
+   awk '{s=s+(($2-100)/($3))^2} END {printf(" %2d %8.2f ",NR,sqrt(s))}' t.r${week} >> ${root}.sigl${week}
+   awk '{if( $3 > 0.5 ) {printf(" %8.5f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f${week} >> ${root}.mar${week}
+
+   grep -h "^.......$pn " $list | grep 'Y Axis Bias   (none) ' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100}' >! t.r${week}
+   poly01r yes 0 no no 0 < t.r${week} | awk '{print $2/100, $15/100,$13,$11}'>! t.f${week}
+   awk '{printf(" %8.5f ",$1)}' t.f${week} >> ${root}.mean${week}
+   awk '{printf(" %8.5f ",$2)}' t.f${week} >> ${root}.wrms${week}
+   awk '{printf(" %8.2f ",$3)}' t.f${week} >> ${root}.nrms${week}
+   awk '{s=s+($2/($3))^2} END {printf(" %8.2f ",sqrt(s))}' t.r${week} >> ${root}.sigl${week}
+   awk '{if( $3 > 0.5 ) {printf(" %8.5f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f${week} >> ${root}.mar${week}
+# MOD TAH 190623: Not needed with ECOMC
+#  echo -n "    0.0 " >> ${root}.mar${week}
+
+   grep -h "^.......$pn " $list | grep 'B Axis Bias   (none) ' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100}' >! t.r${week}
+   poly01r yes 0 no no 0 < t.r${week} | awk '{print $2/100, $15/100,$13,$11}'>! t.f${week}
+   awk '{printf(" %8.5f ",$1)}' t.f${week} >> ${root}.mean${week}
+   awk '{printf(" %8.5f ",$2)}' t.f${week} >> ${root}.wrms${week}
+   awk '{printf(" %8.2f ",$3)}' t.f${week} >> ${root}.nrms${week}
+   awk '{s=s+($2/($3))^2} END {printf(" %8.2f ",sqrt(s))}' t.r${week} >> ${root}.sigl${week}
+   awk '{if( $3 > 0.5 ) {printf(" %8.5f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f${week} >> ${root}.mar${week}
+# MOD TAH 190623: Not needed with ECOMC
+#  echo -n "    0.0 " >> ${root}.mar${week}
+
+   grep -h "^.......$pn " $list | grep 'Cos Direct    (none)' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100+1.e-6}' >! t.r${week}
+   poly01r yes 0 no no 0 < t.r${week} | awk '{print $2/100, $15/100,$13,$11}'>! t.f${week}
+   awk '{printf(" %8.5f ",$1)}' t.f${week} >> ${root}.mean${week}
+   awk '{printf(" %8.5f ",$2)}' t.f${week} >> ${root}.wrms${week}
+   awk '{printf(" %8.2f ",$3)}' t.f${week} >> ${root}.nrms${week}
+   awk '{s=s+($2/($3))^2} END {printf(" %8.2f ",sqrt(s))}' t.r${week} >> ${root}.sigl${week}
+   awk '{if( $3 > 0.5 ) {printf(" %8.5f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f${week} >> ${root}.mar${week}
+
+# MOD TAH 070925: Added 1e-6 to sigma for cases when parameter is fixed
+   grep -h "^.......$pn " $list | grep 'Sin Direct    (none)' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100+1.e-6}' >! t.r${week}
+   poly01r yes 0 no no 0 < t.r${week} | awk '{print $2/100, $15/100,$13,$11}'>! t.f${week}
+   awk '{printf(" %8.5f ",$1)}' t.f${week} >> ${root}.mean${week}
+   awk '{printf(" %8.5f ",$2)}' t.f${week} >> ${root}.wrms${week}
+   awk '{printf(" %8.2f ",$3)}' t.f${week} >> ${root}.nrms${week}
+   awk '{s=s+($2/($3))^2} END {printf(" %8.2f ",sqrt(s))}' t.r${week} >> ${root}.sigl${week}
+   awk '{if( $3 > 0.5 ) {printf(" %8.5f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f${week} >> ${root}.mar${week}
+
+   grep -h "^.......$pn " $list | grep 'Cos Y Bias    (none)' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100+1.e-6}' >! t.r${week}
+   poly01r yes 0 no no 0 < t.r${week} | awk '{print $2/100, $15/100,$13,$11}'>! t.f${week}
+   awk '{printf(" %8.5f ",$1)}' t.f${week} >> ${root}.mean${week}
+   awk '{printf(" %8.5f ",$2)}' t.f${week}>> ${root}.wrms${week}
+   awk '{printf(" %8.2f ",$3)}' t.f${week} >> ${root}.nrms${week}
+   awk '{s=s+($2/($3))^2} END {printf(" %8.2f ",sqrt(s))}' t.r${week} >> ${root}.sigl${week}
+   awk '{if( $3 > 0.5 ) {printf(" %8.5f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f${week} >> ${root}.mar${week}
+
+   grep -h "^.......$pn " $list | grep 'Sin Y Bias    (none)' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100+1.e-6}' >! t.r${week}
+   poly01r yes 0 no no 0 < t.r${week} | awk '{print $2/100, $15/100,$13,$11}'>! t.f${week}
+   awk '{printf(" %8.5f ",$1)}' t.f${week} >> ${root}.mean${week}
+   awk '{printf(" %8.5f ",$2)}' t.f${week} >> ${root}.wrms${week}
+   awk '{printf(" %8.2f ",$3)}' t.f${week} >> ${root}.nrms${week}
+   awk '{s=s+($2/($3))^2} END {printf(" %8.2f ",sqrt(s))}' t.r${week} >> ${root}.sigl${week}
+   awk '{if( $3 > 0.5 ) {printf(" %8.5f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f${week} >> ${root}.mar${week}
+
+   grep -h "^.......$pn " $list | grep 'Cos B Bias    (none)' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100+1.e-6}' >! t.r${week}
+   poly01r yes 0 no no 0 < t.r${week} | awk '{print $2/100, $15/100,$13,$11}'>! t.f${week}
+   awk '{printf(" %8.5f ",$1)}' t.f${week} >> ${root}.mean${week}
+   awk '{printf(" %8.5f ",$2)}' t.f${week} >> ${root}.wrms${week}
+   awk '{printf(" %8.2f ",$3)}' t.f${week} >> ${root}.nrms${week}
+   awk '{s=s+($2/($3))^2} END {printf(" %8.2f ",sqrt(s))}' t.r${week} >> ${root}.sigl${week}
+   awk '{if( $3 > 0.5 ) {printf(" %8.5f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f${week} >> ${root}.mar${week}
+
+   grep -h "^.......$pn " $list | grep 'Sin B Bias    (none)' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100+1.e-6}' >! t.r${week}
+   poly01r yes 0 no no 0 < t.r${week} | awk '{print $2/100, $15/100,$13,$11}'>! t.f${week}
+   awk '{printf(" %8.5f ",$1)}' t.f${week} >> ${root}.mean${week}
+   awk '{printf(" %8.5f ",$2)}' t.f${week} >> ${root}.wrms${week}
+   awk '{printf(" %8.2f ",$3)}' t.f${week} >> ${root}.nrms${week}
+   awk '{s=s+($2/($3))^2} END {printf(" %8.2f ",sqrt(s))}' t.r${week} >> ${root}.sigl${week}
+   awk '{if( $3 > 0.5 ) {printf(" %8.5f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f${week} >> ${root}.mar${week}
+
+# ECOMC additions
+   grep -h "^.......$pn " $list | grep 'Cos 2U Direct (none)' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100+1.e-6}' >! t.r${week}
+   poly01r yes 0 no no 0 < t.r${week} | awk '{print $2/100, $15/100,$13,$11}'>! t.f${week}
+   awk '{printf(" %8.5f ",$1)}' t.f${week} >> ${root}.mean${week}
+   awk '{printf(" %8.5f ",$2)}' t.f${week} >> ${root}.wrms${week}
+   awk '{printf(" %8.2f ",$3)}' t.f${week} >> ${root}.nrms${week}
+   awk '{s=s+($2/($3))^2} END {printf(" %8.2f ",sqrt(s))}' t.r${week} >> ${root}.sigl${week}
+   awk '{if( $3 > 0.5 ) {printf(" %8.5f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f${week} >> ${root}.mar${week}
+
+   grep -h "^.......$pn " $list | grep 'Sin 2U Direct (none)' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100+1.e-6}' >! t.r${week}
+   poly01r yes 0 no no 0 < t.r${week} | awk '{print $2/100, $15/100,$13,$11}'>! t.f${week}
+   awk '{printf(" %8.5f ",$1)}' t.f${week} >> ${root}.mean${week}
+   awk '{printf(" %8.5f ",$2)}' t.f${week} >> ${root}.wrms${week}
+   awk '{printf(" %8.2f ",$3)}' t.f${week} >> ${root}.nrms${week}
+   awk '{s=s+($2/($3))^2} END {printf(" %8.2f ",sqrt(s))}' t.r${week} >> ${root}.sigl${week}
+   awk '{if( $3 > 0.5 ) {printf(" %8.5f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f${week} >> ${root}.mar${week}
+
+   grep -h "^.......$pn " $list | grep 'Cos 4U Direct (none)' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100+1.e-6}' >! t.r${week}
+   poly01r yes 0 no no 0 < t.r${week} | awk '{print $2/100, $15/100,$13,$11}'>! t.f${week}
+   awk '{printf(" %8.5f ",$1)}' t.f${week} >> ${root}.mean${week}
+   awk '{printf(" %8.5f ",$2)}' t.f${week} >> ${root}.wrms${week}
+   awk '{printf(" %8.2f ",$3)}' t.f${week} >> ${root}.nrms${week}
+   awk '{s=s+($2/($3))^2} END {printf(" %8.2f ",sqrt(s))}' t.r${week} >> ${root}.sigl${week}
+   awk '{if( $3 > 0.5 ) {printf(" %8.5f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f${week} >> ${root}.mar${week}
+
+   grep -h "^.......$pn " $list | grep 'Sin 4U Direct (none)' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100+1.e-6}' >! t.r${week}
+   poly01r yes 0 no no 0 < t.r${week} | awk '{print $2/100, $15/100,$13,$11}'>! t.f${week}
+   awk '{printf(" %8.5f ",$1)}' t.f${week} >> ${root}.mean${week}
+   awk '{printf(" %8.5f ",$2)}' t.f${week} >> ${root}.wrms${week}
+   awk '{printf(" %8.2f ",$3)}' t.f${week} >> ${root}.nrms${week}
+   awk '{s=s+($2/($3))^2} END {printf(" %8.2f ",sqrt(s))}' t.r${week} >> ${root}.sigl${week}
+   awk '{if( $3 > 0.5 ) {printf(" %8.5f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f${week} >> ${root}.mar${week}
+
+   echo " " >> ${root}.mean${week}
+   echo " " >> ${root}.wrms${week}
+   echo " " >> ${root}.nrms${week}
+   echo " " >> ${root}.sigl${week}
+   echo " ! P $planes[$i]" >> ${root}.mar${week}
+
+end
+
+echo " "
+echo Created ${root}.*${week}
+ 
+\rm t.f${week} t.r${week}
+

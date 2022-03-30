@@ -1,0 +1,64 @@
+#!/bin/csh -f
+#
+#doc Get monthly DCB values from AIUB and add to dcb.dat
+#doc 
+#
+# Script to get monthly DCB values from AIUB and add to dcb.dat
+# Uses wget and creates www.aiub.unibe.ch/ionosphere/p1c1.dcb locally,
+# then runs gamit/utils/dcbtab to add this file to dcb.dat
+# Written by R King 12 Oct 2004
+
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "===================================================================================="
+  echo " Get monthly DCB values from AIUB and update tables/dcb.dat "
+  echo "  "
+  echo " Usage: sh_update_dcb -o <Y/N> "
+  echo "  "
+  echo "        <Y/N>  Yes or No to overwrite an existing p1c1.dcb file    [Required] "
+  echo "  "
+  echo "===================================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS #############################   
+set o  = 'Y'
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -o:
+      set overwrite  = $input[2]  
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+
+##################### READ THE FTP_ADDRESSES TEMPLATE ############################    
+#    
+# Restore this code later, from sh_update_eop
+#
+##################### GET THE JOB DONE ############################
+     
+#  This was the only one of several ftp/ncftp/wget methods I tried that worked
+#  It creates the full directory structure locally: /www.aiub.unibe.ch/ionosphere/p1c1.dcb 
+#  Setting -no-directories resulted in not getting the file at all.
+#  We should fix this up eventually.
+ 
+wget -passive-ftp  http://www.aiub.unibe.ch/ionosphere/p1c1.dcb 
+
+if( $overwrite == "Y" ) then
+  \cp -f www.aiub.unibe.ch/ionosphere/p1c1.dcb ./
+else
+  mv p1c1.dcb p1c1.dcb.save
+  \cp -f www.aiub.unibe.ch/ionosphere/p1c1.dcb ./
+endif
+
+# program gamit/utils/dcbtab creates 'dcb.dat.new' by concatenating 'dcb.dat' and 'p1c1.dcb' 
+
+~/gt/utils/dcbtab
+
+exit

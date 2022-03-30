@@ -1,0 +1,643 @@
+# Table to help utils/upd_stnfo guess GAMIT receive, antenna, software codes from RINEX headers
+# Free format: keywrd string code
+#   where keywrd is 'rcv', 'ant', or 'swv'
+#         string is a character string of arbitrary length to be searched for in the header line  
+#         code   is the GAMIT receiver, antenna, or swver code to be assigned
+# Valid lines of the table must have a blank first character; entries converted to uppercase internally
+# Use ^ in place of blanks (upd_stnfo will replace blanks by ^ in the RINEX strings
+# Purely numerical firmware entries in the RINEX header will be read directly without translation
+# Last modified by rwk 990424
+# MOD TAH 991120:  Added ^ after TI entries   
+# MOD RWK 000330:  Fixed SNR-8 ROG_8 to SNR-8^ ROG__8
+# MOD RWK 001228: Add Javad rcv and ant; correct lack of space for MiniMac entries  
+# MOD RWK 020318: Add default for radome      
+# MOD MHM/RWK 020507 Add some Trimble and Ashtech firmware versions  
+# MOD RWK 030402: Add some Ashtech 6G, 6I firmware 
+# MOD RWK 030410: Add Ashtech 6F, 6CM3, 6CM7 firmware  
+# MOD RWK 030719/28: Add ASHTECH-DORNE and MARGOLIN ASH (PGC) for ASHDMG    
+# MOD RWK 040209: Add Ashtech, Novatel, Navcom, and Topcon entries from rcvant.dat Jul 2003-Jan 2004   
+# MOD RWK 040319  Add Sokkia Radian rcv and firmware.    
+# MOD RWK 040330  Add ASH701945E_M.  
+# MOD RWK 040412  Add Trimble 4000MSGR    
+# MOD RWK 040623  Add Topcon JPSREGANT_DD_E and JPSREGANT_SD_E and 3SNavigation 3S-02-TSADM antennas;
+#                 and Topcon JPS E_GGD receiver.   
+# MOD RWK 040719  Add ASH701945G_M.
+# MOD TAH 040908: Add TRIMBLE NETRS   
+# MOD RWK 050216  Add ROGMTA (all aliases), LC1230, JNSMAR, NOVEU4, and correct AOICSA.  
+# MOD RWK 050311  Add Topcon GB-1000 rcvr and PGA-1 antennas. 
+# MOD RWK 050315  Add Leica GRX1200PRO (LC12PR) receiver.
+# MOD TAH 050709: Add radome types at bottom so that mtsinf2 will copy accross correctly. 
+# MOD RWK 071003  Add the IGS name for the TPS GB-1000 recevier.
+# MOD RWK 071110  Add TPS MAXOR.  
+# MOD RWK 071113  Fix missing ^ for JPS/TPS LEGACY. 
+# MOD RWK 080808  Correct GAMIT code for TPS GB-1000, and a second alias, and add firmware 3.1 Mar,13,2007 p2
+# MOD RWK 080813  Add Trimble 6.01 firmware
+# MOD RWK 081117  Add several dozen new IGS codes   
+# MOD RWK 090526  Add firmware 1L00 for Ashtech Z-XII3 and ZE21 for UZ-12; and Topcon 2.5  
+# MOD RWK 090702  Add Leica GRX1200GGPRO (LC14PR) and firmware 5.62/3.14 
+# MOD RWK 091103  Add Ashtech Z-X 
+# MOD RWK 091208  Add mapping for Leica 300 series firmware
+# MOD RWK 100708  Add Leica firmware 5.62 for GRX1200PRO as swver 7.20
+# MOD RWK 100714  Add Trimble firmware 'Nav 2.27' as swver 1.27    
+# MOD RWK 100714  Add TPS GB-1000 firmare '3.0 Jun 16, 2006' as 3.0
+# MDO RWK 110211  Add Trimble firmware 1.1-2 and Ashtech firmware CJ50, CK00, CQ00 (see makes/settim.f)
+# MOD RWk 110912  Add Trimble firmware 00441 and Leica firmware 8.00
+# MOD RWK 120123  Add new alias for TRM22020.00+GP
+# MOD RWK 121020  Add Topcon firmware 3.4 Dec, 12,2009 p2 
+# MOD RWK 121030  Add Leica 5.10/1.39 as 5.50 
+# MOD RWK 131018  Add TRNTR9 as Trimble NetR9
+# MOD RWK 140224  Add TRM41249.0 as alias for TRM41249.00
+# MOD RWK 140317  Add Zephyr Geodetic as alias for  TRM41249.00  
+# MOD RWK 150422  Add Firmware for CHC N71 and N72.
+# MOD RWK 160510  Add R8 Model 2 as alias for TRIMBLE R8 GNSS 
+# MOD RWK 160510  Add R8 Model 3 as alias for TRIMBLE R8 GNSS3
+# MOD RWK 160510  Add ATX1230 as alias for LEICA GRX1200+
+# MOD RWK 160510  Add R7 GNSS as alias for TRIMBLE R7 GNSS      
+# MOD RWK 170815  Add NetRS as alias for TRIMBLE NETRS 
+# MOD RWK 170921  Add NETG3A as alias for TPS NET-G3A 
+# MOD RWK 170921  Add GRX1200PROGG as alias for LEICA GRX1200GGPRO 
+# MOD RWK 170921  Add GR10 as alias for LEICA GR10 and AS10 as alias for LEIAS10. 
+# MOD RWK 171219  Add R8S as alias for TRIMBLE R8 GNSS reciver and TRMR8_GNSS antenna 
+# MOD RWK 171220  Add TPSGR3 as alias for TPS GR3 receiver
+# MOD MAF 180706  Add TRM159800.00
+# MOD RWK 190430  Fix spelling of 'ProFlex800'
+# MOD RWK 190509  Add SEPTPOLANT_X_MF as alias for SEPPOLANT_X_MF 
+
+# Default  receiver / software / antenna / radome 
+ rcv default TRMSST
+ swv default 7.26 
+ ant default TRMSST 
+ rad default NONE
+
+# TI codes
+ rcv TI^   TI4100
+ swv GES^^^     1.0 
+ swv GES^^1.0   1.0
+ swv GES^^1.5   1.5
+ swv GESAR^1.9  1.9
+ swv GSI^TI^4100 1.0
+ swv GSI^TI4100  1.0
+ swv NAVDAPT^2.0 2.0
+ ant TI^   TI4100
+ ant 4100_100 TI_100 
+ ant 4100_200 TI2000
+ ant 4100^    TI4100
+ ant 4100_4   TI4000   
+ ant FRPA     FRPA-2
+# Trimble codes
+ rcv SST    TRMSST 
+ rcv TRIMBLE^SD TRMSST
+ rcv SSE      TRMSSE
+ rcv TRIMBLE^4000SE^ TRMSSE
+ rcv SSI^     TRMSSI
+ rcv SSI-SS   TR4SIS
+ rcv SLD      TRMSLD
+ rcv Trimble^4000SSi TRMSSI 
+ rcv 4000SSI^   TRMSSI
+ rcv 4000SSi^   TRMSSI
+ rcv 4000SSI-SS TR4SIS    
+ rcv 4000MSGR   TRMSGR
+ rcv 4400       TR4400
+ rcv 4700       TR4700
+ rcv 7400MSI    TR7400
+ rcv BD-750     TRM750
+ rcv 5700       TR5700
+ rcv NETRS      TRNTRS
+ rcv NETR5      TRNTR5
+ rcv TRIMBLE^5800 TR5800
+ rcv TRIMBLE^R7   TRM_R7
+ rcv R7^GNSS      TR7GNS
+ rcv TRIMBLE^R8   TRM_R8 
+ rcv R8^Model^2   TR8GNS
+ rcv R8^Model^3   TR8GN3
+ rcv TRM^NETRS    TRNTRS 
+ rcv Trimble^NetR9  TRNTR9
+ rcv TRNTR9       TRNTR9       
+ rcvr NetR9       TRNTR9
+ rcvr Epoch^50    GEO684
+ rcvr NetRS       TRNTRS 
+ rcvr NET-G3^     TPSNG3             
+ rcvr NETG3A      TPSG3A 
+ rcvr R8S         TR8GNS  
+ ant M41249       TRMZGP
+ ant Zephyr^Geo   TRMZGP                               
+ swv NP^1.20         1.20
+ swv NP^1.24         1.24 
+ swv NP^1.30         1.30
+ swv NP^1.35         1.35
+ swv NP^2.24         2.24
+ swv NP^4.64         4.64
+ swv NP^4.53         4.53   
+ swv NP^5.64         5.64  
+ swv NP^5.65         5.65  
+ swv NP^5.66         5.66     
+ swv Nav^5.70        5.70  
+ swv NP^5.71         5.71  
+ swv NP^6.01         6.01
+ swv NP^6.10         6.10
+ swv NP^6.12         6.12
+ swv NP^7.01         7.01
+ swv NP^7.09         7.09  
+ swv NP^7.12         7.12
+ swv NP^7.15         7.15
+ swv NP^7.19         7.19
+ swv ^7.19^/         7.19
+ swv ^7.19;          7.19 
+ swv Nav^7.25        7.25
+ swv NP^7.26         7.26    
+ swv NP^7.28         7.28 
+ swv ^7.28^/         7.28
+ swv ^7.28;          7.28
+ swv NP^7.29         7.29                    
+ swv Nav^7.29        7.29
+ swv NP^7.32         7.32  
+ swv NP^7.58         7.58  
+ swv Nav^1.13        1.13   
+ swv Nav^2.27        1.27 
+ swv 1.1-2           1.12
+ swv 00441           4.41
+ ant TRM10877.10+SGP TRMSXD
+ ant 4000SX          TRMSXD 
+ ant TRM12562.00+SGP TRMSLD   
+ ant TRM12562.10+SGP TRSLDR
+ ant 4000SLD         TRMSLD  
+ ant TRM14177.00     TRSTL1
+ ant TRM14532.0      TRMSST    
+ ant TRM14532.1      TRSSEK     
+ ant SST             TRMSST
+ ant ST^L1/L2^       TRMSST   
+ ant TRIMBLE^SD      TRMSST
+ ant TRM22020.00+GP  TRMSSE
+ ant SSE             TRMSSE
+ ant TR^GEOD^L1/L2   TRMSSE
+ ant TR_GEOD_L1/L2_GP TRMSSE
+ ant TRM22020.00-GP  TRMKIN
+ ant TR^GEOD^L1/L2^W/O TRMKIN
+ ant TRM29659.0      TRMDMG 
+ ant MARGOLIN_TRIM   TRMDMG 
+ ant TRM29659DOME    TRMDMG
+ ant LIN^TRIM        TRMDMG 
+ ant TRM33429.00+GP  TRMICG  
+ ant TRM33429.00-GP  TRMICN
+ ant TRM33429.20+G   TRMIC2
+ ant TRM27947.00+GP  TRMUGG
+ ant TRM27947.00-GP  TRMUGN  
+ ant TRIMBLE^4800    TR4800
+ ant TRM39105.00     TRMZEP
+ ant TRM41249.00     TRMZGP
+ ant Trimble^Choke^Ring TRMDMG   
+ ant TRM59800.00     TR5980   
+ ant TRM41249USCG      TRMZRC
+ ant TRM41249.0        TRMZGP
+ ant TRM55971.00       TRMZGN
+ ant TRM36569.00+GP    TRMI13
+ ant TRM4800           TR4800
+ ant TRM5800           TR5800
+ ant TRM4600LS         TR4600
+ ant TRM14156.00-GP    TRSTKN                     
+ ant TRM22020+GP       TRMSSE
+ ant TRMR8_GNSS        TR8GNS 
+ ant TRMR8S            TR8GNS 
+ ant TRM159800.00      TR1598
+
+# Ashtech codes
+ rcv P-XII             ASHP12
+ rcv Z-12              ASHZ12
+ rcv L-XII             ASHL12 
+ rcv LM-XII            ASHM12   
+ rcv LM-XII3           ASHM12
+ rcv ASHTECH^Z-XII     ASHZ12
+ rcv Z-XII3            ASHZ12   
+ rcv ASHTECH^UZ-12     ATUZ12
+ rcv ASHTECH^Z18       ATZ_18       
+ rcv ASHTECH^GG24C     ATG24C   
+ rcv ASHTECH^LCS-XII   ATLCS1   
+ rcv ASHTECH^G-XII     ATG_12   
+ rcv ASHTECH^MICROZ    ATMCRZ   
+ rcv ASHTECH^Z-XII3T   ATZ12T   
+ rcv ASHTECH^Z-XII3GETT ATZ12G   
+ rcv THALES^Z-MAX      THAZMX 
+ rcv ASHTECH^Z-X       ATZXTR             
+ rcv ProFlex500        ATPF50 
+ rcv ProFlex800        ATPF80 
+ swv 5F       1.00
+ swv 6A6A     1.00
+ swv 6A       1.00
+ swv 6F       1.00
+ swv 7A       1.00
+ swv WN       1.00
+ swv 6G6G     1.00
+ swv 6M6M     1.00
+ swv 6M       1.00
+ swv 7A       1.00
+ swv 7A247A24  1.00 
+ swv 6CM3     6.00
+ swv 6CM7     6.00 
+ swv 6G       6.00
+ swv 6GP4     6.00
+ swv 6IP4     6.00
+ swv 7A       7.00  
+ swv NP^7.12  7.12
+ swv NP^7.15  7.15  
+ swv 1C00     8.00 
+ swv 1E82     8.0
+ swv 1C01     8.01
+ swv 1D00     8.10
+ swv 1E00     8.20   
+ swv 4J30     8.20  
+ swv 1E24     8.22 
+ swv 1E76     8.23 
+ swv 1E8D     8.24 
+ swv 1E95     8.25  
+ swv 1F00     8.30 
+ swv 1F371    8.3
+ swv 1F39     8.32 
+ swv 1F50     8.35 
+ swv 1F60     8.36 
+ swv 1G00     8.40 
+ swv 1H00     8.50
+ swv 1J00     8.70   
+ swv 4J00     8.74   
+ swv 4J001C6  8.74 
+ swv 1L00     8.85
+ swv 1SWE1D0  8.86  
+ swv 1L01     8.87 
+ swv CB00     9.00
+ swv CC00     9.10   
+ swv CD00     9.20  
+ swv RC00     9.40 -- YB 10/15/99
+ swv RC05     9.45 -- YB 10/15/99
+ swv RD00     9.50 -- YB 10/15/99
+ swv UB00     9.70 -- YB
+ swv UC00     9.71 -- YB 10/15/99
+ swv UD00     9.72 -- YB 10/15/99
+ swv UE00     9.73 -- YB 10/15/99
+ swv UF00     9.74 
+ swv V6400    9.80
+ swv 0064     9.80  
+ swv V6500    9.81
+ swv 0065     9.81   
+ swv IL01-1D04 9.90 
+ swv CJ50     9.91  
+ swv ZC00     9.92  
+ swv CJ00     9.93
+ swv CN00     9.94
+ swv ZE00     9.95 
+ swv ZE21     9.96    
+ swv ZB00     9.97
+ swv CK00     9.98
+ swv CQ00     9.99  
+ ant ASHMAR/RANGE     ASHMAR          
+ ant ASH700700.A      ATMR2A          
+ ant 700700A          ATMR2A          
+ ant ASH700700.B      ATMR2B
+ ant 700700B          ATMR2B          
+ ant ASH700700.C      ATMR2C
+ ant 700700C          ATMR2C          
+ ant ASH700228A       ASHL12 
+ ant GEODETIC^L       ASHL12  
+ ant MICROSTRIP       ASHL12 
+ ant LM-XII           ASHL12
+ ant ASH700228A+EX    ASHLEX   
+ ant GEOD^L^EXT       ASHLEX  
+ ant ASH700228B       ATGEOB          
+ ant ASH700228C       ATGEOC          
+ ant ASH700228D       ASHP12          
+ ant ASH700228E       ATGEOE          
+ ant ASH700718A       ASHGD3 
+ ant GEODETIC^III     ASHGD3
+ ant ASHGD3           ASHGD3          
+ ant ASH700718A1      ASHGDA          
+ ant ASH700718B       ATGE3B  
+ ant 700818           ATGE3B        
+ ant ASH700829.2      ASHG3R 
+ ant ^3^USCG          ASHG3R          
+ ant ASH700829.3      ATGE33          
+ ant ASH700829.A      ATGE3A          
+ ant ASH700829.A1     ATGEA1          
+ ant ASH701008.01B    ATIIIA          
+ ant ASH700936A_M     ASHDMG 
+ ant ASHTECH-DORNE    ASHDMG    
+ ant MARGOLIN^ASH     ASHDMG         
+ ant ASH700936A_M     ASHDMR          
+ ant ASH700936B_M     ATDMCB          
+ ant ASH700936C_M     ATDMCC          
+ ant ASH700936D_M     ATDMCD          
+ ant ASH700936E       ATDMCE          
+ ant ATDMCE           ATDMCE
+ ant ASH700936E_C     ASHDMC          
+ ant ASH700936E_C     ASHDMD          
+ ant ASH700936F_C     ATDMCF          
+ ant ASH701933B_M     ATDMRC          
+ ant ASH701073.1      ASHGG1          
+ ant ASH701073.3      ASHGG3          
+ ant ASH701941.1      ATGGD1          
+ ant ASH701941.2      ATGGD2          
+ ant ASH701941.A      ATGGDA          
+ ant ASH701941.B      ATGGDB          
+ ant ASH701945A_M     ATDMRA          
+ ant ASH701945B_M     ATDMRB          
+ ant ASH701945.02B    ATDMR2          
+ ant ASH701945C_M     ATDM1C     
+ ant ASH701945E_M     ATDM1E 
+ ant ASH701945G_M     ATDM1G     
+ ant ASH701946.2      ATDMG2          
+ ant ASH701946.3      ATDMG3          
+ ant ASH701975.01A    ATGD4A          
+ ant ASH701975.01Agp  ATGP4A     
+ ant ASH701975.01B    ATGD4B 
+ ant ASH701975.01Bgp  ATGP4B 
+ ant ASH110454        ATPROM 
+ ant THA_ZMAX+RCVR    THAZMX   
+ ant THA800961+REC    THAZMX 
+ ant THA800961+REC    THAZMX 
+ ant THA800961+RTK    THAZRT 
+ ant THA800961RECUHF  THAZMU 
+ ant THA800961RTKUHF  THARTU 
+ ant ASH700699.L1     AT699B 
+                                                      
+# Rogue codes                      
+ rcv SNR-8^    ROG__8              
+ rcv SNR-800   ROGSNR              
+ rcv SNR-8A    ROG_8A              
+ rcv SNR-8C    ROG_8C              
+ rcv SNR-8000  TR8000  
+ rcv SNR-8000^ACT AO800A 
+ rcv SNR-8100^ACT AO810A    
+ rcv TURBOROGUE TR8000             
+ rcv SNR-8100  TR8100              
+ rcv SNR-12    ROG_12              
+ rcv SNR-12^RM ROG800              
+ rcv SNR-12^ACT AO12BM             
+ rcv BENCH     AOBMRK              
+ rcv AOA^ICS   AOICSA              
+ rcv RASCAL-8  AO_8RS              
+ rcv RASCAL-12 AO12RS              
+ swv 95.03.08  3.20                
+ swv 3.2.32.8  3.20         
+ swv 3.3.32.2  3.30   
+ swv 3.3.32.5  3.31     
+ ant LIN^R     ROGSNR              
+ ant M_R       ROGSNR              
+ ant LIN^B     ROGAOA              
+ ant M_B       ROGAOA              
+ ant LIN^T     TRBROG              
+ ant M_T       TRBROG              
+ ant TYPE^T    TRBROG              
+ ant M_RA_SOP  ROGMTA              
+ ant M_RA_NGS  TRBMTA              
+ ant M_TA_SOP  ROGMTA              
+ ant M_TA_NGS  TRBMTA              
+
+# MiniMac codes                    
+ rcv 2816AT MIN6AT                 
+ rcv MIN6AT^ MIN6AT                
+ ant TER^X-DI MINXDP               
+ ant MAC^PAT  MINPCH    
+           
+# Leica codes                  
+ rcv SR299^       LC_299                                                                                                   
+ rcv SR299I       LC_299                                                                                                   
+ rcv SYSTEM^200   LC_299                                                                                                   
+ rcv SR299E       LC299E                                                                                                   
+ rcv SR299^E      LC299E                                                                                                   
+ rcv SR399^       LC_399                                                                                                   
+ rcv SR399E       LC399E                                                                                                   
+ rcv SR399^E      LC399E                                                                                                   
+ rcv SR9500       LC9500                                                                                                   
+ rcv SR510        LC_510                                                                                                   
+ rcv SR520        LC_520                                                                                                   
+ rcv SR530        LC_530                                                                                                   
+ rcv RS500        LC_500                                                                                                   
+ rcv MC500        MC1000 
+ rcv GRX1200^     LC1200
+ rcv GRX1200PRO   LC12PR   
+ rcv GRX1200GGPRO LC14PR     
+ rcv GRX1200PROGG LC14PR 
+ rcv GX1230       LC1230                                                                         
+ rcv CRS1000      LC_CRS 
+ rcv GMX902^      LCG902 
+ rcv GX1230GG     LC123G
+ rcv GMX902GG     LC902G
+ rcv GX1220       LC1220
+ rcv ATX1230      LC121P
+ rcv LEIGS15      LCGS15
+ rcv GR10         LCGR10 
+ swv 5.62         7.20
+ swv 5.02         3.50  
+ swv 5.10         5.50        
+ swv 2.14         7.30 
+ swv 8.00         8.00  
+ swv 3.11.16      3.11 
+ ant SYSTEM^200   LC299I  
+ ant System^200   LC299I 
+ ant LEISR299_IN  LC299I 
+ ant SR299        LC299I 
+ ant SR299_I      LC299I                                                                                                   
+ ant SR299^I      LC299I   
+ ant LEISR399_IN  LC399I  
+ ant SR399_I      LC299I                                                     
+ ant SR399^I      LC299I    
+ ant LEIAT201     LC_201 
+ ant LEIAT202+GP  LC202G 
+ ant AT202+GP     LC202G                                                    
+ ant SR299E^GP    LC202G  
+ ant LEIAT202-GP  LC202N 
+ ant AT202-GP     LC202N                                                    
+ ant SR299E^W/O   LC202N  
+ ant LEIAT302+GP  LC302G 
+ ant LEIAT302-GP  LC302N 
+ ant LEIAT303     LC_303 
+ ant AT-303       LC_303
+ ant LEIAT303+RD  LC303R 
+ ant LEIAT501     LC_501 
+ ant LEIAT502     LC_502 
+ ant LEIAT503     LC_503  
+ ant AT503        LC_503 
+ ant LEIAT504^    LC_504  
+ ant AT504        LC_504 
+ ant LEIAT504GG   LC504G
+ ant ^AT504       LC_504
+ ant AX1202       LC1202
+ ant LEIAR25      LCAR25 
+ ant AS10         LCAS10 
+
+# Javad codes                                                  
+ rcv JPL_Leg        JPSLEG                                       
+ ant JNSMARANT      JNSMAR    
+ ant JPSLEGANT_E    JP_LEG
+ ant JPSODYSSEY_I   JP_ODY
+ ant JPSREGANT_SD_E JPRSDE
+ ant JPSREGANT_DD_E JPRDDE
+ ant JPSREGANT_SD_I JPRSDI
+ ant JPSREGANT_DD_I JPRDDI
+ ant JNSMARANT_GGD  JNSMAR
+
+# Navcom codes
+ rcv NCT-2000D   NCT200           
+ rcv SF-2000     SF2000           
+ rcv NCT-2030M   NCT203           
+ rcv SF-2040G    SF204G           
+ rcv SF-2050G    SF205G           
+ rcv SF-2050M    SF205M           
+ rcv SF-2050R    RT2050           
+ rcv RT-3010S    RT301S           
+ rcv RT-3020S    RT302S           
+ rcv RT-3020M    RT302M
+ ant NAVAN2004T         AN2004          
+ ant NAVAN2008T         AN2008                                 
+ ant NAVCOM SF-2040G    SF204G                               
+ ant NAVCOM RT-3010S    RT301S   
+# Novatel codes
+ rcv NOVATEL MILLENIUM NOVMIL    
+ rcv NOVATEL WAAS      NOVWAS  
+ rcv NOV EUR04        NOVEU4 
+ rcv NOV MILLEN-RT2   NOVRT2 
+ rcv NOV^OEMV3        NOVMV3 
+ rcv NOV^OEMV1        NOV_V1 
+ rcv NOV^OEMV1G       NOVV1G 
+ rcv NOV^OEMV2        NOV_V2 
+ rcv NOV6OEMV3        NOV_V3 
+ rcv NOV^15A          NOV15A 
+ rcv NOV^WAASGII      NOVGII 
+ ant NOV501       NO501N      
+ ant NOV501+CR    NO501C      
+ ant NOV503+CR    NO503C      
+ ant NOV503+CR+RD NO503R      
+ ant NOV502       NO502N      
+ ant NOV502       NO502N      
+ ant NOV502+CR    NO502C      
+ ant NOV531       NO531N      
+ ant NOV531+CR    NO531C      
+ ant NOV600       NOV600      
+ ant NOV_WAAS_600 NOV6WA 
+ ant NOV702_2.02  NO7022 
+ ant NOV702_3.00  NO7023 
+ ant NOV702GG     NO70GG 
+ ant NOV702GGL    NO70GL 
+ ant NOV702 rev.4 NO70R4 
+ ant NOV533+CR    NO533R 
+ ant NOV600LB     NO600B 
+ ant NOV701GG     NO701G 
+ ant NOV701GGL    NO701L 
+ ant NOV702GG     NO702G 
+ ant NOV702L      NO702L 
+ ant NOV704X      NO704X 
+          
+# Sepentriao codes
+ ant SEPTPOLANT_X_MF   SEPXMF 
+
+# Topcon codes
+ rcv  TOPCON^GP-R1     TOPPR1  
+ rcv  TOPCON^GP-R1D    TOPRID  
+ rcv  TOPCON^GP-R1DP   TOPRIP                                                  
+ rcv  TOPCON^GP-R1DY   TOPR1Y  
+ rcv  TOPCON^GP-S1     TOPPS1  
+ rcv  TOPCON^TURBO-SII TOPTRB  
+ rcv  TOPCON^GP-SX1    TOPSX1  
+ rcv  TOPCON^TT4000SSI TOPSSI  
+ rcv  TOPCON^GP-DX1    TOPDX1  
+ rcv  TOPCON^GP-R1SD   TOPRIS  
+ rcv  TOPCON^LEGACY^GD TOPLEG  
+ rcv  JPS^LEGACY^GD    JPSLEG  
+ rcv  TPS^LEGACY^GD    TPSLEG    
+ rcv  JPS^LEGACY       JPSLEG  
+ rcv  TPS^LEGACY       TPSLEG    
+ rcv  TPS^LAGACY       TPSLEG    
+ rcv  JPS^REGENCY      JPSREG  
+ rcv  TPS^REGENCY      TPSREG  
+ rcv  TOPCON^ODYSSEY   TOPODY 
+ rcv  JPS^E_GGD        JPSLGE 
+ rcv  TPS^E_GGD        TPSLGE 
+ rcv  JPS ODYSSEY      JPSODY  
+ rcv  JPS EUROCARD     JPSEUR  
+ rcv  TOPCON^HIPER^    TOPHIP  
+ rcv  TOPCON^HIPER-GD  TOPHGD  
+ rcv  TPS^HIPER-GD     TPSHGD  
+ rcv  TOPCON^HIPER-GGD TOPHGG  
+ rcv  TPS^HIPER-GGD    TPSHGG 
+ rcv  TPS^HIPER        TPSHGG     
+ rcv  TPS^HIPERPRO     TPSHPR 
+ rcv  TPS^GB-1000      TOPGB1 
+ rcv  GB1000           TOPGB1 
+ rcv  TPS^GB-500       TOPGB5 
+ rcv  GB500            TOPGB5
+ rcv  TPS^GB1000       TOPGB1
+ rcv  TPS^GB500        TOPGB5
+ rcv  TPS^HGGDT        TOPGB1
+ rcv  TPS^MAX          TPSMAX    
+ rcv  JPS^EGGD         JPSEGT 
+ rcv  TPSGR3           TPSGR3
+ ant  TOP700337        TOPP12  
+ ant  TOP700779A       TOPGD3  
+ ant  TOP72210         TOPTRB  
+ ant  TPSHIPER_GD      TPSHIP  
+ ant  TPSCR3_GGD       TPSC3D  
+ ant  TPSCR3_GGD^SNOW  TPSC3R 
+ ant  JPSREGANT_SD_E   JPRSDE
+ ant  JPSREGANT_DD_E   JPRDDE
+ ant  TPSPG_A1         TPSPGA 
+ ant   TPSPG_A1+GP   TPSPGG  
+ ant   TPSPG_A5      TPSPG5  
+ ant   TPSCR4        TPSCR4  
+ ant   TPSCR4 SNOW   TPSCC4  
+ ant   TOP72110      TPS721  
+ ant   TPSLEGANT_G   TPSLGG  
+ ant   TPSLEGANT2    TPSLG2  
+ ant   TPSLEGANT3_UHFTPSLG3  
+ ant   TPSODYSSEY_I  TPSODY  
+ ant   TPSCR.G3      TPSCG3  
+ ant   TPSG3_A1      TPSG3A  
+ swv  2.6^Mar          2.60   
+ swv  2.4^Sep          2.40  
+ swv  2.5^Jun          2.50
+ swv  2.5^Feb          2.51   
+ swv  3.0^Jun          3.00 
+ swv  3.1^Jan          3.10
+ swv  3.1^Mar          3.10 
+ swv  3.5^May          3.50
+ swv  3.4^Dec          3.40
+# Sokkia codes
+ rcv   PDCSTD          SOKRAD  
+ rcv   SOKKIA^RAD      SOKRAD  
+ ant   SOK_GSR2700ISX  SOKGSR   
+ ant   SOK^502         SOK502 
+ swv   swv ^4.502/     4.502
+# 3SNavigation codes
+ ant  3S-02-TSADM      3STSDM
+# AeroAmtenna codes  
+ ant  AERAT2775_41  AERA41 
+ ant  AERAT2775_42  AERA42 
+ ant  AERAT2775_43  AERCHK  
+ ant  AERAT2775_43  AERCHR    
+ ant  AERAT2775_62  AERA62 
+ ant  AERAT2775_160 AER160 
+ ant  AERAT1675_29  AER167                         
+
+# CHC codes
+ swv 4.93      4.93 
+              
+#####  Radome codes
+ rad CAFG     CAFG
+ rad CONE     CONE
+ rad DOME     DOME
+ rad DUTD     DUTD
+ rad EMRA     EMRA
+ rad ENCL     ENCL
+ rad GRAZ     GRAZ
+ rad JPLA     JPLA
+ rad LEIC     LEIC
+ rad LEIS     LEIS
+ rad OSOD     OSOD
+ rad SCIS     SCIS
+ rad SCIT     SCIT
+ rad SCPL     SCPL
+ rad SNOW     SNOW
+ rad TCWD     TCWD
+ rad UNAV     UNAV
+ rad UNKN     UNKN 
+ rad NONE     NONE
+
+# Ad hoc IRNS receiver/antenna
+ rcv 18700    IRN187
+ swv 16974    1.0  

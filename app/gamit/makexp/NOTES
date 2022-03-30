@@ -1,0 +1,37 @@
+Notes on j-file handling with new clock code:
+
+sh_gamit
+  set default jclock = "brdc"
+  source process.defaults for $brdc 
+  if sp3 exists, check for jclock=sp3
+    if jclock = sp3, jclock = ${sp3name}${gpsw}${gpsd}.sp3
+              (** should be jfile?)
+    else jclock = "brdc"
+    call sh_preproc with -jclock ${jclock}
+   
+                         
+sh_preproc    [** add jclock to doc section]
+   set defualt jclock = 'brdc'
+   case -jclock, set jclock = $arg[2]
+   if $jclock = "brdc", set jfile =  j${brdc}${yr[3]}.${doy}  
+   else                 set jfile =  j${orbt}${yr[3]}.${doy}
+   call sh_makexp with -jfile ${jfile}
+
+sh_makexp 
+  set default jfile = ''
+  case -jfile, set jfile = $arg[2]
+    {TEMPORARY
+    # Construct the j-file name if not input (temporarily use nav file)
+    if( $jfile == '' ) then
+      set jfile =  jbrdc${yr[3]}.${doy}    
+     endif   
+    END TEMPORARY}
+   if ( $usersess == "yes" ) then 
+     makexp  $expt $orbt $gnss $nav $jfile $doyy[1]  $doyy[2] $xver $apr $sinfo[1] $sinfo[2] $sinfo[3] $sinfo[4]   
+   else
+   # session values read by makexp from session.info
+     makexp  $expt $orbt $gnss $nav $jfile $doyy[1] $doyy[2] $xver $apr 
+  endif
+             
+
+   

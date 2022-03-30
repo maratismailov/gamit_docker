@@ -1,0 +1,124 @@
+#!/bin/csh
+#
+#doc Script to extract averged phase residuals in the autcln summary files
+#doc Script creates or appends to file for each site selected.
+#doc "Autcln" files must have "INPUT CFILES: Date:" line and <type> lines
+#
+######################## INSTRUCTIONS #############################
+if ( $#argv == 0 ) then
+   echo "---------------------------------------------------"
+   echo "Script to extract averged phase residuals in the autcln summary files"
+   echo "Script creates or appends to file for each site selected"
+   echo "autcln files must have 'INPUT CFILES: Date:' line and <type> lines"
+   echo " "
+   echo "sh_extract_elmean <options>"
+   echo " -files [list of aucln summary files] Required "
+   echo " -s [list of 4-char site names or satellites of form G01 G02 etc] Required"
+   echo "    -s ALL will plot all sites/satellites available"
+   echo " -root <Root for file names>"
+   echo " -t <ELMEAN/AZMEAN/NAMEAN> type of average residual to plot."
+   echo "     Future versions of this script will change the AZMEAN specification"
+   echo "     Default is ELMEAN.  Elevation angle dependent values"
+   echo " "
+   echo "---------------------------------------------------"
+
+endif
+#
+### Set defaults ###
+set root = ELMEAN
+set files = " "
+set sites = " "
+set type = "ELMEAN"
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv "-x" )  # -x added to avoid "input: Subscript out of range" error
+  switch($input[1])
+#       breaksw 
+#      Get names of sites
+       case -s*:
+            set sites    =   ( $sites $input[2] )
+            shift input; shift input
+            while ( $#input > 0 &&   `echo  $input[1]  | cut -c1` != "-" )
+                set inarg =  $input[1]
+                if ( `echo  $inarg | cut -c1` != "-" ) then
+                   set sites   =   ( $sites $inarg )
+                if ( $#input == 1 ) goto alldone
+                   shift input
+                endif
+            end
+       if ( $#input == 0 ) goto alldone
+       breaksw 
+#      Get autcln file names
+       case -f*:
+            set files    =   ( $files $input[2] )
+            shift input; shift input
+            while ( $#input > 0 &&   `echo  $input[1]  | cut -c1` != "-" )
+                set inarg =  $input[1]
+                if ( `echo  $inarg | cut -c1` != "-" ) then
+                   set files   =   ( $files $inarg )
+                if ( $#input == 1 ) goto alldone
+                   shift input
+                endif
+            end
+       if ( $#input == 0 ) goto alldone
+       breaksw 
+#      Root for site files
+       case -r*:
+           set root = $input[2]  
+           breaksw 
+
+#      type option: Default ELMEAN
+       case -t*:
+           set type = $input[2]
+           breaksw
+
+       endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+
+# See if ALL option passed with -s
+if( $sites[1] == 'ALL' ) then
+#   See if sites or satellites
+    echo "Getting list from $#files autcln.post.sum files"
+    if( $type == "NAMEAN" ) then
+       set sites = `grep -h '^NAMEAN' $files | grep -v SVS  | awk '{print $2}' | sort -u`
+    else
+       set sites = `grep -h '^ELMEAN' $files | grep -v Site | awk '{print $2}' | sort -u`
+    endif
+    echo "ALL option selected.  Generating results for $#sites sites"
+    echo $sites
+endif
+
+
+## Now process the data
+foreach site ( $sites )
+#    Get ps file name
+     set sf = $root.${site}.dat
+     echo Creating $sf
+     if( ! -e $sf ) then
+         touch $sf
+     endif
+
+#    Extract the values the input files.
+     set osfs = " "
+     set N = 0;
+     foreach file ( $files )
+#       Get Year and Day
+        set ymd = `grep 'Date:' $file | awk '{print $4,$5,$6}'`
+        if( $#ymd == 0 ) then
+           set yd = `echo $file | awk '{print substr($0,4,4),substr($0,9,3)}'`
+        else
+           set yd  = `doy $ymd | head -1 | awk '{print substr($2,1,4),$6}'`
+        endif
+        if( $type == "NAMEAN" ) then
+            grep '^NAMEAN' $file | grep $site | awk -v y=$yd[1] -v d=$yd[2] '{printf("%4.4d %3.3d %s\n",y,d, substr($0,12))}' >> $sf
+        else if( $type == "AZMEAN" ) then 
+            grep '^AZMEAN' $file | grep $site | awk -v y=$yd[1] -v d=$yd[2] '{printf("%4.4d %3.3d %s\n",y,d, substr($0,12))}' >> $sf
+        else
+            grep '^ELMEAN' $file | grep $site | awk -v y=$yd[1] -v d=$yd[2] '{printf("%4.4d %3.3d %s\n",y,d, substr($0,12))}' >> $sf
+        endif
+     end
+end
+ 

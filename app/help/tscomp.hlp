@@ -1,0 +1,30 @@
+ Usages:
+ tscomp <dir> <prod_id> <option> <pbo .pos files>
+ 
+ where <dir>  -- directory to put the time series in.  
+       <prod_id> is product id with form: jpl.diffs_frame.  Characters
+              5:9 will used for time series type (normally rapid or final)
+       <option> -- either DIFF, MEAN, MEAN_ALL, MEAN_DIFF 
+             where DIFF -- Difference two files
+                   MEAN -- Take mean value assuming all files are for
+                           the same site
+                   MEAN_ALL -- Take mean but only output value when all
+                           input entries are available
+                   MEAN_DIFF -- Take mean of difference time series files
+                           assumed from DIFF option. File is named based
+                           on first site in the list.
+       <list of pbo .pos files>
+ 
+ PROD_ID types valid in PBO:
+ Format <cen>.<series>_<frame>+<type>
+ <cen>     - Center 3 characters (bsl cwu pbo mit) or special product
+             code e.g., aug for Augustine Volcano, aku for Akutan volcano
+ <series>  - "diffs" or "wmean" would be common choice. When MEAN is used
+             the last two characters of the series is replaced with the 
+             number of values in the mean. Recommended to use the "type"
+             option to set line designator e.g., cgm.wmean_nam08+avgxx
+             where xx will be replaced by number. (Added 180206).  
+ <frame>   - Frame type: loose or frame; or any other 5-character descriptor.
+ <type>    - Optional type.  If not given series name is used.  Additional
+             type put in the final series is supplemental run (suppl).
+ 

@@ -1,0 +1,27 @@
+CLOCK_BREAK: VLBI program to add clock break values
+  
+CLOCK_BREAK: Program to add clock break values to KalObs file 
+  
+Runstring:
+CI> CLOCK_BREAK KalObs_file <Input_file>
+  
+where KalObs_file is the name of the KalObs file to be updated
+and   Input_file is the optional name of a file containing the list 
+          of sites and epochs at which clock breaks ocurr.
+          If no name is given then the user's terminal will be input
+          device. 
+  
+The form of the input is: 
+  SITE_NAME  YY MM DD HR MIN
+where site_name is the name of the site at which the break occurrs and
+          must be preceeded by at least one blank.
+      YY MM DD HR MIN is a time immediately before the epoch of the 
+          observation to which the break will be applied. 
+  
+Any line with a non-blank character in column 1 will be treated as a
+comment.
+The input list is terminated with a EOF (Control D) 
+  
+RESTRICTION: The epochs must be entered in ascending time order.
+  
+ 

@@ -1,0 +1,20 @@
+#!/bin/csh -f
+# run a GPS batch job 
+# Written by Christophe Vigny Jan 1997, replacing
+# earlier version written at MIT
+
+if(! -e $1) then
+  echo " file $1 does not exist "
+  exit 0
+endif
+
+set user = `whoami`
+if(-e $1.err) rm -f $1.log
+if(-e $1.out) rm -f $1.out
+
+batch <<I
+/bin/csh $1 >& $1.out
+egrep 'Normal|WARNING|ERROR' $1.out >> $1.log
+mail "$user" < $1.log
+I
+

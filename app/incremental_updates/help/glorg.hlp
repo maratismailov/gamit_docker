@@ -1,0 +1,614 @@
+GLORG: GLOBK coordinate frame realization program
+
+GLORG Ver 5.20: Origin resolution program for the GLOBK. 
+
+Runstring:
+
+% glorg <output> <options> <command_file> <com_file> <OPTION>
+
+where <output> is the name of the output file (may be 6 for output
+               to current window.
+      <options> is the bit mapped option selection or it can be
+               specified by codes separated by : or = (no spaces)
+               (Code feature added at Ver. 4.0)
+               The options are: 
+       CODE    BIT   Decimal  Meaning
+       CORR      0         1  Output correlation matrix
+       BLEN      1         2  Output baseline lengths and components
+       BRAT      2         4  Output baseline lengths and components rates
+                              of change.
+       CMDS      3         8  Write a summary of the markov file to the
+                              output file.
+       VSUM      4        16  Write the short version of the velocity field
+                              information (one line per site)
+                 5-9      32-512 NO LONGER USED (see POS_ORG and RATE_ORG
+			      below).
+       RAFX     10      1024  Fix the Right ascension origin of the system.
+       MOUT     11      2048  Only output baselines if both sites are Markov.
+                              (Used to limit output in large back solutions)
+       COVA     12      4096  Output full precision covariance matrix.
+       PSUM     13      8192  Output position adjustments in summary form
+       GDLF     14     16384  Output the GDL file used in the solution 
+       DBUG     15            Output matrix details when there are negative
+                              variances and negative chi**2 increments
+       ERAS     16            Erase the output file before writing solution
+       NOPR     17            Do not output the file (either crt, prt or org
+                              dendending on opt set).
+       SDET     18            Output details of the stabilization calculations
+                              in glorg
+       RNRP     19            Report the statistics of the differences in the 
+                              positions and velocities of renamed sites.  Also
+                              generates equate lines than can be filtered with
+                              shell script sh_exeqs.  The equates lines are 
+                              written to file <org root>.eqs
+       FIXA     20            Automatically fixes differences in aprioris when
+                              equates are made (except for positions that 
+                              differ by more than 1.0 m)
+       PLST     21            Report the list of parameters to be estimated to 
+                              log file before running the globk filter.  (If
+                              list is not the expected groups of stations, the
+                              globk run can killed, the globk command file fixed
+                              and run re-started.
+       GEOD     24            Output GEOD coordinates (WGS84) (sh_exglk -g option)
+       UTM      25            Output UTM coordinates (WGS84) (sh_exglk -u option)
+       SMAR     26            Report site procoss noise in globk output 
+       PBOP     27            Sets position and velocity lines output for PBO processing 
+                              (needed to generate time series files with tssum or
+                              PBO-format velocity format with sh_pbor_vel; these lines 
+                              now hard-wired, so option can be omitted, but turned off 
+                              with -PBOP)
+       MIDP     28            Sets the output and binary hfiles to be referenced to
+                              the mid-point epoch of the combined data (See discussion
+                              in globk.hlp).  
+                              Feature introduced in verions 5.13 (070824)
+       RENM     29            Outputs the list of renames to the log file.  Useful
+                              when the BREAK command in am EQ-File is used. Needs to 
+                              be invoked when GLOBK is run.
+       NEUC     30            Output a NEU correlation matrix as percentage in 
+                              integer format.  The parameter numbering is the same as
+                              the output the mapping X->N, Y->E and Z->U
+       BALN     31            Balance station and satellite PCO covariances to 
+                              account for sites used multiple times so that their 
+                              standard deviations are not reduced by sqrt(N).  
+
+               For example: BLEN:BRAT:VSUM would output baseline lengths,
+                            baseline rates and a summary velocity field.
+
+      <command file> is the name of the command file, snf
+
+      <com_file>     is the name of globk common file used in the analysis.
+
+      <OPTION> string that can appear at the starts of command file lines
+               which will be executed.  (Normally these lines are ignored
+               since they do not start with a blank. (New Ver 5.08).  If the
+               option was used when globk was run, the same option will be
+               use in interpretting the glorg command file unless a different
+               string is used when glorg is run.
+
+Changes at version 5.21 (210517)
+--------------------------------
+Added BALN option to org_opt to modify station coordinate and 
+satellite PCO covariances to account for the number of times a 
+station is used. PCO change based on number of ACs.  The operation 
+is only done in the output stage of glorg.   If the out_sol command 
+is used in glorg to outout the combined binary h-file (.CON extent), 
+the balancing operation has been performed.  (Standard out_glb binary 
+h-files from globk is not effected).  When using the .CON h-files, 
+apr_rot should be used to allow rotation of the frame resolved H-file.  
+These .CON files also have the translations resolved.  If converted 
+to SINEX, the -d=TR can be used to add back rotation and translation 
+uncertainty.  SCALE should not be estimated when frame resolved H-files 
+are produced because the scale will be fixed at the reference frame 
+values in these files.
+
+Changes at version 5.20 (180306)
+--------------------------------
+Updates to support GNSS processing in GLOBK.
+
+Changes at version 5.19 (150526)
+--------------------------------
+Increased the number of digits in parmaeter number format.  Added sigma value 
+for eq_dist (additional argument, same as constain commnand). Added eq_4char
+command as alternative to eq_dist (only sites with same 4-char ID are added).
+
+New command at version 5.19:
+          EQ_4CHAR   - Allows equates to be specified for all sites with the
+                       same start 4-character ID.  Form is
+		                 eq_4char <equate type> [sigma (m)]
+                      where equate type is is defined under EQUATE. e.g.,
+		                 eq_4char ndot 0.0001
+                      equates the north velocity adjustments for all sites
+		              with the same 4-character ID with a constraint
+                              of 0.1 mm/yr. 
+
+Features added at version 5.18 (150130)
+---------------------------------------
+Modified the equate/unequate and force commands to allow non-unique site names
+to be used and the list of sites thus generated processsed as if site name was
+given in the command.  
+
+Features added at version 5.17 (110815)
+---------------------------------------
+Added reference frame hiarchy in stab_site command with / separator in names.
+For example: stab_site algo/nrc1/wes2 would use algo if the site is in the 
+solution, otherwise nrc1 would be used and then wes2 if needed.
+
+Features added at version 5.16 (080614)
+---------------------------------------
+Version number matched to globk with wild cards allowed in all file names
+
+Features added at version 5.13 (070824)
+---------------------------------------
+MIDP output option which references solutions to the midpoint epoch of the
+combined data.  Feature should not be used when large stochastic position 
+variations are present.
+
+Features added at version 5.11 (040801)
+---------------------------------------
+Changed the memory allocation method to 64-bit compatable.  Fortran compiler
+must support integer*8 in this version.  
+
+
+Features added at version 5.10 (040329)
+---------------------------------------
+Add option to use ALL and wild cards (@ or *) in specifying the names of sites
+in the PLATE and ASSIGN_P commands. To allow sites to be reset to no plate 
+assignment introduce plate name NONE that will un-assign plates.
+Introduce 2 more arguments to stab_min to specific post stabilzatio minimum sigmas
+Set default number of stabilzation iterations to 4.
+Added discussion on frame realization at the bottom of this help file.
+
+Features added at version 5.09 (040220)
+---------------------------------------
+Introduced VXTRAN VYTRAN VZTRAN to force and equate commands to force Value
+of X,Y,Z translation (needs apr_trans in globk command file), RXTRAN RYTRAN RZTRAN
+will force/equate translation rate; VSCALE RSCALE forces/equates scale and scale 
+rate (need apr_scale in globk).
+Introduced output option SMAR (used in prt_opt, org_opt) to print markov process
+noise on sites.
+
+Features added at version 5.08 (030513)
+---------------------------------------
+Added feature to plate rotation pole estimation so that translation rate is 
+estimated simultaneously.  The addition of this feature makes the relative
+Euler pole estimates insensitive to apriori velocity field and the rate_org
+options used to stablize the reference frame. A new command was introduced
+that allows this feature to be turned off (this generating results comparable
+to Pre 5.08 versions of glorg.)
+New Command:
+   NOPLATETRAN 
+Adding this command turns off the translation rate estimation when estimating
+plate rotation poles.  
+
+Features added at version 5.07 (030109)
+---------------------------------------
+Added the RNRP, FIXA and PLST options to the output options of globk and glorg.
+(see above)
+Added output of progress in performing equates
+Changed the reporting of equates that can not be applied (often due to implicit
+repeated equates.  These are often generated with sh_exeqs becuase A is equated
+to B, then A is equated to C and then B is equated to C, but this last equate 
+in not needed becuase it is implicit in the first two.)
+Extended the options in stab_site to allow specificiation of when a site should
+or should not be used in the stabalization.  (See Stab_site below).
+
+Features added at version 5.06 (010525)
+---------------------------------------
+Fixed problems in the implementation of the EXTENDED apriori position model
+
+Features added at version 5.05 (000903)
+---------------------------------------
+If site is renamed to end in _XHI, then site height will not be used in equates
+(most useful when eq_dist is used).
+
+Features added at version 5.04 (000404)
+---------------------------------------
+Use of the out_sol file command was improved (in pre-5.04 version, the
+file named in the out_sol command needed to exist before glorg was run.
+This is no longer the case).  The interaction between the out_sol and
+out_glb commands were improved as noted in the globk help file, and below
+under the out_sol comamnd.
+
+Features added at version 5.03 (000302)
+---------------------------------------
+Added a constraint sigma option to the force command (see FORCE below).
+
+Features added at version 5.02 (991101)
+---------------------------------------
+Progragated the effects of adding non-secular aprioris to output of glorg.
+
+Features added at version 5.01 (990226)
+---------------------------------------
+The use_site command was replaced with STAB_SIT command which more correctly
+reflects the nature of the command.  USE_SITE is still supported for backward
+compatability.
+Add documentation at of feature introduced at version 5.00
+New command:
+       OUT_SOL  -- output globk binary sol_file.
+                   Command usage:
+                   
+                     out_sol  <sol_file name>
+                     
+                   where <sol_file name> is new name (including wildcards)
+                   Allows user to write a new (binary) solution file with the 
+                   constraints and stabilization applied which can be used 
+                   with glsave to make constrained binary files. In turn, 
+                   these constrained binary hfiles can be used with
+                   glbtosnx to make constrained sinex files.  Command takes 
+                   as argument the new solution file name.  The wildcard 
+                   file naming features of globk are used in decoding this 
+                   name.  If this feature is used in glorg and the out_glb
+                   command in used in globk, then a second binary hfile will
+                   be written with the constrained solution.  This second
+                   file has .CON added to the name of the binary hfile.  
+                   The out_sol feature can not be used when running a
+                   back solution.
+* MOD TAH 051211:  When this command is used and new common file called
+                   <sol_file name>.COM is also generated.  If new apr_file 
+                   commands are used in glorg, then this new com_file should
+                   be used when glsave is run.
+               
+
+Features added at version 5.00 (981104)
+----------------------------------------
+The new version of glorg is mainly to support the new parameters introduced
+in globk version 5.0.
+Satellite parameter names were added to decoding of equates, forces and
+constrains.  The naming of the radiation elements is the same as arc with
+XOFF, YOFF and ZOFF added for antenna offset parameters.  For example, to
+equates offsets between satellites would be:
+  equate prn_01 zoff prn_02 zoff                                
+
+Feature added at version 4.17: 980518
+--------------------------------------
+   SOURCE command was added which allows globk and glorg commands to
+    be read from another file inside the primary globk command file.
+    The command can only be used in the primary globk command file.
+    Format:
+    
+      SOURCE <file name>
+    where <file name> is a file containing globk commands (can not include
+      another source command).
+      
+    This command is useful for having a single file with e.g. stab_site
+    commands which are shared among multiple glorg command files.
+   
+
+Comamnds added at verions 4.05 of glorg (980612)
+------------------------------------------------
+       ASSIGN_P  - Assigns sites to a plate but these site will not be
+                   used to compute the pole position estimates themselves.
+                   Format is
+                     assign_p [plate name] [list of sites ...]
+                   Command may be repeated multitimes for the same plate.
+                              
+Commands added at version 4.04 of glorg (980419)
+------------------------------------------------
+
+       STAB_ITE  - Sets characteristics of coordinate system stabalization.  
+                   The command format is: 
+
+                     stab_ite [# iterations] [Site Relative weight] [n-sigma]  
+
+                    where [# iterations] is the number of iterations.  The
+                              default is 4 which allows sites to removed that
+                              are poorly determined or not consistent with other sites.
+                          [Site Relative weight] indicates how the site sigmas
+                              are used in stabilization. If it is set to 0.0,
+                              all sites are weighted equally throughout all
+                              interations of the stabilization process; if set to
+                              1.0, the weight is determined by the coordinate
+                              sigmas in the previous iteration; if set to an 
+                              intermediate value, say 0.5 (default), the coordinate
+                              sigmas from the previous iteration are allowed only
+                              50% weight (vs constant).  The number of iterations
+                              must be > 1 for this feature to be invoked.  In
+                              this computation, as in the overall stabilization,
+                              heights sigmas are downweighted with respect to the 
+                              horizontal sigmas by CND_HGTV (1st two arguments).
+                              feature to be invoked. (default 0.5).  Note that
+                          [n-sigma] is an editing condition to eliminate sites 
+                              that are discordant with the aprioris.  (Iterations
+                              must be greater than 1 to be used).  The value 
+                              applies to the ratio of the root-sum-square of the
+                              north, east, up residual (calculated with up down-
+                              weighted) to the site's relative weight (displayed
+                              in the output) times the overall rms of the 
+                              stabilization fit (also displayed).  The default
+                              is 4.0.
+NOTE: EQ_FIRST can be used when the stabilization is iterated because the 
+      covariance matrix needs to be re-read from disk with each iteration.
+
+MOD Version 5.10: Added two additional arguments to stab_min to specify minimum 
+sigma differences in post stabilization testing.
+        STAB_MIN   - Allows user to set the minimum values for the cnd_hgtv 
+                     limits on heights sigmas of sites to be used in the 
+                     stabalization, and on the miniumum RMS to be used in
+                     postfit rms editing.  The command format is:
+             
+                      stab_min [dHsig min pos] [Min RMS pos] [dHsig min rates] [Min RMS rate] ...
+                               [dNEsig min pos] [dNEsig min rate]
+
+                     where [dHsig min pos] is minium difference between best and median
+                          height sigma for position (default 0.005 m)
+                           [Min RMS pos] is minium postfit RMS in position to be
+                          used. (Default 0.003 m)
+                           [dHsig min rates] is same as [dHsig min pos] except 
+                          for rates (default 0.005 mm/yr)
+                           [Min RMS rate] is same as [Min RMS pos] except for 
+                          for rates (default 0.003 m/yr).
+                           [dNEsig min pos] post-iteration minimum difference bewteen
+                          best and median sigmas (default 0.0005 m)
+                           [dNEsig min rate] sames as pos argument except for rates
+                          (default 0.0001 m/yr).
+                     If only two arguments are given then these values will be
+                     used for both position and velocity. Last values will be retained
+                     at default values.
+                     Example
+                       stab_min 0.005 0.003 0.005 0.003 0.001 0.0005
+                     
+
+Other changes at 4.04:
+----------------------
+Detection of poorly determined sites (see CND_HGTV above) was changed to be 
+the deviation from the median rather than from the mean.  This makes the 
+detection more sensitive and reliable in cases with poorly determined 
+stations
+
+Changed the default CND_HGTV values from 1.0 to 10.0, which is more typical 
+of height variance relative to horizontal components; and changed the height 
+ratio limits from 2.0 (position) and 10.0 (velocity) to 3.0 and 3.0.   In 
+cases unreliable height estimates, it's advisable to downweight the heights
+significantly and set the ratio large so that no site will be removed due
+to a height problem, but rather all editing will be done on the 2d and 
+successive iterations using the horizontal components; i.e., set 
+CND_HGTV 10000. 10000. 10. 10.
+
+Introduced separate (internal) lists for sites to be used in the position
+and velocity stabilization, reflecting the result of different editing
+through multiple interations.  To force the same sites to be used for both
+stabilizations, you will need make sure all sites are included by setting
+the two editing criteria (last two arguments of CND_HGTV and last argument
+of STAB_ITE) to large values.
+
+LOCAL_EQ was changed to take an optional N argument to force the equates
+to made in an XYZ frame.  Use of NEU frame for equates and forces is now
+the default.
+
+  
+Features added at version 4.02 of glorg (970514) 
+------------------------------------------------
+
+The CND_HGTV command was modified to accept two additional arguments.  These 
+optional arguments (following the two values for reweighting the height and 
+height-rate variances) set limits on the sigmas of the height and height rates
+of station to be used in the origin constraints.  They are meant to exclude
+stations with large uncertainties and are specified in terms of heights because 
+an indeterminate reference frame will cause the uncertainties of the horizontal 
+coordinates to be artificially large.  Specifically, they set a limit on the
+following ratio:  (h-hmed)/(hmed-hbest) where h is the variance of the height
+or height rate of a station, hmed is the median variance for all stations
+used for the origin definition, and hbest is the best (smallest) variance
+of the stations being used. The defaults are 3.0 and 3.0 (Changed with vers 4.04)
+
+        
+Commands added at version 4.01 of glorg (961127)
+------------------------------------------------
+
+         COND_SIG   - Sigmas to be assigned to rotation ,translation,  and scale
+                      parameters in pos_org and rate_org commands.  Six values
+                      are specified: rotation sigma (mas), translation sigma (m), 
+                      scale sigma (ppb),  rotation rate (m/yr), translation
+                      rate (mas/yr) and scale rate (ppb/yr).  When the parameters
+                      are given, the origin of the system to defined to only 
+                      within these sigmas.  The command is useful for minimizing
+                      numerical stability problems and/or have the site position
+                      and rate sigmas account for uncertainties in realizing the 
+                      reference frame.
+                      e.g.  cond_sig 0.1 0.01 0.1  0.1 0.01 0.1
+                      sets the origin to 10 mm, orientation to 0.1 mas, and scale
+                      to 0.1 ppb, the origin rates are 10 mm/yr, 0.1 mas/yr and
+                      0.1 ppb/yr.
+
+
+Commands added at Version 3.23
+-------------------------------
+
+          POS_ORG   - Sets the parameters to be used in setting the
+                      origin, rotation and scale of the coordinate
+		               system.  Arguments are the parameters to be
+		               used viz. XTRAN, YTRAN and ZTRAN for translation;
+		               XROT, YROT and ZROT for rotations; and
+		               SCALE for scale factor. e.g., pos_org xrot yrot zrot 
+                      would only allow rotations in setting the
+		               coordinate system.  Used with STAB_SIT to set
+		               which sites are used in the definition
+          RATE_ORG  - Similar to POS_ORG but for rates.  Same arguments
+		               may be used.  
+
+          CND_HGTV  - Used with pos_org and rate_org to set the variance
+		               of the heights relative to a variance of 1 for the
+		               horizontal components.  Setting CND_HGTV to a
+		               large number, effectively eliminates heights being
+		               used the coordinate system definition.  The first 
+		               two values given are for position and velocity.
+		               The next two values (as explained below) are for
+		               the sigma ratios needed for a site to be used
+		               in the origin constraint.  Example: cnd_hgtv 10 10 3.0 3.0
+		      
+          FIRST_EQ  - Sets mode in which the equates and forces will be
+                      applied before the origin fixing constraints (as 
+                      discussed above) are appied.  No arguments.
+          EQ_DIST   - Allows equates to be specified for all sites within
+		               the set distance. Form is
+		                 eq_dist  <dist (m)> <equate type> [sigma (m)]
+                      where equate type is is defined under EQUATE. e.g.,
+		                 eq_dist 2000 ndot
+                      equates the north velocity adjustments for all sites
+		               within 2 km of each other.
+                      Ver 5.19: Sigma (m) of equate added (stop matrix having zero
+                               eigen values if GLX file created from glorg out_sol
+                               file (always use the out_sol.COM com-file when using
+                               GLSAVE to make sure correct aprioris are used after
+                               FIXA invoked. (See 051211 comments above)
+          UNEQUATE  - Is used to override the equates set with eq_dist. 
+		               Form is same as equate, and any parameter specified
+		               in the equate will be removed from the equate lists.
+		               unequate gras_085 ndot gras_085 edot
+		               would remove gras_085 north and east velocity parameters
+		               from any from any equates in which they appeared.
+MOD TAH 150130:                If all the gras_xxx sites are to be un-equated, then
+                               unequate gras ndot gras edot
+                               can be used (all gras site names will be un-equated).
+
+          PLATE     - Allows Euler poles to estimated using a selection of
+                      sites.  The velocity residuals in the glorg output are
+                      then given relative to these new poles of rotation.
+                      The format of the command is:
+                        plate <plate name> <..list of stations ... >
+                      where <plate name> is the 8 character name of the plate
+                      and the list of stations is the list of site whose
+                      velocities will be used to determine the Euler pole.
+                      The command may be issuued multiple times with the
+                      same plate name to build a complete list of sites 
+                      (NOTE: A site should not be named multiple times).
+                      and to specify different plates.  The estimation is
+                      done for all plate simultaneously using the full
+                      velocity covariance matrix.
+                      NOTE: NOPLATETRAN should be used unless the plates are
+                      global in nature.
+
+
+Summary of (original) GLORG command-file inputs:
+------------------------------------------------
+
+          APR_FILE  - GLOBK-style file of a priori station positions and
+                      velocities.  **NOTE**: New a priori coordinates can be
+                      used only for stations that were loosely constrained in 
+                      the GLOBK analysis.  Command may be issued multiple
+                      times.
+          STAB_SIT  - List of stations to be used in the origin definition.
+                      CLEAR and ALL are acceptable site names.  The 
+                      command may be invoked multiple times.
+                      Added Version 5.07: Restriction options for applying 
+                      sites.  Form is at the end of list of stations:
+                       R <List string> <start date> <end date> 
+                      where <list string> is a substring of the list file 
+                         name (may be be preceeded by + or -, if - used then
+                         list file should not contain this string)
+                      <start date> is year, month, day, hour, min for time
+                         before the first data in the hfile
+                      <end date> is  year, month, day, hour, min for time
+                         after the last data in the hfile
+                      <List string> is optional and should not be prurely
+                         numeric.
+                      <end date> is optional (defaults to 2100 1 1 0 0)
+                      The R options act are a condition to decide if the 
+                      stab_site command should be applied.  If the conditions
+                      in the R option are satified then the stab_site command
+                      will be used.
+                      Ex: stab_site -JPLM_GNR -CHIL_GNR R SIO 1994 1 17 0 0
+                      will remove these sites from the stabalization after the
+                      date given (assumes that prior to this they been used)
+                      Only list files with SIO in their name are affected.
+                      CLEAR and ALL options are always applied irrespective of
+                      R options.
+                      Site names may contain @ as wild card for ending characters
+                      in name.  Short site names have the same effect ie.,
+                      JPLM@ or JPLM alone will match all JPLM_xxx names.
+                      Added version 5.17: reference frame hiarchy with / separator 
+                      in names. For example: stab_sit algo/nrc1/wes2 would use algo 
+                      if the site is in the solution, otherwise nrc1 would be used 
+                      and then wes2 if needed.
+          EQUATE    - Forces adjustments to parameters to be made equal. 
+                      Form is:
+                       equate  n1 n2 n3 n4 ..
+                      will force these to be equal.  (Numbers must be
+                      in ascending order.)
+                      OR
+                      Site names may also be used in which case
+                      the command looks like:
+                       equate west_gps xdot hays_gps xdot.
+                      The exceptable site name modifiers are:
+                      xdot, ydot, zdot, ndot, edot, udot and
+                      xpos, ypos, zpos, npos, epos, upos
+                      for velocities and positions. (Local_eq
+                      determines if global cartesian or local
+                      coordinates will be used for equates.
+                      If a site name is given which is not in the
+                      solution then error messages warning about
+                      decoding errors will be printed.  These may
+                      be ignored.
+MOD TAH 150130:       Short site names may now be used so that if there
+                      are sites ohi2_gps ohi2_2ps ohi3_3ps etc. then
+                      equate ohi ndot
+                      will equate ndot at all sites that start with OHI.
+          CONSTRA   - Similar to EQUATE except that the standard deviation
+                      of the constraint is specified.  Form is:
+                        constrai <sigma> n1 n2 ...
+                      where sigma is in units of the parameters.
+          FORCE       Will force the adjustment to a parameter
+                      to a specific values.  Forms are similar
+                      equate in that parameter numbers or site
+                      name and component may be used:
+                       force n1 value sigma
+                       force west_gps xdot value sigma 
+                      where n1 is a parameter number and 
+                       value is the value of the adjustment to
+                       to this parameter to be forced, and sigma
+                       is the sigma with which the value should be
+                       forced. (Sigma added at version 5.03).
+MOD TAH 150130:        Force can also use short site names.
+    
+          LOCAL_EQ  - Used in conjunction with EQUATE and FORCE.
+                      Rotates the sites into NEU before applying constraint.  The
+                      parameter numbers used are then the X number for N,
+                      Y number for E and Z number for U.  Only
+                      one setting can be used for all equates and
+                      forces.  At Vers. 4.04 the default for this command
+                      became to form equates in local frame.  The use of
+                      of the command is now:
+                       local_eq n
+                      to make the equates and forces in the XYZ frame rather
+                      than NEU.
+
+NOTES ON REFERENCE FRAME DEFINITION CONTROL
+-------------------------------------------
+Ideally in glorg the sites choosen to define the reference are carefully chosen
+to be sites with high quality data (i.e., intrinsically small position and
+velocity sigmas) and the apriori coordinates and velocities would be well known.
+Because the two conditions above are not always satisfied, glorg has a number
+conditions implemented that sites need to satisfy in order to be included in the
+frame definition.  These conditions are based on the sigmas of the site position
+and velocity and on the residuals to the apriori position and velocity.  These 
+conditions are applied iteratively. The same procedures are used for position and
+velocity but they typically use different tolerances and often different sites
+are used for position and velocity frame realiziations (e.g. a site with only
+recent data will have a well defined position and thus used in the position 
+definition but its velocity maybe be poorly determined and thus not used in 
+the velocity frame definition.  Also since glorg may need to operate on different
+quality data, many of the conditions are based on the relative performance of
+stations.
+There are three types of conditions tested:
+(1) Height sigma tests (initial test before first frame stablization)
+(2) Outlier tests on the estimated position/velocity of each station
+(3) Post stablization tests on the horizontal sigmas of site positions and velocities.
+The sigma condition test are based on the difference between the best determined
+sigmas and the median of sigmas of the sites in current frame definition.  
+The second two arguments of CND_HGTV command sets the difference between the sigma
+of a sites and the median sigma of all frame sites to the difference of median to 
+the best site for a site to be used in frame definition.  In some cases, the difference
+in sigma between the best site and the median can be very small and so minimum values
+for this difference can be site with the stab_min command.
+The outlier test checks the residual of the position/velocity estimate to its apriori
+and applies a n-sigma test.  Because the sigmas can get very small, stab_min command
+also allows the minimum residual that will cause a site to removed from the frame
+definition.
+The reference frame definition is iterated and with each iteration, the median sigmas 
+and individual site sigmas can change and so sites can be removed from the frame 
+definition in subsequent iterations (i.e, the first iteration removes the worse sites
+and subsequent iterations refine the list of sites to use in the frame definition so 
+that in the end the sites used in the frame definition satisify the ideal selection
+criteria given above.
+
+

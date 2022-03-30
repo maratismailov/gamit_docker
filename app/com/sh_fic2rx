@@ -1,0 +1,100 @@
+#!/bin/csh -f     
+# 
+#doc Translate FICA files to RINEX observation and navigation files
+#
+# Written by R. King 6 July 2001;  last modified by R. King 31 July 2001
+# 
+if($#argv < 1) then
+more << EOF
+
+ sh_fic2rx converts FICA files to RINEX using program gamit/makex/fic2rx
+
+   Usage: sh_fic2rx -f [FICA files] -l [L-file] -j [J-file]
+     
+    where  [FICA files] gives the list of FICA files to be translated (wildcards allowed) 
+           [L-file] is the name of the L-file (default lfile.) (full pathname allowed)
+           [J-file] is the name of the J-file; may be omitted if no Minimacs included  
+         
+ 
+           
+    Examples: sh_fic2rx -f *.069.Z
+              sh_fic2rx -f ????97.068
+              sh_fic2rx -f *.fic -l lscec8.258 
+              sh_fic2rx -f *081.fic -l ../tables/lfile.  -j ../081/jbrdc9.081 
+
+    **NOTE:  Must have leap.sec linked to this directory
+
+EOF
+   
+exit
+endif
+#--------------------------------------------------------------------
+  
+# set defaults
+set lfile = "lfile."    
+set jfile = ""
+ 
+# set the arguments
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1]) 
+    case -f:
+      set files = (`echo $argv | cut -d- -f2`) ; shift files
+      breaksw
+    case -l:
+      set lfile = $input[2]
+      breaksw 
+    case -j:
+      set jfile = $input[2]
+      breaksw
+  endsw   
+  if( $#argv > 0 ) shift argv
+end
+      
+# remove status files
+if( -e FIC2RX.status ) then
+  \rm FIC2RX.status   
+endif
+if( -e FIC2RX.warning) then
+  \rm FIC2RX.warning 
+endif
+if( -e FIC2RX.fatal) then
+  \rm FIC2RX.fatal
+endif
+
+echo "Output of sh_fic2rx " >! tmp.outfile
+echo " " >> tmp.outfile
+echo " " >> tmp.outfile
+  
+foreach file ($files)        
+   if( $file:e == 'Z' ) then 
+       set body = $file:r
+       uncompress $file  
+       set file = $body
+   endif
+#   echo "fic2rx $file $lfile"  
+   echo " "
+   echo "*******************************************************"
+   echo " "
+   echo "fic2rx $file $lfile $jfile" >> tmp.outfile
+   fic2rx $file $lfile $jfile                  
+   cat fic2rx.out >> tmp.outfile 
+   cat FIC2RX.status >> tmp.status
+   if( -e FIC2RX.warning ) then  
+     echo "WARNING: File " $file >> tmp.warning
+     cat FIC2RX.warning >> tmp.warning  
+   endif                     
+   if( -e FIC2RX.fatal ) then 
+     echo "FATAL  " File " $file >> tmp.warning
+     cat FIC2RX.fatal >> tmp.fatal     
+   endif
+end
+   \mv tmp.status FIC2RX.status  
+   if( -e tmp.warning ) then
+     \mv tmp.warning FIC2RX.warning 
+   endif
+   if( -e tmp.fatal) then
+     \mv tmp.fatal FIC2RX.fatal   
+   endif
+   \mv tmp.outfile fic2rx.out                                            
+exit

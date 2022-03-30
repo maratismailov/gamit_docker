@@ -1,0 +1,164 @@
+#!/bin/csh
+
+if ( $#argv == 0 ) then
+echo " "
+echo "   Use GMT to make a plot of coseismic displacements" 
+echo "  "
+echo "  requirements  : GMT(netcdf/gmt/ghostscript)"
+echo "  "
+echo "  USAGE :    sh_eq   <options>. "
+echo "  "
+echo "  EXAMPLES:  " 
+echo "  sh_eq  -f izmit99.org -eq GPS GIZ  " 
+echo "  " 
+echo "=+=+=+=+=+=+=+=+=+=+=+=+=+ OPTIONS +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+"
+echo " -f[files]        list    : globk prt files MUST have this."    
+echo "  " 
+echo " -eq                      : PRE/POST seismic site name extensions you require the offsets between (time ordered) MUST have this " 
+echo "  " 
+echo " -pos                     : extract ALL station positions "
+echo "  " 
+echo " -postseismic             : extract stations with earthquake name extension only "
+echo "  " 
+echo " -preseismic              : extract stations without earthquake name extension only "
+echo "  " 
+exit
+else
+endif
+##################### SET UP DEFAULTS ############################################################
+set eq1         = ""
+set eq2         = ""
+set pltfile     = ""
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+# decipher command line
+while ($#argv > 0 )
+set input = ( $argv )
+switch($input[1])
+  case -postseismic:
+           set post      =   "yes"  
+  breaksw
+  case -preseismic:
+           set pre      =   "yes"  
+  breaksw
+  case -eq:
+           set eq1        =  $input[2]   
+           set eq2        =  $input[3]   
+  breaksw
+  case -f:
+  case -files:
+         set pltfile   =   ( $pltfile $input[2] ) 
+           shift input; shift input 
+           while ( $#input > 0 &&   `echo  $input[1]  | cut -c1` != "-" ) 
+              set inarg =  $input[1]
+              if ( `echo  $inarg | cut -c1` != "-" ) then
+                   set pltfile    =   ( $pltfile $inarg ) 
+                   if ( $#input == 0 ) goto alldone
+                   shift input
+              endif
+           end
+           if ( $#input == 0 ) goto alldone
+  breaksw
+endsw
+if ( $#argv > 0 ) shift argv
+end
+alldone:
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#   
+\rm -r -f tmp.*
+set username = `whoami`
+echo "PROCESSING prt files"    
+   
+echo $pltfile >! pltfile.tmp
+echo $pltfile
+
+# get root file name
+set fname = ` echo $pltfile | awk -F"/" '{print $NF}'` 
+ 
+echo  Extracting Data: 
+### extract all the eartquake displacement and site position information from GOLBK print file 
+# raw printfile Unc. position lines
+#Unc. MATH_GNR -2443215.2939 -4706037.5779  3533477.6886  0.0000  0.0000  0.0000 1994.066  0.0024  0.0023  0.0024
+#Unc. MUNS_GPS -2571861.1990 -4582901.3932  3605893.1739  0.0000  0.0000  0.0000 1994.066  0.0034  0.0043  0.0036
+# 1      2          3              4             5           6       7       8       9       10      11      12
+ 
+# Extract 2 files: one containing all post earthquake SITES 
+#                : the other all post earthquake POSITIONS 
+ echo $pltfile 
+ cat $pltfile | egrep  Unc. | egrep -i $eq1 | awk '{print $2, $3, $4, $5}' | xyz_to_llh >! tmp.all_pre_pos    
+ cat $pltfile | egrep  Unc. | egrep -i $eq2 | awk '{print $2, $3, $4, $5}' | xyz_to_llh >! tmp.all_post_pos    
+ cat tmp.all_post_pos | awk '{printf "%.4s \n", $1 }'  >! tmp.all_post_site 
+ cat tmp.all_pre_pos  | awk '{printf "%.4s \n", $1 }'  >! tmp.all_pre_site 
+
+#
+ cat tmp.all_post_pos | awk '{print $3,$2}' >! tmp.all_post_pos_plt 
+ cat tmp.all_pre_pos  | awk '{print $3,$2}' >! tmp.all_pre_pos_plt 
+ cat tmp.all_post_pos | awk '{print $3,$2,"10","0","0","5",substr($1,1,4)}' >! tmp.all_post_site_plt
+ cat tmp.all_pre_pos | awk '{print $3,$2,"10","0","0","5",substr($1,1,4)}' >! tmp.all_pre_site_plt
+#
+ foreach i (`cat tmp.all_post_site_plt | awk '{print $7}'`)
+		egrep -i -v  $i tmp.all_pre_site_plt  >!  tmp.1
+		\mv  tmp.1 tmp.all_pre_site_plt 
+ end 
+# Extract displacement vectors from the globk .prt file baseline summary.    
+#      baseline                  dn      adj    sign             de     adj    sige   corne          du        adj     sigu
+# MATH_GNR-MATH_GPS              1.7     1.7    0.1              3.6     3.6    0.2  -0.002         17.6      17.6     0.9
+# JPLB_GNR-JPLB_GPS             -6.5    -6.5    0.1              8.9     8.9    0.2  -0.026         13.7      13.7     1.0
+#         1                       2       3      4                5       6      7     8              9        10      11  
+
+# create a tmp file containing just the part we need:
+ cat $pltfile | awk '/BASELINE COMP/,/RATES OF CHANGE/ {print} /RATES OF CHANGE/ {exit}' >! tmp.baseline
+ awk '{if(substr($1,1,4) == substr($1,10,4)) print}' tmp.baseline >! tmp.need
+ 
+ touch tmp.disp
+# now we need only to check the site extent
+ awk ' { if (substr($1,6,3) == "'$eq2'" && substr($1,15,3) == "'$eq1'") \
+	     print $1, $5, $2, $7, $4, $8, $9, $11 \
+         else if (substr($1,6,3) == "'$eq1'" && substr($1,15,3) == "'$eq2'") \
+	     print $1,-$5,-$2, $7, $4, $8,-$9, $11 \
+ } ' tmp.need >> tmp.disp
+
+ grep -v 'NaN' tmp.disp | awk '{print $0}' >! tmp.disp1   
+ \mv  tmp.disp1 tmp.disp 
+
+# format of tmp.displace file
+#      baseline     de  dn sige sign corne  du  sigu
+# MATH_GNR-MATH_GPS 1.7 3.6 0.1 0.2 -0.002 17.6 0.9   
+#       1            2   3   4   5    6     7    8      
+#
+ \mv tmp.disp tmp.displace
+
+ \rm tmp.pos tmp.site1 >& /dev/null
+ touch tmp.pos tmp.site1
+
+ cat tmp.displace | awk '{printf "%.4s \n", $1 }' >! tmp.site 
+ foreach j (`cat tmp.site`) 
+   cat tmp.all_post_pos  | egrep -i $j"_G" | awk '{print $1,$3,$2,$4}' >> tmp.pos
+   cat tmp.all_post_site | egrep -i $j     >> tmp.site1  
+ end
+
+# make an output file of displacements
+ echo "      SITE             dE       dN     uncE    uncN   corrNE     dU     uncU " >!  eq_disp.$pltfile.out 
+ cat tmp.displace | awk '{printf"%s  %7.1f  %7.1f  %6.1f  %6.1f  %7.3f  %7.1f  %6.2f \n",$1,$2,$3,$4,$5,$6,$7,$8}' >> eq_disp.$pltfile.out
+# Put together GLOBK vector plotfile and site position plt_file and the difference file.. 
+#  
+ cat tmp.displace | awk '{printf "%7.1f %7.1f %7.2f %7.2f %6.3f \n", $2,$3,$4,$5,$6}' >! tmp.vec 
+ cat tmp.displace | awk '{printf "%7.1f %7.1f %7.2f %7.2f %6.3f \n", "0.0",$7,"2.0",$8,"0.0"}' >! tmp.up
+ cat tmp.displace | awk '{printf "%8.2f %8.2f %7.2f %7.2f %7.2f %7.2f %6.3f %8.2f %7.2f %7.2f \n", $2,$3,0.0,0.0,$4,$5,$6,$7,0.0,$8}' >! tmp.velfmt 
+ cat tmp.pos | awk '{print $2,$3}' >! tmp.pos_plt
+ paste tmp.pos_plt tmp.vec >! tmp.vector
+ paste tmp.pos_plt tmp.up >! tmp.up_plt
+ cat tmp.pos | awk '{print $2,$3,"10","0","0","5"}' >! tmp
+ paste tmp tmp.site1 >! tmp.site_plt  
+ 
+ paste tmp.pos_plt tmp.velfmt >! tmp.velfmt1
+ echo "-------------------------------------------------------------------------------" >! eq_disp.$pltfile.vel
+ echo "                                                                               " >> eq_disp.$pltfile.vel                            
+ echo " SUMMARY DISPLACEMENT ESTIMATES FROM GLOBK Ver 5.01S                           " >> eq_disp.$pltfile.vel                            
+ echo "  Long.       Lat.        E & N Disp       E & N Adj.      E & N +-      RHO    H Disp  H adj.   +-    SITE" >> eq_disp.$pltfile.vel
+ echo "  (deg)    (deg)           (mm/yr)          (mm/yr)          (mm/yr)                   (mm/yr)" >> eq_disp.$pltfile.vel
+
+ paste tmp.velfmt1 tmp.site >> eq_disp.$pltfile.vel   
+
+\rm tmp.* *.tmp tmp
+
+exit
+

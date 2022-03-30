@@ -1,0 +1,1281 @@
+AUTCLN: GAMIT phase data cleaning program
+In lines below @ means one or more spaxes (no tabs)
+
+VERSION 3.40 (200617)
+---------------------
+Improved GLONASS processing, added trim_shortseg option to 
+trim_oneway_tol command.  Added verify_scan to check UNFLAGGED slips.
+
+VERSION 3.39 (200509)
+---------------------
+Mods to prefit_clk command for removing millisecond jumps in clocks.  Fix
+Beidou clocks when L7 is mapped to L6 for processing. Added PRESCANCLK 
+status report.
+
+VERSION 3.38 (190711)
+---------------------
+Mod's for handle ECOMC model and mapping of GLONASS frequencies during
+c-file writing.
+
+VERSION 3.37 (180321)
+---------------------
+Added option to control whether Glonass ambiguities are integer or
+scaled to frequency of satellite (default, non-integer, remap_glonass Y)
+
+VERSION 3.36 (180310)
+---------------------
+GNSS processing for GLONASS. Implemented by mapping to a common
+frequency and applying ionospheric delay correction to omc values
+output by autcln.  New APP_ION command added to apply ion correction.
+Add lif1 and lif2 to compute ion delay at L1 in cycles.  Value set in 
+set_freqs.f
+
+VERSION 3.35 (160826)
+Added PREFIT_CLK commmand to remove linear trends from range clocks
+before processing.  Make autcln independent of I-file used in model.
+@  PREFIT_CLK <Y/N> [Y/N]  !  Default is Y (use N to turn off feature; Pre 3.35 behavior)
+Second Y/N argument turns on prefit scanning for milli-secoond clock
+jumps.  Default is not to do this (older version behavior). Added Vers. 3.39.
+
+VERSION 3.34 (150327)
+---------------------
+Added support for GNSS processing (mods still needed for GLONASS
+processing due to frequency multiple access.
+
+VERSION 3.33 (130329)
+---------------------
+Added feautue have single file per site with the phs_res_root
+command (See phs_res_root).
+
+VERSION 3.32 (130119)
+---------------------
+Updated to read/write 10.41 c-file versions.
+
+VERSION 3.31 (120308)
+--------------------
+Added ELMEAN, averaged phase residuals by site in 1-deg bins to
+output summary file.  sh_plot_elmean can be used to plot the values.
+Output status AZNAMEAN will also output azimuth means (<35 deg elev)
+and satellite nadir means
+
+VERSION 3.30 (091228)
+---------------------
+Replaced nol1only command with L1only command which now must be
+given if L1 only data is to be processed.  Default in autcln is
+to delete data which have L1 only data.  This command also deletes
+all L2 data from dual frequnecy receivers.
+
+VERSION 3.29 (080523)
+---------------------
+Added SEQ and DIR options to lc_autcln command. The SEQ option is
+original autcln sequence ambiguity resolution code.  The DIR option
+is the new code that directly estimates the ambiguities and is the new
+default.
+
+
+VERSION 3.28 (080512)
+---------------------
+Added NOL1ONLY command to stop processing of L1 only data (needed in
+large network processing).  Also changed some prefit range 
+error detection.
+
+VERSION 3.27 (070403)
+---------------------
+Added code to flag data with no double differences before resolving
+ambiguities.  Fix should solve problems with singular matrices in solve
+and bad dependent biases (070403)
+Changed the sign of the WL Ambiquity values passed to solve.  Seems to be
+a long standing bug.(070405)
+Removed output of statistics of clocks with no data which could appear to
+have very small RMS (070423)
+Changed iteration at which large rms is checked to twice editing iteration.
+Change stops removing complete station due to high rms (070502)
+
+VERSION 3.26 (070312)
+---------------------
+Small changes to setting whether WL-ambiguity can be fixed.
+
+VERSION 3.25 (061017)
+---------------------
+Small changes to add get_cmd call and treatment of short spans of data
+new the ends of data.  May reduce singular matrix problems with LC_AUTCLN
+
+VERSION 3.24 (060109)
+---------------------  
+Added additional calls to trim_oneway to eliminate short segments
+of data during postfit editing (can remove high rms residuals)
+Added better detection of need for bias flags when data restored during
+postfit editing.
+Fixed P1/P2 residual output. (060109)
+
+VERSION 3.23 (051116)
+---------------------
+Fixed problem with satellite clock being zero for some downweighted
+data in model
+Added checks on missing L2 range data for zero_dd_wl code.
+Added P1 and P2 residuals to the DPH phase files (051116)
+
+VERSION 3.22 (050206)
+---------------------
+Modified to handle c-file version 1020.
+Added check on minimum oneway data needed before all data deleted
+  for site/satellite. (LC_AUTCLN mode can generate singular solve
+  solutions when there is little data at a site.  Default is 30
+  epochs of data. Entry added to MAX_SCAN_EDIT command.
+
+VERSION 3.21 (040801)
+---------------------
+Modified memory allocation to handle 64-bit machines (uses
+memassign.c in libraries/comlib)
+
+NEW FEATURES ADDED AT VERSION 3.20 (040703)
+----------------------------------
+Modifided code to handle new M-file form with both time dependent
+and average values of the zanith atmospherc delays
+Some changes to the way no double difference edit flag is set.
+
+
+NEW FEATURES ADDED AT VERSION 3.19 (031213)
+----------------------------------
+Added LC_AUTCLN command which works in conjunction wiht the
+LC_AUTCLN in sestbl. to control solve.  Here Melbourne-Webena
+Wide lanes are used to resolve double diference biases and this
+information is passed to solve.  New command is LC_AUTCLN
+@  LC_AUTCLN <type> <min num> <dChi Ratio> <max sig> <max deviation>
+where <type> is SEQ or DIR for the two algorithm types.  SEQ is the
+             sequential algorithm used before version 3.29.  DIR is
+             the new direct estimate algorithm introdced in version 
+             3.29.  (type option added Ver. 3.29(
+      <min num> is mimimum number of double differences in widelane
+                (Default 50)
+      <dChi Ratio> tolerance test between best and next best case
+                to decide if bias is  resolved. 
+                (Default 10 for SEQ/1.5 for DIR)
+      <max sig/ion constraint> is maxium sigma the mean wide lane can have 
+                for the SEQ algorithm (Default 0.3 cyc) or ia a length 
+                dependent weighting factor for the for the DIR algorithm
+                (default 1e-2, make value smaller with high-ionospheric
+                delays (e.g.2000-2001 5e-3)
+      <max deviation> is maximum deviation from an integer (Default 0.25 cyc)
+                Not used in DIR algorithm.
+Use of -1 for any values will retain the default value.
+
+A small change was implemented to postfit editing:  The algorithm uses
+the elevation angle dependent error model to compute the expected RMS of
+each residual.  This change tends to make the elevation angle dependent
+term contribution to error model larger because less of the low elevation
+angle data is now deleted.
+
+
+VERSION 3.18 (03022)
+--------------------
+Cleaned up code associated with making igs clock files.
+
+NEW FEATURES ADDED AT VERSION 3.17 (030122)
+----------------------------------
+Added argument to igs_clk command to allow the output sampling
+interval to be specified (igs default is 10 for 30-sec data). 
+Cleaned up some of the output and alignment of phase clocks
+
+NEW FEATURES ADDED AT VERSION 3.16 (010610)
+----------------------------------
+Some code changes to work-around apparent bugs in HPUX 11 f90
+compiler. Added FDD to status report options to output detailed
+one-way phase clock estimation.  (Previously had been reported 
+but now optional).
+
+NEW FEATURES ADDED AT VERSION 3.15 (000719)
+----------------------------------
+Updated the IGS clock module to better allign the phase and
+range estimates of the clock parameters.  There are also
+two mods needed to gamit routines (makex/stnclk.f and model/phsmod.f)
+to get better estimates of the clocks.  
+
+Added a new command and feature.  With version 3.15, any
+exisiting bias flags in x-files are ignored by default
+(consequenly, the ORG entries in the bias flag report 
+should now always be zero).  This was implemented because
+many of the pre-existing bias flags were not needed and
+tended to introduce short segments of data that were deleted.
+To continue using pre-existing bias flag, add the new command
+@  USE_ORIG_BF
+to your command file.  (No arguments are needed with the command.)
+
+NEW FEATURES ADDED AT VERSION 3.14 (000310)
+----------------------------------
+A new command igs_clk was added so that one-way clocks can be
+written by autcln in the standard IGS clock format.  The 
+command is:
+@  IGS_CLK  <name> <samp> <min RMS> <Max RMS> [List of reference clocks]
+where <name> is output clock file name.  If name has only 
+           3-characters then it is used to construct a name
+           of the form nameWWWWD.clk where WWWWD is the GPS
+           week and day number (For example: mit10456.clk)
+     <samp> is decimination rate in output clock file (eg. 10 will
+           output sample every 5 minutes).
+     <min RMS> is the RMS needed by a clock for it to be used
+           as a reference clock if not reference clock list
+           is given.  Units: cycles (20 cycles is tpyical for
+           Hydrogen maser)
+     <max RMS> is largest RMS as site clock can have for it
+           to be included in the output file.  Units: cycles
+           (200 cycles will include most sites)
+     [List of reference clocks] is an optional list of sites
+           to use to define the clock reference (e.g. ALGO WTZR)
+If the list is not given, then clock with RMS better than Min RMS
+will be used.
+
+A small program diff_igs has been added to the ctogobs directory
+that allows differences between igs clock files to be generated
+with a fraction day of year as the argument.
+
+NEW FEATURES ADDED AT VERSION 3.13 (000214)
+----------------------------------
+Fixed bug associated with calculating the array sized needed
+to reading the m-file.  Only affected results for large numbers
+of stations and atmospheric delays.
+
+NEW FEATURES ADDED AT VERSION 3.12 (990918)
+----------------------------------
+More work on the range clock algorithm to better treat early
+data with frequent bad range measurements.  Added additional 
+argument to RNG_RESID_TOL to specify the maximum range error
+allowed.  The default is 400 meters.  The range residual error
+allowed is now treated like other tolerances where a minimum
+and maximum value is given and in between is a scaling of the 
+RMS error.  The new defaults for RNG_RESID_TOL should work fine
+and should not be overwritten unless many  "BAD Pre-RNG data for"
+error messages are written.  (If this occurs set the tolerances
+to cover the range of range errors seen.  This will be needed
+if  MODEL Version 9.83 or earlier is used.  With earlier versions
+of model, rng_res_tol  4.0 1000.0 2000.0 will probably work OK.
+This sets the range error tolerances to between 1 and 2 km depending
+on the range quality.)
+
+NOTE: This new version of autcln is more sensitive to corrupt
+satellite clock information in the broadcast ephemeris files.
+The level of this sensitivity is such that the epoch calculations
+in model are probably effected by a significant amount.  Therefore
+double difference phase residuals can look OK, but the position
+estimates will be corrupted by the bad epoch information.
+
+Also added feature to automatically detect the original sampling
+rate of the receiver if it is greater than the x-file sampling
+rate.  Solve problems with rinex files where the sampling rate is
+not reported correctly.
+
+Additional argument added to the POSTFIT_EDIT command to specify
+the maximum RMS allowed at a station before it is completely removed
+from the analysis.  Default is 0.5 cycles (~95 mm).
+
+NEW FEATURES ADDED AT VERSION 3.11 (990701)
+----------------------------------
+Added computation of averaged phase one-way phase residual.  The
+new AMS lines in the summary file have the RMS scatter of 25-point
+averages of the residuals.  The Ratio gives the ratio to the single
+point RMS (should be 5.0).  A ratio near 1 indicates that the residuals
+are dominated by long-period variations.
+AMS  IT Site   All Ratio   02  03  11  12  13  14  16  17  18  19  20  21  23  25  28
+AMS  28 0047   5.9   1.26   0   7   0   0   0   0   5   6   0   0   2   8   6   0   5
+ 
+
+NEW FEATURES ADDED AT VERSION 3.10 (990523)
+----------------------------------
+Refinement of phase clock algorithm to allow better processing
+of L1 only data. 
+
+NEW FEATURES ADDED AT VERSION 3.09 (990518)
+----------------------------------
+One "upgrade" and one new feature were added at version 3.09.
+The upgrade was to make autcln compatible with processing L1
+only data (i.e., single frequency receivers).  The new feature
+was allowing azimuth dependent elevation cut-off angles.
+
+AZ_MASK allows azimith dependent elevation cutoff angles to be
+    specified.  The format of the command is:
+
+@ AZ_MASK  [cf_code] <AZ01> <EL01> <AZ02> <EL02> <AZ03> .....
+
+where [cf_code] is the 4-character code for the site.  ALL will not
+                work since these masks are station dependent.
+      <AZ01>    is azimuth of start of mask (degs)
+      <EL01>    is elevation cutoff between <az1> and <az2> (degs)
+      <AZ02>    next azimuth for change in elevation cutoff (degs)
+      <EL02>    is elevation cutoff between <az2> and <az3> (degs)
+      ...
+      <AZ0N>    is the last azimuth to end the mask (degs).
+
+Data whose azimuth is not covered by the mask use the standard cutoff
+specified in the site_param or min_elev commands.
+
+Schematically the scheme is shown below for the case of 2-azimuth bins
+
+     ^
+Elev |
+     |          ___________ EL01
+     |          |          |
+     |----------...........|..............-------------- Min_elev
+     |                     |_____________| EL02
+     +____________________________________________________> Azimuth
+     0         AZ01       AZ02           AZ03           360
+
+Beteen 0 and AZ01 and AZ03 and 360 deg, the standard minimum elevation
+cut-off is used.  Between AZ01 and AZ03 the mask cutoff is used even
+if these values are below the standard minimum elevation.
+    
+Processing L1 only data
+-----------------------
+The changes to autcln to allow L1 only data to be processed should be
+transparent to the user.  However, for the L1 only data we have looked
+at, some of the default autcln settings will need to be changed.  Two
+major problems have been seen in the L1 only data: (a) the telemetry links 
+sometimes lose lots of data, resulting in gaps in the data stream that are
+not associated with the receiving losing lock; and (b) the phase and
+range data, at times, seem to refer to different epochs.  This problem
+persists even after some initial fixes to L1 only receivers.  The net 
+effect of both these problems will be to lose of lots if not all data during
+cleaning.  The solution to the problems are:
+(1) Set the gap_size for the L1 only receivers larger than 1 (the default)
+For some of the data we  have tested, the gap_size needs to be set as large
+as 15 for 30 second data (i.e., 7.5 min gaps).  These gaps are due to 
+telemetry link problems.  Commands of the form:
+  gap_size <L1 site code>  15
+where  <L1 site code> is the 4 char code for an L1 system with bad telemetry.
+A series of commands of this type would be issued.  The autcln summary
+indicates how many bias flags were added due to gaps and this can be used
+to see if the gaps size is too small.
+For example: From the summary file, if the GGG entry under gap is large
+the gap size for the site should be increased. GGG < 20 is good; GGG > 100 is
+not good and the gap size should be increased.
+ BIAS FLAG REPORT: Types
+ ORG-Original  JMP-Big Jump   ION-Ion Jump   GAP-Data Gap   DDS-DD scan    WLS-Wide Lane  DDC-DD cleaning
+SITE       # Flagged            |      # Remaining           |     # Edited               |    # with jump
+     ORG JMP ION GAP DDS WLS DDC| ORG JMP ION GAP DDS WLS DDC| ORG JMP ION GAP DDS WLS DDC| ORG JMP ION GAP DDS WLS DDC
+SIL1   0 JJJ   0 GGG   0   0   0|   0   0   0   0   0   0   0|   0   0   0   0   0   0   0|   0   0   0   0   0   0   0
+
+(2) Set the first two arguments of phs_fit_tol to large values to allow
+for differences between phase and range.  The defaults for these values
+are 2000 and 1000 cycles which allows for noise in the range of 380 to 190 m.
+(The second value referrs to mean offsets, the first to individual ranges).
+If the entry under JMP above (JJJ) is large, the phs_fit_tol values should
+be increased.  Values as high as 50000 cycles for the first two entries
+are often needed if the phase and range have not had clocks applied 
+consistently.  If the apriori coordinates are reasonable good then the
+third and forth arguments can be left at 200 and 100 cycles.
+
+
+NEW FEATURES ADDED AT VERSION 3.08 (981001)
+----------------------------------
+This version of autcln supports the new cfile structure of
+GAMIT 9.74 which includes multiple gradients and satellite
+antenns offsets.
+
+The algorithms for matching the phase and range clocks were
+also modified to improve phase clock estimation when the range
+data and/or station clock are performing badly.
+
+NEW FEATURES ADDED AT VERSION 3.07 (980808)
+----------------------------------
+The phase clock estimation code was changed to make it more
+robust at the expense of addition time in the analysis.  Each
+iteration takes about 10 times longer with the new code.  For
+regional networks the new code does not seem to be needed, but
+if the phase clock solutions fail to converge, adding some 
+full analysis iterations may help.  The apply_phase clock
+command has additional arguments to control this new feature.
+
+NEW FEATURES ADDED AT VERSION 3.06 (980405)
+----------------------------------
+Modified the restore code in pf_edit mode to be more robust in
+allowing data to be restored.  Fixed a problem with lost bias
+flags when the rms of residuals was large.  Also changed the
+default tolerance for restoring data from 0.5 cycles to 0.05 cycles.
+
+
+NEW FEATURES ADDED AT VERSION 3.05 (980210)
+----------------------------------
+Modified the output of the one-way phase residuals
+to include the non-integer bias parameter estimates 
+when bias flags are present; and changed the output
+of the phase residuals to before the bias parameters
+are reset to integer values (before this change, the
+phase residuals could have mean offsets).  A consequence
+of this change is that pf_remove_bf is used, the phase
+residuals files still include the bias flags removed
+by the pf_remove_bf command.
+
+NEW FEATURES ADDED AT VERSION 3.04 (970904)
+----------------------------------
+New command pf_remove_bf added which will try to remove bias
+flags from the one-way residuals after apply_phs_clks has been
+used.  This feature is most reliably used when postfit residuals
+are used.  The default is false.
+
+@PF_REMOVE_BF
+No arguments
+
+
+NEW FEATURES ADDED AT VERSION 3.03 (970829)
+----------------------------------
+This version is mainly enhancements.  Two new features were added:
+-When the phs_res_root option is used to output one-way phase residuals
+(most useful when apply_phs_clk and use_postfit are used), the azimuth
+and elevation angle is output.  This allows sky plots of the residuals to
+be made.
+-Normal pointing is now allowed when use_postfit is invoked. (The np_size
+is now also checked to ensure that an odd number is used).
+
+BUG FIX ADDED AT VERSION 3.02
+-----------------------------
+A bug associated with truncating helf cycles when half wavelength
+data were used with phase clocks (apply_phs_clk) was fixed.
+
+NEW FEATURES ADDED AT VERSION 3.01
+----------------------------------
+Added automatic feature to sort the cfile names in the dfile
+into alphabetic order before processing.  Feature is invoked
+when the dfile only is used to give the file names.
+
+NEW FEATURES ADDED AT VERSION 3.00
+----------------------------------
+Three new features were at a ver 3.00 of autcln.  These features are
+all assoicated with generating usuable one-way residuals from autcln
+and being able  to edit these residuals.
+
+The new commands are:
+---------------------
+
+@ USE_POSTFIT <mfile name>
+
+where <mfile name> is part or all of the name of the mfile to use to
+generate the postfit residuals.  If no argument is given then the name
+is assumed to be m[dfnm]a.ddd where [dfnm] are the four characters from
+the dfile name  given in the autcln runstring.  If 1 character is given 
+hen this is assumed to the series name (i.e. a,b..) If less than 7 
+seven characters are passed then these are used as the beginning of the 
+name of the mfile.  If 7 or more characters are passed then these will 
+be used as the mfile name.
+
+If the Mfile can not be opened then a warning message is printed and
+not postfit residuals will be used.  The mfile does not need to contain
+all of the sites being used by autlcn.
+
+Note: At ver 3.05 we removed condition that apriori sites positions and
+orbit parameters in m-file and c-files have to match
+
+Note: Two additional arguments added at version 3.07.
+
+@ APPLY_PHS_CLK [MAX Iter] [Non-int] [Converged %] [Over shoot] [Full Iter] [Max corr]
+
+This command will invoke a new feature in autcln which will generate
+one-way phase residuals which should have all the clock effects from
+the ground sites and satellites removed.  The processs is done iteratively
+and the arguments allow the user to control this process.  The arguments
+are: [MAX Iter] -- Maximum number of iterations (default is 30)
+     [Non-int]  -- Number of iterations before use of non-integer bias
+                   parameters will be used in estimating the clock parameters.
+                   (Default is 3).
+     [Converged %] -- % change in the RMS of the one-way residuals between
+                   iterations that will be taken to mean the solution has
+                   converged.  (Default is 0.1 %)
+     [Over shoot] -- This option can be used to speed convergence.  At each
+                   iteration, the mean offsets of the one-way residuals are 
+                   computed and removed.  The over shoot is a multiplier
+                   used so that more that more than the mean is removed at
+                   each iteration.  The default is 1.5, and values greater
+                   2 seem to cause solutions to diverge.
+     [Full Iter]  -- Number of iterations with full bias estimate analysis
+                   This mode takes considerably longer, and seems to be 
+                   needed for global networks.
+     [Max corr]  -- Maximum correlation to be used in full solution when
+                   solving bias estimates (by making this value closer to
+                   1, the solution should run faster but not be a robust].
+
+Entering negative values for any argument will make the default value used.
+All of the arguments are optional with the default being used for any 
+values not passed. 
+Invoking this option will normally double the autcln runtime and should
+not effect the quality of a solve solution.  However, the RMS scatters of 
+the one-way residuals are computed and added to the summary file.  These
+can be useful when attempting to diagnose problems.
+NOTE:  The one-way residuals will only look flat when the same mfile is
+used in autcln and when data are viewed with cview.
+
+
+@ POSTFIT_EDIT [Start Iter] [Nsigma] [Max Restore RMS] [Max RMS]
+
+This commands allows editing of phase residuals using an n-sigma
+criterion.  Apply_phs_clk is invoked when this option is used.  The
+arguments are:
+    [Start Iter] -- Start iteration number in apply_phs_clk before
+                    editting starts.  Several iterations should be
+                    made before editing.  The default is 9.
+    [Nsigma]     -- Number of sigma data to delete.  The sigma used 
+                    is the RMS scatter of the LC phase data from each
+                    site.  The default is 4.0.  LC residuals that are
+                    less than n-sigma that have been flagged due to close
+                    bias flags can be restored provided they are less
+                    then <max_restore>.
+    [Max Restore RMS] -- RMS of LC residals for a station that will allow
+                    data to be restored.  For data to be restored the
+                    residual must be less than twice the RMS allowed and
+                    the RMS of all the data from the site must be less
+                    than this tolerance.  Default 0.05 cycles (10 mm).
+     [Max RMS]   -- Maximum RMS postfit residuals before a station is 
+                    removed completely (cycles).  Default 0.5 cyc (~95 mm).
+
+
+
+COMMANDS (autcln and ctogobs Ver 3.00):
+---------
+In the description @ denotes at least one blank at the beginning of a
+line
+
+Command Description
+@ END     
+        Last command issued.  An end-of-file (EOF) will have the same
+        effect.
+ 
+@ RNG_JUMP_TOL [n-allan sd] [min jump (usec)]
+        Tolerances for detecting clock jumps. The size of a discontinuity
+        in the range O-C that will be considered a clock jump.  
+        The first value [n-allan sd] is the multiplier of 
+        the clock stability given by the Allan standard deviation and the 
+        second value (min jump (usec)) is the minimum, in microseconds, 
+        that will be considered a jump in microseconds, .i.e., both 
+        numbers must be exceeded for a clock jump to be flagged.  
+        Typical values   20.0 and 0.1
+
+@ CLK_RESET_TOL [jump difference (usec)]
+        Tolerance for jump to be taken as a millisecond reset in the 
+        clock (usec).  Typical value 10 usec, but may need to be increased
+        if apriori clock polynomial (from fixdrv) does not match the data
+        well (for example due to bad apriori station coordinates or 
+        satellite orbits).  The default is set to 100 usec to account
+        for low quality crystal clocks in many receivers.
+ 
+@ RNG_RESID_TOL [n-sigma] [min error (m)] <max error (m)>
+        Tolerance for bad range residuals.  The first is multiplier on
+        the sigma of the range data and second is the minimum value 
+        in meters.  The third optional value is the maximum error
+        all i.e., all residals greater than this will be deleted.
+        Range residuals are computed after satellite and station
+        clocks are estimated.  They are equivalent to double difference 
+        range residuals.  They are affected by poor station coordinates and
+        satellite orbits.
+
+@ ION_JUMP_TOL [Reciever code/ALL] [max gap (sec)] [Multiplier] [Min dIon (cyc)] [Max dIon]
+        Lets user set the tolerances for detection cycles slips in the
+        ionospheric delay (LG).  The maximum jump allowed is set by
+        mininum of the [Max dIon] and the maximum of the [multiplier] by 
+        the last change in the ion delay and the [Min dIon (cyc)].  That is
+        tolerance will fall somewhere bewteen Min dIon and Max dIon with
+        the intermediate values set by the multiplier by the change in the 
+        previous two data points.  The test will be done for all data points
+        separated by [max gap] or less and all contiguous data.  Typical value for
+        max gap is 240 sec.  In polar and equatorial regions, the max gap should
+        shortened and the [Multiplier] and [Min dIon] increased. For polar and
+        equatorial regions; Multiplier of 6 and Min dIon of 2 cyc will normally
+        stop excessive flagging of data.
+
+@ RNG_NOISE [Receiver code/ALL] [noise (mm)] 
+        Lets user specify the apriori values for the standard deviation of the
+        range measurements by site (initial values only).  They will be 
+        updated during autcln/ctogobs run and the updated values
+        are reported in the clock and range statistics in the 
+        output and summary file.  
+
+@ MAX_RCLK_ITERATIONS [max iterations]
+        Maximum number of range clock iterations.  The solution for the estimates
+        of the satellite and station clocks is iterated to determine the statistics 
+        of the range noise and clock Allan standard deviations.  The iteration 
+        stops either at [max iterations] or until the convergence criteria are
+        met.
+ 
+@ REL_CLK_WEIGHT [weight] 
+        Weight to be given to the clock noise model based on previous iteration's
+        estimates of the Allan standard deviations of the clocks relative to data
+        noise while estimating the clocks.  Typical value is to down
+        weight the clock statistics by a factor of 10 relative to the
+        data.
+ 
+@ RNG_CLK_ROOT [range clock root of file names]
+        Lead part of the name to be given to the range clock
+        solution output.  If no root is given then the range clock
+        solution will not be output.  For example crng will produce
+        output files named crng.PIN1 and crng.PRN_21.  
+        A cplot command file will also be generated called <root>.plt
+
+@ PHS_CLK_ROOT [phase clock root of file names]
+        Lead part of the name to be given to the phase clock
+        solution output.  If no root is given then the phase clock
+        solution will not be output.  See rng_clk_root.
+ 
+@ PHS_RES_ROOT [phase residual root of file names] <number type>
+        Lead part of the name to be given to the phase 
+        residual output.  If no root is given then the phase residuals
+        will not be output.  See rng_clk_root and residual_site.
+Added Version 3.33 130329: Optional number type argument added:
+        <number type> MULTIPLE (multiple files: One PRN per file)
+                      SINGLE (all PRN's output to single file per site)
+
+@ SNG_DIFF_ROOT [single difference file root]
+        Lead part of the name for single difference between stationsfiles
+       (These may be used with the program mon_data to processing single
+        difference kinematic data).  The single differences are between
+        first site and subsequent sites.  The residual_site list is used 
+        select which sites to write to single difference files.  Only 
+        generated if cfiles are written out.
+
+@ RESIDUAL_SITE [List of four character codes/ALL/NONE]
+        Lets the user specify which sites should be output
+        to the phase residual or single difference files 
+
+@ SUMMARY_FILE [Name of summary file/6]
+         Name of a summary file.  If command is not given the summary
+         is writeen to a file named autcln.sum.  If 6 is
+         given as the file name then the summary is written to stdout.
+
+@ RCV_ALLAN_SD [site code/ALL] [Allan standard deviation (ppb@ 100sec)]
+        Allows the user to specify the Allan standard deviations
+        of the clocks at each site. (Updated during autcln/ctogobs run).
+
+@ REMOVE_BIAS_COND [Chi**2 Ratio] [min chi**2] [max gap]  <large gap scale>
+        Sets the constrasts for removing biases
+        The four values specified are:
+         (1) Chi**2 ratio
+         (2) minimum value of smallest chi**2 and
+         (3) Gap over which double difference biases will not be
+             attempted (seconds)
+         (4) The <large gap scale> is optional and it sets the multiplier
+             on the chi**2 quality value given below based on the ratio
+             of the gap in the data to the minimum number of points being
+             used in the patch.
+        The formula used used is that X = C2/(C1+min*exp(-C1/min)) > ratio
+        to remove the bias flag, where C1 is the smallest Chi**2 during
+        fix to integer values; C2 is the next smallest; min is argument
+        (2) in the command; and ratio is argument (1).  In addition, the
+        gap must be smaller than (3).  If <large gap scale> have been 
+        specified then the value of X computed from the data is reduced
+        by 1 + <large gap scale>*atan(gap/min data)) where gap is the gap
+        in the data and min data is the smaller of the number of data in the
+        left and right segments about the gap.  The default value of 
+        <large gap scale> is 2.0 
+
+@ ALLOW_ONE_BG [YES/NO]
+        Deals with the case in which all channels of a receiver slip at
+        nearly the same time, preventing an unambiguous patch in the one-
+        way observations.  By specifying Yes to this command, you allow
+        selection of one channel as 'base', patching all other channels
+        with respect to it.  The default is No, but setting Yes will provide
+        more complete and usually better editing.  Occasionally AUTCLN will
+        make a mistake in the Yes mode, but it can be caught by SCANDD.
+
+@ USE_GAMIT_ELEV [YES/NO] 
+        Allows user to specify if the GAMIT Elevation cut-off angle 
+        should be used or not. If Yes is specified then the gamit cutoff
+        is used.  Low elevation data wil be reweighted in the output
+        c-files (See new_cf_series in runstring)
+
+@ USE_CVIEW_EDIT [YES/NO]
+        Allows user to specify if the CVIEW editing flag (-1) should 
+        be used or not. If Yes is specified then cview flags -1 will
+        not be used.
+
+@ USE_MM_RANGE [YES/NO]
+        Allows user to specify if MiniMac range measurements should
+        be used.  Default is not to use them.  (If ranges are not 
+        used then MiniMac should be connected to a very good clock.)
+
+@ IGNORE_GAPS [YES/NO]
+        Lets user specify that gaps should be ignored when
+        forming acceptable double difference during cleaning.  
+        This option should only be used for cleaned data when the
+        GAMIT elevation cutoff and cview edits are used.
+
+@ FLAG_GAPS [YES/NO]
+        Lets user specify if gaps in the one-way data should be
+        flagged with a bias flag.  This option is automatically
+        set when the allow_one_bg yes is given.  
+
+@ GAP_SIZE [cf_code/ALL] [number of epochs]
+        Lets user specify the number of epochs allowed in a gap
+        so that it will not be flagged.  At setting of 1 (default)
+        will cuase all gaps to be flagged.  Automatically turns on
+        the flag_gaps option.   (Only used when gaps are flagged).
+
+@ REMOVE_MS_JUMP [YES/NO]
+        Lets user decide if millisecond jumps are in the clock are
+        removed when cfiles are written (to remove the jumps is the
+        standard).
+
+@ REMOVE_FIRST_BIA [YES/NO] 
+        Lets user determine if the first bias flag on one-way sequences
+        should be removed before c-cfiles are written.  This option
+        conflicts with generation of the single difference files and
+        should not be used when single difference files are written.
+
+@ EDIT_SITE_SV [Site Code] [PRN] [Start Epoch] [Stop Epoch]
+        Allows user to specify site/satellite combinations over
+        specific epoch ranges to be edited and not used in determining
+        clock behavior and double difference editing.  Useful for 
+        treating bad satellite range data.  
+        ALL may be used for the site code and all sites 
+           will be deleted for the specified specified satellite.  
+        0 may be used for the PRN number and all satellites will be 
+           deleted over the specified epoch range.
+
+
+@ PHS_FIT_TOL [4 values all in cycles]  
+        Tolerances in deciding if a cycle slip has occurred in 
+        the pre-fit clock fit to the phase data.  The 4 values
+        given are:
+        (1) Deviation of mean phase from range solution (pass1)
+        (2) Deviation of worst phase residual from range solution
+        (3) Deviation of mean phase from phase solution from pass 1
+        (4) Deviation of worst phase residual from phase solution
+            from pass 2.  (Values 3 and 4 are normally much less than
+            values 1 and 2).
+         Actual deviations being flagged can be viewed by setting
+         status_report Pass1_slips Pass2_slips.
+
+@ STATUS_REPORT [List of options]
+        Allows user to tailor the output of the program by selecting
+        which quanities will be output.  The options come from the 
+        following list:
+          CLK_JMP_PROC - possible clock jump detection 
+          CLK_JMP_VAL  - value of clock jump when one is found
+          BIAS_ADDED   - BIAS flag added during one-way phase processing
+          PASS1_SLIPS  - Number of cycles added in Pass 1 one-way clean
+          PASS2_SLIPS  - Number of cycles added in Pass 2 one-way clean
+          DD_TRIALS    - List each double difference combination tried
+          DD_ESTIMATES - Estimates of cylcle slip during the DD fix.    
+          DD_SCAN      - Details of scan flag showing sites and svs used.
+          ELEV_DIST    - Distribution of final (weighted) data by elev
+          RUN_PARAMS   - Dump of parameters used in run 
+          PC_BIASEST   - Estimates of the bias parameter updates in Phase
+                         clock solutions
+	  FDD          - Estimates of phase offsets during one-way clock
+	                 estimation (vers 3.16)
+          AXNAMEAN     - Output AZMEAN and NAMEAN to sum file
+          PRESCANCLK   - Clock scanning differences in pre-fit scan.	 .
+        ALL may also be used, and then -option to turn off particular
+        output, e.g., STATUS_REPORT ALL -CLK_JMP_PROC
+        The status reports are sent to stdout.
+
+@ DD_REPORT [DD Report file name] [option]
+        Allows user to specify a file of the format readable by cview
+        and to specify which types of double differences should
+        by output to this file (i.e., ALL, FIXED, NOT_FIXED).  If the
+        file name dd.srt is used then the file can be directly read 
+        into cview to allow checking of the cleaning results.
+
+
+@ MIN_ELEVATION [Min clean elev (deg)] <Min output elev (deg)>
+        Minimum elevation to which data will be cleaned. Once this
+        value has been set in autcln/ctogobs, the data below this elevation 
+        will not be useable later without further cleaning.
+        The Min output elev (deg) is optional, and is the elevation
+        cutoff to be applied when the cfiles are written. (Default is
+        the same as the Min clean elev.
+ 
+@ TRIM_ONEWAY_TOL [min_dtl_bias] [min_good_bias] [min_dtr_end] [min_good_end]
+        Lets user set the tolerances in triming the oneway data to remove short
+        segments of data.  The four parameters and their defaults are given below:
+        min_dtl_bias  - mininum time in seconds between bias flags (120s)
+        min_good_bias - minunum number of epochs between bias flags and
+                        maximum time over which a bias flag will be
+                        removed in one-way data (8)
+        min_dtr_end   - Fraction of total duration of data allowed for
+                        a bias flag at the end of one-way sequence (0.1)
+        min_good_end  - Number of epochs of data allowed after the last bias
+                        flag (24)
+        Y/N           - To trim short segments of data between gaps(default Y)
+        Negative values can be given above to keep defaults.
+        If these conditions are not meet then the one-way data are removed. 
+        Removing short segments at the end, set by the two last parameters,
+        is important only if you are attempting to resolve ambiguities.  For
+        global orbit determination, they should be smaller and can be set to 0.  
+
+@ DD_RETURN_SIZE [Max WL] [Max LC] [Max LG] <One way fix tol>
+        Set the number of data to be used for cycle skip repair (1-way and DD):
+        Max WL - widelane  
+        Max LC - LC (ionosphere free observable)
+        Max LG - LG (ionospheric contribution to LG)
+        These values are given in epochs can not be set less than 5.  The defaults
+        are 100 (WL), 50 (LC), and 10 (LG).  They should be decreased if there
+        might be significant curvature in the residuals, due to inter-channel
+        receiver drift for (WL), a poor geometric model (DD LC), or high ionsphere (LG).
+        <One way fix tol> is an optional argument that sets the
+          maximum duration in seconds over which one-way L1/L2 range data will
+          be patched using the Widelane and LG.  The default is 10 seconds.  
+
+@ DD_FIT_TOL  [WL Ratio] [WL Min] [WL Max] [LC Ratio] [LC Min] [LC Max]
+        Lets user set tolerances for flagging cycle slips in wide-lane [WL]
+        and LC double differences [LC].  The parameters for each of these
+        are:
+        [Ratio] - Ratio allowed for jump compared to local rms or last
+                  change 
+        [Min]   - Minimum value for a jump that will be flagged (cyc)
+        [Max]   - Maximum value above which all jumps will be flagged (cyc).
+        (The tolerance on the maximum jump allowed will fall between
+         Min and Max with the local rms times the ratio setting the
+        intermediate values.)
+
+@ SCAN_SITE  [All/None/list of site names]
+        Lets user specify which sites should be scanned before double
+        difference cleaning.  If UNFLAGGED slips are found during 
+        double difference cleaning this command should be used. All will
+        set all sites to be scanned; clear will set no sites to be 
+        scanned.  A minus sign before a site name will remove this
+        site from list (e.g., -PIN1 will remove Pin1 from the scan list.)
+
+@ MAX_SCAN_EDIT [number Bias Flags] [Min oneway data needed]
+        Lets user set the threshold for the number of double difference
+        bias flags that can be added during scanning before the complete
+        station/sattellite set of one-way data is edited completely.
+        (Default is not to apply this editing condition).  For Non-AS
+        data can be set small (~10).  For AS data, <50 will excessively
+        delete old Rogue data.  Used to automatically delete bad stations
+        and sattelite burns.
+        Ver 3.22 AUTCLN: Added Min oneway data option that will delete
+        data on site/satellite if there is less than minimum epochs of
+        data (Default 30 epochs).
+
+@ NP_SET [size (epochs)] [Start (epochs)]
+        Form normal points with phase and range data using groups of
+        [size (epochs)] points.  (For 30 second data, size=15 forms
+        7.5 minute normal points.  Value must be odd.  [Start (epochs)]
+        set the starting epoch for forming normal points.  If the
+        value is negative then normal points will not be formed but
+        the editing necessary to form the normal points will be applied
+        to the data. (Useful for testing the effects of the approximations
+        inherent in the normal point formation.)
+
+@ SITE_PARAMS [site/ALL] [Min Clean El] [Min Out El] [Min L1 SNR] [Min L2 SNR]
+        Allow site specific parameters to be specified that set: 
+        [Min Clean El] - minimum elevation angle to which data will 
+              be cleaned (degs)
+        [Min Out El] - minimum elevation angle to be used for output of
+              cfiles (deg).  [Min Out El] must => [Min Clean El]
+              (By cleaning to a lower elevation angle, more data is 
+               available for detecting and fixing cycle slips)
+        [Min L1 SNR] - minimum SNR value to be used at L1.  Setting this
+               to 0 will allow all initially into the solution. (same
+               as Pre 2.13 Versions of autcln).
+        [Min L2 SNR] - minimum SNR value to be used at L2.  
+        The default values for these parameters is set based on receiver
+        type.  If the MIN_ELEVATION command is used after the SITE_PARAMS
+        command all stations will be given the cut-off elevation angles
+        specified in the Min_elevation command.
+
+@ MAX_CHAN <max channel>
+        Sets the maximum number of channels (ie. satellites per epoch)
+        allowed in the c-files.  If the value is exceeded a fatal 
+        AUTCLN/read_cfdata: Too many channels in receiver
+        message is printed and the autcln run stops.
+
+@ PREFIT_CLK <Y/N>
+        Autcln will re-fit linear clocks to station clocks if Y or no
+        argument is used.  N will turn off fitting (Pre 3.35 behavior)
+        
+        
+
+EXPLANATION OF OUTPUTS:
+----------------------
+
+DD_TRIALS Line
+..............
+ Ep   114 S1/C1   2 13 S2/C2   1  2 dL1/2 slip      0.0     0.0 cycles  NumLR  23 18 EpLR    111   114 dchi, Chiqual     1.7   102.9    30.3
+ where Ep    epoch number,
+       S1/C1 is site number and channel for one way.
+       S2/C2 is site number and channel for double difference.  If these values 
+             are zero then there was no double difference formed.
+       dL1/2 slip is the change in number of cycles at L1 and L2
+       NumLR is the number of data in left and right segments (May actually
+             be less than this if unflagged bias found. 
+       EpLR  is the epoch numbers accross the gap or bias flag being patched,
+       dchi, Chiqual are the lowest to chi**2 increments when integer cycles
+             are tired, and Chiqual is the Ratio used to see if bias flag
+             can be used.
+
+Bias FLAG Line test (Always printed)       
+....................................
+ Epoch  114 Site MOJ1 PRN 20 L1 from     0.0 to     0.0 L2 from     0.0 to     0.0 Reliable?  T   30.34 BFLG OneBG F Force F
+where Epoch  epoch number
+      Reliable?  T indictates bias flag removed;  Values given next is Chiqual,
+      BFLG or GAP says whether bias flag or gap being patched,
+      OneBG F or OneBG T indicates that we have allowed one bias flag or gap
+             to do the patch.
+      Force F or Force T indicates that the one-way were forced to have the
+             bias flag removed so that on other combinations could have one
+             bias or gap.
+
+      
+
+INTERPRETING AUTCLN SUMMARY FILE
+---------------------------------
+Autcln outputs a summary file (default autcln.sum but name can be set with the 
+summary_file command) which is useful for diagonizing problems with an 
+analysis.  The summary is divided into several parts some of which give 
+statistics for the run and other which the parameters for the run.  The 
+summaries are associated with each of the main steps in the autcln cleaning 
+process.  Since the steps are made in sequence with results from 
+previous steps used, errors in one stage of the processing usually cause erors 
+in later stages.  Also errors at one station or on one satellite can effect 
+the results from other stations and satellites. Hence, when the summary file is 
+interpreted, the sequence of errors and the interactions between sites and 
+satellites errors should be kept in mind.  
+The steps in the autcln process and the actions taken during the steps are:
+
+(1) Clock error estimates for sites and satellites based on range data.  This 
+analysis is iterated until there is convergence between iterations for the 
+estimates of clock statistics.  The maximum number of iterations can be set.
+Range data can be edited by the analyst if they is not consistent with data from 
+other sites and satellites.  In the default settings for autcln, bad range 
+data are typically un-deleted in the second iteration if there are lots of bad 
+range measurements.
+
+(2) Clock error estimates for sites and satellites based on phase data.  The 
+clock errors from the range data are used as aprioris for estimates from phase 
+data.  During this analysis, large jumps in the phase data can be detected and 
+the number of cycles of phase needed to make the range and phase consistent 
+are computed.  Changes in the ionospheric delay estimates from phase data are 
+also used to detect jumps in the data.  When jumps are detected, bias flags are 
+added.  Bad range or bad prefit residuals can cause an excessive number of 
+bias flags to be added at this stage.  The adding of bias flags and the number 
+of cycles removed with each bias flag are reported in the output of autcln.  
+The default ionospheric jump detector parameters are too tight for polar and 
+equatorial regions and can be changed by station in the command file.
+
+(3) The default action next is to add bias flags to all gaps in the data.  This 
+can be changed in the command file but is not recommended.
+
+(4) The default action next is to scan all contiguous one-way data and to form 
+double differences with triplets of the data to see if there are jumps in the 
+double differences.  When a jump is found, more double differences are formed 
+to assess if the one-way data being analyzed have the jump.  (This is done by 
+switching the satellite and station to see if the jump persists.)  Bad prefit 
+residuals can cause many biases to be added at this stage.  Unmodeled 
+accelerations of the satellites can also cause many bias flags to be added at 
+different stations.
+
+(5) Cleaning of data using as many observables as possible.  This step 
+involves trying to assess the number of cycles of slip at each bias flag in 
+the one-way data and whether the bias flag can be reliably removed.  Small 
+segments of data (i.e., closely spaced bias flags) are removed before any 
+attempt is made to resolve biases.  Three criteria are used to compute
+the number of cycles: (1) continuity of LC, (2) continuity of LG, and
+(3) continuity of the widelane.  Different numbers of data are used in each of 
+these with the widelane typically being the longest and LG the shortest.  The 
+sequence autcln uses is to first try to resolve the integers in one-ways if P-
+code L1 and L2 range data are available using the widelane and LG continuity.  
+If this fails then double differences are used and LC continuity is also 
+considered.  The default setting in autcln is to not allow one-way bias flag 
+removal because this became unreliable once AS was turned on.  To patch in 
+double differences, autcln finds another station and satellite combination 
+which does not have a bias flag or gap around the time of the flag which is 
+being evaluted.  Stations and satellites are scanned in sequence until autcln 
+finds a combination that can be used to remove the bias flag or runs out of 
+stations and satellites to try.  The default is to output a line for each 
+combination tried.  The last one output is the one which was used to determine 
+the number of cycles.  A common occurrence is that all satellites at a station 
+have bias flags at or near the same time (due to a power failure for example).  
+In these cases, there is an optional feature to "allow one bias or gap" (the 
+allow_one_bg command) at this time.  In this case, autcln first determines if 
+bias flags can be removed if it ignores the bias flags on both satellites 
+being used in the double difference.  If the bias flag can removed, then it 
+resolves the cycles slips on the first one-way data sequence to be tested and 
+removes the bias flag.  When later bias flags are encounted at this time for 
+this station, they will be patched relative to the first one-way sequence 
+where the bias flag was removed.  "Force?  T" appears in the output for those 
+bias flags removed this way.  (There is no explicit book keeping to ensure 
+that this happens).  When data are very "broken up" with many bias flags and 
+gaps, autcln can make mistakes in this precedure, so this is normally the 
+most unreliable part of the cleaning process.  Only loss of lock on all satellites at 
+a station is treated in this way.  If all stations lose lock on a satellite at 
+the same time then the bias flags will be not removed unless they can be 
+patched in one-ways.  While data are being used for patching, they are also 
+checked for jumps.  When a jump is found, autcln scans each of the one-way 
+sequences, checking to see if there are cycle slips in them.  Because more data 
+are used than when the jumps were first detected, this test is more sensitive than the 
+orginal scanning and sometimes detects jumps that had not been previously 
+detected.  In many cases, these jumps are noisy data and the added bias flag 
+is later removed (and sometimes added back again later).  Jumps detected this 
+way can be found in the output by grep'ing on LCDD.  If they are large, then 
+autcln has become confused about where a slip is located and this can cause 
+problems.
+The cleaning loop is iterated four times since data with bias flags resolved 
+late in the loop may be used to resolve biases on data looked at earlier.  
+There are some differences between the iterations.  In the first iteration, 
+allow_one_bg is not used.  This is so that as many bias flags as possible 
+are resolved before it is attempted.  On subsequent  iterations, allow_one_bg 
+is invoked on increasingly larger gaps in the one-way sequence.  It starts at 
+about 10% of the maximum gap size over which biases will be removed, and 
+increases by about 5% each iteration.  After the first iteration, large gaps in the 
+data are no longer considered (i.e., we will never be able to remove these bias flags).
+
+(6) Data trimming.  In this step, short sequences of data between bias flags 
+are removed and the length of data after the last bias flag on each each one-
+way sequence is checked as a percentage of the total number of data on the 
+sequence.  If this percent is too small then the data are removed and the 
+process repeated.  This is done so that solve will have a long sequence of 
+data for resolving biases.  (Double differences are not checked at this point, 
+so it is possible to get bias flags which have only a small number of data 
+available for their determination.)
+
+(7) Normal pointing (optional).  Normal points can be formed at this point. 
+(Only useful if c-files are to be written out).
+
+
+A summary of the above steps is given in the summary file.  The sections of 
+the summary file are:
+
+
+CLOCK STATISTICS:
+=================
+ AUTCLN  SUMMARY FILE: Version 2.13H
+
+ Clock and Range noise statistics at iteration  3
+ Site/PRN    Allan SD@100  #     Range rms    #
+             sec  (ppb)            (mm)
+ BRLD       19.761493   2832          596.9  16210 TRM
+ KAIN       19.931665   2879          675.1  15939 TRM
+ KIT3         .527232   2879          729.9  16307 TRB
+ KUM6       10.105467    719         2061.0   3462 TRM
+ KUMB       20.533951   2879          471.6  16378 TRM
+ WETT         .010000   2808          240.9  15224 ROG
+etc.
+ PRN_01       .384611   1188
+ PRN_02       .411166   1039
+ PRN_05       .422517    984
+ PRN_06       .397293    916
+ PRN_07       .414031   1237
+
+This table gives estimates of the clock Allan standard deviation (in parts-
+per-billion) and range noise rms for each receiver.  These clock statistics are
+based on range data only.  The example shown is nominal for non-AS conditions 
+with SA active.  Under AS conditions the range noise for ROG increases to 
+1000-2000 mm, and TRM and TRB increase to 800-1000 mm.  Values much larger
+than these usually mean lots of bad range data or bad prefit residuals 
+(station coordinate errors of >10 m).  Very bad range data can be seen with
+AVCLCK errors in the model output p-file.  Also autcln.out will list 
+bad range measurements (but sometimes here the station or satellite may 
+incorrectly listed, especially when there is a lot of bad data).  If there are
+AVCLCK errors, then the edit_site_sv command can be used to pre-edit these
+values in autcln.
+
+SCANNING SUMMARY:
+=================
+ DDScan bias flags added report for pass  1
+ SITE PN01  02  05  06  07  09  14  15  16  17  18  19  20  21  22  23  24  25  26  27  28  29  31
+ BRLD    6   2  10   8  14  18   6   4  10   2   4   2  12   6   6   4  12   7   0   2   2   0   0
+ KAIN    0   0   0   0   0   0   0   0   1   0   0   0   0   0   1   0   0   0   0   0   1   0   0
+ KIT3    0   0   0   0   0   0   0   0   0   0   0   1   0   0   0   0   0   0   2   0   0   0   0
+ KUM6    0   2   0   0   2   4   0   0   0   0   0   0   0   0   0   0   2   0   0   0   0   0   0
+ KUMB    0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   1   0   0
+ LHAS    0   0   0   0   0   0   0   0   0   0   0   0   1   0   0   0   0   0   1   0   0   0   1
+
+This summary lists the number of bias flags added by site and satellite during 
+double difference scanning of the phase data.  Large values here can mean 
+either bad prefit residuals or bad phase data.  The MAX_SCAN_EDIT command can 
+be used to automatically delete all data on a station/satellite combination which 
+has too many bias flags added during double difference scanning.  Many bias 
+flags being added to a satellite at many stations usually represents the 
+effects of an unmodelled acceleration of the satellite.  Rogue SNR-8 receivers 
+often have many bias flags added when AS is on.
+
+DATA EDITING AND BIAS FLAGS REMAINING
+=====================================
+ DATA AMOUNTS (Good: # good data; Gap: # deleted in gaps; BF: # bias flags  < 2*max separation)
+ SITE  PRN Good  Gap  BF  PRN Good  Gap  BF  PRN Good  Gap  BF  PRN Good  Gap  BF
+ FORT PN01  657    0   0 PN02  699    4   0 PN04  649    0   0 PN05  681    0   0
+      PN06  945    0   0 PN07  133    7   0 PN09  648    0   0 PN14  477    0   1
+      PN15  444    0   1 PN16 1119    2   2 PN17  813    0   0 PN18  782    0   0
+      PN19 1047    0   0 PN20  470    6   2 PN21  962    0   0 PN22 1125    0   0
+      PN23  659    0   0 PN24  573    0   1 PN25    0    0   0 PN26 1132    0   0
+      PN27 1058    0   1 PN28  640    0   0 PN29 1032    0   0 PN31 1128    0   0
+
+These lists (one per station) show by satellite the number of good data in 
+the one-way sequence, the number of data deleted in gaps between closely 
+spaced bias flags, and the number of remaining bias flags that might be 
+resolved (i.e., number bias flags separated by less than twice the maximum 
+size over which bias flags would be removed).  Large numbers in the gap 
+columns and/or large numbers of remaining bias flags usually mean bad prefit 
+residuals or noisy data.  Usually, the numbers in the gap column increase when AS 
+is on especially for SNR-8 receivers.  More than 3 bias flags remaining 
+usually indicates that the data are noisy and broken up into small pieces.  
+(Bad data at one site can often lead to additional biases at other sites, so 
+it usually the site with the most bias flags that is causing the problems.)
+
+ELEVATION ANGLE STATISTICS
+===========================
+
+ELEVATION ANGLE HISTOGRAM
+SITE  0- 5  5-10 10-15 15-20 20-25 25-30 30-35 35-40 40-45 45-50 50-55 55-60 60-65 65-70 70-75 75-80 80-85 85-90 Min (dg)
+BRLD    0     0     0    93   108   114    77    82    66    75    67    55    54    47    63    39    20    13  15.66
+KAIN    0     0     0    62   116    94    97    91    76    69    68    53    56    60    50    35    22     8  15.91
+KIT3    0     0     0    95   118    94    85    83    84    84    75    73    55    72    50    37    17    12  15.47
+
+This table shows the number of good data or good normal points in elevation bins.  
+Correctly operating receivers should have about the same number in 15-20 
+degree bin as in the 20-25.  (The above example is for 15-point normal 
+points).
+
+BIAS FLAG REPORT:
+=================
+This report provides an overall summary of the number of bias flags in the 
+clean data and why they were added.
+
+ BIAS FLAG REPORT: Types
+ ORG-Original  JMP-Big Jump   ION-Ion Jump   GAP-Data Gap   DDS-DD scan    WLS-Wide Lane  DDC-DD cleaning
+SITE       # Flagged            |      # Remaining           |     # Edited               |    # with jump
+     ORG JMP ION GAP DDS WLS DDC| ORG JMP ION GAP DDS WLS DDC| ORG JMP ION GAP DDS WLS DDC| ORG JMP ION GAP DDS WLS DDC
+BRLD  33   6   0  25 137   0   0|   0   0   0   0   0   0   0|  28   2   0  25 136   0   0|   5   4   0   0   0   0   0
+KAIN  42  11   0 105   7   0   0|   0   0   0   0   0   0   0|  34   4   0 100   3   0   0|   8   7   0   0   0   0   0
+KIT3 111   0   1  11   3   0   0|   0   0   0   1   0   0   0| 109   0   0  10   3   0   0|   2   0   0   0   0   0   0
+KUM6   0   0   0  35  10   0   0|   0   0   0   0   0   0   0|   0   0   0  35  10   0   0|   0   0   0   0   0   0   0
+KUMB  36  14   0  98   1   0   0|   0   0   0   1   1   0   0|  30   8   0  93   0   0   0|   6   6   0   0   0   0   0
+LHAS  54   1   0  34   3   0   0|   4   0   0   0   0   0   0|  50   1   0  32   2   0   0|   0   0   0   0   0   0   0
+OTM5  26   6   0   8   1   0   0|   0   0   0   0   0   0   0|  21   5   0   7   1   0   0|   5   1   0   1   0   0   0
+OTM6  45   7   1   6   4   0   2|   1   0   0   0   0   0   0|  42   6   1   6   3   0   1|   2   1   0   0   0   0   0
+OTMK  38   5   2 115   5   0   2|   0   0   0   2   0   0   0|  27   2   2 106   5   0   2|  11   3   0   2   0   0   0
+POL2 186   0   1  47   4   0   0|   0   0   0   0   0   0   0| 183   0   1  46   4   0   0|   3   0   0   0   0   0   0
+TALG  49   0   0  90   0   0   0|   0   0   0   3   0   0   0|  49   0   0  48   0   0   0|   0   0   0   0   0   0   0
+TOS1  40   5   0  49   6   0   0|   0   1   0   0   0   0   0|  36   1   0  48   3   0   0|   4   3   0   0   0   0   0
+TURG  39  15   0  17   0   0   0|   0   0   0   1   0   0   0|  38   6   0  16   0   0   0|   1   9   0   0   0   0   0
+WETT  52   0   0   5   2   0   0|   5   0   0   0   0   0   0|  47   0   0   5   0   0   0|   0   0   0   0   0   0   0
+
+The report is in four sections:
+# Flagged   -- These are the numbers of bias flags added or encountered during 
+cleaning (Entries explained below).
+# Remaining -- These are the numbers of bias flags left in the cleaned data.
+# Edited    -- These are the numbers of bias flags removed by deleting the 
+data affected by the bias flag (as opposed to the bias flag removed by 
+reliably resolving the integer number of cycles at the flag).
+# with jump -- These are the numbers of bias flags which were resolved to non-
+zero integer values.  The difference  #Flagged - (#Remaining+#Edited+#with 
+jump) gives an idea the number of bias flags added that were not really 
+needed.  (It is not possible to tell how many real jumps were in the edited 
+data). 
+
+When data are normal pointed the number of remaining bias flags will not 
+necessarily be the same as the sum of the values shown in the DATA EDITING AND 
+BIAS FLAGS REMAINING report because this latter report is generated before 
+normal points are formed, and some bias flags reported in the #Edited columns are not present if the data are deleted during the normal point formation.
+
+Within each of these categories, the reasons for adding the bias flags are given.
+
+ORG -- Is the number of original bias flags in the data (loss-of-lock 
+indicator set in the rinex file).  There is not much the user can do about 
+these if they are large, other than to conclude that the receiver itself was not 
+very "happy".
+JMP -- Is the number added due to large jumps between the phase and range 
+estimates of the clocks.  Large values here can indicate very bad prefit data 
+(e.g. when site positions are 100's km in error) but most often indicate bad 
+range data.  Very bad ranges (>300m) will generate AVCLCK errors in model, and
+smaller range errors can be detected by the reports of added bias flags in AUTCLN's 
+fitting of one-way phase.  The tolerances for these fits can be increased to 
+stop the bias flags being added, or the intial range data can be deleted.  
+(These are often low elevation data that will not be used in the final 
+analysis anyway.)
+ION -- Is the number of bias flags added in the ionospheric jump detector.  
+Again the tolerances can be increased so that these jumps are not detected.  
+This jump detector is independent of both the range and prefit model quality.  
+For equatorial and polar site the detector tolerances should be loosened.
+(e.g.,  ion_jump_tol  yell  30 6.0 2.0 5.0)
+GAP -- Is the number added due to gaps in the data.  There is not much that 
+the user can do about these since they result from gaps in the data.  If the 
+SNR is being used to flag data, reducing the SNR limit can make these values 
+smaller.
+DDS -- Is the number of bias flags added due to discontinuities in the double 
+difference data.  Large values here indicate poor quality phase data or bad 
+prefit residuals.
+WLS -- Is the number of bias flags added due to jumps in the widelane 
+observable.  The widelane jump detector should be loosened for AS data.
+DDC -- Is the number of bias flags added during cleaning.  Large values here 
+are very bad because all the jumps in the data should have been detected 
+before cleaning starting.  Grep'ing on LCDD in autcln.out will show the magnitudes 
+of the jumps.  Most often these are just above the tolerances for detection and 
+simply reflect the increased sensitivilty of the detector used during 
+cleaning.  Large jumps usually mean that autcln has become confused as to 
+which one-way a jump occurs on and is trying to patch it in the wrong place.  
+Often deleting some of the data around these times is sufficient to remove the 
+problem.  Grep'ing on the epoch number (with a space on either side) shows the 
+manipulations of all data at this epoch, including which stations and 
+satellites were used to do the patch and this can be useful in tracing what 
+happened during the cleaning.
+
+EDITING REPORT 
+==============
+This report shows the parameters used at each station for the editing. and why 
+data were eliminated from the analysis.
+
+ EDITING REPORT AND SITE PARAMS
+ SITE  MnOUT  MnCLN  SNR   LSNR GF03 RCLK GF02 BEND BCLS NPED GF-1 GF04 DDSC PFED GFUN BDL2 NODD ELCL EDIT MMRG ELEV   Good
+       (deg)  (deg)  L1 L2
+ BRLD  15.00  10.00  2  2   135    0    0    0    0  135 1480    0 1453    0    0    0    0    0 1478  322    0   51  14595
+ KAIN  15.00  10.00  2  2   238    0    0    0   20   95 1469    0 1572    0    0    0    0    0 1590    0    0   23  14355
+ KIT3  15.00  10.00  5  4     0    0    0    0  137   49  611    0 1588    0    0    0    0    0 1667    0    0  445  15510
+ KUM6  15.00  10.00  2  2    74    0    0    0   12   52  458    0  262    0    0    0   73    0  262    0    0    5   2940
+ KUMB  15.00  10.00  2  2    37    0    0    0    0   97 1626    0 1335    0    0    0    0    0 1353    0    0   18  14655
+ LHAS  15.00  10.00  5  4    26    0    0    0   98   21  856    0 2405    0    0    0   26    0 2440    0    0 1047  14985
+ OTM5  15.00  10.00  2  2    44    0    0    0    0   52  246    0  231    0    0    0    0    0  237    0    0    8   3195
+
+MnOUT -- Minimum elevation angle to be used when writing out the cfiles.
+MnCLN -- Minimum elevation angle used during cleaning.  By including lower 
+elevation data for cleaning, there is more chance of finding double 
+differences.  The disadvantage is that low elevation angle data can be of very 
+poor quality for some receivers.  Also we have seen cases where the low 
+elevation angle data appears to be values generated by the model in the 
+receiver and therefore is very smooth but inconsistent with the real data.  
+This really confuses autcln because the data appear very good and often 
+autcln will remove the real data because they are so much noisier than the 
+"model" data.
+SNR L1 and L2 are the signal-to-noise ratio limits used by the station.  There is 
+some inconsistency in the SNR limits used by different RINEX translators 
+especially for Rogue SNR-8 data.  The values above (for KIT3 which is a 
+TurboRogue) are for Rogues translated by JPL's SRX program.  (Strictly, 4 
+means SNR<0 in the SRX converter, but there seem to be lots of good data with 
+SNR of 4 so we accept these data.  RGRINEX running on Rogue SNR-8 data will 
+have SNR values as low as 2 and these are often good data.  SNR=1 in the RINEX 
+standard means bad data and hence the limits should never be less than 2.  0 
+or blank in the RINEX file for SNR will NOT be edited by autcln since by 
+definition these values mean no information is available.
+
+The meaning of each column is the number of points (before normal pointing, 
+but after data for normal pointing has been selected) edited for the given 
+reason.  Data points can have mulitple reasons for being edited.
+LSNR -- SNR value at either L1 or L2 below the set limit
+GF03 -- GAMIT low amplitude flag (rarely if ever set by the current MAKEX).
+RCLK -- Large difference between autcln's estimates of the station clock and 
+the value actually used in model (not implemented currently)
+GF02 -- GAMIT bad data flag.  May be set by MAKEX but also set 
+by autcln if the L1 and L2 range values are exactly equal (indicates receiver 
+is not tracking.  Usually denoted by an L2 SNR of 2.)
+BEND -- Bias flags were too close to the end of the data.
+BCLS -- Bias flags were too close together.
+NPED -- Data could not be used in normal point but was OK other than this 
+(usually about 10% of the total amount of good data for 15-point normal points)
+GF-1 -- GAMIT marginal flag.  Usually zero for raw data but is set when data 
+are cleaned in cview.  Reprocessing of autcln output cfiles with edit_site_sv 
+used in the command file will set this flag.
+GF04 -- GAMIT elevation cutoff flag (set in MODEL).
+DDSC -- Too many bias flags were added during double difference scanning so
+the whole one-way sequence was deleted.
+PFED -- Postfit AUTCLN edits (postfit_edit command).
+GFUN -- GAMIT flag of unknown type (should be zero).
+BDL2 -- SNR edits for L2 only (i.e., L1 SNR was good).
+NODD -- Data for which no double differences could be formed (not 
+implemented, but should be flagged if separate autcln runs are to be combined).
+ELCL -- Data edited below cleaning elevation angle.
+EDIT -- Data edited by edit_site_sv command
+MMRB -- Data flaged with the 'use MiniMac range = no' command.
+ELEV -- Data flagged below the output elevation angle.
+Good -- number of good data remaining that will be used in the SOLVE analysis.
+
+FINAL SUMMARY
+=============
+The final part of the summary gives the parameters used in the cleaning run.
+(Typing 'autcln defaults' will display the default values used for the input commands.)
+

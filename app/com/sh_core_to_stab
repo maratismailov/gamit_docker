@@ -1,0 +1,72 @@
+#!/bin/csh
+#
+# Script to convert IGN XXXX_core.txt file to a GLORG stab file
+# The core.txt files look like:
+#%more IGS14P/IGS14P_core.txt
+#AREQ AREV UNSA
+#ARTU MDVJ MDVO NRIL
+#ASC1 STHL
+#BAHR BHR1 YIBL NAMA
+#CHAT CHTI AUCK
+#CHPI BRAZ UFPR SAVO
+#
+# and these are converted to
+# stab_site AREQ/AREV/UNSA
+# stab_site ARTU/MDVJ/MDVO/NRIL
+
+if( $#argv == 0 ) then
+   echo "Usage: sh_core_to_stab <input core.txt file> <output stabfile>"
+   echo "Converts  IGN XXXX_core.txt file to a GLORG stab file"
+   echo "<output file is optional>"
+   echo " "
+   exit
+endif
+
+set if = $1
+if ( $#argv >= 2 ) then
+   set of = $2
+else
+   set of = `echo $if:r | awk '{printf("%s_hierarchy.stab",$1)}'`
+endif
+if ( $#argv >= 3 ) then
+   set sf = $2
+else
+   set sf = `echo $if:r | awk '{printf("sittbl.%s",$1)}'`
+endif
+
+
+#
+echo "sh_core_to_stab: Converting $if to $of"
+echo "# sh_core_to_stab: Converting $if to $of" >! $of
+echo "# Converted `date` by `whoami`" >> $of
+echo "# " >> $of
+echo " stab_site clear" >>  $of
+echo "# " >> $of
+awk '{gsub(" ","/")} {printf(" stab_site %s\n",$0)}' $if >> $of
+echo "# " >> $of
+
+echo "Created $of with `cat $of | wc -l` primary sites"
+
+# Now create sittbl.
+echo "Creating sittbl. $sf"
+
+echo "SITE              FIX    --COORD.CONSTR.--  " >! $sf
+echo "      << default for regional stations >>" >> $sf
+echo "ALL               NNN     10.   10.    10. " >> $sf   
+echo "      << IGS  $if and $of  >>" >> $sf
+#ALIC ALIC_GPS     NNN    0.010 0.010  0.02 
+
+set nft = `awk '{print NF}' $if | sort -n | tail -1`
+echo "Up to $nft fields in $if"
+
+foreach n ( `seq 1 $nft` )
+   echo "      << Level $n >>"  >> $sf
+   awk -v n=$n '{if ( NF >= n ) {printf("%s %s_GPS     NNN    0.010 0.010  0.02\n",$n,$n)}}' $if >> $sf
+end
+
+echo "Created $sf with `grep -v '^ ' $sf | wc -l` entries"
+echo " "
+
+
+
+

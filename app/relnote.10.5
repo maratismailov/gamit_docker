@@ -1,0 +1,1078 @@
+Release Notes for GAMIT/GLOBK 10.5 
+
+Last updated by rwk  12 August 2014
+   
+----------------------------------------------------------------------
+
+Release 10.41 consolidates incremental updates made since release 10.40 
+of November 2010 and adds several new features not included in the 
+incremental updates.         
+                     
+We have provided and will keep up-to-date, ITRF2008 coordinates
+sites in prior releases of the ITRF as well as new sites that have 
+been and will be added for IGS processing.  The primary file, in the 
+ITRF2008 NNR frame is itrf08_comb.apr; and there are secondary files, 
+itrf08_comb_[plate].apr, created by rotating this file to the frames of 
+the major plates using the Euler poles estimated by  Altamimi et al. 
+[J. Geophys. Res., 117, B07402, doi:10.1029/2011JB008930,2012].  (Note 
+that the plate-referenced files that we created 2012-01-06 and put into 
+incremental_updates/tables were based on preliminary vectors that changed 
+in the final publication, so users who downloaded these should replace 
+them by the current files.) These files should always be used in conjunc-
+tion with the rename file itrf08_comb.eq to assure that the 8-character 
+site name assigned to your data matches the coordinates for the appropri-
+ate period.  See 'apr_and_eq_files.txt' in the download documentation 
+directory for a complete explanation of how the combined files were 
+constructed. 
+                     
+There are improved templates in ~/gg/tables for GLOBK runs: 
+globk_comb.cmd, glorg_comb.cmd, globk_long.cmd, glorg_long.cmd.  
+These reflect current best practice and take advantage of the 'option' 
+feature of the globk, glorg, and sh_glred command lines so that the 
+same command file can be used for both repeatabilities and velocity 
+solutions without editing the file itself.  The standard southern 
+California example has been reworked to use these file and should 
+now be easier to execute and to use as a template for your own 
+processing.  Also, there is a new detailed recipe for processing
+and analyzing survey-mode (sGPS) measurements, 'sGPS_recipe.txt',
+to be found in the documents directory of the download site and
+also on the web as part of the presentations from the recent
+workshop held at UNAVCO (Boulder13).  
+
+The GPT/GMF models for zenith hydrostatic delay and mapping functions
+have been replaced by the new GPT2 model (Lager et al., Geophys. Res.
+Lett., ) which is based on a more refined numerical weather model, 
+includes semi-annual as well as annual variations, has better spatial 
+resolution, and accounts better for height differences through a seasonally 
+dependent lapse rate.  In the new model both the ZHD and mapping funtions
+are derived from a table, gpt.grid, automatically linked into the experiment
+and day directories from ~/gg/tables.  If you specify GPT or GMT in
+your sestbl. and have gpt.grid in ~/gg/tables, you will automatically
+get GPT2 (the old GPT is invoked only if gpt.grid is missing).
+
+GLOBK now has the ability to remove non-tidal atmospheric loading
+(ATML) based on the average of the day given in the h-file.  Since
+GLOBK can not yet read an grid file to apply the ATML corrections
+directly, if you want to investigate their effects, the best strategy
+is to apply the ATML in GAMIT and then optionally retain or
+remove the corrections using the new command -appload_mod in the
+GLOBK commaand file.  The preferred ATML files for GAMIT are those
+that have been filtered to remove sub-daily terms (atmfilt_cm.YYYY).
+In principle, the sub-daily thermal tides should be applied in GAMIT,
+but none of the current models, including a time-dependent recently
+developed by Ray and Ponte, has been shown to reproduce accurately
+the tidal loading, so the present recommendation of the IGS for
+the next reprocessing is to omit these terms.
+
+Liz Petrie of the University of Newcastle has coded a model in ARC for 
+the accelerations on the GPS satellites due to antenna radiation and 
+Earth radiation.  These models are invoked by setting 'Earth radiation 
+model = NCEL1', now default in the sestbl. and 'fixdrv'.  As part of 
+this modification, we have reworked many of the subroutines in ARC to 
+be more modular, added (backward-compatible) models to the ARC batch file, 
+and coded sh_get_orbits and sh_sp3fit to read the orbital models from 
+from a sestbl.  This latter change assures that the orbital models used 
+for creating g- and t-files from sp3 files will be consistent with the 
+models used for the data processing.  For sh_gamit processsing, the 
+sestbl. in ../tables is automatically linked into the /igs directory. 
+If the sestbl is absent, hard-wired models will be used.                    
+       
+Three model conventions have been updated to be consistent with those
+used by the IGS: mean pole and short-period EOP are changed from IERS 
+1996 to IERS 2010, and the gravity field from EGM96 to EGM08.  These 
+changes are important for EOP estimation but have neglible effect on 
+positioning.
+
+A new script sh_plot_pos will read PBO-style pos files rather than _mb
+files for plotting time series.  GLOBK now generates the 'PBO' lines
+in the print files automatically (no need to use PBOP in the print options).
+We have retained sh_plotcrd and the use of _mb files for this release,
+but they will eventually go away.  The Python script ts_plot.py, introduced
+in Release 10.40 to read pos files will also be abandoned because it required 
+too many non-standard Python libraries (see below).
+                                 
+The new script sh_plot_elmean, together with additions to the autcln summary
+files allow plotting of mean residuals over several days as a function of 
+elevation angle or satellite nadir angle, providing more diagnostics for bad 
+antenna models or tracking environments.  These can be used instead of or
+in conjuction with the individual-day sky plots and phase vs elevation plots
+produced by sh_oneway from the autcln DPH files when '-pres ELEV' specified
+with sh_gamit.
+                                               
+Keeping an up-to-date svnav.dat and antmod.dat file is <<critical>> to 
+correct processing. Failure to do so will often impose the wrong radiation-
+pressure model, SV antenna offset, and yaw model on the satellite. We will
+notify users any time these files are changed, but regular checking of
+the incremental_updates/README file is advised. Changes since 10.40 are:
+ - Launch of SV 35 (Blk IIA) as PRN 1 (date: 110606)
+ - Reassignment of PRN 1 to newly launched  SV63 (Blk IIF)  (110718)
+ - Reassignment of PRN 30 from SV 31  to SV 35 (both Block IIA (110816)
+ - Update the maximum yaw rates for Block II and Block IIA satellites 
+     using the weighted average values determined by JPL 1996-2008 (110824)
+ - Reassignment of PRN 24 from SV 24 (Blk IIA) to SV 49 (Blk IIR-M)
+ - Reassignment of PRN 24 from SV 49 (Blk IIR-M) to SV 32 (120315)
+ - Reassignment of PRN 24 from SV 32 (Blk IIR) to SV 37 (Blk IIA) (120426)
+ - Reassignment of PRN 24 from SV 37 (Blk IIA) to SV 49 (Blk IIR-M) (120806)
+ - Launch of SV 65 (Blk IIF), replacing SV 49 (Blk IIR-M) as PRN 24 (121008)
+ - Reassignment of PRN 27 from SV 27 (Blk IIA) to  SV 49 (Blk IIR-M) (121018)   
+ - Reassignment of PRN 30 from SV 35 (Blk IIA) to SV 49 (Blk IIR-M) (130510)
+ - Reassignment of PRN 27 from SV 49 (Blk IIR-M) to SV 66 (Blk IIF) (130516)
+     
+
+Other changes and commments:                 
+
+** 10.41 vs 10.40
+
+New receivers: TRIMBLE NETR3, R7 GNSS, and SPS852 ; LEICA GG02PLUS, GS08PLUS, GS09, 
+GS12, GR25, and GS25; NOV OEM6; Ashtech PF500 and PF800;, NAVCOM SF-3040 SF-3050; 
+Topcon TPSGR5; JAVAD TR_VS; SEPT POLARX4, POLARX4TR, and POLARXS; SOK GSR2700 RSX; 
+SOUTH S82T GNSS and S82V GNSS; STONEX S9II GNSS; IFEN NX_NTR_303_D, NX_NTR_500_D, 
+NX_NTR_600_D, SX_NSR_RT_200, SX_NSR_RT_300, SX_NSR_RT_400, SX_NSR_RT_401, 
+SX_NSR_RT_402, SX_NSR_RT_700, and SX_NSR_RT_800.
+RNG FASA+, ITT 3750300, GEOMAX Zenith10, GEOMAX Zenith20 receivrs
+   
+New antennas: TRM_R6, TRM_R8. TRM55970,TRM59900.00, TRM59900.00, and TRMAG25; 
+NOV533 (compact), NOV702_2.02 and NOV702_3.00; ASH701023.A and ASH70123.L1;
+LEIGS08, LEIGS12, LEIGG02PLUS, and LEIGS08PLUS;, NavCom NAV_ANT3001BR (AT1675-20W); 
+JAV_TRIUMPH-1, JAVTRIUMPH_VS, JNSCR_C146-22-1 and four JPSREGANT; TPSHIPER_II, 
+TPSHIPER_II+10, TPS NET-G3A, and TPSGR5; SEPCHOKE_MC; Navxperience NAX3G+C; 
+Stonex STHS82_7224V3.0 and STXS9SA7224V3.0; Altus APSAPS-3; Rusnavgeoset 
+RNG80971.00; ITT3750323; GeoMax GMXZENITH10 and GMXZENITH20.
+
+Correct the values in hi.dat used to convert slant height to direct height for the
+TPSHIPER_PLUS antenna. 
+
+Fix typos in hi.dat entries for SEN14R, SENS49R, SENS96, SENS96, SEN96R,
+TPS721, TRSXDS, and TRSLDR antennas; add dimensions for Leica LEIAR25 antennas.
+
+Updated Makefile.config.new (to be renamed to Makefile.config) for new
+Linux releases.  
+ 
+Creating an earthquake file: The script sh_makeeqdef has been updated to use
+hypercenter locations from the EHB bulletin (via ISC) up to the end of 2008,
+and from the standard ISC bulleint thereafter.    
+         
+Update sh_get_hfiles for changes in the SOPAC archive ftp.                   
+
+Fix bug in reading more than 36 SVs from a RINEX file.
+
+Fix the p-file and h-file printout for SP EOP.
+
+Update sh_get_orbits to use repro1 orbits when down loading igsf from CDDIS.
+These orbits are available week 730-1459.
+
+Updated grdtab to remove S1/S2 tides from non-filtered grids.  
+
+Change mapping of ietide for h-files: mean-pole-tide removed is now bit 4 (8),
+rather than bit 5 (16).  Other minor changes to 'solve'; see sversn.f. 
+
+convertc: Updates to check reasonableness, allow more file types, 
+fix bug in reading vel file created by velrot with longer lines,
+and reverse the order from lat/lon to lon/lat for GEO or GEP files.                                                
+
+sh_get_nav, sh_get_orbits: Add wget option.
+   
+sh_PBS_gamit: changed "mailto" variable to "mail_to because" of some conflict/problem 
+returning blank argument to -M option in qsub command, which stalls qsub. 
+
+sh_eq: Removed from /com since made obsolete by eq option of sh_exglk.  
+            
+sh_metutil/metutil: Increase dimensions for z-file entries to allow
+10-second sampling over 24 hours.
+               
+sh_gamit: Add '-alpha off' and '+antalias' to ImageMagic convert to avoid 
+transparency and pixelation in converting sky plot images from Postscript 
+to gif; change default aprf to itrf08.apr.
+
+Updated hfupd.f and hfupd_ut.f to find renamed sites in station.info
+for updating.  
+
+Updated template sestbl. to fix typo for 'Mag field'.
+                
+Updated read_pmu_inp.f to account for GPS-UTC time difference.
+
+Fixed format "errors" in tsfit.f and tssum.f.
+
+Fix bug in computng average hydrological load for h-file. 
+
+Added displace folder to updates. 
+
+Allow by-passing uncompress when downloading RINEX files: /com/sh_get_rinex.
+
+Fixed bug in grdtab reading OSO list files with slightly different formats;
+correct comments for order of tokens on the grdtab command line. Copy from
+gamit/grdtab:  grdtab, get_otl_list. 
+
+Added "GCR APTOL" warning to email summary from sh_gamit. 
+                                          
+sh_get_orbits/sh_sp3fit/ngstot: GLONASS SVS can be can be present (but are 
+ignored); add ESA finals (ESAF) as an orbit option; fix bug with SV id
+is blank rather than 'G'. 
+                                    
+sh_glred: add options to select the command file and to input a prefix 
+string for the globk OPTION command; add ability to search for binary
+files with extent 'glb') (PBO, e.g.); fix problem with 'word too long'.
+
+Changes to better handle CYGWIN installations.  Copy com/unimake and
+libraries/Makefile.config.new (and rename to Makefile.config after
+checking for compatibility with local settings).    
+                         
+Updated sh_link_rinex and sh_PBS_gamit to use -expt option for links and 
+copies.
+
+Updated sh_get_rinex to allow >1000 site downloads.  Error with Word too long
+in original version.
+
+Update globk/autcln to implement new features (see help files) and updated 
+pole tide definitions.  Makefile.generic in gen_util updated.  
+
+New script to compare a list of RINEX files with one or more station.info files
+to check for station.info.completeness, /com/sh_stinfo_list. 
+
+Changed the USNO ftp command in gg/tables/ftp_info to use passive transfer;
+necessary since 1 February 2012.
+
+Updated kf/ctogobs/proc_phsfin.f to output mean residuals by elevation in 1-deg bins.
+ELMEAN lines. Bins with no data list 99.9 values.  
+
+Updated frame_to_fra.f with help option and plate to use the feature.
+
+Allow automatic uncompressing of bzip2 files. Copy from com: sh_crx2rnx,
+sh_get_rinex, sh_gamit.  
+                        
+Fix bug in getting the average atmospheric loading value into the h-file.
+
+Update 'profile' utility to handle changed vel-file format.  
+
+
+Corrected "find" commands in install_software with trailing slashes to follow 
+linked directories successfully when verifying or searching for libX11 and Xlib.h. 
+
+Allow reading of ANTEX files with 0.5-degree grid spacing. 
+                  
+Allow processing from c-files to check model changes.  
+
+Read met values from a RINEX met file using free-format (work-around for
+improperly written RINEX v2 files).  gamit/model/read_metrnx. 
+ 
+Added NONE command file name feature to tsfit.f (in help but not implemented) .
+    
+Change to model/read_metrnx.f to allow reading of mis-formatted RINEX met files 
+from Matera. 
+                                                                        
+TRACK:   Added new relative humidity option to GPT; fixed bug in velocity apriori 
+coordinates; updated help file; new script sh_track_to_kml; account for model
+differences between L1 and L2; fix bug in reading the last epoch of an IONEX
+file; trap better bad clocks and data; add support for C2 range data.      
+
+trackRT:  TRACK updates plus fixed timing problem with trackRT and BNC2.5; updated 
+handle BNC 2.6 feed format. 
+
+Update DLAPACK routines to current versions to avoid a bug effective 
+with gfortran 4.6 when run with optimization (now default unless 
+-mno-align-double is sset). 
+
+Fix bug in kf/svpos/svdiff.f when more than 12-channels of data.         
+
+sh_upd_stnfo/mtinf:  Fix bug with in and out station.info files with rx files;
+fix -rxo option; increase dimensions to work with current SOPAC station.info
+files. 
+
+sh_setup: Change to copy in whatever is linked was station.info in 
+ ~/gg/tables, now nominally station.info.mit.  Rename station.info.sopac.newfmt 
+to station.info.sopac. 
+
+Increase maximum channels for Sokia receivers from 14 to 24. 
+
+Updated gg/tables/ftp_info for new server and directory structure at TU Wien
+for VMF1 file. 
+
+Fixed conflict with useof :A option in kf/glist/glist.f.
+
+Updated RMS/NUM format in autcln for more than 9999 obs per satellite. 
+
+Use 'tr' instead of potentially unavailable 'dos2unix' to remove extraneous
+carriage returns in RINEX files.  
+
+Fix bug in sh_gamit for case of pre-existing SP3 files.  
+                                              
+Fix bug in gamit/lib/read_antex.f that causes a bogus SV antenna offset for
+PN30/SV35 (first time a PRN has been reused for the same SV Block).  
+
+Update tables/otlcmc.dat for additional terms in the NAO_99b model. 
+                                                
+Fix problem with sh_glred when running a single day.  
+ 
+sh_exglk:  Cleaned up extraction of apriori coordinate lines. 
+       
+sh_get_orbits: Changed default eop_ser from bull_b to usno. 
+
+sh_makeeqdef: New script to create globk earthquake file from http://neic.usgs.gov/ 
+catalog.  
+      
+The command 'reset' in the eq_file will reset all of the input site extents to
+_GPS. 
+
+Added a white-noise process to the mar_scale command so that some process
+noise can be applied between to h-files at the same time, useful if they
+were generated with differeent scales, e.g., ITRF2005 for IGS repro1 and
+ITRF2008 for data processed using itrf08_comb.apr.
+
+Allow 'getrel' to work with newer GLOBK velocity formats. 
+                                            
+Updated kf/utils/stinf_to_rename.f to handle current scheme of using only a 
+4-character ID for the initial site name.  
+
+Fix serious bug in ARC affecting the SV yaw during eclipse.  
+
+Fix bug in failing to use C2 when both C2 and P2 indicated with the
+RINEX header but P2 zero for SVs that have C2.  Copy gamit/lib/rrinex.f.
+Kogan/King 110420
+
+Fix bug in failure to apply center-of-mass correction (CMC) for ocean tide
+models when translating sp3 files to t-files; fix bug in writing MIT sp3
+files. Add 'status' message for CMC corrections in both ngstot and ttongs.
+Copy from gamit/orbits: oversn.f, ngstot.f, rsp3hd.f,  ttongs.f, wsp3hd.f,
+and sdtrit.f.   Kogan/King 110414
+
+Fix bogus header in ANTEX file.   King 110322
+
+Allow use of IERS2010 model for short-period EOP (Ray model still default). Copy
+cversn.f, pmut1_oceans.f, and Makefile.generic from /libraries/comlib; lversn.f and
+srotat.f from gamit/lib; fversn.f and mdmake.f from gamit/fixdrv.  Herring/King 110223
+
+Fix htoglb bug in making ephemeris file (occurs only with Intel compiler). Herring 110202
+                                                
+Change default setting in sh_plotvel to be compatible with GMT4.  Ferhat/King 110119  
+
+Fix problem with setting day-loop span in sh_gamit with some operating systems. Shimada/King 110117
+
+Copy into /tables itrf08.apr, IGS08_101117.apr (current IGS) (from IGS08.ssc), and
+IGS08_101117.eq (GLOBK rename, from soln_IGS08.snx) files.  The eq fiile has names
+matching those in both itrf08.apr and IGS08_101117.apr; note, however, that the IGS
+files may have discontinuities later than those accounted for in itrf08.apr, and that
+the IGS08 apr file will not include coordinates for early segments used in ITRF2008.
+King 110106
+                                
+Allow sh_find_data to work over a year boundary.  Copy from /com.  Shimada/McClusky/King 110106
+
+Add the 2011 lunisolar tables to incremental_updates/tables/. (luntab and soltab were in the
+10.4 distribution, but nutabl. was missing).  King 110104
+
+Remove bogus test on t-file year > 2010.  Copy gamit/fixdrv/armake.f. King 110101/110103
+
+Allow more up to 20 observables in RINEX files.
+
+Updated glist to output of sites by time all on one (long) line.  
+
+Updated treatment of coordinates in renames globk (fixed problem with XCL renames with earthquakes
+  that have been previously applied). Khandler/eq_name_chng.f  
+ 
+Correct a bug in sh_gamit when linking IONEX files with  multiple experiments.
+
+Add slant heights for the TRM39105.00 (Zephyr w/o ground plane) to hi.dat.  
+
+Correct the echo of the atmospheric tidal loading model in the p-file. 
+                                
+
+** 10.4 vs 10.35     
+
+Introduction of  a real-time kinematic module, trackRT.  See help/trackRT.hlp
+for a complete description including instructions for installation.
+                     
+Changes to the code and svnav.dat to use an appropriate radiation-pressure
+model and antenna offset for Block IIF satellites (only PN 25 thus far).  If 
+you need to combine new processing with MIT or SOPAC global h-files that used 
+the old models set ' apr_svs  prn_12 100 100 100 10 10 10 0R ' to unlink the 
+radiation pressure models.  Both MIT and SOPAC will rerun these days to 
+remove the problem.
+   
+Two new programs, tscon and tsfit, are available for prototyping GLOBK solutions.
+They allow you to convert PBO, REASON, and other time series to GLOBK formats and
+to generate in an iterative but rapid fashion appropriate models for discontinuities 
+and earthquakes in continuous time series prior to making long globk runs.  See 
+Chapter 4 of the GLOBK Reference Manual and the help files for tscon and tsfit.
+
+There is a new example, better designed for instruction on setting up
+processing with new data and incorporating a multi-year solution with GLOBK.
+                 
+The c-file and h-file formats have changed.  C-files from prior releases
+cannot be used, but the code remains compatible with older GAMIT (ascii) and
+GLOBK (binary) h-files.  The impetus for this change was to better document
+models used in the processing, particularly for receiver and satellite antenna
+models. 
+
+Higher-order ionospheric (HOI) corrections (2nd and 3rd order, but not
+bending) are available in GAMIT, as described by Petrie et al. [J. Geophys.
+Res., 115, B03417, doi:10.1029/2009jb006677, 2010].  Using these terms requires 
+downloading daily IONEX files containing total electron content (TEC) at 
+2-hr intervals from CODE into the [expt]/ionex directory and linking these 
+into the day directory using '-ion' in the sh_gamit command file.  To apply 
+the effects in processing, set  'Ion model = GMAP' and 'Mag field = ITRF11' 
+in the sestbl.  See the new Chapter 8 of the GAMIT Reference Manual for
+more details.  Thanks to Liz Petrie of Newcastle U (UK) for most of the work
+on this, and to Andrzej Araszkiewicz the Military U of Technology (Poland) 
+for important contributions.
+
+The procedure for creating and keeping an updated station.info file has 
+been better documented and enhanced by changes to sh_upd_stnfo. See the
+description on p. 27 of the Introduction to GAMIT/GLOBK manual, or the
+README of the new example.
+
+GLOBK will now accept multiple eq_files, allowing you to configure separate 
+files for earthquakes, breaks, and editing (_XPS, XCL).  If an eq_file entry 
+uses the 'break' command rather than the 'rename' command, globk will assign 
+the extent. A new RENM print option causes the full rename list to be output.  
+glist now also allows for multiple eq_files, separated by colons.   
+    
+We are now providing in the GRIDS directory on everest.mit.edu atmospheric 
+loading files that have been filtered to remove the diurnal and semi-diurnal 
+thermal tides (S1, S2) using the procedure described by Tregoning and Watson 
+(J. Geophys. Res., 14, B09403, doi:10.1029/2009JB006344, 2009). These can be 
+used in conjunction with atl.grid (also on everest) comprising the IERS
+standard S1,S2 tides (Ponte and Ray, Geophys. Res. Lett.,29, 2153, doi:10.1029/
+2002GL016340, 2002) by renaming the filtered files (atmfilt_cm.YYYY) to the 
+standard name for unfiltered files  (atmdisp_cm.YYYY) in gg/tables, and setting 
+'Use atl.grid = Y' and  'Tides applied = 63' in the sestbl.  Based on feedback
+from users, we hope to eventually discontinue distribution of the unfiltered
+grids.  Note that earlier versions of the filtered files, from either ANU or
+MIT, were written incorrectly; further, there was a bug in the 'model' routine
+that read the sub-daily ATL from the u-file, causing the north and up components 
+to be reversed.  Any use of ATL should use the new grids and Release 10.4.
+  
+There is a new plotting script, ts_plot.py, that reads PBO-style time-
+series files (.pos), created by tscon or tssum, rather than the mb_-files 
+created by ensum.  We plan to transition to the .pos format eventually since 
+it is more complete and flexible, but this will happen slowly and only when 
+we're sure that users can easily install all of the libraries needed to run 
+ts_plot.py: Python V2.7  ( http://www.python.org/download/ ); Numpy 
+( http://new.scipy.org/download.html ), optionally scipy; matplotlib 
+( http://sourceforge.net/projects/matplotlib/files/matplotlib/matplotlib-1.0/ )
+and egenix-mx-base-3.1.3 ( http://www.egenix.com/products/python/mxBase/ ).   
+
+Changes to tsview to enhance performance when viewing and editing large
+numbers of time series; recording of the reasons for edits when creating entries
+for eq_files.
+
+There are updates to autcln and solve to better handle single-frequency data.  
+The default in autcln now requires the user to include 'L1only' in the autcln.cmd 
+file to process single-frequency data.
+
+Pseudorange resolution of wide-lane ambiguities (LC_AUTCLN) is now recommended 
+for networks larger than 50 km and data from January 1994 (except with codeless 
+receivers), the date from which  empirically determined differential code biases 
+(DCB) for each SV have been determined (dcb.dat) by AIUB.  A new algorithm, implemented 
+for Release 10.34, is more robust than the earlier one and gives some weight to the 
+ionsophere-constrained phase WL.  The defaults controls should work well for most 
+networks with recent data, but you may want to test increasing the 'ion constraint' 
+value (from the default .01 to .02) under maximum ionspheric conditions (2000-2002), 
+or decreasing the value (to .005) for old data under minimum ionospheric conditions 
+(1994-1998).  
+                               
+There are now IGS RINEX files with as many as 11 obervables, requiring an
+update of the code (rrxhed and rrinex in gamit/lib) and remaking the executables
+with MAXOBT=11 in gamit/includes/makex.h.   IGS ANTEX files begining with 
+igs05_1499.atx have more comment lines than we originally coded (50).  Set MAXTXT=1000 
+in gamit/includes/dimpar.h. and remake gamit.  Prior to an October 2008 incremental 
+update to 10.34, failure to make this change will result in a cryptic failure in 
+suggesting a misnamed receiver or antenna.  Release 10.4 will recognize ANTEX 
+Version 1.4.        
+
+Fix a bug in time argument for GPT; affects the annual signal in heights at
+the level of 0.2-1.0 mm. Thanks to Francois Fund (ESGT) for catching this
+and Paul Tregoning (ANU) for testing it.  
+      
+Fix bugs and deficiencies in sh_upd_stnfo/mstinf to obtain a better match
+of entries with RINEX files and to avoid multiple entries continuous
+stations when not needed.  Add the ability to get a station list from 
+sites.defaults and/or the /rinex directory, and the ability to use wildcards 
+to get multiple IGS log files.  Fix bug in distinguishing between Receiver Type' 
+and 'Receiver SN', and 'Antenna Type' and 'Antenna SN' in reading station.info
+files (thanks to Olivier Charade (INSU/CNRS), allow more complete updating
+of station.info entries mid-session.
+
+Fix two bugs in fixdrv, both introduced in 10.35:  1) full-solution 
+observable erroneously set when quick_pre observable = LC (allowed for 
+backward compatibility) rather than LC_ONLY (preferred); 2) check on
+too-tight a priori coordinate constraints failed in sh_sigelv.  Thanks
+to Liz Petrie (Newcastle) for catching both of these.  
+      
+Fix bug in sh_get_nav when the day number has leading zeroes, needed for
+CDDIS downloads with tscsh (one line of code missed in fixes applied to 
+most scripts for 10.35 release).  Thanks to S Shimada of NIED for the 
+catch and Mark Murray for additional cleanup.  
+
+Fix bug in  kf/glfor/get_max_glbd.f that resulted in wrong dimension for
+the partial derivative array when earthquakes logs and/or apr_rot commands
+used.  
+        
+Updates to 'track' to account for millisecond range jumps.
+
+Fix bug in creating station.info entries with sh_upd_stnfo when the compiler
+option for floating point is not real*8.  Thanks to Mark Murray (New Mexico 
+Tech) for catching this. 
+       
+Fix bug in utility org2stab to get a stablization list from a velocity
+solution.
+          
+Fix bug in sorting median process-noise values in sh_gen_stats.
+      
+Correct a bug in sh_update_eop after detecting an invalid EOP series.
+
+Fix failure to link binary for utility ne2azel
+ 
+Add gradients to the output file of sh_metutil; trap an empty z-file from 
+having no good observations at a site. Copy gamit/utils/metutil.  Thanks
+to Mark Murray (New Mexico Tech).
+
+Modify sh_get_met to work with either Z or gz files, and for multiple days;
+update the met directories for CDDIS.  Thanks to Kalev Rannat (Tallin U). 
+
+Add ~60 receivers and ~10 antennas to rcvant.dat. Update to current
+IGS ANTEX file (igs05_1597.atx) and create igs05_1597_plus.atx by
+adding PCV models from NGS for 8 antennas not in the IGS file. 
+Correct misspellings or official changes for 6 receivers or antennas.   
+
+Changes to unimake and Makefile.config to facilitate installation under 
+CYGWIN.  See the notes 'CYGWIN' under updates/documentation.  Thanks to 
+Semi Ergintav (TUBITAK) and George Vergos (AUTH) for notes and testing.  
+
+Add to sh_gamit the ability to invoke sh_metutil to get ZWD and PW (met-file)
+from an input z-file and o-file, and to archive, compress, or delete z-
+and met-files at the end of the run.  Add script sh_met2pbo to concatenate
+multiple met-files. 
+
+Fix header entries and format in writing SP3-C files.
+
+Update Hatanaka RINEX compression routines to version 4.0.4, fixing function
+name conflict with getline in gcc 4.4 and cleaning handling of line-feed at
+end of file.  
+                             
+Add output lines in Euler-pole utility conveuler.
+      
+Modify format in utility confpol to convert N,E sigmas and correlations 
+to confidence ellipses.
+
+New utility check_siteid to compare 4-character IDs from glist and
+several external formats to detect conflicts. 
+        
+Fix bug in reading number of data types in simulation model.
+
+Fix compiler flags for Intel 9.0. 
+
+Fix minor compile errors      
+
+
+** 10.35 vs 10.34     
+         
+sh_gamit (and sh_get_orbits) allow the use of MIT orbits from global reprocessing 
+2000-present, typically a factor of two better than the operational IGS Final 
+orbits prior to 2004 and without the scale discontinuity at Week 1400 (November 
+2006); see http://kg4-dmz.gfz-potsdam.de/igsacc/repro/igsacc_final.html.  
+
+sh_glred (and sh_get_hfiles) allow the use of combined binary h-files from MIT 
+or SOPAC reprocessing. The options for SOPAC sub-network ascii h-files now include 
+'igsall' which will fetch all of the global sub-nets available on the day. (Note 
+that it is not legitimate to use only a subset of the igs? h-files.)  See the 
+revised Chapter 4 of 'Introduction to GAMIT/GLOBK' and the presentation 
+'Reference_Frames.ppt' from the March09 Advanced Workshops on the GAMIT/GLOBK 
+documentation web page for a discussion of strategies for establishing the 
+reference frame for time series and velocity solutions.     
+
+Allow for 10 or more observables in a RINEX file. 
+
+New versions of tsch now enforce a standard (apparently always present)
+that numbers with leading zeroes are treated as octal.  This causes
+problems with GAMIT day number lower than 100 in a dozen shell scripts.
+ 
+Updates to 'track' to better handle short broadacast empheris and to
+resolve some issues with independent bias flags.
+
+Using broadcast ephemeris in processing:  Update sh_bcfit to check
+for validity of dates and to generate a session.info file if it does
+not exist.  
+         
+New sh_gamit option to block updating of experiment l-file (useful to
+avoid clashes when running in a cluster environment).
+          
+New utility (org2stab) for an generating unweight list for hfupd and a
+stab_site list for glorg from a globk/glorg velocity solution.  
+
+New utility (grw) for generating quickly sig_neu downweight commands
+while viewing a time series. 
+   
+Change directory structure for SOPAC h-files and OLG RINEX files, and add 
+BKG met files to tables/ftp_info. 
+    
+Changes to sh_gamit make the downloading and use of orbit files and 
+IONEX files more robust.
+
+CVIEW: Fix bug in reading in x-files; fix bug in screen display with 
+OSX and some other laptops.
+       
+Fix bug in sh_gamit when using IGS ultra-rapid orbits.         
+
+Fix bug iin identifying l-file coordinates to update when the site is
+fast-moving (e.g. on ice). 
+  
+Fix bug in sh_org2vel when plate name > 7 characters.
+    
+Fix bug in sh_oneway for GMT formating
+
+Fix bug in creating x-files with Topcon firmware > 3.0.
+             
+Fix bug in assignment of number of zenith or gradient parameters from an 
+input interval (one too few in recent releases). Thanks to Ian Thomas of 
+Newcastle for the catch. 
+
+Fix bug in sh_sp3fit, which incorrectly used IGS92 rather than EGM96
+gravity field for the final t-file. 
+
+New 'fixdrv' option: Allow skipping of the loose solution ('skip loose = y') to
+avoid poorly conditioned matrix with very short baselines.
+                     
+Allow of VMF1 ZHD with GMF; works now if UFL first 'met source' option and 
+either map.grid or map.list is present.
+        
+Fix bug in reading ANTEX files with more than 50 comments. 
+
+The command-line coordinate conversion program (a replacement for
+'tform' in most cases) has been updated to output longitudes as either 
+-180 to +180 or 0 to 360 and to fix a bug in outputting spherical l-files. 
+
+Add to sh_gamit summary the names of sites removed from processing by the
+minxf control in processing.defaults.
+                                                             
+Cleanup of 'solve': changes in the information written to the q-file by,
+remove some screen print;  initialize 'avgload' variable; remove obsolete 
+single-difference code. 
+        
+Add site code to error messages in reading ANTEX files      
+  
+Support 'gz' with Hatanaka-compressed RINEX files.
+ 
+tables: Updates to svnav.dat and antmod.dat for SV49/PN01; it is essential
+to make this update for data acquired after the launch (March 2009).
+Add luni-solar tables for 2009. 
+
+New receivers: NOV4G2 (NOV OEM4-G2), LC123G (LEICA GX1230GG), 
+LC902G (LEICA GMX902GG), LC1220 (LEICA GX1220), SEPX2E (SEPT POLARX2E), 
+SEPX2C (SEPT POLARX2C), SEPAX1 (SEPT ASTERX1) SEPAX2 (SEPT ASTERX2),
+ALTPS3 (ALTUS APS-3), LEICA GRX1200+, LEICA GRX1200+GNSS, LEICA GX1210, 
+LEICA GX1210+, LEICA GX1220+, LEICA GX1230+, LEICA GX1220+GNSS, LEICA GX1230+GNSS, 
+NOVV3R (NOV OEMV3-RT2)
+
+New Antennas: TPSG3A (TPSG3_A1),TR5980 (TRM59800.00), SOKGSR (SOK_GSR2700ISX), 
+AER167 (AERAT1675_29, NOV702 (NOV702), LEICA AX1201, LEIAX1203+GNSS, LEIATX1230+GNSS,
+SEP220 (SEP_POLANT+), SEP29S (EP_POLANT+_GG), TRMZGS (TRM57971.00). Correct typos 
+in TOP72110 and SOK_RADIAN_IS entries.
+
+
+** 10.34 vs 10.33  
+   
+sh_gamit (and sh_get_orbits) allow the use of IGS ultra-rapid orbits that 
+include predictions, facilitating near-realtime generating of coordinates 
+or atmospheric parameters.
+
+Fix a serious bug in 'model' whereby the  pole tide, if requested, was  returned 
+as zero or undefined.  The effect is up to 2 mm in horizontal and 5 mm in heights 
+for a global solution, less than 1 mm horizontal for interstation differences up 
+several thousand km.  The problem is avoided if you omit the pole tide in GAMIT and 
+set 'app_ptid all' in GLOBK. (You cannot simply set the control in GLOBK because 
+GLOBK will not apply the tide if the h-file indicates that it has been applied in GAMIT.) 
+ 
+tables: Fix error in svnav.dat in setting start dates for PN29/SV57 and
+PN07/SV48, both erroneously set for 2007 10 20 instead of their actual
+launch dates.  There is no problem with the PN29 error since the previous
+SV having this PN was dead by 2007 10 20 (day 293), but for PN07, using
+the old files will result in errors for the period between day 293 and
+the demise of the old PN07 on day 345.  Thanks to Sigrun Hreinsdottir 
+of U. Arizona for catching this. 
+              
+Add percentage of ambiguities resolved to sh_gamit summary file 
+
+New receivers:  SOK GSR2600, JPS EGGDT, SEPT POLARX2E, TPSHIPER_LITE
+                TPS-HIPER-GGD (same as TPS HIPER-GD).
+New antennas:   Micropulse WAAS 2225NW, TRM41249USCG; fix name of TPSCR.G3 to
+                conform with IGS standard.  Correct SLAGP to SLHGP for ASH700228A,B,C
+                in hi.dat.
+               
+Handle correctly site renames--either explicit for instrument changes or implicit
+for earthquakes---within a session ('model'):  use only data from the longer of
+the two spans.  
+      
+There is a new coordinate-conversion utility 'convertc' which will take as
+input a GLOBK apr-file (Cartesian) or a GLOBK velocity file or glist file 
+(geodetic), and output an apr-file, velocity file, or KML file (for Google
+Earth).  
+
+of the functions formerly performed by tform; 
+Track: Fixes for milli-second clock resets that are not correctly accounted
+for in the RINEX files.  Small bug fixes and some format changes. Increased size
+to allow 12-hrs of 2-Hz data.  
+
+Plate-referenced apr file for ITRF 2005:  The files distributed with 10.33
+were in error, having used the TIRF 2000 poles to rotate itrf05.apr to
+the major plates rather than the new poles from Altamimi et al. [2007].
+The new files are correct, and also have site extents (_1Ps, 2PS, etc)
+corresponding to the GLOBK convention used in itrf05.apr and corresponding
+to the names used in itrf05.eq_rename.  Corrected versions of itrf05_aust.apr, 
+itrf05_pcfc.apr, itrf05_soam.apr, itrf_noam,apr, itrf05_eura.apr, and itrf_anta.apr.  
+
+Updated algoritm for clock estimation in 'autcln'.  
+
+Fix bug in setting DCBs for non-Trimble receivers when AS off. Occured only 
+prior to DCB availability, so no effect except a rare * printed in x-file.  
+                                                                   
+Wild cards now allowed for all GLOBK commands.
+
+Fix bug in making sky plots with sh_gamit.
+
+New feature in sh_plotcrd to select stations by region.
+
+Fix bug in locating RINEX and h-files on the local file system.      
+
+Increase the dimensions of MAXCHN to account for receivers with more than 20 channels.
+
+Change in Apr., Unc., and Int. formats of globk/glorg print files to allow
+velocities of -999.99 m/yr (motion on ice).
+
+Fix a problem reading an integer elevation cutoff from the sestbl (should
+be used only with LC_HELP). Thanks to Rossana deMarco of CNR-IRPI. 
+
+ZHD in 'model':  There is a bug that causes a fatal when RNX UFL is the met 
+heirarchy and the RINEX values are bogus.  The bug is complicated by the 
+presence of a redundant and unused file in the distribution.  To fix the 
+problem, copy /gamit/model/get_met_source.f and Makefile.generic, remove 
+from your /gamit/model directory the file get_ion_source.f, Makefile, and 
+model_lib.a; then regenerate the Makefile (unimake -m model from the /gamit level) 
+and remake model. Thanks to Liz Petrie at U Newcastle for catching this. 
+             
+'yawtab':  Fix bug in call to oversn.f, effect is only to miss version numbers.
+
+Mac OSX Intel: Fix inadvertent carriage return in /libraries/Makefile.config.
+ 
+
+** 10.33 vs 10.32
+      
+Update svnav.dat and antmod.dat (igs05_1461.atx) for SV55/PN15 (25 Oct 2007)
+and SV57/PN29 (21 Dec 2007).
+                           
+Lunisolar tables for 2008; IAU 1980 nutations replaced by IAU 2000 nutations. 
+H-files created with the old model will be automatically rotated to the new
+model.  
+
+sestbl:  Change 'Antenna model' to AZEL and 'SV antenna model' to ELEV to use 
+absolute PCVs;
+
+sittbl: Loosen suggested constraints to relect preference for ambiguity resolution.
+              
+Fix bug for OTL interpolation for sites between 0 longitude and the first grid 
+point (0.25 deg for FES2004, 0.5 deg for other grids).  1
+             
+Fix bug in reading and using ATML or VMF1 values on the last day of the year.
+
+New receivers: LEICA GRX1200GGPRO, TPS NETG3, TPS MAXOR, TPS EUROCARD,  NOV OEMV3    
+New antennas:  LEIAT504GG, TRM4600, TRM41249USCG, NOV702GG, NOV702GL, NOV702 rev.4
+     
+Replace 'compress' but 'gzip' in scripts.   
+
+Velocity histograms (sh_velhist):  Add capability to set a minimum as well as maximum 
+sigma and a geographicbox.  
+
+Enhancements to facility cluster computer: In /com,  sh_PBS_gamit, sh_gamit, sh_sp3fit, 
+sh_get_orbits.
+
+Add worst, best, median in calculating random walk for'real sigma' algorithm in
+sh_gen_stats, sh_enstat: 
+
+guess_rcvant.dat: Added missing carats (^) to entries for the TOPCON/TPS
+receivers and antennas. 
+                           
+TRACK: Fixed 10-hz epoch problem and reading gamit zenith delay estimates.
+
+sh_sp3fit:  Fix bug reading sp3c files (old code wrong but works ok with 
+g77 but not gfortran). Thanks to Demitry Balandin (Inst Geophysics Urals, RAS) 
+for finding this. 
+
+Fix bug with merging station.info files (sh_upd_stnfo, mstinf2).  
+
+New RINEX compresssion routines provided by Yuki Hatanaka (GSI-Tsukuba) to 
+handle RINEX Version 3.0. 
+
+Fix header comments for sh_metutil (correct units for temperature and ZHD).
+
+Using Az-El PCV corrections:  There was an error in interpolating the 
+ANTEX tables when both elevation- and azimuth-dependent corrections are
+used.  On rare occasions, depending on the details of the model and 
+distribution of observations, the bug could generate up to 10 mm error 
+in heights and zenith delays, though usually the effect is negligible.   
+Thanks to Wang Min of CEA for the catch.
+
+Using GPT for a priori pressure and temperature.  There was a bug in the
+time argument used to read the GPT model; the change in values, however, is 
+very small and has a negigible effect on estimates of heights or zenith delays.
+Copy gamit/model/atmdel.f.  Thanks to Peter Smythe of ANU for the catch. 
+
+Fixed problem with converting mutiple SINEX files with htoglb.
+
+sh_rx2apr (svpos); Fix problem using RINEX Version 1 (missing 'G' for SV name).  
+
+Change to autcln to improve postfit editing for old data. 
+
+Change the default gravity field for 'arc' to EGM96' (fixdrv).
+
+Add gravity and nutation models to the h-file.                
+
+Fix bug in 'xtorx' with new-format station.info.
+
+
+** 10.32 vs 10.31  
+
+Installation: 1) For the Intel compiler the link for libraries/comlib/execute_intel.f 
+should point to execute_hp.f, not exectute_g77.f;  2) for OSX 8.8, Makefile.config
+updated to read 'OS_ID Darwin 5200 8800';  3) for gfortran, restore a missing link 
+for  csubs.f in gamit/clean. 
+
+Ambiguity resolution with LC_AUTCLN:  changes in autcln will improve resolution of 
+WLs signficantly, both before and after the introduction of DCBs (April 2001).  
+Changes in solve will reduce or eliminate cases of failed inversions due to problems 
+removing dependent biases.
+
+Ambiguity resolution with LC_HELP:  WL resolution in the presence of high ionosphere is 
+improved by rescaling the WL bias sigmas by the rms deviations for each baseline rather 
+than by the overall nrms of the ionosphere-constrained solution.  
+                                                       
+Narrow-lane ambiguity resolution :  With both LC_AUTCLN and LC_HELP, deviation-scaling 
+of the NL sigmas is also implemented.  The effect on resolution is not large, but 
+the statistical summaries now printed in the q-file provide useful diagnostics for 
+tuning ambuiguity resolution. (Changes also to sh_gamit to pick up the new print
+for the mailto summary file.
+                  
+VMF1:  Changes to allow multiple formats of VMF1 station-list files.  
+
+autcln.cmd: The template gg/tables had an extraneous blank before 'POST lc_autcln'
+that should be removed to use LC_AUTCLN in GAMIT.  
+
+METUTIL:  Fix two bugs using RINEX met files: 1) add correctly an extra value
+at the end to allow proper interpolation; 2) change temperature units to K.
+Copy gamit/utils/metutil.f.     
+
+Ashtech choke ring antennas:  Bug in setting the aliases for these antennas for purposes
+of calculating direct height from slant height, results in a direct height error of
+about 1 mm for an antenna mounted 1 m above the mark.  
+
+New receviers:  Added Leica GMX902 and Trimble R7 and R8.
+                                                            
+Creating new-style station.info:  Add self-documentation for program gamit/hi/conv_stnfo)
+that converts an old-style to new-style station.info file.  
+
+sh_plotvel: Better diagnostics. 
+            
+RINEX compression:  Change sh_get_rinex to use sh_crx2rnx instead of sh_uncompress,
+and sh_uncomopress to use gunzip instead of uncompress.     
+
+GLORG: Output option (MIDP) which references solutions to the midpoint epoch of the
+combined data; should not be used when large stochastic position estimates are present.
+
+
+** 10.31 vs 10.30         
+
+hi.dat:  The ASHDMG antennas was misnamed ASHGD3; fixed errors in slant range dimensions 
+for the ASHDMG, ROGSNR, and ROGRMA antennas.  None of these errors will affect runs
+with DHARP as the height measurement.
+
+Atmospheric delay models:  Fixed bug in GPT; made reading of a RINEX met file or a
+u-file ZHD (VMF1) more robust.  
+
+Met utilities:  Fixed problem with RINEX met files and improved interpolation for
+sh_met_util. 
+
+gcc/g77  3.4.x bug:  Added a temporary patch to a lapack routine causing 'solve' to
+stall in an infinite loop when compiled with level 3 optimization with gcc/g77 3.4.x
+and possibly 2.95. 
+
+kf/track : Fixed problem reading RX files with internal comments with more than 12 lines
+           rd_rinex_obs.f. 
+
+Deleting eclipse data:  Has not worked properly for some time, but now fixed
+in gamit/utils/autecl.f.  
+
+Problems compiling and using ocean loading with the HP f90 compiler..  Download the entire 
+incrementals to get Makefile changes, system-dependent routines, and several GAMIT routines 
+with uninitialized variables.   
+   
+Initialization problem for 'idatum' in fixdrv.  
+
+Sky plots not created by sh_gamit because sh_make_sky_gifs looks for 'autcln postfit'
+in the sestbl, but this command is no longer necessary; fixed sh_make_sky_gifs.
+
+Fix intel compiler flags for 'solve'.  Thanks to S. Shimada (NIED/Tsukuba) for catching this.
+
+SV-dependent data reweighting did not work with (default) 'AUTCLN Postfit = R' option.
+Copy gamit/fixdrv/bmake.f. Thanks to Wang Min (CEA/Beijing) for catching this. 
+
+Add traps for # SVs on g-file or nav-file > maxsat.  Copy gamit/fixdrv/satnmr.f and
+gamit/makexp/checke.f  
+           
+hi.dat: Correct entries for SLBCR for ROGSNR and ROGRMA.  Thanks to Sigrun Hreinsdottir
+of U. Arizona for catching this.  
+
+OS-dependent routine for HP:  The HP requires a special version of libraries/comlib/systime.f 
+so so we have re-introduced OS-dependent versions; also we need an HP version of
+kf/gen_util/execute.f.  Copy cversn.f, Makefile.generic, and the systime_HHH.f version 
+you need from /libraries/comlib; and Makefile.generic and the execute_HHH.f version
+you need from kf/gen_util. 
+ 
+MAKEX problem opening and closing hi.dat.  Copy makex.f and closem.f from gamit/makex.
+
+svnav.dat:  Update for PN12/SV58.  Copy svnav.dat or svnav.dat.igs, depending
+on whether you want to maintain backward-compatibility or IGS-consistency for SV
+antenna offsets when using a relative PCVs (with absolute PCVs, these values are
+overridden by antmod.dat).  Note that SOPAC used an old svnav.dat for processing
+of PRN 12 between 2006 12 15 and 2007 01 13, so if you are combining SOPAC H-files
+with your own processing, you must either exclude PRN 12 from your processing or
+allow the radiation-pressure parameters to adjust independently in the SOPAC and your
+own h-files.  This is easily accomplish by  'apr_svs  prn_12 100 100 100 10 10 10 0R'.
+As described in the 10.2 Release Notes, a similar situation pertains to PN22/SV22
+as a result our error in listing its block number. Its radiation pressure parameters
+should be decoupled from all SOPAC or MIT H-files created between 1993 and 2003. 
+
+GLORG: Fixed I*8 declaration for memory allocation on 64-bit machines when plate estimate
+used. 
+
+HTOGLB: Sinex routines changed to read and deconstrain center of mass and satellite anttena
+offset estimates.  Added codes for IGS05_1404 antmod file to SMod_to_full.f. 
+ 
+sh_rx2apr: svpos/svdiff now work properly with the C2 observable.
+
+Apriori coordinates:  GAMIT/model now has the ability to use the full 8-character
+station name when reading a GLOBK-style L-file together with a GLOBK eq_file.
+The link scripts will now attempt to link into the day directory, via the 
+[expt]/tables directory a file named 'eq_rename', which you may link (in [expt]/tables
+or gg/tables to a particular rename file.  In the gg/tables directory distributed with
+10.31, theeq_rename file is linked to a file derived from the steps documented for
+IGS stations by IGS Analysis Center Coordinator Remi Ferland (NRCan) and distributed as
+IGS-Discontinuities.snx.  This file is incomplete even for IGS stations but may serve
+as a starting point for GAMIT users.
+
+Trapping bad a priori coordinates:  If you overconstrain a station's coordinates
+in the GAMIT run, you will get an elevated nrms and degraded ambiguity resolution.
+There is now a test for this in 'solve', based on an adjustment more than twice
+the apiori constraint.  The script sh_sigelv in the batch file now checks for
+the requisite lines in the q-file, and if a station has a large adjustment in
+the first ('p') solution, its constraints are relaxed for the final ('a') solution.
+
+N-file reweighting: Because the N-file is now always written (for trapping 
+bad a priori coordinates), the sestbl command for invoking phase-error reweighting
+is changed from 'Use N-file = Y' to 'AUTCLN reweight = Y'.  However, the old
+command will still work in 10.31.
+
+
+** 10.30 vs 10.21 
+
+Speed of computation:  New inversion routines have been added to SOLVE, 
+improving the speed by about 30%.  Note that gfortran will gain another
+10% compared to g77, and the Intel compiler about 25%.  
+
+sh_gamit.log:  All of the GAMIT batch file status, warning, and fatal
+messages are now written into the log file, and more traps have been
+added to stop the run once a fatal is encountered. This should make it
+easier to find the source of a failure.
+
+Fix logic to 'cfmrg' and 'solve'  to allow more than 30 SVs.  This change is 
+necessary if you use the full complement of SVs currently distributed
+with IGS orbits.
+     
+Fix sh_gamit problem resulting in deleted rinex files when making Hatanaka 
+compressed RINEX at the end of the run.  Copy /com/sh_gamit. 
+
+Add aliases for JNS versions of Topcon 'zero-centered' antennas.  Copy
+gamit/lib/ant_alias.f. 
+                
+AUTCLN: Fixed problem with postfit editing bias flags, added additional
+calls to trim one way to remove bad data and fixed P1/P2 residual output,
+and changed default # of channels from 14 to 15 to accommadate newer
+receivers (also fixable by setting 'max_chan 15' in autcln.cmd.)
+
+MAKEXP: Fixed problem when a station.info entry begins later than the session 
+start and on a separate day.  Avoid problem when station.info has no entry 
+for data in a RINEX file linked into the day directory but not used in 
+the session: rstnfo now prints only a warning if called by makexp; if there 
+is a true omission, makex will stop with a fatal.  
+
+SOLVE: Fixed bug in printing observable/ambiguity type in q-file,  Fix bugs
+when estimating a single zenith delay.  Fix bug (introduced with incrementals
+of 060227) in assigning gradient apr values; thanks to Sunil Bisnath of CfA
+and Mathilde Vergnolle of U. Luxembourg. Fix a bug in reading the batch file 
+and writing the q-file header when there are more than 50 sites; thanks to
+Kirill Palamartchouk of TU Crete.
+
+GLORG: Added eq_dist option for estimates of logarithmic parameters; fix
+some bugs in earthquake reporting.                             
+
+Plotting time series:  The new print option PBOP in glorg will generate output
+lines in the format adopted by the U.S. Plate Boundary Observatory (PBO); plots
+are generated by new program tssum.  
+         
+GLBTOSNX: Improved output of renamed sites.
+
+Allow true C2 observables by not changing 'C2' to 'P2' unless the data 
+are earlier than 2004 (needed for Trimble serial P-code data).  
+
+sh_merge_rinex: Now allows input of the sampling intervel.  Thanks
+to Seiichi Shimada of NIED for the fix.  
+
+sh_make_rinex: The script to run to run TEQC on raw data files to create 
+RINEX had a bug that prevented mixing of Trimble data files with those from 
+any other receiver type; now fixed.
+
+SP3-C files:  Fix option (-u) in sh_sp3fit for excluding SVs, thanks to 
+Wang Min of CEA Beijing.  Fix problems when flags are needed, thanks 
+to  Mark Murray of New Mexico Tech.  Fix bug in naming g-file with 
+2- or 3-day fits. 
+
+PCV models: Updated versions of the IGS01 relative and IGS05 absolute PCV models
+in gg/tables: igs_01_antex11.pcv and igs_05.atx.  The igs_05.atx file has a 
+model for the new PRN 17 (SVN 53) as well as revisions of additions for about 
+50 ground antennas.
+
+TRACK: Updated to handle sp3c format and new IIRM satellites; small changes
+to better handle bad pseudorange data.
+
+Fix non-working -u option (exclude SVs with unknown accuracy code) in sh_sp3fit. 
+Thanks to Wang Min of CEA for the catch.  McClusky 060306
+
+Missing data from Leica GRX1200:  Fix omission of SVs in upper channels when 
+an incorrect firmware version is used in station.info; thanks to Wang Min of
+CEA Beijing.  
+
+sh_baseline:  Allow turning off of error bars and setting the tick and labels 
+of the y-axis. 
+ 
+sh_upd_stnfo: Fixed bug in updating station.info from a RINEX file when more
+than 12 SVs listed in an epoch line; thanks to A. Zubovitch of RAS Moscow.
+ 
+Bogus antenna heights: Fix bug that set HI=0. when using hi.dat with a missing 
+height code. 
+
+unify_apr:  Better handling of sites when they appear multiple times in pos_mode
+and vel_mode.
+
+merge_apr: New program to merge two a priori files with no duplicate entries.
+
+Fix non-POSIX standard calls to 'head' and 'tail' command in > 100  scripts
+(old form does not work with Fedora Core 5). 
+
+Use gzip/gunzip instead of compress/uncompress in locating and creating
+RINEX files. (Still more scripts to change for this.)  Copy from /com:
+sh_find_data and sh_make_rinex.     
+
+
+
+
+
+
+
+
+

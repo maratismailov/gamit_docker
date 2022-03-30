@@ -1,0 +1,372 @@
+  echo "  "
+  echo " Usage: sh_get_orbits -archive <archive> -yr <yr> -doy <doy> -ndays <num> -multiday " 
+  echo "                      -type <type> -pre <f/r/p> -center <center> -gnss [gnss-code] "
+  echo "                      -makeg <yes/no> -maket -noacc -eop_ser <ser> -eop_pth <pth> "
+  echo "                      -orbt <orbt> -ftp_prog <ftp/ncftp/wget> -max_fit_tol <val>"     
+  echo "                      -param_trans -srp_param <srprm> "
+  echo "  "
+  echo " Where: <archive> Either sopac, cddis, mit, or igscb  [Defautl cddis] "
+  echo "        <yr> 4 char year of nav data requested  [Required] "
+  echo "        <doy> 3 char day of year of nav data requested  [Required] " 
+  echo "        <num> Number of consecutive days of data to retreive  [Default 1] "
+  echo "        <multiday> Form a multiday t-file from downloaded files " 
+  echo "        <type> Either sp3 or gfile (gfile from sopac only).  [Default sp3] "
+  echo "                use msp3 to get a multi-GNSS file from CDDIS " 
+  echo "        <f/r/u> The precision of the orbit requested.  [Default f] "
+  echo "                  where f=final, r=rapid, u=ultrarapid (includes prediction) "
+  echo "        <center> Name of the IGS processing center sp3 files. [Default igs] "
+  echo "                 available centers igs/cod/emr/esa/gfz/jpl/ngs/sio/mit/com " 
+  echo "                 where com means a combined file from CDDIS MGEX directory"
+  echo "                 (these latter now uppercase long-named but use com and rename" 
+  echo "        <gnss-code>  G R E C I J  [Default G] (currently downloads only G, R, E C"
+  echo "        <makeg> Convert sp3 files in GAMIT format g-files files. [Default yes] " 
+  echo "        <noacc> Do not exclude satellites base on accuracy codes. [Default exclude]"
+  echo "        <ser> This is the pole. and ut1. series to be use when converting "
+  echo "              sp3 -> g-files. ONLY use when makeg = yes. [Default usno] "
+  echo "        <pth> This is the path to the pole.ser and ut1.ser files [Default ~/gg/tables] " 
+  echo "        <orbt> 4 char ID used in g-file name [Default 3 char center + 1 char pre. i.e.e igsf] "
+  echo "        <ftp/ncftp/wget> choose the ftp program to be used [default is ftp]"
+  echo "        <val> maximum misfit given in meters before a satellite is removed from orbit fit" 
+  echo "        makeg make a gamit g-file from downloaded SP3 file [default yes] "         
+  echo "        <srpprm>  Options for SRP parameterisation (radiation model must be one of BERNE, BERN2,  UCLR1, UCLR2) "
+  echo "          noopr : Fix all once-per-rev parameters  (estimate only the constants) " 
+  echo "          ondopr: Estimate only the direct once-per-rev parameters "
+  echo "          onyopr: Estimate only the Y-axis once-per-rev parameters "
+  echo "          onbopr: Estimate only the B-axis once-per-rev parameters "
+  echo "          dyopr : Estimate the direct and Y-axis once-per-rev parameters "                                           
+  echo "          dbopr : Estimate the direct and B-avix once-per-rev parameters "
+  echo "          ybopr : Estmate the Y-axis and B-axis once-per-rev parameters  "
+  echo "       param_norot Turn off estimation of a rotation in orbfit "
+  echo "       param_trans Estimate translation  "
+  echo "       maket make a gamit t-file from downloaded SP3 file [default not to make] "
+  echo "  "      
+  echo " NOTE: IGS sp3 files are available in f/r/p precision from both sopac and cddis archives "      
+  echo "       SIO sp3 files are available in   r/p precision ONLY from sopac archive "
+  echo "       All other sp3 files are ONLY available in f precision form both cddis and sopac "  
+  echo "       MGEX sp3 files are coded only for long-named COD versions from CDDIS " 
+  echo " NOTE: igsf orbits downloaded from cddis between (and including) weeks 658 and 1831 will "
+  echo "       get the repro2 orbits which are renamed from ig2 to igs. igsf orbits downloaded "
+  echo "       from sopac between (and including) weeks 730 and 1459 will get the repro1 orbits "
+  echo "       which are renamed from ig1 to igs. To get original igsf orbits use igscb for archive "   
+  echo "  "      
+  echo " Examples: sh_get_orbits -archive sopac -yr 1998 -doy 235 -ndays 1 -type gfile -pre r "
+  echo "           sh_get_orbits -archive cddis -yr 1998 -doy 235 -ndays 1 -pre r -center sio "
+  echo "           sh_get_orbits -archive cddis -yr 1998 -doy 235 -ndays 7 -ftp_prog ncftp"
+  echo "           sh_get_orbits -archive mit   -yr 2000 -doy 235 -ndays 7 -center mit"
+  echo "  "
+  echo "====================================================================================="
+  exit
+endif 
+
+# Check if ncftp is requested
+if ( `echo $ftp_prog | awk '{print $1}'` == 'ncftp' ) then
+  if (`echo $ftpcmd | awk '{print $1}'` == 'ftp') then
+    set ftpcmd = `echo $ftp_prog $ftpsite` 
+    echo "-ftp_prog = ncftp requested, ftpcmd now: $ftpcmd" 
+  endif
+endif
+
+# Check if wget is requested                                            #OCh
+if ( `echo $ftp_prog | awk '{print $1}'` == 'wget' ) then               #OCh
+  if ( `echo $wlogin | wc -w` == 0 ) set wlogin = `echo $ftplogin`      #OCh
+  if ( $wgetsite == '' ) set wgetsite = `echo ftp://$ftpsite`           #OCh
+  set ftpcmd = `echo $ftp_prog`                                         #OCh
+  echo "-ftp_prog = wget requested, ftpcmd now: $ftpcmd"                #OCh
+endif                                                                   #OCh
+
+# Set up the ftp script
+if (`echo $ftpcmd | awk '{print $1}'` == 'ftp') then 
+  echo "user $ftplogin" >! tmp.get.$ts  
+  echo "binary" >> tmp.get.$ts
+  set getcmd = 'get'
+else if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then                                                        #OCh
+  cat /dev/null >! tmp.get.$ts                                                                                    #OCh
+  if (`echo $wgetsite | awk -F: '{print $1}'` == 'https') set wgetoptions = "--no-check-certificate $wgetoptions" #OCh
+else
+  echo "binary" >! tmp.get.$ts
+  set getcmd = 'get -f -z'
+endif
+      
+# Setup type of sp3 files to be downloaded 
+# MOD: RWK 180330: If multi-gnss requested, for now force long-named COD MGX from CDDIS 
+if ( ${type} == msp3 ) then
+  set cent = 'COD'                                 
+  set archive = cddis 
+else if( ${type} == sp3 ) then
+  if ( $orbt == '' ) set orbt = ${cent}${pre}
+  if ( ${cent} == sio ) then
+    if ( ${archive} == sopac ) then
+      if ( ${pre} != "f" ) then 
+        set cent = ` echo ${cent} ${pre} | awk '{print substr($1,1,2)$2}'`
+      endif
+    else
+      echo "${cent} files with precision ${pre} are only available from sopac archive"
+      echo "Setting precision to f (final) for ${archive} archive" 
+      set pre = "f"
+      if ( $orbt == '' ) set orbt = ${cent}${pre}
+    endif  
+  else if ( ${cent} == igs ) then
+    if ( ${pre} != "f" ) then 
+      if ( $orbt == '' ) set orbt = ${cent}${pre}
+      set cent = ` echo ${cent} ${pre} | awk '{print substr($1,1,2)$2}'`
+    endif 
+  else 
+    if ( ${pre} != f ) then
+      echo "${cent} files are only available in f (final) precision"
+      echo "Setting precision to f (final) for downloading"
+      set pre = "f"
+      if ( $orbt == '' ) set orbt = ${cent}${pre}
+    endif
+  endif  
+endif
+
+#
+# Set up loop on days
+#@ sday = ${doy} - 1
+@ sday = `echo "ibase=10; ${doy} - 1" | bc`
+#@ count = ${numd}
+@ count = `echo "ibase=10; ${numd}" | bc`
+
+ 
+while ( ${count} )
+  set sday = `echo ${sday} |  awk '{printf "%03d \n", $1+1 }'`
+  @ count = ${count} - 1
+
+# Make 4 char GPSW number (include previous day for ultra-rapid orbits)
+  set gpsw = `doy ${yr[1]} ${sday} | tail -n -2 | head -n 1 | awk '{printf "%04d \n", $3}'`
+  set gpsd = `doy ${yr[1]} ${sday} | tail -n -2 | head -n 1 | awk '{printf "%1d  \n", substr($7,1,1)}'` 
+#   @ sdaylast = ${sday} - 1
+  @ sdaylast = `echo "ibase=10; ${sday} - 1" | bc`
+
+  set sdaylast = `echo $sdaylast |  awk '{printf "%03d \n", $1}'` 
+  set gpswlast = `doy ${yr[1]} ${sdaylast} | tail -n -2 | head -n 1 | awk '{printf "%04d \n", $3}'`
+  set gpsdlast = `doy ${yr[1]} ${sdaylast} | tail -n -2 | head -n 1 | awk '{printf "%1d  \n", substr($7,1,1)}'` 
+
+# Now set up the script to get files
+  set directory = `echo $ftpdir | sed s/"YYYY"/$yr[1]/ | sed s/"YY"/$yr[2]/ | sed s/"DDD"/${sday}/ | sed s/"SSSS"/${site}/ | sed s/"GPSW"/${gpsw}/ `
+
+# MOD MAF 170316: See if repro orbits should be downloaded
+  set repro = 'no'
+  set sdir = ''                                                                          #OCh
+  set gpswx = `echo $gpsw | sed "s/^0//"`
+  if( $archive == "sopac" && $cent == "igs" && $pre == "f" && $gpswx >= 730 && $gpswx <= 1459 ) then
+    set repro = 'yes'
+    set reproN = '1'
+  else if( $archive == "cddis" && $cent == "igs" && $pre == "f" && $gpswx >= 658 && $gpswx <= 1831 ) then
+    set repro = 'yes'
+    set reproN = '2'
+  endif
+  if( $repro == 'no' ) then 
+    if (`echo $ftpcmd | awk '{print $1}'` != 'wget') echo "cd $directory" >> tmp.get.$ts #OCh
+  else    # Add repro to directory name
+    if (`echo $ftpcmd | awk '{print $1}'` != 'wget') then                                #OCh
+      echo "cd ${directory}/repro$reproN" >> tmp.get.$ts
+    else                                                                                 #OCh
+      set sdir = "/repro$reproN"                                                              #OCh
+    endif                                                                                #OCh
+     echo "Get repro$reproN orbits and naming as igsf"
+  endif   # End MOD 170316     
+  set log = `date "+get_orbit_${archive}_%y%m%d:%H%M.log"`                               #OCh
+  if ( ${archive} == sopac ) then
+    if ( ${type} == "gfile" ) then 
+#     Set the g-file name to be used if not specified
+#     echo 'cd /pub/gfiles/'${gpsw} >> tmp.get.$ts
+      if ( ${pre} == "f" ) then 
+        if ( ${orbt} == '' ) set orbt = "pgga"
+        if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then                       #####OCh
+          echo "wget $wgetoptions -a $log -O g${orbt}${yr[3]}.${sday}.Z $wgetsite$directory/$sdir/gpgga${yr[3]}.${sday}.Z" >> tmp.get.$ts
+          echo "wget $wgetoptions -a $log -O g${orbt}${yr[3]}.${sday}.Z $wgetsite$directory/$sdir/gpggaa.${sday}.Z" >> tmp.get.$ts
+          echo "wget $wgetoptions -a $log -O g${orbt}${yr[3]}.${sday} $wgetsite$directory/$sdir/gpgga${yr[3]}.${sday}" >> tmp.get.$ts
+          echo "wget $wgetoptions -a $log -O g${orbt}${yr[3]}.${sday} $wgetsite$directory/$sdir/gpggaa.${sday}" >> tmp.get.$ts
+        else                                                                        #####OCh
+          echo $getcmd 'gpgga'${yr[3]}'.'${sday}'.Z  g'${orbt}${yr[3]}'.'${sday}'.Z' >> tmp.get.$ts
+          echo $getcmd 'gpggaa.'${sday}'.Z  g'${orbt}${yr[3]}'.'${sday}'.Z' >> tmp.get.$ts
+          echo $getcmd 'gpgga'${yr[3]}'.'${sday}'  g'${orbt}${yr[3]}'.'${sday} >> tmp.get.$ts
+          echo $getcmd 'gpggaa.'${sday}'  g'${orbt}${yr[3]}'.'${sday} >> tmp.get.$ts
+        endif                                                                       #####OCh
+      endif
+      if ( ${pre} == "r" ) then 
+        if ( ${orbt} == '' ) set orbt = "pgga"
+        if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then                       #####OCh
+          echo "wget $wgetoptions -a $log -O g${orbt}${yr[3]}.${sday}.Z $wgetsite$directory/$sdir/gpgga${yr[3]}.${sday}.rap.Z" >> tmp.get.$ts
+          echo "wget $wgetoptions -a $log -O g${orbt}${yr[3]}.${sday}.Z $wgetsite$directory/$sdir/gpggaa.${sday}.rap.Z"  >> tmp.get.$ts
+          echo "wget $wgetoptions -a $log -O g${orbt}${yr[3]}.${sday} $wgetsite$directory/$sdir/gpgga${yr[3]}.${sday}.rap" >> tmp.get.$ts
+          echo "wget $wgetoptions -a $log -O g${orbt}${yr[3]}.${sday} $wgetsite$directory/$sdir/gpggaa.${sday}.rap"  >> tmp.get.$ts
+        else                                                                        #####OCh
+          echo $getcmd 'gpgga'${yr[3]}'.'${sday}'.rap.Z  g'${orbt}${yr[3]}'.'${sday}'.Z' >> tmp.get.$ts
+          echo $getcmd 'gpggaa.'${sday}'.rap.Z  g'${orbt}${yr[3]}'.'${sday}'.Z' >> tmp.get.$ts
+          echo $getcmd 'gpgga'${yr[3]}'.'${sday}'.rap  g'${orbt}${yr[3]}'.'${sday} >> tmp.get.$ts
+          echo $getcmd 'gpggaa.'${sday}'.rap  g'${orbt}${yr[3]}'.'${sday} >> tmp.get.$ts
+        endif                                                                       #####OCh
+      endif
+      if ( ${pre} == "p" ) then 
+        echo "Predicted pgga g-files not available from SOPAC" 
+        exit
+      endif
+    else if ( ${type} == "sp3"  ) then
+#     echo 'cd /pub/products/'${gpsw} >> tmp.get.$ts
+      if ( $cent != "cod" ) then         
+        if (${cent} == "igu") then   
+#         for ultra-rapids, try to get the last 6-hr file from the previous day and all 4 from this day 
+#         files are 48-hrs long, centered on the designated epoch and hence contain at least 24h in
+#         the past and predictions for the future             
+          if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then                       #####OCh
+            echo "wget $wgetoptions -a $log $wgetsite$directory/$sdir/${cent}${gpswlast}${gpsdlast}_18.sp3.Z" >> tmp.get.$ts
+            echo "wget $wgetoptions -a $log $wgetsite$directory/$sdir/${cent}${gpsw}${gpsd}_00.sp3.Z" >> tmp.get.$ts
+            echo "wget $wgetoptions -a $log $wgetsite$directory/$sdir/${cent}${gpsw}${gpsd}_06.sp3.Z" >> tmp.get.$ts
+            echo "wget $wgetoptions -a $log $wgetsite$directory/$sdir/${cent}${gpsw}${gpsd}_12.sp3.Z" >> tmp.get.$ts
+            echo "wget $wgetoptions -a $log $wgetsite$directory/$sdir/${cent}${gpsw}${gpsd}_18.sp3.Z" >> tmp.get.$ts
+          else                                                                        #####OCh
+            echo  $getcmd ${cent}${gpswlast}${gpsdlast}'_18.sp3.Z'  >> tmp.get.$ts 
+            echo  $getcmd ${cent}${gpsw}${gpsd}'_00.sp3.Z'  >> tmp.get.$ts  
+            echo  $getcmd ${cent}${gpsw}${gpsd}'_06.sp3.Z'  >> tmp.get.$ts  
+            echo  $getcmd ${cent}${gpsw}${gpsd}'_12.sp3.Z'  >> tmp.get.$ts  
+            echo  $getcmd ${cent}${gpsw}${gpsd}'_18.sp3.Z'  >> tmp.get.$ts  
+          endif                                                                       #####OCh
+        else if ( $repro == 'yes' ) then
+#         This case where repro$reproN orbits should be downloaded
+          if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then                       #####OCh
+            echo "wget $wgetoptions -a $log -O ${cent}${gpsw}${gpsd}.sp3.Z $wgetsite$directory/$sdir/ig${reproN}${gpsw}${gpsd}.sp3.Z" >> tmp.get.$ts
+          else                                                                        #####OCh
+            echo  $getcmd ig${reproN}${gpsw}${gpsd}'.sp3.Z' ${cent}${gpsw}${gpsd}'.sp3.Z' >> tmp.get.$ts
+          endif  
+        else   # Use original code
+          if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then                       #####OCh
+            echo "wget $wgetoptions -a $log -O ${cent}${gpsw}${gpsd}.sp3.Z $wgetsite$directory/$sdir/${cent}${gpsw}${gpsd}.sp3.Z" >> tmp.get.$ts
+          else                                                                        #####OCh
+            echo  $getcmd ${cent}${gpsw}${gpsd}'.sp3.Z' ${cent}${gpsw}${gpsd}'.sp3.Z' >> tmp.get.$ts
+          endif                                                                       #####OCh
+        endif
+      else
+        if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then                         #####OCh
+          echo "wget $wgetoptions -a $log -O ${cent}${gpsw}${gpsd}.sp3.Z $wgetsite$directory/$sdir/${cent}${gpsw}${gpsd}.eph.Z" >> tmp.get.$ts
+        else                                                                          #####OCh
+          echo $getcmd ${cent}${gpsw}${gpsd}'.eph.Z' ${cent}${gpsw}${gpsd}'.sp3.Z' >> tmp.get.$ts
+        endif                                                                         #####OCh
+      endif
+    else if ( ${type} == "gfiler" ) then 
+      if ( ${orbt} == '' ) set orbt = "pggr"
+      if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then                           #####OCh
+        echo "wget $wgetoptions -a $log -O g${orbt}${yr[3]}.${sday}.Z $wgetsite$directory/$sdir/gpgga${yr[3]}.${sday}.rap.Z" >> tmp.get.$ts
+        echo "wget $wgetoptions -a $log -O g${orbt}${yr[3]}.${sday}.Z $wgetsite$directory/$sdir/gpgga.${sday}.rap.Z" >> tmp.get.$ts
+        echo "wget $wgetoptions -a $log -O g${orbt}${yr[3]}.${sday} $wgetsite$directory/$sdir/gpgga${yr[3]}.${sday}.rap" >> tmp.get.$ts
+        echo "wget $wgetoptions -a $log -O g${orbt}${yr[3]}.${sday} $wgetsite$directory/$sdir/gpgga.${sday}.rap" >> tmp.get.$ts
+      else                                                                            #####OCh
+        echo $getcmd 'gpgga'${yr[3]}'.'${sday}'.rap.Z  g'${orbt}${yr[3]}'.'${sday}'.Z' >> tmp.get.$ts
+        echo $getcmd 'gpggaa.'${sday}'.rap.Z  g'${orbt}${yr[3]}'.'${sday}'.Z' >> tmp.get.$ts
+        echo $getcmd 'gpgga'${yr[3]}'.'${sday}'.rap  g'${orbt}${yr[3]}'.'${sday} >> tmp.get.$ts
+        echo $getcmd 'gpggaa.'${sday}'.rap  g'${orbt}${yr[3]}'.'${sday} >> tmp.get.$ts
+      endif                                                                           #####OCh
+    else
+      echo "Orbit type requested ${type} is not available form this archive --Stop"
+      exit
+    endif
+  else if ( ${archive} == cddis ) then
+    if ( ${type} == "sp3" || ${type} == "msp3" ) then
+#     echo 'cd /pub/gps/products/'${gpsw} >> tmp.get.$ts
+      if ( $cent != "COD" ) then
+        if (${cent} == "igu") then  
+#         for ultra-rapids, try to get the last 6-hr file from the previous day and all 4 from this day 
+#         files are 48-hrs long, centered on the designated epoch and hence contain at least 24h in
+#         the past and predictions for the future             
+          if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then                       #####OCh
+            echo "wget $wgetoptions -a $log $wgetsite$directory/$sdir/${cent}${gpswlast}${gpsdlast}_18.sp3.Z" >> tmp.get.$ts
+            echo "wget $wgetoptions -a $log $wgetsite$directory/$sdir/${cent}${gpsw}${gpsd}_00.sp3.Z" >> tmp.get.$ts
+            echo "wget $wgetoptions -a $log $wgetsite$directory/$sdir/${cent}${gpsw}${gpsd}_06.sp3.Z" >> tmp.get.$ts
+            echo "wget $wgetoptions -a $log $wgetsite$directory/$sdir/${cent}${gpsw}${gpsd}_12.sp3.Z" >> tmp.get.$ts
+            echo "wget $wgetoptions -a $log $wgetsite$directory/$sdir/${cent}${gpsw}${gpsd}_18.sp3.Z" >> tmp.get.$ts
+          else                                                                        #####OCh
+            echo  $getcmd ${cent}${gpswlast}${gpsdlast}'_18.sp3.Z'  >> tmp.get.$ts 
+            echo  $getcmd ${cent}${gpsw}${gpsd}'_00.sp3.Z'  >> tmp.get.$ts  
+            echo  $getcmd ${cent}${gpsw}${gpsd}'_06.sp3.Z'  >> tmp.get.$ts  
+            echo  $getcmd ${cent}${gpsw}${gpsd}'_12.sp3.Z'  >> tmp.get.$ts  
+            echo  $getcmd ${cent}${gpsw}${gpsd}'_18.sp3.Z'  >> tmp.get.$ts  
+          endif                                                                       #####OCh
+        else if ( $repro == 'yes' ) then
+#         This case where repro$reproN orbits should be downloaded
+          if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then                       #####OCh
+            echo "wget $wgetoptions -a $log -O ${cent}${gpsw}${gpsd}.sp3.Z $wgetsite$directory/$sdir/ig${reproN}${gpsw}${gpsd}.sp3.Z" >> tmp.get.$ts
+          else                                                                        #####OCh
+            echo  $getcmd ig${reproN}${gpsw}${gpsd}'.sp3.Z' ${cent}${gpsw}${gpsd}'.sp3.Z' >> tmp.get.$ts
+          endif                                                                       #####OCh
+        else   # Use original code  
+          if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then                       #####OCh
+            echo "wget $wgetoptions -a $log -O ${cent}${gpsw}${gpsd}.sp3.Z $wgetsite$directory/$sdir/${cent}${gpsw}${gpsd}.sp3.Z" >> tmp.get.$ts
+          else                                                                        #####OCh
+            echo  $getcmd ${cent}${gpsw}${gpsd}'.sp3.Z' ${cent}${gpsw}${gpsd}'.sp3.Z' >> tmp.get.$ts
+          endif                                                                       #####OCh
+        endif
+      else                 
+# MOD RWK 180330: Allow upper-case long-named CODE MGEX files  
+        if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then                         #####OCh
+           if( $cent == 'COD' ) then
+            echo "wget $wgetoptions -a $log -O COD0MGXFIN_${year}${doy}0000_???_???_ORB.SP3.gz"  >> tmp.get.$ts
+           else
+             echo "wget $wgetoptions -a $log -O ${cent}${gpsw}${gpsd}.sp3.Z $wgetsite$directory/$sdir/${cent}${gpsw}${gpsd}.eph.Z" >> tmp.get.$ts
+           endif
+           echo WGET 
+           echo `cat tmp.get.$ts`  
+        else                                                                          #####OCh
+          if( $cent == 'COD' ) then 
+            echo mget 'COD0MGXFIN_'${year}${doy}'0000_???_???_ORB.SP3.gz' >> tmp.get.$ts
+          else
+            echo $getcmd ${cent}${gpsw}${gpsd}'.eph.Z' ${cent}${gpsw}${gpsd}'.sp3.Z' >> tmp.get.$ts
+            echo FTP
+            echo `cat tmp.get.$ts`
+          endif                                                                         #####OCh
+      endif
+    else
+      echo "The orbit type ${type} you requested from ${archive} is not available --Stop"
+      exit
+    endif
+  else if ( ${archive} == igscb ) then
+    if ( ${type} == "sp3" && (${cent} == "igs" || ${cent} == "igr" || ${cent} == "igu")) then
+#      echo 'cd /igscb/product/'${gpsw} >> tmp.get.$ts
+      if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then                           #####OCh
+        echo "wget $wgetoptions -a $log -O ${cent}${gpsw}${gpsd}.sp3.Z $wgetsite$directory/$sdir/${cent}${gpsw}${gpsd}.sp3.Z" >> tmp.get.$ts
+      else                                                                            #####OCh
+        echo $getcmd ${cent}${gpsw}${gpsd}'.sp3.Z' ${cent}${gpsw}${gpsd}'.sp3.Z' >> tmp.get.$ts
+      endif                                                                           #####OCh
+    else 
+      if ( ${type} != "sp3" ) then
+        echo "The orbit type ${type} you requested from ${archive} is not available --Stop"
+      else
+        echo "The IGS center ${cent} orbit product you requested from ${archive} is not available --Stop"
+      endif
+      exit
+    endif
+  else if ( ${archive} == mit ) then      
+   ...
+
+# Rename the long-named sp3 file
+if( $cent == 'COD' ) then 
+  sh_rename_sp3 -f COD0MGXFIN_${year}${doy}0000_???_???_ORB.SP3.gz -r 
+endif 
+
+                                
+# Now uncompress the .sp3 files
+  if (`echo $ftpcmd | awk '{print $1}'` == 'wget') then #OCh
+    grep '^ *=>' $log | grep -v .listing | awk '{print "gunzip -f",substr($NF,2,length($NF)-2)}' >! tmp.unc.$ts #OCh
+  else
+    grep '^get ' tmp.get.$ts | awk '{print "gunzip -f ",$NF}' >! tmp.unc.$ts
+    # Added by MAF (2017-08-10, MIT) to edit any "PCV:NONE" and/or "OL/AL:NONE" fields
+    if ( $repro == 'yes' ) then
+      if ( $reproN == 2 ) then
+        echo -n "sed '/^\/\* /{s/PCV:NONE /PCV:IGS08/; s/OL\/AL:NONE   /OL\/AL:FES2004/;}' " >> tmp.unc.$ts
+        grep '^get ' tmp.get.$ts | awk '{printf "%s >! tmp.%s && mv -f tmp.%s %s\n",$NF,$NF,$NF,$NF}' | sed 's/\.sp3\.Z/\.sp3/g' >> tmp.unc.$ts
+      endif
+    endif
+  endif
+  csh tmp.unc.$ts >>& $log 
+  if ( ${makeg} == yes ) then
+# Make links to necessary tables files to run sh_sp3fit..
+##TEMPORARY: skip this to keep local svnav.dat
+     links.arc J2000 ${yr[1]} ${eop_ser} >& /dev/null
+    if ( $eop_pth != '' ) then
+      \rm pole. ut1.
+      ln -s ${eop_pth}/pole.${eop_ser} pole.
+      ln -s ${eop_pth}/ut1.${eop_ser} ut1.
+    else
+       set eop_pth = ~/gg/tables
+    endif
+                              

@@ -1,0 +1,99 @@
+#!/bin/csh -f              
+#
+#doc Merge part-day RINEX files into single-day (0-24 UTC)
+#doc
+#
+######################## INSTRUCTIONS #############################
+if ( $#argv == 0 ) then
+  echo "==================================================================================================="
+  echo "  Merge part-day RINEX files into single-day (0-24 UTC) "
+  echo "  "
+  echo "  USAGE :    sh_merge_rinex  -site <station> -year <yr> -days <doy> -int <sampling> -obs <max_obs> "
+  echo " "
+  echo "      Required: "
+  echo "  "          
+  echo "          <station > is the 4-char id of the station to be merged "
+  echo " "
+  echo "          <yr> is the 4 char year of observations"         
+  echo "  "
+  echo "          <doy> are the 3 char days of the year of observations "         
+  echo "  "
+  echo "          All sessions (1,2,..) on a day will be merged to output session 0"         
+  echo " "
+  echo "      Optional: "
+  echo " "
+  echo "          <sampling> is the output sampling interval in seconds [default 30] "
+  echo " "
+  echo "          <max_obs> is the maximum number of observables to write (L1, L2, P1, P2, C1, D1) "
+  echo "                    [default is to use all ]"
+  echo "  "
+  echo "  Example :   sh_merge_rinex -site koke -year 1996 -days 016 017 "   
+  echo " "
+  echo " "
+  echo "======================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+set year = ""
+set yr = ""
+set days = " "     
+set sampling = 30
+# merge_rinex will use the value on the input RINEX if max_obs = 0
+set max_obs = 0
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+       breaksw
+       case -s:
+       case -site:
+                set site = $input[2]
+		breaksw 
+       case -y*:
+         set year = $input[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+         set yr = `sh_year -year $year`
+       breaksw 
+       case -d:
+	    case -days:
+                set days    =   ( $days $input[2] )
+                shift input; shift input
+                while ( $#input > 0 &&   `echo  $input[1]  | cut -c1` != "-" )
+                        set inarg =  $input[1]
+                        if ( `echo  $inarg | cut -c1` != "-" ) then
+                                set days   =   ( $days $inarg )
+				                 if ( $#input == 1 ) goto alldone
+                                shift input
+                        endif
+                end
+       breaksw 
+#       case -i:
+#       case -int:
+#                set sampling = $input[2]
+#                breaksw
+       if ( $#input == 0 ) goto alldone
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ###################### 
+foreach i (`echo $days` )  
+    set outfile = $site$i"0".${yr[2]}"o"  
+    if ( -e $outfile) then
+      echo 'Output file ' $outfile 'already exists, do you want to overwrite it? (y/n)'
+      set ans = $<
+      if( $ans == 'y' ) \rm $outfile
+      if( $ans == 'n' ) exit
+    endif
+    ls -1 $site$i?.${yr[2]}"o"  >! tmp.inlist
+    echo ' '
+    echo 'Merging  RINEX files: ' `cat tmp.inlist`   
+    echo 'Merged file:  ' $outfile    
+#   run gamit/utils/merge_rinex  
+# RWK 170728
+#     merge_rinex tmp.inlist $i 0 $sampling $max_obs  
+    merge_rinex tmp.inlist $i 0 
+
+end
+\rm tmp.inlist
+

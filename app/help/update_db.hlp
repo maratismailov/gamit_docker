@@ -1,0 +1,27 @@
+UDATE_DB: VLBI program to update Data Base from KalObs file
+  
+   Proper runstring is: 
+  
+ % update_db <KalObs> <code> <History file>
+  
+  where <KalObs> is the name of the KalObs file from which the
+  information for updating the database is to be taken (including 
+  the database name), and <code> is some combination of the letters 
+  
+         I (update ionosphere)
+         G (update number of group ambiguities) 
+         P (update number of phase ambiguities) 
+         E (Editing of data--Solvk edits become db interactive edits)
+
+  and history file is a set of text lines to be added to history.
+  
+  The database name and version are taken from the KalObs file. 
+  For example,
+  
+ CI> update_db k84sep24x.kal gi 
+  
+  tells the program to update the data base !84SEP24X (from which the 
+  KalObs file K84SEP24X.KAL was read) for the ionospheric values and
+  the number of group delay ambiguities.
+  
+ 

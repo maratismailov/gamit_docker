@@ -1,0 +1,31 @@
+# Generic Makefile for kf/ctogobs (alias autcln) - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King January 20, 2015
+
+# NOTE: autcln and ctogobs are the same program.  The internally
+#       determines which is running and reads it runstring appropriately. 
+ 
+#LABELS: ctogobs_lib:NONE:ctogobs_lib:NONE
+#LABELS: autcln:ctogobs:NONE:autcln  
+#LABELS: ctogobs:ctogobs:NONE:ctogobs
+#LABELS: dd_sd:dd_sd:NONE:dd_sd
+#LABELS: sd_ow:sd_ow:NONE:sd_ow
+#LABELS: diff_igs:diff_igs:NONE:diff_igs
+#LABELS: merge_igs_clk:merge_igs_clk:NONE:merge_igs_clk
+    
+#SHARELIB: .:ctogobs_lib
+#SHARELIB: ../Ghandlers:cf_hndl_lib
+#SHARELIB: ../Khandlers:KalObs_hndl_lib
+#SHARELIB: ../gen_util:gen_util_lib
+#SHARELIB: ../../libraries/matrix:kinv_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+
+#OBJ_ctogobs_lib  ctog_utils   ctog_utm    ctog_ut2     upd_cf_sd     flag_np
+#OBJ_ctogobs_lib  trim_oneways ctogobs_dd  ctogobs_dd2  make_sd_file  prescan_clk
+#OBJ_ctogobs_lib  set_pre_edit chk_scan_ed init_scan_ed rd_ctog_cmds  prc_ctog_cmd
+#OBJ_ctogobs_lib  set_dd_ret   wr_dd_scan  rep_params   ctogobs_scan  set_scan_lis
+#OBJ_ctogobs_lib  flag_gaps    remove_fb   push_ddbf    report_bf     find_dd_slip
+#OBJ_ctogobs_lib  get_caprog   read_dfile  save_toofew  force_lc_pol  gen_gobs   
+#OBJ_ctogobs_lib  comp_dphs    proc_phsfin ctog_ow      pf_ow_sf      est_bps
+#OBJ_ctogobs_lib  flat_dd      wr_igs_clk  align_phs    fit_igs_clk   zero_dd_wl
+#OBJ_ctogobs_lib  est_wlfull   est_dd_wl   set_freqs    comp_ion      fit_glonass_clks
+#OBJ_ctogobs_lib  prescan_msj  verify_scan_dd           trim_shortseg

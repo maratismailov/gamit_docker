@@ -1,0 +1,12 @@
+plot(fe,real(gpfs),'r',fe,imag(gpfs),'m',f,gpf,'k');
+irkm 12313M001   (clock=H-maser)
+koug 97301M402   (clock=internal crystal)
+lpal 81701M001   (clock=internal crystal)
+mad2 13407S012   (clock=H-maser)
+naur 50701M001   (clock=internal crystal)
+ohi3 66008M006   (clock=H-maser)
+roth 66007M003   (clock=EXTERNAL [log does not say which kind])
+thu3 43001M002   (clock=Rubidium)
+tid1 50103M108   (clock=H-maser)
+xmis 50183M001   (clock=internal crystal)
+yar3 50107M008   (clock=internal crystal)

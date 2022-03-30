@@ -1,0 +1,14 @@
+KAMBI: VLBI program to resolve group delay ambiguities
+
+ KAMBI: Program to resolve ambiquities interactivly
+
+ Runstring:
+ kambi <KalObs> <input file> <type>
+
+ where <KalObs> is the name of the kalobs file
+       <input file> is the name of the list of inputs with format
+           Site 1 Site 2  Epoch (yy,mm,dd,hr,min) residual (ps)
+           The residual is converted to the closest number of ambiquities
+       <type>   either G for group delay (default) or P for phase delays.
+
+

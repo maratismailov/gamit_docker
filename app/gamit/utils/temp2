@@ -1,0 +1,165 @@
+c-----------------------------------------------------------------------
+      Subroutine sort_svn( n,svn,prn,antbody,start,stop )
+
+*     Sort the arrays by SVN and time 
+      
+      implicit none
+                 
+      integer*4 maxnl
+      parameter(maxnl= 30000) 
+
+
+      integer*4 n,i,j,k
+     .        , svn(maxnl),prn(maxnl),start(5,maxnl),stop(5,maxnl)
+     .        , svnbuf1,svnbuf2,prnbuf1,prnbuf2
+     .        , startbuf1(5),stopbuf1(5),startbuf2(5),stopbuf2(5)              
+     .        , istrt,iend,svnlast
+      character*20 antbody(maxnl),antbuf1,antbuf2
+
+c     Sort by SVN
+               
+      do i = 1,n-1 
+        do j = 1,n-i
+           svnbuf1 = svn(j)
+           svnbuf2 = svn(j+1)  
+           prnbuf1 = prn(j)
+           prnbuf2 = prn(j+1)                    
+           antbuf1 = antbody(j)
+           antbuf2 = antbody(j+1)
+           do k=1,5
+             startbuf1(k) = start(k,j)      
+             startbuf2(k) = start(k,j+1)
+             stopbuf1(k) = stop(k,j)      
+             stopbuf2(k) = stop(k,j+1)   
+           enddo                                   
+           if( svnbuf1.le.svnbuf2 ) then  
+             svn(j) = svnbuf1
+             svn(j+1) = svnbuf2  
+             prn(j) = prnbuf1
+             prn(j+1) = prnbuf2  
+             antbody(j) = antbuf1
+             antbody(j+1) = antbuf2
+             do k=1,5
+               start(k,j)   = startbuf1(k)
+               start(k,j+1) = startbuf2(k)
+               stop(k,j)   = stopbuf1(k)
+               stop(k,j+1) = stopbuf2(k)
+             enddo
+           else    
+             svn(j) = svnbuf2
+             svn(j+1) = svnbuf1  
+             prn(j) = prnbuf2
+             prn(j+1) = prnbuf1    
+             antbody(j) = antbuf2
+             antbody(j+1) = antbuf1
+             do k=1,5
+               start(k,j)   = startbuf2(k)
+               start(k,j+1) = startbuf1(k)
+               stop(k,j)   = stopbuf2(k)
+               stop(k,j+1) = stopbuf1(k)
+             enddo                   
+           endif 
+         enddo
+      enddo      
+                 
+      print *,'SVN-sorted values '
+      do i=1,n
+        write(*,*) 'i svn prn start ',i,svn(i),prn(i),(start(j,i),j=1,5)
+      enddo
+    
+* Now sort by time within each SVN
+
+      istrt = 1
+      iend = n         
+      svnlast = svn(1)
+      do i=2,n     
+        if( svn(i).ne.svnlast ) then
+          iend = i - 1
+          call sort_times(istrt,iend,svn,prn,antbody,start,stop)  
+          istrt=i
+          svnlast = svn(i)
+        endif
+      enddo
+
+      return
+      end
+c------------------------------------------------------------------
+
+      Subroutine sort_times(istart,iend,svn,prn,antbody,start,stop)
+
+c     Sort an SVN subgroup of the array by start time of the entry
+                                                                        
+      implicit none
+                                 
+      integer*4 maxnl
+      parameter(maxnl=30000)
+
+      integer*4 istart,iend,svn(maxnl),prn(maxnl)
+     .        , start(5,maxnl),stop(5,maxnl)
+     .        , startbuf1(5),startbuf2(5),stopbuf1(5),stopbuf2(5)
+     .        , svnbuf1,svnbuf2,prnbuf1,prnbuf2,i,j,k
+      character*20 antbody(maxnl),antbuf1,antbuf2 
+
+c     Function
+      integer*8 itimdif
+                 
+      print *,'svn istart iend ',svn(istart),istart,iend
+      do i=istart,iend
+        write(*,*) (start(j,i),j=1,5)
+      enddo
+      do i = istart,iend-1        
+        print *,'DEBUG i ',i
+        do j = istart,istart+(iend-i) 
+           print *,'DEBUG j ',j
+           svnbuf1 = svn(j)
+           svnbuf2 = svn(j+1)  
+           prnbuf1 = prn(j)
+           prnbuf2 = prn(j+1)                    
+           antbuf1 = antbody(j)
+           antbuf2 = antbody(j+1)
+           do k=1,5
+             startbuf1(k) = start(k,j)      
+             startbuf2(k) = start(k,j+1)
+             stopbuf1(k) = stop(k,j)      
+             stopbuf2(k) = stop(k,j+1)   
+           enddo  
+           print *,'DEBUG i j ',i,j                                 
+ccc            if( svnbuf1.le.svnbuf2 ) then  
+           print *,'startbuf1 startbuf2 '
+     .          ,(startbuf1(k),k=1,5),(startbuf2(k),k=1,5)
+           if( itimdif(startbuf1,startbuf2).gt.0 ) then
+             print *,'2 > 1 no swap '
+             svn(j) = svnbuf1
+             svn(j+1) = svnbuf2  
+             prn(j) = prnbuf1
+             prn(j+1) = prnbuf2  
+             antbody(j) = antbuf1
+             antbody(j+1) = antbuf2
+             do k=1,5
+               start(k,j)   = startbuf1(k)
+               start(k,j+1) = startbuf2(k)
+               stop(k,j)   = stopbuf1(k)
+               stop(k,j+1) = stopbuf2(k)
+             enddo
+           else                      
+             print *,'2 < 1 swap '
+             svn(j) = svnbuf2
+             svn(j+1) = svnbuf1  
+             prn(j) = prnbuf2
+             prn(j+1) = prnbuf1    
+             antbody(j) = antbuf2
+             antbody(j+1) = antbuf1
+             do k=1,5
+               start(k,j)   = startbuf2(k)
+               start(k,j+1) = startbuf1(k)
+               stop(k,j)   = stopbuf2(k)
+               stop(k,j+1) = stopbuf1(k)
+             enddo                   
+           endif 
+         enddo
+      enddo    
+
+      return
+      end  
+
+

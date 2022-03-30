@@ -1,0 +1,103 @@
+# YYYY = 4 Char year, YY = 2 Char year,  DDD = doy, GPSW = GPS Week, SSSS = 4 Char Site ID
+# SOPAC ftp site
+# sopac address            lox.ucsd.edu
+ sopac address             garner.ucsd.edu
+ sopac login               anonymous
+ sopac password
+ sopac ftp command         ftp -inv
+ sopac rinex directory     /pub/rinex/YYYY/DDD 
+ sopac navfile directory   /pub/rinex/YYYY/DDD
+ sopac navalt directory    /pub/nav/YYYY/DDD
+ sopac gfile directory     /pub/combinations/GPSW
+ sopac gfiler directory    /pub/products/GPSW
+ sopac sp3 directory       /pub/products/GPSW
+ sopac hfiles directory    /pub/hfiles/YYYY/DDD
+ sopac hfilesg directory   /pub/global/YYYY/DDD
+ sopac hfilesr directory   /pub/regional/YYYY/DDD
+ sopac gamit directory     /pub/gamit/setup
+# CDDIS ftp site
+ cddis address             cddisa.gsfc.nasa.gov
+ cddis login               anonymous
+ cddis password
+ cddis ftp command         ftp -inv
+ cddis rinex directory     /pub/gps/gpsdata/YYDDD/YYd
+ cddis navfile directory   /pub/gps/gpsdata/brdc/YYYY
+ cddis navalt directory    /pub/gps/gpsdata/YYDDD/YYn
+ cddis sp3 directory       /pub/gps/products/GPSW
+# UNAVCO ftp site
+ unavco address            data-out.unavco.org      
+ unavco login              anonymous
+ unavco password
+ unavco ftp command        ftp -inv
+ unavco rinex directory    /pub/rinex/YYYY/DDD
+# UNAVCO PBO ftp site
+ unavpbo address            data-out.unavco.org      
+ unavpbo login              anonymous
+ unavpbo password
+ unavpbo ftp command        ftp -inv
+ unavpbo rinex directory    /pub/PBO_rinex/YYYY/DDD
+# UNAVCO1 ftp site
+ unavcol1 address          data-out.unavco.org     
+ unavcol1 login            anonymous
+ unavcol1 password
+ unavcol1 ftp command      ftp -inv
+ unavcol1 rinex directory  /pub/l1rinex/YYYY/DDD
+# CORS ftp site
+ cors address              www.ngs.noaa.gov
+ cors login                anonymous
+ cors password
+ cors ftp command          ftp -inv
+ cors rinex directory      /cors/rinex/YYYY/DDD/SSSS
+# IGS CB ftp site
+ igscb address             igscb.jpl.nasa.gov
+ igscb login               anonymous
+ igscb password
+ igscb ftp command         ftp -inv
+ igscb sp3 directory       /igscb/product/GPSW
+# USNO ftp site
+ usno address              maia.usno.navy.mil
+ usno login                anonymous
+ usno password
+ usno ftp command          ftp -inv
+ usno eop directory        ser7
+# BKG EUREF ftp site
+ bkg address               igs.ifag.de
+ bkg login                 anonymous
+ bkg password
+ bkg ftp command           ftp -inv
+ bkg rinex directory       EUREF/obs/YYYY/DDD
+# GEODAF ftp site (180 days)
+ geodaf address            geo.mt.asi.it
+ geodaf login              anonymous
+ geodaf password
+ geodaf ftp command        ftp -inv
+ geodaf rinex directory    GEOD/GPSD/RAW/YYYY/DDD
+# KREIZ
+ kreiz address             kreiz.unice.fr
+ kreiz login               anonymous
+ kreiz password          
+ kreiz ftp command         ftp -inv    
+ kreiz rinex directory     /pub/Regal
+# IGN data center                       
+ ign address               lareg.ensg.ign.fr
+ ign login                 anonymous
+ ign password          
+ ign ftp command           ftp -inv 
+ ign rinex directory       /pub/rgp/YYYY/DDD
+# Password protected ncftp example
+ example address           example.ftp.site
+ example login             a_user
+ example password          my_password
+ example ftp command       ncftp -u login -p password                       
+ example rinex directory   /pub/Regal/rinex
+ example sp3   directory   /pub/Regal/sp3
+ example gfile directory   /pub/Regal/gfile
+ example hfile directory   /pub/Regal/hfile
+ example eop directory     /pub/Regal/eop
+ example navfile directory /pub/Regal/navfile
+# ICC geofons i g data center                       
+ icc address               ftp.icc.es
+ icc login                 anonymous
+ icc password          
+ icc ftp command           ftp -inv
+ icc rinex directory       /geofons/pub/data/gps_stations/rinex24h

@@ -1,0 +1,684 @@
+#!/bin/bash
+
+version='2019/02/20'
+#2345678901234567890123456789012345678901234567890123456789012345678901234567890
+# Edit history (only recorded from 2015/12/02 onwards):
+#
+# 2019/02/20: MAF added comments to output rename file (.xps).
+# 2019/02/19: MAF added output rename file (.xps) to exclude points that fail
+#             any maximum sigma criteria.
+# 2016/11/29: MAF corrected allowance of tsfit command file with no "max_sigma"
+#             terms to be read.
+# 2016/08/19: MAF added "-X" option to "less" to allow help contents to remain
+#             on screen when exiting.
+# 2015/12/03: MAF added functionality to implement -n option (n-sigma test).
+# 2015/12/02: MAF corrected parsing of options using 'echo "$@"' to 'echo "$*"'
+#             to avoid echo erroneously evaluating elements of $@ as options
+#             (e.g. "-e", "-n").
+#
+#2345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+
+# Redirect standard error to /dev/null
+#exec 2>/dev/null
+
+
+flags='dfmnopstx'  # Command line option flags
+
+
+# Program defaults
+dir='.'                          # Write output files to current working directory
+models=( wh )                    # Noise models to run (default white noise only)
+tsfit_cmd=()                     # tsfit command file (do not use tsfit command file if empty array)
+rename_files=()                  # rename-/eq-files to be used to create input to "OffsetFile" (none if empty array)
+years0=( 2 )                     # Default minimum time series length (years) for which to estimate annual plus semi-annual periodic terms
+annual=0                         # Do not estimate annual cycles for time series longer than <arg> years
+semiann=0                        # Do not estimate semi-annual cycles for time series longer than <arg> years
+max_sigma0=( 20 20 50 )          # Default maximum sigma limits (applied if -s option given with no arguments)
+max_sigma=()                     # Maximum sigma limits (no limits applied if empty array)
+nsigma0=( 3 3 3 )                # Default n-sigma limits (applied if -n option given with no arguments)
+nsigma=()                        # n-sigma limits (no limits applied if empty array)
+remove=0                         # Do not remove CATS control files
+wgs84=( 6378137 298.257223563 )  # WGS84 major radius (m) and inverse flattening
+minnum=70                        # Minimum number of observations for non-white noise to be included
+
+
+# Null input test
+if [ $# -eq 0 ]; then
+
+  less -X << END && exit 1
+Usage displayed using "less". Press up and down arrows to scroll or "q" to quit.
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+  Program:     $(basename $0)
+  Written by:  Michael A Floyd (2014/03/11, MIT)
+  Last edited: Michael A Floyd ($version, MIT)
+
+  N.B. Requires "CATS". See Williams (2008) and https://noc.ac.uk/people/sdwil.
+       CATS is not capable of accounting for functions such as changes in
+       velocity and logarithmic or exponential decays. So exercise caution when
+       working with time series that exhibit such behaviour.
+
+       Williams, S. D. P. (2008), CATS: GPS coordinate time series analysis
+       software, GPS Solut., 12, 147-153, doi:10.1007/s10291-007-0086-4.
+
+       This is a sister script to sh_hector, which does the same using "Hector".
+
+  Usage: $(basename $0) -f <file(s)> -m <model(s)> -t <tsfit command file(s)>
+                                                                [global options]
+           or
+
+         $(basename $0) -f <file(s)> -m <model(s)> [options] [global options]
+
+    -f <file(s)>   : Input pos-format files, e.g. from tssum.
+
+    -m <model(s)>  : Run CATS using one or more noise models. Available noise
+                     models are: pl (power-law); gm (First Order Gauss-Markov);
+                     wh[ite]; bp (band-pass); vw (variable white); gg
+                     (generalized Gauss-Markov); sw (step-variable white). See
+                     CATS manual for further information. Noise models may be
+                     combined using a plus character ("+"), e.g.
+                     "-m pl: wh+pl:k-1" would run CATS twice, once using only a
+                     power-law noise model and once using a combined white-plus-
+                     flicker noise model. If this option is not given, or given
+                     without arguments, the default is to run a white noise only
+                     model.
+
+    -t <tsfit cmd> : Use a tsfit command file(s) to set options for sh_hector,
+                     e.g. read "eq_file" commands for the -o option here,
+                     "periodic" commands for the -p option and "max_sigma"
+                     commands for the -s option.
+
+  Options (will be overridden by options found in tsfit command file if given):
+
+    -n <n-sigma>        : Apply n-sigma residual limit to identify and remove
+                          outliers before estimating time-correlated noise
+                          characteristics. [N.B. Not yet implemented.]
+
+    -o <offset file(s)> : GAMIT/GLOBK-style eq-file(s) containing renames and
+                          earthquake definitions, used to create a file for
+                          inclusion with CATS input file header information.
+
+    -p <n>              : Estimate periodic (annual plus semi-annual) terms
+                          for time series longer than <n> years [default: ${years0[0]} if
+                          given with no arguments or reading options from a
+                          tsfit command file including "periodic" commands (see
+                          -t option and tsfit help)].
+
+    -s <max. sigma>     : Apply maximum sigma limit (mm) to identify and remove
+                          outliers before estimating time-correlated noise 
+                          characteristics [default: ${max_sigma0[0]} mm (E), ${max_sigma0[1]} mm (N),
+                          ${max_sigma0[2]} mm (U)]. <max. sigma> may be 1, 2 or 3 arguments:
+                          if 1 argument is given, apply limit to all three
+                          components; if 2 arguments are given, apply first
+                          limit to horizontal components and second to vertical
+                          component; if 3 arguments are given, apply limits to
+                          east, north and up components respectively.
+
+  Global options:
+
+    -d          : Directory in which to write output files (default current
+                  working directory).
+
+    -x          : Delete CATS control and standard output files, leaving only
+                  the vel-file(s), extended apr-file(s) and "mar_neu" command
+                  file(s).
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+END
+#       working with time series that exhibit such behaviour or, alternatively,
+#       use tsfit to fit the time series and use the output residuals (".res")
+#       files with the -f option here to do the noise analysis.
+
+fi  # END: Null input test
+
+
+# Test for CATS executables required by this script
+which cats &> /dev/null
+if [ $? -ne 0 ]; then  # executable not available
+  cat << END && exit 1
+! Error ! CATS executable required but cannot be found on this system.
+Exiting...
+END
+fi
+
+
+# Print version
+echo "$(basename $0) version $version"
+
+
+# Parse command line arguments
+while [ $# -gt 0 ]; do
+
+  case $1 in
+
+    -d )  # Directory in which to write output files
+      dir=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-d *//') )
+      if [ ${#dir[@]} -gt 1 ]; then
+        cat << END
+! Warning ! Too many arguments (${#dir[@]}) given to -d option.
+            Using first argument only (${dir[0]})."
+END
+      fi
+      ;;
+
+    -f )  # Input pos-files
+      files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-f *//') )
+      pos_files=( $(echo ${files[@]} | tr ' ' '\n' | grep '\.pos$' ) )
+      res_files=( $(echo ${files[@]} | tr ' ' '\n' | grep '\.res$' ) )
+      ;;
+
+    -m )  # Noise models
+      models=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-m *//') )
+      if [ ${#models[@]} -eq 0 ]; then  # No argument(s) given to -m option so use default white noise only model
+        models=( wh )
+        echo '! Warning ! No argument(s) given to -m option. Using default white noise model.'
+      fi
+      ;;
+
+    -n )  # n-sigma limits (not yet implemented)
+      n_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-n *//') )
+      if [ ${#n_args[@]} -eq 0 ]; then  # No argument(s) given to -n option so use default values (${nsigma0[@]})
+        nsigma=( ${nsigma0[@]} )
+        echo '! Warning ! No argument(s) given to -n option. Using default values.'
+      elif [ ${#n_args[@]} -eq 1 ]; then  # Apply limit to all three components
+        nsigma=( ${n_args[0]} ${n_args[0]} ${n_args[0]} )
+      elif [ ${#n_args[@]} -eq 2 ]; then  # Apply first limit to horizontal components and second to vertical
+        nsigma=( ${n_args[0]} ${n_args[0]} ${n_args[1]} )
+      elif [ ${#n_args[@]} -eq 3 ]; then # Apply limits to east, north and up components respectively
+        nsigma=( ${n_args[0]} ${n_args[1]} ${n_args[2]} )
+      else
+        nsigma=( ${nsigma0[@]} )
+        cat << END
+! Warning ! Too many arguments (${#n_args[@]}) given to -n option.
+            Must supply 1, 2 or 3 arguments. Proceeding using default values.
+END
+      fi
+      ;;
+
+    -o )  # Input rename-/eq-files
+      rename_files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-o *//') )
+      if [ ${#rename_files[@]} -eq 0 ]; then  # No arguments given to -o option
+        echo '! Warning ! No arguments given to -o option. No offsets to be used.'
+      fi
+      ;;
+
+    -p )  # Estimate periodic (annual plus semi-annual) terms for time series longer than <arg> years
+      years=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-p *//') )
+      if [ ${#years[@]} -eq 0 ]; then  # No argument given to -p option so use default value (${years0[0]})
+        years=( ${years0[0]} )
+        echo '! Warning ! No argument given to -p option. Using default value.'
+      elif [ ${#years[@]} -gt 1 ]; then  # Too many arguments
+        cat << END
+! Warning ! Too many arguments (${#years[@]}) given to -p option.
+            Proceeding using first argument only (${years[0]}).
+END
+      fi
+      annual="${years[0]}"   # Estimate annual cycles for time series longer than ${years[0]} years
+      semiann="${years[0]}"  # Estimate semi-annual cycles for time series longer than ${years[0]} years
+      ;;
+
+    -s )  # Maximum sigma limits
+      s_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-s *//') )
+      if [ ${#s_args[@]} -eq 0 ]; then  # No argument(s) given to -s option so use default values (${max_sigma0[@]})
+        max_sigma=( ${max_sigma0[@]} )
+        echo '! Warning ! No argument(s) given to -s option. Using default values.'
+      elif [ ${#s_args[@]} -eq 1 ]; then  # Apply limit to all three components
+        max_sigma=( ${s_args[0]} ${s_args[0]} ${s_args[0]} )  # mm
+      elif [ ${#s_args[@]} -eq 2 ]; then  # Apply first limit to horizontal components and second to vertical
+        max_sigma=( ${s_args[0]} ${s_args[0]} ${s_args[1]} )  # mm
+      elif [ ${#s_args[@]} -eq 3 ]; then # Apply limits to east, north and up components respectively
+        max_sigma=( ${s_args[0]} ${s_args[1]} ${s_args[2]} )  # mm
+      else
+        max_sigma=( ${max_sigma0[@]} )
+        cat << END
+! Warning ! Too many arguments (${#s_args[@]}) given to -s option.
+            Must supply 1, 2 or 3 arguments. Proceeding using default values.
+END
+      fi
+      ;;
+
+    -t )  # tsfit command file
+      tsfit_cmd=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-t *//') )
+      if [ ${#tsfit_cmd[@]} -eq 0 ]; then  # No argument given
+        echo '! Warning ! No argument given to -t option. No tsfit command file to be used.'
+      elif [ ${#tsfit_cmd[@]} -gt 1 ]; then
+        cat << END
+! Warning ! Multiple arguments (${#tsfit_cmd[@]}) given to -t option.
+            Proceeding using first argument for only tsfit command file.
+END
+      fi
+      ;;
+
+    -x )  # Remove CATS control files
+      remove=1
+      ;;
+
+  esac
+
+  shift
+
+done
+
+
+# Test if tsfit command file given
+if [ ${#tsfit_cmd[@]} -gt 0 ]; then
+
+  # Test if other input options were given
+  if [ ${#rename_files[@]} -gt 0 -o ${#max_sigma[@]} -gt 0 -o ${#nsigma[@]} -gt 0 -o $annual -gt 0 ]; then
+    echo '! Warning ! tsfit command file given with -t option. Ignoring non-global options'
+  fi  # END: Test if other input options were given
+
+  # Read tsfit command file(s) for rename-/eq-files
+  rename_files=( $(grep -h -i '^ *eq_file ' ${tsfit_cmd[0]} | awk '{print $2}') )
+
+  # Read tsfit command file(s) for periodic term estimation
+  periods=( $(grep -h -i '^ *periodic ' ${tsfit_cmd[0]} | awk '{print $2}' | sort -u) )
+  if [ ${#periods[@]} -eq 0 ]; then  # No periodic terms to be estimated
+    annual=0
+    semiann=0
+  else
+    # Test if ~ annual period is set to be estimated
+    if [ -n "$(echo "${periods[@]}" | tr ' ' '\n' | grep '365')" ]; then  # Annual periodic term set to be estimated
+      annual=2
+    else
+      annual=0
+    fi
+    # Test if ~ semi-annual period is set to be estimated
+    if [ -n "$(echo "${periods[@]}" | tr ' ' '\n' | grep '182')" ]; then  # Semi-annual periodic term set to be estimated
+      semiann=2
+    else
+      semiann=0
+    fi
+  fi
+
+  # Read tsfit command file(s) for maximum sigma limits
+  max_sigma=( $(grep -h -i '^ *max_sigma ' ${tsfit_cmd[0]} | awk '{printf "%.1f %.1f %.1f",$3*1e3,$2*1e3,$4*1e3}') )
+  if [ ${#max_sigma[@]} -ne 0 -a ${#max_sigma[@]} -ne 3 ]; then
+    cat << END && exit 1
+! Error ! Incorrect number of arguments (${#max_sigma[@]}) for maximum sigma
+          limits read from tsfit command file(s). Check "max_sigma" option in
+          $(echo ${tsfit_cmd[0]} | tr ' ' ',').
+Exiting...
+END
+  fi
+
+  # Read tsfit command file(s) for for n-sigma limits
+  #nsigma=( $(grep -h -i '^ *nsigma ' ${tsfit_cmd[0]} | awk '{print $2,$2,$2}') )
+
+  echo "Options set from tsfit command file ${tsfit_cmd[0]}..."
+
+fi  # END: Test if tsfit command file given
+
+
+# Echo input parameters
+if [ ${#max_sigma[@]} -eq 3 ]; then  # Echo maximum sigma limits
+  echo "Maximum sigma limits set to ${max_sigma[0]} mm (E), ${max_sigma[1]} mm (N) and ${max_sigma[2]} mm (U)."
+fi
+if [ ${#nsigma[@]} -eq 3 ]; then  # Echo n-sigma residual limits
+  echo "n-sigma residual limits set to ${nsigma[0]} (E), ${nsigma[1]} (N) and ${nsigma[2]} (U)."
+fi
+if [ $annual -gt 0 -a $semiann -gt 0 -a $annual -eq $semiann ]; then  # Echo periodic term estimation
+  echo "Seasonal (annual plus semi-annual) cycles to be estimated for time series longer than $annual years."
+elif [ $annual -gt 0 ]; then
+  echo "Annual cycles to be estimates for time series longer than $annual years."
+elif [ $semiann -gt 0 ]; then
+  echo "Semi-annual cycles to be estimates for time series longer than $annual years."
+fi
+
+
+# Make directory in which to run CATS and write header information to $vel_file and $stats_file
+prog="$(echo $0 | awk -v FS='/' '{print $NF}')"
+user="$(finger $(whoami) | awk -v FS=':' 'NR == 1 {print $NF}')"
+date="$(date +'%Y-%m-%d')"
+xps_file="${dir[0]}/cats_wls.xps"
+if [ -f "$xps_file.tmp" ]; then
+  rm -f $xps_file.tmp
+fi
+for model in ${models[@]}; do
+
+  model_dir="$(echo $model | sed 's/pl:k-1/fl/g; s/pl:k-2/rw/g; s/://g' | tr '+' '_')"
+  mkdir -p ${dir[0]}/$model_dir/
+
+  cat << END >| ${dir[0]}/$model_dir.vel
+* Velocity field created with $prog by$user on $date
+*  Long         Lat        Evel    Nvel    dEv     dNv    E +-    N +-    Rne      Hvel     dHv    H +-  Site
+*  deg          deg       mm/yr   mm/yr   mm/yr   mm/yr   mm/yr   mm/yr            mm/yr   mm/yr   mm/yr
+END
+
+  echo "# Extended apr-file created with $prog by$user on $date" >| ${dir[0]}/$model_dir.apr
+
+  echo "# Created with $prog by$user on $date" >| ${dir[0]}/$model_dir.mar_neu
+
+  rm -f ${dir[0]}/$model_dir.cats_time
+
+done
+
+
+# Loop over input pos-files
+for file in ${pos_files[@]} ${res_files[@]}; do
+
+  type="${file##*.}"
+  site="$(grep '^4-character ID' $file | awk '{print $NF}')"
+  ref_xyz=( $(grep '^XYZ Reference ' $file | awk '{print $5,$6,$7}') )
+  ref_llh=( $(grep '^NEU Reference ' $file | awk '{print $5,$6,$7}') )
+  t1="$(grep '^First Epoch ' $file | awk '{print $(NF-1)$NF}')"
+
+  # Calculate time series length from pos-file header
+  decyr1="$(grep '^First Epoch ' $file |
+             awk 'BEGIN {split("31 59 90 120 151 181 212 243 273 304 334 365",sum)};
+                  {year = substr($(NF-1),1,4)+0; mon = substr($(NF-1),5,2)+0; day = substr($(NF-1),7,2)+0;
+                   hour = substr($NF,1,2)+0; min = substr($NF,3,2)+0; sec = substr($NF,5,2)+0;
+                   doy = sum[mon-1] + day; dpy = 365;
+                   if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) {dpy = 366; if (mon > 2) doy++};
+                   printf "%.5f",year+(doy+(hour+min/60+sec/3600)/24)/dpy}')"
+  decyr2="$(grep '^Last Epoch ' $file |
+             awk 'BEGIN {split("31 59 90 120 151 181 212 243 273 304 334 365",sum)};
+                  {year = substr($(NF-1),1,4)+0; mon = substr($(NF-1),5,2)+0; day = substr($(NF-1),7,2)+0;
+                   hour = substr($NF,1,2)+0; min = substr($NF,3,2)+0; sec = substr($NF,5,2)+0;
+                   doy = sum[mon-1] + day; dpy = 365;
+                   if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) {dpy = 366; if (mon > 2) doy++};
+                   printf "%.5f",year+(doy+(hour+min/60+sec/3600)/24)/dpy}')"
+  dt=( $(echo $decyr1 $decyr2 | awk '{printf "%.4f %d",$2-$1,int($2-$1)}') )
+
+  # Write site information to CATS neu-file header
+  neu_file="${dir[0]}/$(basename ${file%.*}).neu"
+  echo -n '# ' >| $neu_file; grep -i -m 1 '^4-character ID' $file >> $neu_file
+  echo -n '# ' >> $neu_file; grep -i -m 1 '^Station name' $file >> $neu_file
+  echo -n '# ' >> $neu_file; grep -i -m 1 '^First Epoch' $file >> $neu_file
+  echo -n '# ' >> $neu_file; grep -i -m 1 '^Last Epoch' $file >> $neu_file
+  echo -n '# ' >> $neu_file; grep -i -m 1 '^Release Dat' $file >> $neu_file
+  echo -n '# ' >> $neu_file; grep -i -m 1 '^XYZ Reference position' $file >> $neu_file
+  echo -n '# ' >> $neu_file; grep -i -m 1 '^NEU Reference position' $file >> $neu_file
+
+  # Read rename-/eq-files and write to CATS neu-file header
+  if [ ${#rename_files[@]} -gt 0 ]; then
+    grep -h -i "^ *rename *$site" ${rename_files[@]} |
+     grep -v '_XPS' |
+     grep -v '_XCL' |
+     awk '{printf "%4d%02d%02d%02d%02d\n",$4,$5,$6,$7,$8}' >| temp.ymdhm
+    # Loop over defined earthquakes to find if site is within radius of influence
+    for eqk in $(grep -h -i '^ *eq_r' ${rename_files[@]} | awk '{print $2}'); do  # Only search for implemented (renamed) earthquake definitions
+      # Test if site is within earthquake's radius of influence
+      grep -h -i "^ *eq_def *$eqk " ${rename_files[@]} |
+       awk -v a=${wgs84[0]} -v finv=${wgs84[1]} -v x=${ref_xyz[0]} -v y=${ref_xyz[1]} -v z=${ref_xyz[2]} 'BEGIN {pi=4*atan2(1,1); f=1/finv}; {N=a/sqrt(1-f*(2-f)*sin($3*pi/180)^2); xeqk=(N-$6*1e3)*cos($3*pi/180)*cos($4*pi/180); yeqk=(N-$6*1e3)*cos($3*pi/180)*sin($4*pi/180); zeqk=((1-f)^2*N-$6*1e3)*sin($3*pi/180); if ( sqrt((x-xeqk)^2+(y-yeqk)^2+(z-zeqk)^2) <= $5*1e3 ) printf "%4d%02d%02d%02d%02d\n",$7,$8,$9,$10,$11}' >> temp.ymdhm
+    done  # END: Loop over defined earthquakes to find if site is within radius of influence
+    # Write temporary file to final offset file
+    sort -g -u temp.ymdhm |
+     awk '{split("31 59 90 120 151 181 212 243 273 304 334 365",sum); dpy = 365; year = substr($1,1,4)+0; mon = substr($1,5,2)+0; day = substr($1,7,2)+0; hour = substr($1,9,2)+0; min = substr($1,11,2)+0; sec = 0; doy = sum[mon-1] + day; if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) {dpy = 366; if (mon > 2) doy++}; printf "# offset %9.4f 7\n",year+(doy+(hour+min/60+sec/3600)/24)/dpy}' >> $neu_file #&& rm -f temp.ymdhm
+  fi
+
+  # Convert pos-file to CATS neu-file / m
+  if [ "$type" = 'res' ]; then  # res-file
+    if [ ${#max_sigma[@]} -eq 3 ]; then  # Remove points according to maximum sigma limits
+      grep '^ ' $file |
+       awk -v max_sigE=${max_sigma[0]} -v max_sigN=${max_sigma[1]} -v max_sigU=${max_sigma[2]} '{if ($9 <= max_sigN && $12 <= max_sigE && $15 <= max_sigU) printf "%9.4f %9.5f %9.5f %9.5f %8.5f %8.5f %8.5f\n",$3,$8/1e3,$11/1e3,$14/1e3,$9/1e3,$12/1e3,$15/1e3}' >> $neu_file
+      # Write excluded points to rename-file
+      grep '^ ' $file |
+       awk -v max_sigE=${max_sigma[0]} -v max_sigN=${max_sigma[1]} -v max_sigU=${max_sigma[2]} -v site=$site '{split("31 28 31 30 31 30 31 31 30 31 30 31",days); dpy = 365; if ($9 > max_sigN) sigma_n = 1; else sigma_n = 0; if ($12 > max_sigE) sigma_e = 1; else sigma_e = 0; if ($15 > max_sigU) sigma_u = 1; else sigma_u = 0; if (sigma_n == 1 || sigma_e == 1 || sigma_u == 1) {year1 = int($1); year2 = year1; doy1 = ($1-year1)*365.2425 + 1; doy2 = doy1 + 1; if (year1 % 4 == 0 && (year1 % 100 != 0 || year1 % 400 == 0)) {days[2] = 29; dpy = 366}; for (i = 1; doy1 > days[i]; i++) doy1 -= days[i]; if (doy2 > dpy) {year2++; j=1; doy2=1} else for (j = 1; doy2 > days[j]; j++) doy2 -= days[j]; printf " rename %4s     %4s_XPS %4d %02d %02d %02d %02d %4d %02d %02d %02d %02d  !",site,site,year1,i,int(doy1),0,0,year2,j,int(doy2),0,0; if (sigma_e == 1) printf " sigma_e"; if (sigma_n == 1) printf " sigma_n"; if (sigma_u == 1) printf " sigma_u"; printf "\n"}}' >> $xps_file.tmp
+    else
+      grep '^ ' $file |
+       awk '{printf "%9.4f %9.5f %9.5f %9.5f %8.5f %8.5f %8.5f\n",$3,$8/1e3,$11/1e3,$14/1e3,$9/1e3,$12/1e3,$15/1e3}' >> $neu_file
+    fi
+  else  # pos-file
+    if [ ${#max_sigma[@]} -eq 3 ]; then  # Remove points according to maximum sigma limits
+      grep '^ ' $file |
+       awk -v max_sigE=${max_sigma[0]} -v max_sigN=${max_sigma[1]} -v max_sigU=${max_sigma[2]} '{split("31 59 90 120 151 181 212 243 273 304 334 365",sum); dpy = 365; if ($19*1e3 <= max_sigN && $20*1e3 <= max_sigE && $21*1e3 <= max_sigU) {year = substr($1,1,4)+0; mon = substr($1,5,2)+0; day = substr($1,7,2)+0; hour = substr($2,1,2)+0; min = substr($2,3,2)+0; sec = substr($2,5,2)+0; doy = sum[mon-1] + day; if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) {dpy = 366; if (mon > 2) doy++}; printf "%9.4f %9.5f %9.5f %9.5f %8.5f %8.5f %8.5f\n",year+(doy+(hour+min/60+sec/3600)/24)/dpy,$16,$17,$18,$19,$20,$21}}' >> $neu_file
+      # Write excluded points to rename-file
+      grep '^ ' $file |
+       awk -v max_sigE=${max_sigma[0]} -v max_sigN=${max_sigma[1]} -v max_sigU=${max_sigma[2]} -v site=$site '{split("31 28 31 30 31 30 31 31 30 31 30 31",days); dpy = 365; if ($19*1e3 > max_sigN) sigma_n = 1; else sigma_n = 0; if ($20*1e3 > max_sigE) sigma_e = 1; else sigma_e = 0; if ($21*1e3 > max_sigU) sigma_u = 1; else sigma_u = 0; if (sigma_n == 1 || sigma_e == 1 || sigma_u == 1) {year1 = int($1); year2 = year1; doy1 = ($1-year1)*365.2425 + 1; doy2 = doy1 + 1; if (year1 % 4 == 0 && (year1 % 100 != 0 || year1 % 400 == 0)) {days[2] = 29; dpy = 366}; for (i = 1; doy1 > days[i]; i++) doy1 -= days[i]; if (doy2 > dpy) {year2++; j=1; doy2=1} else for (j = 1; doy2 > days[j]; j++) doy2 -= days[j]; printf " rename %4s     %4s_XPS %4d %02d %02d %02d %02d %4d %02d %02d %02d %02d  !",site,site,year1,i,int(doy1),0,0,year2,j,int(doy2),0,0; if (sigma_e == 1) printf " sigma_e"; if (sigma_n == 1) printf " sigma_n"; if (sigma_u == 1) printf " sigma_u"; printf "\n"}}' >> $xps_file.tmp
+    else
+      grep '^ ' $file |
+       awk '{split("31 59 90 120 151 181 212 243 273 304 334 365",sum); dpy = 365; year = substr($1,1,4)+0; mon = substr($1,5,2)+0; day = substr($1,7,2)+0; hour = substr($2,1,2)+0; min = substr($2,3,2)+0; sec = substr($2,5,2)+0; doy = sum[mon-1] + day; if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) {dpy = 366; if (mon > 2) doy++}; printf "%9.4f %9.5f %9.5f %9.5f %8.5f %8.5f %8.5f\n",year+(doy+(hour+min/60+sec/3600)/24)/dpy,$16,$17,$18,$19,$20,$21}}' >> $neu_file
+    fi
+  fi
+
+  # Calculate percentage of missing data
+  ndata="$(grep -c -v '^#' $neu_file)"
+  data_pct="$(echo "$ndata ${dt[0]}" | awk '{printf "%.2f",100*$1/($2*365.2425)}')"
+
+  # Test if (n-sigma) outliers are to be identified and removed
+  if [ ${#nsigma[@]} -gt 0 -a $ndata -gt 1 ]; then
+
+    time_file1="${dir[0]}/pre-nsigma_wls.cats_time"
+    out_file1="${dir[0]}/$(basename ${neu_file%.neu}).wls"
+
+    # Fit time series using weighted least-squares inversion
+    cat << END
+Running preliminary weighted least-squares fit on
+$neu_file to determine n-sigma outliers...
+END
+    echo "$(basename $neu_file) ${dt[0]} $ndata" >> $time_file1
+    if [ ${dt[1]} -ge $annual -a ${dt[1]} -ge $semiann ]; then  # Estimate annual plus semi-annual periodic terms
+      { time -p cats $neu_file -Mvw:s1 -BW -A1y1 -O$out_file1; } 2>> $time_file1
+    elif [ ${dt[1]} -ge $semiannual ]; then  # Estimate semi-annual periodic term only
+      { time -p cats $neu_file -Mvw:s1 -BW -A0.5y -O$out_file1; } 2>> $time_file1
+    else  # Do not estimate annual plus semi-annual periodic terms
+      { time -p cats $neu_file -Mvw:s1 -BW -O$out_file1; } 2>> $time_file1
+    fi
+
+    # Read estimates of initial position
+    # x0, sigma (N); x0, sigma (E); x0, sigma (U)
+    x0=( $(grep '^+.* INTER' $out_file1 | awk '{print $(NF-2),$NF}') )
+
+    # Read estimates of velocity
+    # vel, sigma (N); vel, sigma (E); vel, sigma (U)
+    vel=( $(grep '^+.* SLOPE' $out_file1 | awk '{print $(NF-2),$NF}') )
+
+    # Read estimates of periodic terms
+    # annual sin, sigma (N); annual cos, sigma (N); semi-annual sin, sigma (N); semi-annual cos, sigma (N)
+    periodicN=( $(grep '^+NORT *[SC][IO][NS]' $out_file1 | awk '{print $(NF-2),$NF}') )
+    if [ ${#periodicN[@]} -eq 0 ]; then  # Pad all terms with zero amplitude
+      periodicN=( 0 0 0 0 0 0 0 0 )
+    elif [ ${#periodicN[@]} -eq 4 ]; then  # Pad annual terms with zero amplitude
+      periodicN=( 0 0 0 0 ${periodicN[@]} )
+    fi
+    # annual sin, sigma (E); annual cos, sigma (E); semi-annual sin, sigma (E); semi-annual cos, sigma (E)
+    periodicE=( $(grep '^+EAST *[SC][IO][NS]' $out_file1 | awk '{print $(NF-2),$NF}') )
+    if [ ${#periodicE[@]} -eq 0 ]; then  # Pad all terms with zero amplitude
+      periodicE=( 0 0 0 0 0 0 0 0 )
+    elif [ ${#periodicE[@]} -eq 4 ]; then  # Pad annual terms with zero amplitude
+      periodicE=( 0 0 0 0 ${periodicE[@]} )
+    fi
+    # annual sin, sigma (U); annual cos, sigma (U); semi-annual sin, sigma (U); semi-annual cos, sigma (U)
+    periodicU=( $(grep '^+VERT *[SC][IO][NS]' $out_file1 | awk '{print $(NF-2),$NF}') )
+    if [ ${#periodicU[@]} -eq 0 ]; then  # Pad all terms with zero amplitude
+      periodicU=( 0 0 0 0 0 0 0 0 )
+    elif [ ${#periodicU[@]} -eq 4 ]; then  # Pad annual terms with zero amplitude
+      periodicU=( 0 0 0 0 ${periodicU[@]} )
+    fi
+
+    # Read estimates of offsets
+    offsetT=( $(grep '^# *offset *[12][0-9][0-9][0-9]' $neu_file | awk -v t1=$decyr1 -v t2=$decyr2 '{if ($3 >= t1 && $3 <= t2) print $3}') )
+    # offset1, sigma1; offset2, sigma2; etc. (N)
+    offsetN=( $(grep '^+NORT *OFFSET' $out_file1 | awk '{print $(NF-2),$NF}') )
+    # offset1, sigma1; offset2, sigma2; etc. (E)
+    offsetE=( $(grep '^+EAST *OFFSET' $out_file1 | awk '{print $(NF-2),$NF}') )
+    # offset1, sigma1; offset2, sigma2; etc. (U)
+    offsetU=( $(grep '^+VERT *OFFSET' $out_file1 | awk '{print $(NF-2),$NF}') )
+
+    # List and exclude points with residual > n-sigma
+    grep '^#' $neu_file >| $neu_file.tmp
+    if [ ${#offsetT[@]} -eq 0 ]; then  # No offsets estimated
+      grep -v '^#' $neu_file |
+       awk -v nsigmaE=${nsigma[0]} -v nsigmaN=${nsigma[1]} -v nsigmaU=${nsigma[2]} -v x0N=${x0[0]} -v x0E=${x0[2]} -v x0U=${x0[4]} -v velN=${vel[0]} -v velE=${vel[2]} -v velU=${vel[4]} -v sin0N=${periodicN[0]} -v cos0N=${periodicN[2]} -v sin1N=${periodicN[4]} -v cos1N=${periodicN[6]} -v sin0E=${periodicE[0]} -v cos0E=${periodicE[2]} -v sin1E=${periodicE[4]} -v cos1E=${periodicE[6]} -v sin0U=${periodicU[0]} -v cos0U=${periodicU[2]} -v sin1U=${periodicU[4]} -v cos1U=${periodicU[6]} 'BEGIN {pi = 4*atan2(1,1)}; {if (NR == 1) t0 = int($1); modelN = (x0N + velN*($1-t0) + sin0N*sin(2*pi*($1-t0)) + cos0N*cos(2*pi*($1-t0)) + sin1N*sin(4*pi*($1-t0)) + cos1N*cos(4*pi*($1-t0)))/1e3; modelE = (x0E + velE*($1-t0) + sin0E*sin(2*pi*($1-t0)) + cos0E*cos(2*pi*($1-t0)) + sin1E*sin(4*pi*($1-t0)) + cos1E*cos(4*pi*($1-t0)))/1e3; modelU = (x0U + velU*($1-t0) + sin0U*sin(2*pi*($1-t0)) + cos0U*cos(2*pi*($1-t0)) + sin1U*sin(4*pi*($1-t0)) + cos1U*cos(4*pi*($1-t0)))/1e3; if ($2-modelN <= nsigmaN*$5 && $3-modelE <= nsigmaE*$6 && $4-modelU <= nsigmaU*$7) print $0}' >> $neu_file.tmp
+      # Write excluded points to rename-file
+      grep -v '^#' $neu_file |
+       awk -v nsigmaE=${nsigma[0]} -v nsigmaN=${nsigma[1]} -v nsigmaU=${nsigma[2]} -v x0N=${x0[0]} -v x0E=${x0[2]} -v x0U=${x0[4]} -v velN=${vel[0]} -v velE=${vel[2]} -v velU=${vel[4]} -v sin0N=${periodicN[0]} -v cos0N=${periodicN[2]} -v sin1N=${periodicN[4]} -v cos1N=${periodicN[6]} -v sin0E=${periodicE[0]} -v cos0E=${periodicE[2]} -v sin1E=${periodicE[4]} -v cos1E=${periodicE[6]} -v sin0U=${periodicU[0]} -v cos0U=${periodicU[2]} -v sin1U=${periodicU[4]} -v cos1U=${periodicU[6]} -v site=$site 'BEGIN {pi = 4*atan2(1,1)}; {split("31 28 31 30 31 30 31 31 30 31 30 31",days); dpy = 365; if (NR == 1) t0 = int($1); modelN = (x0N + velN*($1-t0) + sin0N*sin(2*pi*($1-t0)) + cos0N*cos(2*pi*($1-t0)) + sin1N*sin(4*pi*($1-t0)) + cos1N*cos(4*pi*($1-t0)))/1e3; modelE = (x0E + velE*($1-t0) + sin0E*sin(2*pi*($1-t0)) + cos0E*cos(2*pi*($1-t0)) + sin1E*sin(4*pi*($1-t0)) + cos1E*cos(4*pi*($1-t0)))/1e3; modelU = (x0U + velU*($1-t0) + sin0U*sin(2*pi*($1-t0)) + cos0U*cos(2*pi*($1-t0)) + sin1U*sin(4*pi*($1-t0)) + cos1U*cos(4*pi*($1-t0)))/1e3; if ($2-modelN > nsigmaN*$5 || $3-modelE > nsigmaE*$6 || $4-modelU > nsigmaU*$7) {year1 = int($1); year2 = year1; if (year1 % 4 == 0 && (year1 % 100 != 0 || year1 % 400 == 0)) {days[2] = 29; dpy = 366}; doy1 = ($1-year1)*dpy + 1; doy2 = doy1 + 1; for (i = 1; int(doy1) > days[i]; i++) doy1 -= days[i]; if (int(doy2) > dpy) {year2++; j=1; doy2=1} else for (j = 1; int(doy2) > days[j]; j++) doy2 -= days[j]; printf " rename %4s     %4s_XPS %4d %02d %02d %02d %02d %4d %02d %02d %02d %02d  ! n-sigma\n",site,site,year1,i,int(doy1),0,0,year2,j,int(doy2),0,0}}' >> $xps_file.tmp
+    else  # Offsets estimated
+      j=0
+      while [ $j -le ${#offsetT[@]} ]; do  # Loop over offsets
+        let i="$j - 1"
+        if [ $j -eq 0 ]; then  # First offset epoch
+          t1='0'  # Add dummy epoch
+          t2=${offsetT[$j]}
+          offset=( 0 0 0 )
+        elif [ $j -eq ${#offsetT[@]} ]; then  # Last offset epoch
+          t1=${offsetT[$i]}
+          t2='9999.9999'  # Add dummy epoch
+          offset=( $(echo ${offset[@]} | awk -v dN=${offsetN[$i]} -v dE=${offsetE[$i]} -v dU=${offsetU[$i]} '{printf "%.4f %.4f %.4f",$1+dN,$2+dE,$3+dU}') )
+        else
+          t1=${offsetT[$i]}
+          t2=${offsetT[$j]}
+          offset=( $(echo ${offset[@]} | awk -v dN=${offsetN[$i]} -v dE=${offsetE[$i]} -v dU=${offsetU[$i]} '{printf "%.4f %.4f %.4f",$1+dN,$2+dE,$3+dU}') )
+        fi
+        grep -v '^#' $neu_file |
+         awk -v nsigmaE=${nsigma[0]} -v nsigmaN=${nsigma[1]} -v nsigmaU=${nsigma[2]} -v x0N=${x0[0]} -v x0E=${x0[2]} -v x0U=${x0[4]} -v velN=${vel[0]} -v velE=${vel[2]} -v velU=${vel[4]} -v sin0N=${periodicN[0]} -v cos0N=${periodicN[2]} -v sin1N=${periodicN[4]} -v cos1N=${periodicN[6]} -v sin0E=${periodicE[0]} -v cos0E=${periodicE[2]} -v sin1E=${periodicE[4]} -v cos1E=${periodicE[6]} -v sin0U=${periodicU[0]} -v cos0U=${periodicU[2]} -v sin1U=${periodicU[4]} -v cos1U=${periodicU[6]} -v dN=${offset[0]} -v dE=${offset[1]} -v dU=${offset[2]} -v t1=$t1 -v t2=$t2 'BEGIN {pi = 4*atan2(1,1)}; {if (NR == 1) t0 = int($1); if ($1 >= t1 && $1 < t2) {modelN = (x0N + velN*($1-t0) + sin0N*sin(2*pi*($1-t0)) + cos0N*cos(2*pi*($1-t0)) + sin1N*sin(4*pi*($1-t0)) + cos1N*cos(4*pi*($1-t0)) + dN)/1e3; modelE = (x0E + velE*($1-t0) + sin0E*sin(2*pi*($1-t0)) + cos0E*cos(2*pi*($1-t0)) + sin1E*sin(4*pi*($1-t0)) + cos1E*cos(4*pi*($1-t0)) + dE)/1e3; modelU = (x0U + velU*($1-t0) + sin0U*sin(2*pi*($1-t0)) + cos0U*cos(2*pi*($1-t0)) + sin1U*sin(4*pi*($1-t0)) + cos1U*cos(4*pi*($1-t0)) + dU)/1e3; if ($2-modelN <= nsigmaN*$5 && $3-modelE <= nsigmaE*$6 && $4-modelU <= nsigmaU*$7) print $0}}' >> $neu_file.tmp
+        # Write excluded points to rename-file
+        grep -v '^#' $neu_file |
+         awk -v nsigmaE=${nsigma[0]} -v nsigmaN=${nsigma[1]} -v nsigmaU=${nsigma[2]} -v x0N=${x0[0]} -v x0E=${x0[2]} -v x0U=${x0[4]} -v velN=${vel[0]} -v velE=${vel[2]} -v velU=${vel[4]} -v sin0N=${periodicN[0]} -v cos0N=${periodicN[2]} -v sin1N=${periodicN[4]} -v cos1N=${periodicN[6]} -v sin0E=${periodicE[0]} -v cos0E=${periodicE[2]} -v sin1E=${periodicE[4]} -v cos1E=${periodicE[6]} -v sin0U=${periodicU[0]} -v cos0U=${periodicU[2]} -v sin1U=${periodicU[4]} -v cos1U=${periodicU[6]} -v dN=${offset[0]} -v dE=${offset[1]} -v dU=${offset[2]} -v t1=$t1 -v t2=$t2 -v site=$site 'BEGIN {pi = 4*atan2(1,1)}; {split("31 28 31 30 31 30 31 31 30 31 30 31",days); dpy = 365; if (NR == 1) t0 = int($1); if ($1 >= t1 && $1 < t2) {modelN = (x0N + velN*($1-t0) + sin0N*sin(2*pi*($1-t0)) + cos0N*cos(2*pi*($1-t0)) + sin1N*sin(4*pi*($1-t0)) + cos1N*cos(4*pi*($1-t0)) + dN)/1e3; modelE = (x0E + velE*($1-t0) + sin0E*sin(2*pi*($1-t0)) + cos0E*cos(2*pi*($1-t0)) + sin1E*sin(4*pi*($1-t0)) + cos1E*cos(4*pi*($1-t0)) + dE)/1e3; modelU = (x0U + velU*($1-t0) + sin0U*sin(2*pi*($1-t0)) + cos0U*cos(2*pi*($1-t0)) + sin1U*sin(4*pi*($1-t0)) + cos1U*cos(4*pi*($1-t0)) + dU)/1e3; if ($2-modelN > nsigmaN*$5 || $3-modelE > nsigmaE*$6 || $4-modelU > nsigmaU*$7) {year1 = int($1); year2 = year1; if (year1 % 4 == 0 && (year1 % 100 != 0 || year1 % 400 == 0)) {days[2] = 29; dpy = 366}; doy1 = ($1-year1)*dpy + 1; doy2 = doy1 + 1; for (i = 1; int(doy1) > days[i]; i++) doy1 -= days[i]; if (int(doy2) > dpy) {year2++; j=1; doy2=1} else for (j = 1; int(doy2) > days[j]; j++) doy2 -= days[j]; printf " rename %4s     %4s_XPS %4d %02d %02d %02d %02d %4d %02d %02d %02d %02d  ! n-sigma\n",site,site,year1,i,int(doy1),0,0,year2,j,int(doy2),0,0}}}' >> $xps_file.tmp
+        let j++
+      done  # END: Loop over offsets
+    fi
+    cp -p $neu_file.tmp $neu_file
+
+    # Recalculate number of data points
+    ndata="$(grep -c -v '^#' $neu_file)"
+
+  fi
+
+  # Loop over models
+  for model in ${models[@]}; do
+
+    model_dir="$(echo $model | sed 's/pl:k-1/fl/g; s/pl:k-2/rw/g; s/://g' | tr '+' '_')"
+
+    # Define output files
+    vel_file="${dir[0]}/$model_dir.vel"
+    extapr_file="${dir[0]}/$model_dir.apr"
+    stats_file="${dir[0]}/temp.$model_dir.mar_neu"
+    time_file2="${dir[0]}/$model_dir/$model_dir.cats_time"
+
+    # Print message
+    if [ $annual -gt 0 -a ${dt[1]} -ge $annual -o $semiann -gt 0 -a ${dt[1]} -ge $semiann ]; then
+      echo "Estimating velocity and periodic terms for site $site using $(echo $model | sed 's/pl:k-1/fl/g; s/pl:k-2/rw/g; s/://g') noise model."
+    else
+      echo "Estimating velocity only for site $site using $(echo $model | sed 's/pl:k-1/fl/g; s/pl:k-2/rw/g; s/://g') noise model."
+    fi
+
+    # Test if time series is long enough for time-correlated noise estimation
+    if [ $ndata -lt $minnum -a "$model" != 'wh' ]; then
+      model=( wh )  # Override noise model for short time series (< $minnum points)
+      echo "! Warning ! Using white noise model for $site (${component:0:1}) time series with < $minnum points."
+    fi
+
+    # Run CATS
+    if [ $annual -gt 0 -a ${dt[1]} -ge $annual -a $semiann -gt 0 -a ${dt[1]} -ge $semiann ]; then  # Estimate annual plus semi-annual periodic terms
+      cats_cmd="cats $neu_file -A1y1"
+    elif [ $annual -gt 0 -a ${dt[1]} -ge $annual -a \( $semiann -eq 0 -o ${dt[1]} -lt $semiann \) ]; then  # Estimate annual periodic term only
+      cats_cmd="cats $neu_file -A1y"
+    elif [ $semiann -gt 0 -a ${dt[1]} -ge $semiann -a \( $annual -eq 0 -o ${dt[1]} -lt $annual \) ]; then  # Estimate semi-annual periodic term only
+      cats_cmd="cats $neu_file -A0.5y"
+    else  # Do not estimate periodic terms
+      cats_cmd="cats $neu_file"
+    fi
+    out_file2="${dir[0]}/$model_dir/$site.$model_dir.cats"
+    rm -f $out_file2
+    echo "$cats_cmd $(echo $model | tr '+' ' ' | sed 's/^/-M/; s/ / -M/g') -O$out_file2"
+    echo "$neu_file ${dt[0]} $ndata" >> $time_file2
+    { time -p $cats_cmd $(echo $model | tr '+' ' ' | sed 's/^/-M/; s/ / -M/g') -O$out_file2; } 2>>$time_file2
+
+    # Read estimate of velocity
+    # vel, sigma (N); vel, sigma (E); vel, sigma (U)
+    vel=( $(grep '^+.* SLOPE' $out_file2 | awk '{print $(NF-2),$NF}') )
+
+    # Read estimates of periodic terms
+    # annual sin, sigma (E); annual cos, sigma (E); semi-annual sin, sigma (E); semi-annual cos, sigma (E)
+    periodic_est1=( $(grep '^+EAST *[SC][IO][NS]' $out_file2 | awk '{print $(NF-2),$NF}') )
+    # annual sin, sigma (N); annual cos, sigma (N); semi-annual sin, sigma (N); semi-annual cos, sigma (N)
+    periodic_est2=( $(grep '^+NORT *[SC][IO][NS]' $out_file2 | awk '{print $(NF-2),$NF}') )
+    # annual sin, sigma (U); annual cos, sigma (U); semi-annual sin, sigma (U); semi-annual cos, sigma (U)
+    periodic_est3=( $(grep '^+VERT *[SC][IO][NS]' $out_file2 | awk '{print $(NF-2),$NF}') )
+
+    # Read estimates of offsets
+    # offset1, sigma1; offset2, sigma2; etc. (E)
+    offset_est1=( $(grep '^+EAST *OFFSET' $out_file2 | awk '{print $(NF-2),$NF}') )
+    # offset1, sigma1; offset2, sigma2; etc. (N)
+    offset_est2=( $(grep '^+NORT *OFFSET' $out_file2 | awk '{print $(NF-2),$NF}') )
+    # offset1, sigma1; offset2, sigma2; etc. (U)
+    offset_est3=( $(grep '^+VERT *OFFSET' $out_file2 | awk '{print $(NF-2),$NF}') )
+
+    # Convert estimates of velocity uncertainty in presence of time-correlated noise model to equivalent random walk magnitude, vel_sigma^2*dt (m^2/yr), and write to mar_neu command file
+    if [ ${#vel[@]} -eq 6 -a $ndata -ge $minnum -a "$model" != 'wh' ]; then
+      echo $site ${vel[1]} ${vel[3]} ${vel[5]} ${dt[0]} |
+       awk '{printf " mar_neu %s %7.3fe-6 %7.3fe-6 %7.3fe-6 0 0 0\n",$1,($2/1e3)^2*$5*1e6,($3/1e3)^2*$5*1e6,($4/1e3)^2*$5*1e6}' >> $stats_file
+    fi
+
+    # Write velocity estimates to vel-file
+    if [ ${#vel[@]} -eq 6 ]; then  # Velocity estimated
+      echo ${ref_llh[@]} ${vel[@]} $site |
+       awk '{printf " %10.5f  %9.5f  %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %6.3f  %8.2f %7.2f %7.2f %4s_GPS \n",$2,$1,$6,$4,0,0,$7,$5,0,$8,0,$9,$10}' >> $vel_file
+    fi
+
+    # Write estimates of periodic terms to extended apr-file
+    if [ ${dt[1]} -ge $annual -a ${#periodic_est1[@]} -gt 0 -a ${#periodic_est2[@]} -gt 0 -a ${#periodic_est3[@]} -gt 0 ]; then
+      echo $site ${periodic_est2[@]} ${periodic_est1[@]} ${periodic_est3[@]} |
+       awk '{printf " EXTENDED %s_GPS PERIODIC %4d %02d %02d %02d %02d 365.2425  %10.7f %10.7f %10.7f %10.7f %10.7f %10.7f\n",$1,2000,1,1,0,0,$4/1e3,$2/1e3,$12/1e3,$10/1e3,$20/1e3,$18/1e3}' >> $extapr_file
+      #echo $site ${t1:0:4} ${t1:4:2} ${t1:6:2} ${t1:8:2} ${t1:10:2} ${periodic_est2[@]} ${periodic_est1[@]} ${periodic_est3[@]} |
+       #awk '{printf " EXTENDED %s_GPS PERIODIC %4d %02d %02d %02d %02d 365.2425  %10.7f %10.7f %10.7f %10.7f %10.7f %10.7f\n",$1,$2,$3,$4,$5,$6,$9/1e3,$7/1e3,$17/1e3,$15/1e3,$25/1e3,$23/1e3}' >> $extapr_file
+    fi
+    if [ ${dt[1]} -ge $semiann -a ${#periodic_est1[@]} -gt 0 -a ${#periodic_est2[@]} -gt 0 -a ${#periodic_est3[@]} -gt 0 ]; then
+      echo $site ${periodic_est2[@]} ${periodic_est1[@]} ${periodic_est3[@]} |
+       awk '{printf " EXTENDED %s_GPS PERIODIC %4d %02d %02d %02d %02d 182.62125 %10.7f %10.7f %10.7f %10.7f %10.7f %10.7f\n",$1,2000,1,1,0,0,$8/1e3,$6/1e3,$16/1e3,$14/1e3,$24/1e3,$22/1e3}' >> $extapr_file
+      #echo $site ${t1:0:4} ${t1:4:2} ${t1:6:2} ${t1:8:2} ${t1:10:2} ${periodic_est2[@]} ${periodic_est1[@]} ${periodic_est3[@]} |
+       #awk '{printf " EXTENDED %s_GPS PERIODIC %4d %02d %02d %02d %02d 182.62125 %10.7f %10.7f %10.7f %10.7f %10.7f %10.7f\n",$1,$2,$3,$4,$5,$6,$13/1e3,$11/1e3,$21/1e3,$19/1e3,$29/1e3,$27/1e3}' >> $extapr_file
+    fi
+
+    # Write estimates of offset terms to extended apr-file
+    offset_t=( $(sort -g -u temp.ymdhm | awk -v t1=$decyr1 -v t2=$decyr2 '{split("31 59 90 120 151 181 212 243 273 304 334 365",sum); year = substr($1,1,4)+0; mon = substr($1,5,2)+0; day = substr($1,7,2)+0; hour = substr($1,9,2)+0; min = substr($1,11,2)+0; sec = 0; doy = sum[mon-1] + day; dpy = 365; if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) {dpy = 366; if (mon > 2) doy++}; decyr=year+(doy+(hour+min/60+sec/3600)/24)/dpy; if (decyr >= t1 && decyr <= t2) print $0}') )
+    if [ ${#offset_est1[@]} -gt 0 -a ${#offset_est1[@]} -eq ${#offset_est2[@]} -a ${#offset_est1[@]} -eq ${#offset_est3[@]} ]; then
+      # Loop over estimated offsets
+      i=0
+      while [ $i -lt ${#offset_t[@]} ]; do
+        let j="2*$i"
+        echo $site ${offset_t[$i]} ${offset_est2[$j]} ${offset_est1[$j]} ${offset_est3[$j]} |
+         awk '{printf " EXTENDED %s_GPS OFFSET %4d %02d %02d %02d %02d 0.0 %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f\n",$1,substr($2,1,4),substr($2,5,2),substr($2,7,2),substr($2,9,2),substr($2,11,2),$3,0,$4,0,$5,0}' >> $extapr_file
+        let i++
+      done  # END: Loop over estimated offsets
+    fi
+    let twice_nt="2*${#offset_t[@]}"
+    if [ ${#offset_est1[@]} -ne $twice_nt ]; then
+      echo "! Warning ! Check offsets in extended apr-file for site $site."
+    fi
+
+  done  # END: Loop over models
+
+  rm -f temp.ymdhm
+
+  # Test if CATS input files are to be removed
+  if [ $remove -eq 1 ]; then
+    rm -f $neu_file $out_file1 $out_file2
+  fi
+
+done  # END: Loop over input pos-files
+
+
+# Sort final $xps_file
+if [ -f "$xps_file.tmp" ]; then
+  sort $xps_file.tmp >| $xps_file #&&
+   #rm -f $xps_file.tmp
+fi
+
+
+# Loop over models
+for model in ${models[@]}; do
+
+  model_dir="$(echo $model | sed 's/pl:k-1/fl/g; s/pl:k-2/rw/g; s/://g' | tr '+' '_')"
+
+  if [ "$model" != 'White' ]; then  # Calculate median random walk magnitudes
+    stats_file="${dir[0]}/temp.$model_dir.mar_neu"
+    nrec="$(grep -c -i '^ *mar_neu ' $stats_file)"
+    median_n="$(grep -i '^ *mar_neu ' $stats_file | sort -g -k3 | awk -v nrec=$nrec 'BEGIN {median=0}; {if (nrec % 2 == 0 && (NR == nrec/2 || NR == nrec/2+1)) median=median+$3; else if (nrec % 2 == 1 && NR == int(nrec/2)+1) median=2*$3}; END {printf "%7.3f",1e6*median/2}')"
+    median_e="$(grep -i '^ *mar_neu ' $stats_file | sort -g -k4 | awk -v nrec=$nrec 'BEGIN {median=0}; {if (nrec % 2 == 0 && (NR == nrec/2 || NR == nrec/2+1)) median=median+$4; else if (nrec % 2 == 1 && NR == int(nrec/2)+1) median=2*$4}; END {printf "%7.3f",1e6*median/2}')"
+    median_u="$(grep -i '^ *mar_neu ' $stats_file | sort -g -k5 | awk -v nrec=$nrec 'BEGIN {median=0}; {if (nrec % 2 == 0 && (NR == nrec/2 || NR == nrec/2+1)) median=median+$5; else if (nrec % 2 == 1 && NR == int(nrec/2)+1) median=2*$5}; END {printf "%7.3f",1e6*median/2}')"
+    echo '# Median random walk magnitudes (N,E,U / m^2/yr):' >> ${dir[0]}/$model_dir.mar_neu
+    printf '#mar_neu all  %7.3fe-6 %7.3fe-6 %7.3fe-6 0 0 0\n' $median_n $median_e $median_u >> ${dir[0]}/$model_dir.mar_neu
+    cat $stats_file >> ${dir[0]}/$model_dir.mar_neu && rm -f $stats_file
+  fi  # END: Calculate median random walk magnitudes
+
+  # Test if CATS output files are to be removed
+  if [ $remove -eq 1 ]; then
+    rm -fr ${dir[0]}/$model_dir ${dir[0]}/wh
+  fi
+
+done  # END: Loop over models
+

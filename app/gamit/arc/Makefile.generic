@@ -1,0 +1,16 @@
+# Generic Makefile for arc - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King/T. Herrng  March 24, 2018 
+#
+#LABELS: arc:arc:arc_lib:arc
+
+#SHARELIB: ../lib:gamit_lib 
+#SHARELIB: ../../libraries/comlib:com_lib
+#SHARELIB: ../lib:libsofa 
+
+#OBJ_arc_lib adam    arcmrg  aversn   bilin8  binoml   calcof  check_gmodels doodson_angle dtwopi earthrad 
+#OBJ_arc_lib earthradTUM eclout  eflux   ertorb  ERPFBOXW eval    filopn   get_sat_info  gridval
+#OBJ_arc_lib hofrad  igs92   egm96    egm08   iers_etides  init     keplr   legnd2	legndr legndr_p
+#OBJ_arc_lib matmpy  mattrn   oscrat  PROPBOXW rdsrpgrd read_arc_batch read_otides
+#OBJ_arc_lib revrec  satprop  sbfn    sbfn1  sbout  sclcof	sclcof1  set_model_controls 
+#OBJ_arc_lib shadow  shwprt  srpfgrid srpfmod start_int SURFBOXW UCLSRPeditIIA wrthed write_arcouthd
+#OBJ_arc_lib generalrel print_csnm    antpwr_base

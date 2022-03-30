@@ -1,0 +1,59 @@
+#!/bin/csh -f   
+#
+#doc Convert spherical (lat/lon/rad) l-file to cartesian (xyz) l-file
+#doc 
+#
+if ( $#argv == 0 ) then
+  echo " "
+  echo "  Script to convert spherical (llr) l-file to cartesian (xyz) file" 
+  echo "  "
+  echo "  USAGE :    sh_l_to_xyz  -file <lfile>"
+  echo "  "
+  echo "  EXAMPLE:   sh_l_to_xyz -f lfile. "
+  echo "  "
+  echo "  OUTPUT:    lfile.xyz"
+  echo "  " 
+  exit
+endif 
+set lfile       = "" 
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -f*:
+      set lfile = $input[2]  
+    breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end # while
+#=#=#=#=#=#=#=#=#=#=# Get the Job done #=#=#=#=#=#=#=#=#=#=#=#=#=#
+# Check input file exists
+if ( ! -e $lfile ) then
+  echo "Input lfile does not exist: STOP"
+  exit
+endif
+
+# Get root lfile name
+set lf = `echo $lfile | awk -F"/" '{print $NF}'`     
+
+# What are you doing
+set outfile = ${lf}.xyz 
+echo "Creating: $outfile"
+
+# Convert spherical l-file to Cartesian using tform  
+#   --sequence revised for new tform --rwk 22 Oct 2002
+tform <<ENDD  >! tmp.tformout
+2
+2
+$lfile
+4
+1
+$outfile
+3
+ENDD
+
+# Clean up
+echo "Created: $outfile"
+\rm -r tmp.tformout
+
+#Thats all folks
+exit

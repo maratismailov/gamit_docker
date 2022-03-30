@@ -1,0 +1,46 @@
+# Generic Makefile for kf/plot/x1000 - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King September 27, 2000
+   
+#LABELS: x1000:NONE:x1000:NONE
+
+#SHARELIB: ../../../libraries/comlib:com_lib
+
+#OBJ_x1000  check_window
+#OBJ_x1000  cpux
+#OBJ_x1000  cpuy  
+#OBJ_x1000  cwpy   
+#OBJ_x1000  cwpx 
+#OBJ_x1000  drawchar
+#OBJ_x1000  drawmark
+#OBJ_x1000  jiws 
+#OBJ_x1000  jmapm
+#OBJ_x1000  jtexp 
+#OBJ_x1000  j2ply
+#OBJ_x1000  mapem
+#OBJ_x1000  nullterm
+
+#OBJ_x1000_host   cufx_HHHH
+#OBJ_x1000_host   cufy_HHHH   
+#OBJ_x1000_host   jfont_HHHH
+#OBJ_x1000_host   jbegn_HHHH
+#OBJ_x1000_host   j2drw_HHHH
+#OBJ_x1000_host   j2mov_HHHH
+#OBJ_x1000_host   jwind_HHHH
+#OBJ_x1000_host   jview_HHHH
+#OBJ_x1000_host   j2mrk_HHHH
+#OBJ_x1000_host   jcsiz_HHHH
+#OBJ_x1000_host   jclr_HHHH
+#OBJ_x1000_host   jcori_HHHH
+#OBJ_x1000_host   jjust_HHHH
+#OBJ_x1000_host   jmcur_HHHH
+#OBJ_x1000_host   jr2dr_HHHH
+#OBJ_x1000_host   jr2mv_HHHH
+#OBJ_x1000_host   jtexh_HHHH
+# OBJ_x1000_host   jtexm_HHHH  - not needed
+# OBJ_x1000_host   jtexl_HHHH  - not needed
+#OBJ_x1000_host   jwloc_HHHH
+#OBJ_x1000_host   jcolr_HHHH
+#OBJ_x1000_host   jlstl_HHHH
+#OBJ_x1000_host   jvtow_HHHH
+#OBJ_x1000_host   jend_HHHH
+#OBJ_x1000_host   gsclip_HHHH

@@ -1,0 +1,229 @@
+#!/bin/csh -f
+#
+#         C-shell script : sh_crx2rnx
+#             (frontend of CRX2RNX)
+# 1996.12.19  created by HATANAKA, Y.  e-mail: hata@gsi-mc.go.jp
+# 2001.7.5 modified by McClusky S. email: simon@wegener.mit.edu
+# 2018/02/07 modified by M. Floyd
+# 2020/11/30 modified by M. Floyd to accept uppercase file names and
+#                                 add latest acceptable extensions
+#
+#--------------------------------------------------------------------
+if($#argv < 1) then
+more << EOF
+
+sh_crx2rnx is a C-shell script to recover RINEX files from Compact RINEX files.
+
+             Convert GSI compact RINEX into standard RINEX  
+
+Usuage: sh_crx2rnx -c <y/n> -d <y/n> -f <files>
+
+where: -c = y indicates that both the old and new 
+            files are to be compressed (default no)
+
+       -d = y indicates that the original files are to be deleted (default yes)
+
+       -f = files to be uncompacted. Wildcard can be used.
+            Recovered RINEX files are created into current directory.
+
+example sh_crx2rnx -c n -d y -f ????325?.99d.Z ????325?.99d
+
+  compressed RINEX/CRINEX -->     CRINEX     -->      RINEX
+                               ????????.??d  -->   ????????.??o
+       ????????.??d.Z(gz) --> (????????.??d) -->   ????????.??o
+       ????????.??o.Z(gz)                    -->   ????????.??o
+       ????????.??n.Z(gz)                    -->   ????????.??n
+       ????????.??g.Z(gz)                    -->   ????????.??g
+       ????????.??l.Z(gz)                    -->   ????????.??l
+       ????????.??p.Z(gz)                    -->   ????????.??p
+       ????????.??h.Z(gz)                    -->   ????????.??h
+       ????????.??b.Z(gz)                    -->   ????????.??b
+       ????????.??m.Z(gz)                    -->   ????????.??m
+       ????????.??c.Z(gz)                    -->   ????????.??c
+       *.?O.crx.Z(gz)                        -->    *.?O.rnx
+       *.rnx.Z(gz)                           -->    *.rnx
+
+EOF
+
+exit
+endif
+#--------------------------------------------------------------------
+
+set PROGRAM = crx2rnx
+set compress = "n" 
+set delete = "y" 
+while ( $#argv > 0 )
+   set input = ($argv)
+   switch($input[1])
+     case -c:
+       set compress = $input[2]   
+     breaksw
+     case -d:
+       set delete = $input[2]  
+     breaksw
+     case -f:
+       set files =  (`echo $argv | cut -d- -f2`); shift files
+     breaksw 
+   endsw         
+   if ( $#argv > 0 ) shift argv
+ end 
+
+foreach file (`echo $files`)
+
+    set file2 = $file:t
+    if( $file2:e == 'Z')  set file2 = $file2:r 
+    if( $file2:e == 'gz') set file2 = $file2:r 
+    if( $file2:e == 'bz2') set file2 = $file2:r 
+    if( $file2:e == 'xz') set file2 = $file2:r 
+
+    set body = `echo "$file2:r" | tr '[:upper:]' '[:lower:]'`
+    set extension = `echo "$file2:e" | tr '[:upper:]' '[:lower:]'`
+    set yy = `echo $extension | cut -c1-2`
+
+    if($file =~ *.??[Bb].Z || $file =~ *.??[Bb].gz) then
+        gzip -d -f $file
+
+    else if($file =~ *.??[Bb].bz2) then
+        bzip2 -d -f $file
+
+    else if($file =~ *.??[Bb].xz) then
+        xz -d -f $file
+
+    else if($file =~ *.??[Cc].Z || $file =~ *.??[Cc].gz) then
+        gzip -d -f $file
+
+    else if($file =~ *.??[Cc].bz2) then
+        bzip2 -d -f $file
+
+    else if($file =~ *.??[Cc].xz) then
+        xz -d -f $file
+
+    else if($file =~ *.??[Gg].Z || $file =~ *.??[Gg].gz) then
+        gzip -d -f $file
+
+    else if($file =~ *.??[Gg].bz2) then
+        bzip2 -d -f $file
+
+    else if($file =~ *.??[Gg].xz) then
+        xz -d -f $file
+
+    else if($file =~ *.??[Hh].Z || $file =~ *.??[Hh].gz) then
+        gzip -d -f $file
+
+    else if($file =~ *.??[Hh].bz2) then
+        bzip2 -d -f $file
+
+    else if($file =~ *.??[Hh].xz) then
+        xz -d -f $file
+
+    else if($file =~ *.??[Ll].Z || $file =~ *.??[Ll].gz) then
+        gzip -d -f $file
+
+    else if($file =~ *.??[Ll].bz2) then
+        bzip2 -d -f $file
+
+    else if($file =~ *.??[Ll].xz) then
+        xz -d -f $file
+
+    else if($file =~ *.??[Mm].Z || $file =~ *.??[Mm].gz) then
+        gzip -d -f $file
+
+    else if($file =~ *.??[Mm].bz2) then
+        bzip2 -d -f $file
+
+    else if($file =~ *.??[Mm].xz) then
+        xz -d -f $file
+
+    else if($file =~ *.??[Nn].Z || $file =~ *.??[Nn].gz) then
+        gzip -d -f $file
+
+    else if($file =~ *.??[Nn].bz2) then
+        bzip2 -d -f $file
+
+    else if($file =~ *.??[Nn].xz) then
+        xz -d -f $file
+
+    else if($file =~ *.??[Oo].Z || $file =~ *.??[Oo].gz) then
+        gzip -d -f $file
+
+    else if($file =~ *.??[Oo].bz2) then
+        bzip2 -d -f $file
+
+    else if($file =~ *.??[Oo].xz) then
+        xz -d -f $file
+
+    else if($file =~ *.??[Pp].Z || $file =~ *.??[Pp].gz) then
+        gzip -d -f $file
+
+    else if($file =~ *.??[Pp].bz2) then
+        bzip2 -d -f $file
+
+    else if($file =~ *.??[Pp].xz) then
+        xz -d -f $file
+
+    else if($file =~ *.??[Dd].Z || $file =~ *.??[Dd].gz) then
+        gzip -d -c $file | $PROGRAM - > $body.$yy'o'
+        if( $status == 1 ) then
+           \rm $body.$yy'o'
+           echo 'Error uncompressing Hatanaka compact rinex file: '$file
+           continue
+        else
+           if ( $delete == "y" ) then
+             \rm $file >& /dev/null
+           endif
+           if ( $compress == "y" ) then
+             gzip -f $body.$yy'o' >& /dev/null
+             gzip -f $file >& /dev/null
+           endif
+        endif
+	
+    else if($file =~ *.??[Dd].bz2) then
+        bzip2 -d -c $file | $PROGRAM - > $body.$yy'o'
+        if( $status == 1 ) then
+           \rm $body.$yy'o'
+           echo 'Error uncompressing Hatanaka compact rinex file: '$file
+           continue
+        else
+           if ( $delete == "y" ) then
+             \rm $file >& /dev/null
+           endif
+           if ( $compress == "y" ) then
+             gzip -f $body.$yy'o' >& /dev/null
+             gzip -f $file >& /dev/null
+           endif
+        endif
+
+    else if($file =~ *.??[Dd].xz) then
+        xz -d -c $file | $PROGRAM - > $body.$yy'o'
+        if( $status == 1 ) then
+           \rm $body.$yy'o'
+           echo 'Error uncompressing Hatanaka compact rinex file: '$file
+           continue
+        else
+           if ( $delete == "y" ) then
+             \rm $file >& /dev/null
+           endif
+           if ( $compress == "y" ) then
+             gzip -f $body.$yy'o' >& /dev/null
+             gzip -f $file >& /dev/null
+           endif
+        endif
+
+    else if($file =~ *.??[Dd]) then
+        $PROGRAM $file - > $body.$yy'o'
+        if( $status == 1 ) then
+           \rm $body.$yy'o'
+           echo 'Error uncompressing Hatanaka compact rinex file: '$file
+           continue
+        else
+           if ( $delete == "y" ) then
+             \rm $file >& /dev/null
+           endif
+           if ( $compress == "y" ) then
+             gzip -f $body.$yy'o' >& /dev/null
+             gzip -f $file >& /dev/null
+           endif
+        endif
+
+    endif
+end

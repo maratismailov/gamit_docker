@@ -1,0 +1,40 @@
+    4                         {network site number          
+ARGU_NGS
+LOS2_NGS
+TEPU_NGS
+GAV2_NGS
+    5                         {experiment number            
+     1    3   11              {exp. index, obs. type, number
+  1925.8787    0    0    0.00000000   0.7000    ARGU_NGS  LOS2_NGS
+  1925.8787   50    1   59.07000000   0.7000    ARGU_NGS  TEPU_NGS
+  1925.8787  111   45    8.55000000   0.7000    ARGU_NGS  GAV2_NGS
+  1925.8787    0    0    0.00000000   0.7000    GAV2_NGS  ARGU_NGS
+  1925.8787   76   12    7.64000000   0.7000    GAV2_NGS  TEPU_NGS
+  1876.0022  244    7   55.34000000   0.7000    ARGU_NGS  LOS2_NGS
+  1876.0022  294    9   55.70000000   0.7000    ARGU_NGS  TEPU_NGS
+  1876.0022  355   53    2.80000000   0.7000    ARGU_NGS  GAV2_NGS
+  1875.0022  215   26   47.32000000   0.7000    GAV2_NGS  ARGU_NGS
+  1875.0022  249   42   57.27000000   0.7000    GAV2_NGS  LOS2_NGS
+  1875.0022  291   38   57.77000000   0.7000    GAV2_NGS  TEPU_NGS
+     2    3    6              {exp. index, obs. type, nU_NGSmber
+  1925.9609   86    4   15.83000000   0.7000    LOS2_NGS  TEPU_NGS
+  1925.9609  138    8   38.50000000   0.7000    LOS2_NGS  GAV2_NGS
+  1925.9609  172    7   24.29000000   0.7000    LOS2_NGS  ARGU_NGS
+  1925.9609    0    0    0.00000000   0.7000    TEPU_NGS  GAV2_NGS
+  1925.9609   42    4   46.59000000   0.7000    TEPU_NGS  ARGU_NGS
+  1925.9609   85   59   41.71000000   0.7000    TEPU_NGS  LOS2_NGS
+     3    2    6              {exp. index, obs. type, nU_NGSmber
+  1883.0031    0    0    0.00000000   0.7000    LOS2_NGS  TEPU_NGS
+  1883.0031   52    4   21.90000000   0.7000    LOS2_NGS  GAV2_NGS
+  1883.0031   86    3    8.41000000   0.7000    LOS2_NGS  ARGU_NGS
+  1882.0037    0    0    0.00000000   0.7000    TEPU_NGS  LOS2_NGS
+  1882.0037  274    0   17.70000000   0.7000    TEPU_NGS  GAV2_NGS
+  1882.0037  316    5    4.27000000   0.7000    TEPU_NGS  ARGU_NGS
+     4    4    2              {exp. index, obs. type, nU_NGSmber
+  1879.0030   57308.96200    5.76000000    LOS2_NGS  GAV2_NGS
+  1924.0033   57308.96200    5.76000000    LOS2_NGS  GAV2_NGS
+     5   41    4
+  1950.0023    -7.62     -3.19   ARGU_NGS
+  1950.0023    -14.20    -10.45  TEPU_NGS
+  1950.0023    -8.91     -11.97  GAV2_NGS
+  1950.0023    -6.19     -4.27   LOS2_NGS

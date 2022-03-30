@@ -1,0 +1,32 @@
+#!/bin/csh -f
+# Script to return the 4 and 2 digit year associated with a
+# file.  If the file does not exist 0 and 0 are returned
+if( $#argv < 1 ) then
+   echo ""
+   echo "sh_tfyear returns the 4 and 2-digit year of a t-file."
+   echo "Usage:"
+   echo "% sh_tfyear <t-file> "
+   echo "or"
+   echo 'set tfyear = `sh_tfyear <t-file>`'
+   echo '$tfyear[1] is 4-digit year'
+   echo '$tfyear[2] is 2-digit year'
+   echo ""
+   echo "Zeros are returned if error in tfile."
+   echo ""
+   exit
+endif
+#
+set tf = $1
+set yr4 = 0
+set yr2 = 0
+if( -e $tf ) then
+#   Try ttoasic
+    # Edited by MAF (2017-10-18, MIT) to avoid problems when there are spaces in the output status time tag
+    #set af = `ttoasc $tf | grep 'ASCII dump on file' | awk '{gsub(")"," ")} {print $10}'`
+    set af = `ttoasc $tf | grep 'ASCII dump on file' | awk '{print $NF}' | tr -d ')'`
+    set yr4 = `grep 'Epoch of initial conditions' $af | awk '{printf("%4.4d",$3)}'`
+    set yr2 = `echo $yr4 | awk '{printf("%2.2d",substr($1,3,2))}'`
+    \rm $af
+endif
+echo $yr4 $yr2
+

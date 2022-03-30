@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Script for updating required LAPACK routines.
+# Move dlapack.f to gamit/lib/ when finished.
+
+# Redirect standard error to /dev/null
+exec 2>/dev/null
+
+v='3.3.1'
+
+# Download latest BLAS1, 2 and 3 routines
+wget -N http://www.netlib.org/lapack/lapack-$v.tgz
+
+# Unzip and expand downloaded tar-files
+tar xvfz lapack-$v.tgz && rm -f lapack-$v.tgz
+
+# Concatenate required routines
+rm -f dlapack.f
+for routine in dppcon dpptrf dpptri dpptrs; do
+  cat lapack-$v/SRC/$routine.f >> dlapack.f
+done
+
+# Add dependencies
+for routine in dlacn2 dlamch dlatps drscl dtptri; do
+  cat lapack-$v/SRC/$routine.f >> dlapack.f ||
+   cat lapack-$v/INSTALL/$routine.f >> dlapack.f
+done
+
+# Add further dependencies (for DRSCL)
+cat lapack-$v/SRC/dlabad.f >> dlapack.f
+
+rm -fr lapack-$v
+

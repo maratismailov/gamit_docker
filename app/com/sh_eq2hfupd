@@ -1,0 +1,61 @@
+#!/bin/csh -f
+#
+#         C-shell script : sh_eq2hfupd
+# 2001.7.26 Created by McClusky S. email: simon@wegener.mit.edu
+#
+#--------------------------------------------------------------------
+if($#argv < 1) then
+more << EOF
+
+sh_eq2hfupd is a C-shell script to convert globk eq file rename lines into hfupd edit lines.
+
+Usuage: sh_eq2hfupd -f <file> -id <char>
+
+where: -f = globk eq file to be converted.
+       -id = character string used to identify hfiles to be updated.
+       -full = use full 8 char name for delete entries.
+
+example sh_eq2hfupd -id SIO -f output.file
+
+EOF
+
+exit
+endif
+#--------------------------------------------------------------------
+
+set file =  ''
+set id = ''
+set full = ''
+while ( $#argv > 0 )
+   set input = ($argv)
+   switch($input[1])
+     case -id:
+       set id = $input[2]   
+     breaksw
+     case -f:
+       set file =  (`echo $argv | cut -d- -f2`); shift file
+     breaksw 
+     case -full:
+       set full = 'Y'   
+     breaksw
+   endsw         
+   if ( $#argv > 0 ) shift argv
+ end 
+
+if ( $full != 'Y' ) then
+  grep XCL $file | awk -v id=$id '{printf "%7s %4s %s %04d %02d %02d %02d %02d %04d %02d %02d %02d %02d \n"," delete", substr($2,1,4), id, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13}' >! $file.hfupd
+else
+  grep XCL $file | awk -v id=$id '{printf "%7s %8s %s %04d %02d %02d %02d %02d %04d %02d %02d %02d %02d \n"," delete", $2, id, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13}' >! $file.hfupd
+endif
+
+cat $file.hfupd | sort -n -k4 -k5 -k6 >! $file.hfupd.sort
+
+set years = `cat $file.hfupd.sort | awk '{print $4}' | sort -n | uniq`
+
+foreach i ($years)
+  cat $file.hfupd.sort | awk -v i=$i ' $4 == i {print $0}' >! $file.hfupd.sort.$i
+end 
+
+#The end
+
+exit

@@ -1,0 +1,56 @@
+#!/bin/csh 
+#
+#doc Scan predicted post-fit residuals and generate lists of series rms
+#doc
+#
+# R. King May 1996
+if ($#argv == 0) then
+   echo ' '                                       
+   echo ' Scan predicted post-fit residuals and generate lists of series rms'
+   echo ' and cycle slips for editing with CVIEW or AUTCLN'
+   echo ' '        
+   echo '  Usage:   sh_scandd  mfile  '
+   echo ' '                    
+else
+         
+#  create the input file for scandd
+
+   echo $1 >! scandd.inp
+   echo 'y' >> scandd.inp
+   echo 'y' >> scandd.inp
+   echo 'y' >> scandd.inp   
+
+#  Run scandd to create vscan.out and scan.rms
+
+#  scandd < scandd.inp
+
+#  Sort vscan.out to get lists of all and 76 worst slips
+#  Write all slips to vscan.out.sort
+#  Write 76 worst slips to screen and to vscan.out.worst
+
+   sortv v 
+
+#  Copy worst slips to cview.list for input to CVIEW
+   echo ' '
+   echo 'Copying worst slips (vscan.out.worst) to cview.list'
+   /bin/cp vscan.out.worst cview.list
+
+#  Sort scan.rms by rms for all series with rms > 0.15 cycles
+   echo '0.15' >! sorter.inp
+   echo '0 0 ' >> sorter.inp
+   echo '0 0 ' >> sorter.inp
+   sorter < sorter.inp
+
+#  Write summary to screen
+   echo ' '
+   echo 'Scan of residuals completed '
+   echo ' '
+   echo '  Use cview.list to see the largest slips '
+   echo '  and rms.ful to see the largest series misfits'  
+   echo ' '
+
+endif
+
+
+
+

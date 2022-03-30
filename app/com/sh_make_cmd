@@ -1,0 +1,194 @@
+#!/bin/csh -f 
+#
+#doc Create globk and/or glorg command files 
+#doc
+#
+# Last modified 00/09/19 by Simon McClusky and R King
+if ( $#argv == 0 ) then 
+  echo "Create globk and/or glorg command files" 
+  echo " USAGE:  sh_make_cmd -eqf <file> -aprf <file> -pmuf <file> -glorgf <file> -globkf <file>" 
+  echo "                     -hfname <name> -netlist <list> -repuse <list> -repstab <list>"
+  echo "  "  
+  echo " EXAMPLES"
+  echo "  "  
+  echo " sh_make_cmd -glorgf glorg_comb.cmd -globkf globk_comb.cmd "  
+  echo "  "  
+  exit
+endif
+##################### SET UP DEFAULTS #############################   
+# Echo input options
+echo "Input options ${argv[*]}"
+set input_opts = `echo "Input options ${argv[*]}"`
+set eq_file = 'none'
+set aprf = ''
+set in_pmu = ''
+set glorg_cmd = ''
+set globk_cmd = ''
+set hfname = 'comb'
+set netlist = ''
+set repuse = ''
+set repstab = ''   
+
+############## DECIPHER THE REST OF THE COMMAND LINE ################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -eqf:
+      set eq_file = $argv[2] 
+    breaksw 
+    case -aprf:
+      set aprf = $argv[2] 
+    breaksw 
+    case -pmu*:
+      set in_pmu = $argv[2] 
+    breaksw 
+    case -glorg*:
+      set glorg_cmd = $argv[2] 
+    breaksw 
+    case -globk*:
+      set globk_cmd = $argv[2] 
+    breaksw 
+    case -ex*:
+      set expt = $argv[2] 
+    breaksw 
+    case -hf*:
+      set hfname = $argv[2] 
+    breaksw 
+    case -net*:
+       set netlist = (`echo $argv | cut -d- -f2`); shift netlist
+       set num = ` echo $netlist | wc | awk '{print $2}'`; if ( $num <= 0 ) set netlist = ''
+    breaksw
+    case -repu*:
+       set repuse = (`echo $argv | cut -d- -f2`); shift repuse
+       set num = ` echo $repuse | wc | awk '{print $2}'`; if ( $num <= 0 ) set repuse = ''
+    breaksw
+    case -reps*:
+       set repstab = (`echo $argv | cut -d- -f2`); shift repstab
+       set num = ` echo $repstab | wc | awk '{print $2}'`; if ( $num <= 0 ) set repstab = ''
+    breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ############################ 
+# Make globk_comb.cmd file if none exist
+if ( $globk_cmd != '' ) then
+  if ( -e $globk_cmd ) then 
+    echo "$globk_cmd already exists. NOT overwritten"
+  else
+    echo "* Globk command file to combine solutions                          "  >! $globk_cmd
+    echo "  make_svs comb.svs Z                                              "  >> $globk_cmd
+    if ( $eq_file != 'none' ) echo "  eq_file ${eq_file}                     "  >> $globk_cmd
+    echo "  com_file comb.com                                                "  >> $globk_cmd
+    echo "  srt_file comb.srt                                                "  >> $globk_cmd
+    if ( $aprf != '' ) echo "  apr_file ${aprf}                              "  >> $globk_cmd
+    echo "                                                                   "  >> $globk_cmd
+    echo "  max_chii 13 3                                                    "  >> $globk_cmd
+    echo "                                                                   "  >> $globk_cmd
+    if ( $in_pmu != '' ) echo "  in_pmu $in_pmu                              "  >> $globk_cmd
+    echo "  prt_opt GDLF CMDS                                                "  >> $globk_cmd
+    echo "  org_opt PSUM CMDS GDLF                                           "  >> $globk_cmd
+    echo "  org_cmd ${glorg_cmd}                                             "  >> $globk_cmd
+    echo "                                                                   "  >> $globk_cmd
+    echo "  apr_neu  all  100 100 100  0 0 0                                 "  >> $globk_cmd
+    echo "  apr_svs  all  100 100 100 10 10 10 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 "  >> $globk_cmd
+    echo "  apr_wob  100 100  10  10  0 0 0 0 0 0                            "  >> $globk_cmd
+    echo "  apr_ut1  100  10          0 0 0 0                                "  >> $globk_cmd
+    echo "                                                                   "  >> $globk_cmd
+    echo "  out_glb  H------_${hfname}.GLX                                   "  >> $globk_cmd
+    echo "  descr Combination of ${netlist} networks                         "  >> $globk_cmd
+    echo "                                                                   "  >> $globk_cmd   
+    if ( ${repuse[1]} != '' && ${repuse[1]} != "all_sites" ) then 
+      echo "  use_site clear                                                 "  >> $globk_cmd
+      foreach site ( $repuse )                                                 
+        echo "  use_site +${site}                                            "  >> $globk_cmd
+      end
+    else
+      echo "  use_site all                                                   "  >> $globk_cmd
+    endif 
+  endif                                                                      
+endif
+
+# Make glorg_comb.cmd file if none exist
+if ( $glorg_cmd != '' ) then
+  if ( -e $glorg_cmd ) then 
+    echo "$glorg_cmd already exists. NOT overwritten"
+  else
+    echo "* Standard glorg coordinate solution processing"     >! $glorg_cmd
+    echo "                                                 "  >> $glorg_cmd
+    echo "  pos_org  xtran ytran ztran xrot yrot zrot scale"  >> $glorg_cmd
+    echo "  cnd_hgt  10   10                               "  >> $glorg_cmd
+    echo "                                                 "  >> $glorg_cmd
+    echo "  stab_it 4                                      "  >> $glorg_cmd
+    echo "                                                 "  >> $glorg_cmd
+    echo "  stab_site clear                                 "  >> $glorg_cmd
+    echo "                                                 "  >> $glorg_cmd  
+    if ( ${repstab[1]} != '' ) then
+      if (  ${repstab[1]} == 'all_sites' ) then
+        echo "  stab_site all" 
+      else                                       
+        foreach site ( $repstab )                               
+          echo "  stab_site +${site}                        "  >> $glorg_cmd
+        end 
+      endif
+    else
+      echo "  stab_site +VILL_GPS                           "  >> $glorg_cmd
+      echo "  stab_site -MADR_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +MAS1_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +MASP_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +FORT_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +BRAZ_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +KOUR_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +OHIG_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +BRMU_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +THU1_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +SANT_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +AREQ_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +WES2_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +GODE_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +ALGO_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +NLIB_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +MDO1_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +PIE1_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +YELL_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +GOL2_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +GOLD_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +DRAO_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +FAIR_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +KOKB_GPS                           "  >> $glorg_cmd
+      echo "  stab_site -CHAT_GPS                           "  >> $glorg_cmd
+      echo "  stab_site -AUCK_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +KWJ1_GPS                           "  >> $glorg_cmd
+      echo "  stab_site -MCM4_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +MAC1_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +TID2_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +TIDB_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +HOB2_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +GUAM_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +TSKB_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +SHAO_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +PERT_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +YAR1_GPS                           "  >> $glorg_cmd
+      echo "  stab_site -CAS1_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +IRKT_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +LHAS_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +DAV1_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +KERG_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +KIT3_GPS                           "  >> $glorg_cmd
+      echo "  stab_site -BAHR_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +MALI_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +ZWEN_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +HART_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +TROM_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +MATE_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +GRAZ_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +POTS_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +WTZR_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +ONSA_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +NYAL_GPS                           "  >> $glorg_cmd
+      echo "  stab_site +KOSG_GPS                           "  >> $glorg_cmd 
+    endif
+  endif
+endif
+
+exit

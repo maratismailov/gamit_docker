@@ -1,0 +1,371 @@
+#!/bin/csh -f
+#
+#doc build CATS input files from mb_files
+#doc
+#
+#
+# Written by Wouter Maes March 2004
+# Shell script to build CATS input files from mb_files
+# Header information comes from the mb_files and an .org file
+#
+#######################################################################################
+# Display help
+if ($#argv == 0) then
+cat << EOF
+
+This script builds cats_MLE inputfiles (*.neu files) from mb_files.
+
+Basic usage:
+
+   sh_mb2cats -f mb* -t timeformat
+
+   -f mb*	: all mb_files in current directory will be processed.
+or -F filename	: filename is a file containing a list of specific mb_files.
+
+   -t timeformat: Specify the time format of the mb_files: c[alender], d[ay] or y[ear],
+		  default is y[ear].
+
+Additional options:
+
+   -i inputfile : the name of an .org file - used as header information.
+   -o[ffsets]   : the option to print the time offsets in the header,
+		  default is NOT to print the offsets. 
+   -b[aseline]  : the option to build a second *.neu file containing the baseline
+                  lengths and errors from the mb*.dat4 files,
+		  default is NOT to build this file.
+
+Examples:
+
+   sh_mb2cats -f mb* 
+   sh_mb2cats -f mb* -t day 
+   sh_mb2cats -F my_list -t calender -i glred_rep_1999.org -baseline -offsets
+
+Notes:
+
+   1. Make sure that all mb_files have the format 
+           mb_SITE_GPS.dat[1-3]
+       or  mb_SIT1_GPS_SIT2_GPS.dat[1-4]
+
+   2. Make sure that the doy2 program written by Peter Morgan works if you 
+      choose to print the offsets.
+
+EOF
+exit
+endif
+
+#######################################################################################
+# Print time at start of processing
+echo "Time is" `date | awk '{print $4}'`
+#######################################################################################
+# Set defaults
+set offsets = no
+set timeformat = year
+set length = no
+
+cat /dev/null > orgfile		   # Create zero-length file ( better than: touch orgfile )
+
+#######################################################################################
+# Read options
+while ($#argv)
+	set input = ($argv)
+
+	switch ($input[1])
+	case -f:
+		ls mb_????_GPS.dat[1-3] | awk -F_ '/dat1/ {print $2}' > sitelist1		
+		ls mb_????_GPS_????_GPS.dat[1-4] | awk -F_ '/dat1/ {print $2"_"$4}' > sitelist2  
+		shift argv
+	breaksw
+	case -F:
+                awk -F_ 'NF == 3 && /dat1/ {print $2}' $argv[2] > sitelist1
+		awk -F_ 'NF == 5 && /dat1/ {print $2"_"$4}' $argv[2] > sitelist2
+		shift argv
+	breaksw
+	case -t:
+		set timeformat = $argv[2]
+		shift argv
+	breaksw
+	case -o:
+	case -offsets:
+		set offsets = yes				
+	breaksw
+	case -i:
+		set real_org = $argv[2]
+                mv -f $argv[2] orgfile   
+		shift argv
+	breaksw
+	case -b:
+	case -baseline:
+		set length = yes
+	endsw
+	shift argv
+end
+
+#######################################################################################
+# Build header3: Processing strategy (This part of the header information is the same 
+# for all stations so do not include it in the foreach site loop)
+  cat /dev/null > tmp.header3
+  if ( ! -z orgfile ) then		# if orgfile is not a zero-length file
+    echo "#  Processing strategy:" > tmp.process
+    awk '$1 ~ /app_ptid/ {print "#"$0}' orgfile | tail -n -1 >> tmp.process
+    awk '$1 ~ /apr_svs/  {print "#"$0}' orgfile | tail -n -1 >> tmp.process   
+    awk '$1 ~ /apr_wob/  {print "#"$0}' orgfile | tail -n -1 >> tmp.process  
+    awk '$1 ~ /mar_wob/  {print "#"$0}' orgfile | tail -n -1 >> tmp.process  
+    awk '$1 ~ /mar_ut1/  {print "#"$0}' orgfile | tail -n -1 >> tmp.process  
+    set StabIter = `awk '/Starting stabilization iteration/ {print $4}' orgfile | tail -n -1`
+    echo "#  The number of stabilization iterations was $StabIter." >> tmp.process   
+    awk '{sub(/#  /, "# "); print}' tmp.process > tmp.header3    
+    echo "#" >> tmp.header3
+  endif
+
+#######################################################################################
+#######################################################################################
+# Start processing job for dat[1-3] files
+foreach site (`cat sitelist1`)
+ 
+  # Skip off the header of the mbfiles
+  foreach i ( 1 2 3 )
+    tail -n +4 mb_${site}_GPS.dat${i} > tmp.dat${i}
+  end  
+
+  # Build time column, depending on time format cal, day or year.
+  if ( $timeformat == "c" || $timeformat == "cal" || $timeformat == "calender" ) then
+    echo "Converting calender time format to decimal years, have patience, this can take a while..."
+    cp tmp.dat1 tmp.time_cal
+    while ( ! -z tmp.time_cal )
+      doy ` awk 'NR==1 {print $1,$2,$3,$4,$5}' tmp.time_cal ` | tail -n -1 | head -n 1 | awk '{print $3}' >> tmp.time     
+      tail -n +2 tmp.time_cal > file
+      mv -f file tmp.time_cal
+    end
+  else if ( $timeformat == "d" || $timeformat == "day" ) then
+    awk '{print $1}' tmp.dat1 > tmp.time 			# Nog aanpassen!!!!!!
+  else if ( $timeformat == "y" || $timeformat == "year" ) then
+    awk '{print $1}' tmp.dat1 > tmp.time
+  endif
+
+  # Build header1: Site, N, E, U
+  echo "# SITE : $site" > tmp.header1
+  echo "#" >> tmp.header1
+  awk '/Solution/ {printf "# North  : %15s m \n", $7}' mb_${site}_GPS.dat1 >> tmp.header1
+  awk '/Solution/ {printf "# East   : %15s m \n", $7}' mb_${site}_GPS.dat2 >> tmp.header1
+  awk '/Solution/ {printf "# Up     : %15s m \n", $7}' mb_${site}_GPS.dat3 >> tmp.header1
+  echo "#" >> tmp.header1
+
+  # Build header2: Start and stop times
+  head -n 1 tmp.time | awk '{print "# The start time is "$1}' >  tmp.header2
+  tail -n -1 tmp.time | awk '{print "# The stop  time is "$1}' >> tmp.header2
+  echo "#" >> tmp.header2
+
+  # Header3 is already created.
+  
+  # Build header4: Checking for offsets
+  cat /dev/null > tmp.header4
+  if ( $offsets == "yes" ) then
+    echo "Checking ${site} for offsets..."
+    cp tmp.time tmp.offsets
+    
+    while ( ! -z tmp.offsets )
+      head -n 2 tmp.offsets > file1
+      set day = (`cat file1`)      
+      #set a1 = `sh_doy2 $day[1] | tail -n -1 | awk '{print $5}' `
+      #set a2 = `sh_doy2 $day[2] | tail -n -1 | awk '{print $5}' `
+      set a1 = `doy2 $day[1] | tail -n -1 | awk '{print $5}' `
+      set a2 = `doy2 $day[2] | tail -n -1 | awk '{print $5}' `      
+#        @ diff = $a2 - $a1      
+      @ diff = `echo "ibase=10; ${a2} - ${a1}" | bc`
+
+      set j = 1
+      while ( $j < $diff )
+#          @ b = $a1 + $j    
+        @ b = `echo "ibase=10; ${a1} + ${j}" | bc`
+        set c = `doy $b | tail -n -1 | awk '{print $3}'`
+        echo "# offset $c 7" >> tmp.header4
+        @ j++
+      end
+      tail -n +2 tmp.offsets > file2
+      mv -f file2 tmp.offsets
+    end
+    echo "#" >> tmp.header4
+  endif 
+    
+  #The next lines are not an alternative. Depending om #argv of day you get error message: Foreach: Too many arguments...     
+  #  set a = `awk '{print $1}' tmp.dat1`
+  #  foreach day ( $a )
+  #    #doy2 $day | tail -n -1 | awk '{print $5}' >> tmp.doy
+  #    sh_doy2 $day | tail -n -1 | awk '{print $5}' >> tmp.doy
+  #  end
+  #  set a = (`cat tmp.doy`)
+  #  set n = $#a
+  #  set i = 1
+  #  while ( $i < $n )
+  #    @ diff = $a[2] - $a[1]
+  #    set j = 1
+  #    while ( $j < $diff )
+  #      @ b = $a[1] + $j
+  #      set c = `doy $b | tail -n -1 | awk '{print $3}'`
+  #      echo "# offset $c 7" >> tmp.header4
+  #      @ j++
+  #    end
+  #    shift a
+  #    @ i++
+  #  end
+  #  echo "#" >> tmp.header4
+  #endif
+
+  # Build header5
+  echo "#   Time         N[m]         E[m]         U[m]         N_err        E_err        U_err" > tmp.header5
+                      
+  # Build the time series part of the cats inputfile
+  paste tmp.time tmp.dat1 tmp.dat2 tmp.dat3 > tmp.dat1_2_3
+  if ( $timeformat == "c" || $timeformat == "cal" || $timeformat == "calender" ) then
+    awk '{printf "%10.4f%13.5f%13.5f%13.5f%13.5f%13.5f%13.5f\n", $1,$7,$14,$21,$8,$15,$22}' tmp.dat1_2_3 > tmp.series
+  else 
+    awk '{printf "%10.4f%13.5f%13.5f%13.5f%13.5f%13.5f%13.5f\n", $1,$3, $6, $9,$4, $7,$10}' tmp.dat1_2_3 > tmp.series
+  endif
+
+  # Build final *.neu output file 
+  cat tmp.header1 tmp.header2 tmp.header3 tmp.header4 tmp.header5 tmp.series > ${site}.neu
+  echo "Created : ${site}.neu"
+  
+  # Remove temporary files
+  rm -f tmp.header[1,2,4,5] tmp.series tmp.dat* tmp.time  
+
+# End foreach loop
+end
+
+#######################################################################################
+#######################################################################################
+# Start processing job for dat[1-4] files
+foreach site (`cat sitelist2`)
+  set site1 = `echo $site | cut -c1-4`
+  set site2 = `echo $site | cut -c6-9`
+
+  # Skip off the header of the mbfiles
+  foreach i ( 1 2 3 )                     
+    tail -n +4 mb_${site1}_GPS_${site2}_GPS.dat${i} > tmp.dat${i}
+  end  
+  
+  # Build time column, depending on time format cal, day or year.  
+  if ( $timeformat == "c" || $timeformat == "cal" || $timeformat == "calender" ) then
+    echo "Converting calender time format to decimal years, this can take a while..."
+    cp tmp.dat1 tmp.time_cal
+    while ( ! -z tmp.time_cal )
+      doy ` awk 'NR==1 {print $1,$2,$3,$4,$5}' tmp.time_cal ` | tail -n -1 | head -n 1 | awk '{print $3}' >> tmp.time     
+      tail -n +2 tmp.time_cal > file
+      mv -f file tmp.time_cal
+    end
+  else if ( $timeformat == "d" || $timeformat == "day" ) then
+    awk '{print $1}' tmp.dat1 > tmp.time 			# Nog aanpassen!!!!!!
+  else if ( $timeformat == "y" || $timeformat == "year" ) then
+    awk '{print $1}' tmp.dat1 > tmp.time
+  endif 
+ 
+  # Build header1: Site, N, E, U, L  
+  echo "# SITE: $site" > tmp.header1
+  echo "#" >> tmp.header1
+  awk '/Solution/ {printf "# North  : %15s m \n", $7}' mb_${site1}_GPS_${site2}_GPS.dat1 >> tmp.header1
+  awk '/Solution/ {printf "# East   : %15s m \n", $7}' mb_${site1}_GPS_${site2}_GPS.dat2 >> tmp.header1
+  awk '/Solution/ {printf "# Up     : %15s m \n", $7}' mb_${site1}_GPS_${site2}_GPS.dat3 >> tmp.header1
+  awk '/Solution/ {printf "# Length : %15s m \n", $7}' mb_${site1}_GPS_${site2}_GPS.dat4 >> tmp.header1
+  echo "#" >> tmp.header1
+
+  # Build header2: Start and stop times
+  head -n 1 tmp.dat1 | awk '{print "# The start time is "$1}' >  tmp.header2
+  tail -n -1 tmp.dat1 | awk '{print "# The stop  time is "$1}' >> tmp.header2
+  echo "#" >> tmp.header2
+
+  # Header3 is already created.
+  
+  # Build header4: Checking for offsets
+  cat /dev/null > tmp.header4
+  if ( $offsets == "yes" ) then
+    echo "Checking ${site} for offsets..."
+    cp tmp.time tmp.offsets
+    
+    while ( ! -z tmp.offsets )
+      head -n 2 tmp.offsets > file1
+      set day = (`cat file1`)      
+      #set a1 = `sh_doy2 $day[1] | tail -n -1 | awk '{print $5}' `
+      #set a2 = `sh_doy2 $day[2] | tail -n -1 | awk '{print $5}' `
+      set a1 = `doy2 $day[1] | tail -n -1 | awk '{print $5}' `
+      set a2 = `doy2 $day[2] | tail -n -1 | awk '{print $5}' `      
+#        @ diff = $a2 - $a1    
+       @ diff = `echo "ibase=10; ${a2} - ${a1}" | bc`
+
+      set j = 1
+      while ( $j < $diff )
+#         @ b = $a1 + $j     
+        @ b = `echo "ibase=10; ${a1} + ${j}" | bc`
+        set c = `doy $b | tail -n -1 | awk '{print $3}'`
+        echo "# offset $c 7" >> tmp.header4
+        @ j++
+      end
+      tail -n +2 tmp.offsets > file2
+      mv -f file2 tmp.offsets
+    end
+    echo "#" >> tmp.header4
+  endif 
+
+  # Build header5a
+  echo "#   Time         N[m]         E[m]         U[m]         N_err        E_err        U_err" > tmp.header5a
+           
+  # Build the time series part of the cats inputfile
+  paste tmp.time tmp.dat1 tmp.dat2 tmp.dat3 > tmp.timedat123
+  if ( $timeformat == "c" || $timeformat == "cal" || $timeformat == "calender" ) then
+    awk '{printf "%10.4f%13.5f%13.5f%13.5f%13.5f%13.5f%13.5f\n", $1,$7,$14,$21,$8,$15,$22}' tmp.timedat123 > tmp.series
+  else 
+    awk '{printf "%10.4f%13.5f%13.5f%13.5f%13.5f%13.5f%13.5f\n", $1,$3, $6, $9,$4, $7,$10}' tmp.timedat123 > tmp.series
+  endif
+
+  # Build final *.neu output file
+  if ( $length == yes ) then
+    set app = _1
+  else
+    set app = ""
+  endif
+  
+  cat tmp.header1 tmp.header2 tmp.header3 tmp.header4 tmp.header5a tmp.series > ${site}${app}.neu    
+  echo "Created : ${site}${app}.neu"
+
+  # Build length file if baseline option is turned on.
+  if ( $length == yes ) then
+    # Skip off the header of the mb_*.dat4 file
+    tail -n +4 mb_${site1}_GPS_${site2}_GPS.dat4 > tmp.dat4
+  
+    # Build header5b
+    echo "#   Time         L[m]         -            -            L_err        -            -" > tmp.header5b
+         	   
+    # Build time series part
+    paste tmp.time tmp.dat4 > tmp.timedat4
+    awk '{printf "%10.4f%13.5f      0.00000      0.00000%13.5f      0.00000      0.00000\n", $1,$3,$4}' tmp.timedat4 > tmp.series
+                                                  
+    # Build final *.neu output file
+    cat tmp.header1 tmp.header2 tmp.header3 tmp.header4 tmp.header5b tmp.series > ${site}_2.neu
+    echo "Created : ${site}_2.neu"
+  
+  endif
+
+  # Remove temporary files
+  rm -f tmp.header[1,2,4] tmp.series tmp.dat* tmp.time  
+
+# End foreach loop
+end
+
+#######################################################################################
+# Rename or delete org file and remove sitelist[1-2] and rest of tmp* files
+if ( ! -z orgfile ) then
+  mv -f orgfile $real_org
+else
+  rm -f orgfile
+endif
+rm -f sitelist[1-2] tmp.*
+#rm -f DOY*
+
+#######################################################################################
+#######################################################################################
+# Print time at end of processing
+echo "Time is" `date | awk '{print $4}'`
+
+
+echo sh_mb2cats completed succesfully\!\!
+exit 0
+# END

@@ -1,0 +1,32 @@
+# Generic Makefile for arc - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King December 2, 1999
+
+#LABELS: kinv_lib:NONE:kinv_lib:NONE 
+#LABELS: benchd:benchd:NONE:benchd  
+                
+
+#SHARELIB: .:kinv_lib
+
+#OBJ_kinv_lib   dwmab
+#OBJ_kinv_lib   dwadd
+#OBJ_kinv_lib   dvdot
+#OBJ_kinv_lib   dwdot
+#OBJ_kinv_lib   dwpiv
+#OBJ_kinv_lib   dwsmy
+#OBJ_kinv_lib   dwswp
+#OBJ_kinv_lib   dwsum
+#OBJ_kinv_lib   dwmov
+#OBJ_kinv_lib   dvswp
+#OBJ_kinv_lib   dwvmv
+#OBJ_kinv_lib   dwsad
+#OBJ_kinv_lib   dwsub
+#OBJ_kinv_lib   dwint
+#OBJ_kinv_lib   wmov
+#OBJ_kinv_lib   gauss_elim
+#OBJ_kinv_lib   invert_vis
+#OBJ_kinv_lib   scale_matrix
+#OBJ_kinv_lib   squez_matrix  
+#OBJ_kinv_lib   dwadd8
+#OBJ_kinv_lib   dwint8
+#OBJ_kinv_lib   dwmov8
+#OBJ_kinv_lib   dwsmy8

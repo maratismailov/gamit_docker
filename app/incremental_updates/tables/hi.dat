@@ -1,0 +1,651 @@
+# File: hi.dat  Format version 1.0  (keep the version number in columns 32-34 of line 1) 
+# Table of mechanical offsets between measured height-of-instrument (HI) and the antenna reference point (ARP) 
+# Entries last added by rwk 061218; correction to ASHDMG entries by S Shimada and rwk 061228 
+# Correction to ROGSNR and ROGRMA entries by S. Hreinsdottir and rwk 070102 
+# Last edit by rwk 071026 to add SLBGP and SLBGN for TRPERM  
+# Last edit by rwk/scm 080221 to correct SLAGP to SLHGP for ASH700228A,B,C
+# Last edit by rwk 080916 to correct sign of height-hook correction for Leicas and WM-102, 
+#    and change offset for LEIAT303 from 0.345 to 0.360.
+# Last edit by rwk/tah 090414 to correct ROGRMA to ROGMRA.
+# Last edit by rwk 090910 to add four Trimble Zephyr models
+# Last edit by rwk 091203 for Thales ZMax   
+# Last edit by rwk 100707 for TPSPG_A1_6_+GP   
+# Last edit by rwk 101201 to correct radius value for the TPSHIPER_PLUS.     
+# Last edit by rwk 101203 to add slant measurements for TRM39105.00 (Zephyr w/o ground plane)    
+# Last edit by rwk 111101 to fix typos in entries for SEN14R, SENS49R, SENS96, SENS96, SEN96R,
+#    TPS721, TRSXDS, and TRSLDR.
+# Last edit by rwk 111212 add dimensions for LC504G, assumed same as LC_504.
+# Last edit by rwk 111212 add dimensions for ATDMCE, assumed same as ASHDMG
+# Last edit by rwk 111215 add dimensions for NO7022
+# Last edit by rwk 120914 add dimensions for LCAR25, LCR253, LCR254.
+# Last edit by rwk 130122 add dimensions for ASH111661
+# Last edit by rwk 130129 add JAVRINGANT_DM 
+# Last edit by rwk 130624 add STHS83 and STHS86
+# Last edit by rwk 130701 add HXCGG486A and HXCGS488A 
+# Last edit by rwk 130828 add TRMAG25, CHCX90D-OPUS, JAVTRIANT_A, JAVTRIANT_B, and JAV_TRIUMPH-1R.
+# Last edit by rwk 130904 add ACC_5GANT_52AT1
+# Last edit by rwk 130926 add TRM59800.00 
+# Last edit by rwk 131011 add GMXZENITH25, LEIICG60, TAIPENG2100B, and TIAPENG2100R 
+# Last edit by rwk 131127 add AER1675_120 and TRM36569.00+GP  
+# Last edit by rwk 140402 add ASH700700.B and ASH700700.C
+# Last edit by rwk 150422 add HXCCSX601A, HXCCG7601A and HXCCGX601A
+# Last edit by rwk 150520 add ACCG8ANT_52A4TC
+# Last edit by MAF 150720 add TRMR6-2, TRMR6-3, TRMR6-4
+# Last edit by rwk 150729 add HEMA42, HEMA52_WB 
+# Last edit by rwk 151002 add SPP91564_1 and SPP915642
+# Last edit by rwk 151207 add 3S-02-TSADM 
+# Last edit by MAF 160120 add TPSCR.G5, TPSCR.G5C and TWIVP6000, and correct/edit TPSCR.G5
+# Last edit by MAF 160303 correct radius of TPSCR.G3, TPSCR.G5, TPSCR.G5C and TPSCR3     
+# Last edit by RWK 160526 add Minshida ATMETS. 
+# Last edit by RWK 161222 add JAVGRANT_G5T, JAVGRANT_G5T+GP, JAVRINGANT_DM, JAVRINGANT_G5T
+# Last edit by RWK 170512 add TRM115000.00, TRM115000.00
+# Last edit by MAF 170728 add STH82VHX-BS601A, STHCR3-G3, STHCR4, STHS82HX-BS601A, STHS86HX-BS611A
+# Last edit by MAF 180706 add TRM159800.00     
+# Last edit by RWK 190111 add HITAT35101CP, HITAT35101CR, HITAT45101CR 
+# Last edit by MAF 200326 add DHTCR (= DHARP) height code for SEN671575-series antennas
+#
+# Non-blank first column is a comment
+# Comments can follow within the line (unread)  
+#
+# Some antennas have equivalences coded in gamit/lib/hisub.f and are given here only once.
+# If the antenna you want is not in the equivalence, list, however, you can add it to the table.  
+# A warning will be issued for entries missing from the table, and offsets set = 0.
+# station.info entries of L1PHC or UNKNWN DHARP are both given 0. offsets with no warning.
+#                                                                                                
+# Format (1x,a20,1x,a6,1x,f6.4,1x,f6.4)
+# 20-char RINEX code  6-char GAMIT code   5-char HI code  vert offset (m)   horiz offset (m)
+ JPLD/M_R             ROGSNR DHARP 0.     0.     ! ARP is bottom of choke ring / base of antenna
+ JPLD/M_R             ROGSNR DHBCR 0.     0.     ! direct ht to bottom of choke ring            
+ JPLD/M_R             ROGSNR DHTCR 0.0699 0.     ! direct ht to top of choke ring (JPL)         
+ JPLD/M_R             ROGSNR SLBCR 0.     0.1905 ! slant height to bottom edge of choke ring    
+
+ JPLD/M_RA_SOP        ROGMRA DHARP 0.     0.     ! ARP is bottom of choke ring / base of antenna
+ JPLD/M_RA_SOP        ROGMRA DHBCR 0.     0.     ! direct ht to bottom of choke ring            
+ JPLD/M_RA_SOP        ROGMRA DHTCR 0.0699 0.     ! direct ht to top of choke ring (JPL)         
+ JPLD/M_RA_SOP        ROGMRA SLBCR 0.     0.1905 ! slant height to bottom edge of choke ring    
+                          
+ AOAD/M_B             ROGAOA DHARP 0.     0.     ! ARP is bottom of choke ring  
+ AOAD/M_B             ROGAOA DHPAB -0.011 0.     ! direct ht to bottom of pre-amp (below choke ring)
+ AOAD/M_B             ROGAOA DHBCR 0.     0.     ! direct ht to bottom of choke ring            
+ AOAD/M_B             ROGAOA DHTCR 0.0699 0.     ! direct ht to top of choke ring (JPL)         
+ AOAD/M_B             ROGAOA SLBCR 0.     0.1755 ! slant height to bottom edge of choke ring    
+    
+ AOAD/M_TA_NGS        TRBMTA DHARP 0.     0.     ! ARP is bottom of choke ring                  
+ AOAD/M_TA_NGS        TRBMTA DHPAB -0.011 0.     ! direct ht to bottom of pre-amp (below choke r 
+ AOAD/M_TA_NGS        TRBMTA DHBCR 0.     0.     ! direct ht to bottom of choke ring             
+ AOAD/M_TA_NGS        TRBMTA DHTCR 0.0699 0.     ! direct ht to top of choke ring (JPL)          
+ AOAD/M_TA_NGS        TRBMTA SLBCR 0.     0.1755 ! slant height to bottom edge of choke ring    
+
+ AOAD/M_T             TRBROG DHARP 0.     0.     ! ARP is bottom of pre-amp
+ AOAD/M_T             TRBROG DHBCR 0.035  0.     ! direct ht to bottom of choke ring          
+ AOAD/M_T             TRBROG DHTCR 0.1016 0.     ! direct ht to top of choke ring (JPL)       
+ AOAD/M_T             TRBROG SLBCR 0.035  0.1905 ! slant height to bottom edge of choke ring  
+      
+ AOARASCAL            AOARAS DHARP 0.     0.     ! ARP is bottom of mounting screw (NGS)
+ AOARASCAL            AOARAS DHBCR 0.0417 0.     ! direct ht to bottom of outer cylinder       
+ AOARASCAL            AOARAS SLBCR 0.0417 0.070  ! slant ht to lower corner of outer cylinder  
+
+ ASH700228A           ASHL12 DHARP 0.     0.     ! ARP is bottom of pre-amp   
+ ASH700228A           ASHL12 DHBGP 0.060  0.     ! direct height to bottom of ground plane 
+ ASH700228A           ASHL12 DHTGP 0.064  0.     ! direct height to top of ground plane          
+ ASH700228A           ASHL12 SLHGP 0.064  0.115  ! slant ht to top outside of holes in ground plane 
+ ASH700228A           ASHL12 SLBGP 0.060  0.1461 ! slant ht to bottom outside of ground plane 
+ ASH700228A           ASHL12 SLAGP 0.0514 0.143  ! slant ht to bevel at outermost edge of ground plane  
+          
+ AERAT1675_120        AE1120 DHARP 0.     0.     ! ARP is bottom of pre-amp 
+
+ ASH700228B           ATGEOB DHARP 0.     0.     ! ARP is bottom of pre-amp   
+ ASH700228B           ATGEOB DHBGP 0.060  0.     ! direct height to bottom of ground plane 
+ ASH700228B           ATGEOB DHTGP 0.064  0.     ! direct height to top of ground plane          
+ ASH700228B           ATGEOB SLHGP 0.064  0.115  ! slant ht to top outside of holes in ground plane   
+ ASH700228B           ATGEOB SLAGP 0.0514 0.143  ! slant ht to bevel at outermost edge of ground plane  
+
+ ASH700228C           ATGEOC DHARP 0.     0.     ! ARP is bottom of pre-amp   
+ ASH700228C           ATGEOC DHBGP 0.060  0.     ! direct height to bottom of ground plane 
+ ASH700228C           ATGEOC DHTGP 0.064  0.     ! direct height to top of ground plane          
+ ASH700228C           ATGEOC SLHGP 0.064  0.115  ! slant ht to top outside of holes in ground plane   
+ ASH700228C           ATGEOC SLAGP 0.0514 0.143  ! slant ht to bevel at outermost edge of ground plane  
+                   
+ ASH700228D           ASHP12 DHARP 0.     0.     ! ARP is bottom of pre-amp
+ ASH700228D           ASHP12 SLHGP 0.064  0.1318 ! slant ht to inside of holes in  ground plane   
+ ASH700228D           ASHP12 SLBGP 0.0543 0.143  ! slant ht to bevel of bottom edge of ground plane
+ ASH700228D           ASHP12 DHTGP 0.064  0.     ! direct ht to top of ground plane
+
+   
+ ASH700228A+EX        ASHLEX DHARP 0.     0.     ! ARP is bottom of pre-amp     
+ ASH700228A+EX        ASHLEX DHBGP 0.060  0.     ! direct height to bottom of ground plane    
+ ASH700228A+EX        ASHLEX DHTGP 0.064  0.     ! direct height to top of ground plane       
+                
+# The following cover most versions of the Ashtech "whopper": ASHGD3 ASHG3R ASHGDA ATGE3B ATGE33 ATGE3A ATGEA1
+ ASH700718A           ASHGD3 DHARP 0.     0.     ! ARP is
+ ASH700718A           ASHGD3 DHTGP 0.065  0.     ! direct height to top of ground plane         
+ ASH700718A           ASHGD3 SLHGP 0.065  0.1737 ! slant ht to outside of holes in ground plane          
+ ASH700718A           ASHGD3 SLLGP 0.065  0.184  ! slant height outside of ground plane    
+
+ ASH701008.01B        ATIIIA DHARP 0.     0.     ! ARP is
+ ASH701008.01B        ATIIIA DHTGP 0.0637 0.     ! direct height to top of ground plane (reduced by 1.3 mm 111024)  
+ ASH701008.01B        ATIIIA DHBGP 0.062  0.     ! direct height to top of ground plane (guess on GP thickness 111024) 
+ ASH701008.01B        ATIIIA SLHGP 0.0637 0.1737 ! slant ht to outside of holes in ground plane  (reduced by 1.3 mm 111024)         
+ ASH701008.01B        ATIIIA SLLGP 0.0637 0.184  ! slant height outside of ground plane (reduced by 1.3 mm 111024)    
+                   
+# The following cover most Ashtech choke rings: ASHDMG ASHDMC ATDMCB ATDMCD ATDMCF ATDMRA ATDMRE ATDMRB
+#                                               ATDM1C ATDM1E ATDMGG ASHGG3 ATGGD1 ATGGDA ATDMG2
+ ASH700936A_M         ASHDMG DHARP 0.     0.     ! ARP is bottom of pre-amp base
+ ASH700936A_M         ASHDMG DHBCR 0.0348 0.     ! direct height to bottom of choke rings
+ ASH700936A_M         ASHDMG SLBCR 0.0348 0.1897 ! slant height to bottom of choke rings 
+ ASH700936A_M         ASHDMG DHTCR 0.1008 0.     ! direct height to top of choke rings          
+ 
+ ASH700936E           ATDMCE DHARP 0.     0.     ! ARP is bottom of pre-amp base
+ ASH700936E           ATDMCE DHBCR 0.0348 0.     ! direct height to bottom of choke rings
+ ASH700936E           ATDMCE SLBCR 0.0348 0.1897 ! slant height to bottom of choke rings 
+ ASH700936E           ATDMCE DHTCR 0.1008 0.     ! direct height to top of choke rings          
+
+ ASH701073.1          ASHGG1 DHARP 0.     0.     ! ARP is bottom of pre-amp base
+
+ ASH701975.01A        ATGD4A DHARP 0.     0.     ! ARP is bottom of pre-amp base  
+ ASH701975.01B        ATGD4B DHARP 0.     0.     ! ARP is bottom of pre-amp base
+                                              
+ ASH701975.01Agp      ATGP4A DHARP 0.     0.     ! ARP is bottom of pre-amp base
+ ASH701975.01Agp      ATGP4A SLHGP 0.043  0.200  ! slant height to top inside of holes in GP  
+ ASH701975.01Agp      ATGP4A SLTGP 0.043  0.2032 ! slant height to top outside edge of GP     
+ ASH701975.01Agp      ATGP4A SLBGP 0.040  0.2032 ! slant height to bottom outside edge of GP  
+
+ ASH701975.01Bgp      ATGP4B DHARP 0.     0.     ! ARP is bottom of pre-amp base
+ ASH701975.01Bgp      ATGP4B SLHGP 0.043  0.200  ! slant height to top inside of holes in GP  
+ ASH701975.01Bgp      ATGP4B SLTGP 0.043  0.2032 ! slant height to top outside edge of GP     
+ ASH701975.01Bgp      ATGP4B SLBGP 0.040  0.2032 ! slant height to bottom outside edge of GP  
+    
+# The following cover all version of the Ashtech dual-freq marine antenna: ATMR2A ATMR2B ATMR2C 
+ ASH700700.A          ATMR2A DHARP 0.     0.     ! ARP is bottom of pre-amp base          
+ ASH700700.A          ATMR2A DHBDN 0.035  0      ! direct height to black dots in notch       
+ ASH700700.A          ATMR2A SLBDN 0.035  0.109  ! slant height to black dots in notch        
+                                                                                             
+ ASH700700.B          ATMR2B DHARP 0.     0.     ! ARP is bottom of pre-amp base          
+ ASH700700.B          ATMR2B DHBDN 0.035  0      ! direct height to black dots in notch       
+ ASH700700.C          ATMR2B SLBDN 0.035  0.109  ! slant height to black dots in notch        
+
+ ASH700700.B          ATMR2C DHARP 0.     0.     ! ARP is bottom of pre-amp base          
+ ASH700700.B          ATMR2C DHBDN 0.035  0      ! direct height to black dots in notch       
+ ASH700700.B          ATMR2C SLBDN 0.035  0.109  ! slant height to black dots in notch        
+
+ ASHMAR/RANGE         ASHMAR DHARP 0.     0.     ! ARP is bottom of pre-amp base
+                        
+ ASH701073.1          ASHGG1 DHARP 0.     0.     ! ARP is
+
+ ASH110454            ATPROM DHARP 0.     0.     ! ARP is bottom of preamp (NGS)
+ ASH110454            ATPROM SLBGP 0.0356 0.092  ! slant ht to bottom of black edge of GP  
+ ASH110454            ATPROM SLTGP 0.0516 0.092  ! slant ht to top of black edge of GP 
+
+ ASH111661            ASH661 DHARP 0.     0.     ! ARP is bottom of preamp (NGS)
+
+ THA_ZMAX+RCVR        THAZMX DHARP 0.     0.     ! ARP is top of reference plate (tongue) at bottom of receiver  
+ THA_ZMAX+RCVR        THAZMX DHMGP 0.327  0.     ! Direct height to middle of ground-plane casing 
+ THA_ZMAX+RCVR        THAZMX SLMGP 0.327  0.090  ! Slant height to middle of ground-plane casing 
+ THA800961+REC        THAZMX DHARP 0.     0.     |   
+ THA800961+RTK        THAZRT DHARP 0.     0.     |  
+ THA800961RECUHF      THAZMU DHARP 0.     0.     |      
+ THA800961RTKUHF      THARTU DHARP 0.     0. 
+   
+ AERAT2775_43         AERCHK DHARP 0.     0.     ! ARP is
+ AERAT2775_62         AERA62 DHARP 0.     0.     ! ARP is
+ AERAT2775_16         AER160 DHARP 0.     0.     ! ARP is
+
+ GEO200               GEO200 DHARP 0.     0.     ! ARP is
+ GEO220               GEO220 DHARP 0.     0.     ! ARP is  
+      
+ GMXZENITH10          GMXZ10 DHARP 0.     0.     | ARP is
+ GMXZENITH20          GMXZ20 DHARP 0.     0.     | ARP is
+ GMXZENITH25          GMXZ25 DHARP 0.     0.     | ARP is
+                
+ HEMA42               HEMA42 DHARP 0.     0.     !
+
+ HEMA52_WB            HEM52W DHARP 0.     0.     ! ARP is bottom of pre-amp base
+ HEMA52_WB            HEM52W SLBGP 0.0162 0.0925 ! slant ht to bottom edge of ground plane
+
+ HXCGG486A            HXC486 DHARP 0.     0.     ! ARP is bottom of pre-amp base
+ HXCGG486A            HXC486 SLBCR 0.0475 0.161  ! slant ht to bottom outermost edge of ground plane below choke rings
+ HXCGS488A            HXC488 DHARP 0.     0.     ! ARP is bottom of pre-amp base
+ HXCGS488A            HXC488 SLMGP 0.037  0.0735 ! slant ht to middle of outmost edge of ground plane
+
+ HXCCSX601A           HXSX76 DHARP 0.     0.     ! ARP is bottom of pre-amp base
+ HXCCSX601A           HXSX76 SLTBE 0.0353 0.0873 ! slant ht to top of black edge of GP cover (not N protrusion)
+                                  
+ HXCCG7601A           HXCG76 DHARP 0.     0.     ! ARP is bottom of pre-amp base
+ HXCCG7601A           HXCG76 SLBCR 0.0475 0.161  ! slant ht to bottom outermost edge of ground plane below choke rings
+
+ HXCCGX601A           HXCGX6 DHARP 0.     0.     ! ARP is bottom of pre-amp base
+ HXCCGX601A           HXCGX6 SLBCR 0.0475 0.1895 ! slant ht to bottom outermost edge of ground plane below choke rings
+                                 
+ SPP571908273         GEOCHR DHARP 0.     0.     ! ARP is bottom of choke ring
+ SPP571908273         GEOCHR SLBCR 0.     0.186  !  slant height to bottom edge of choke ring
+
+ SPP571212238+GP      SPP8GP DHARP 0.     0.     ! ARP is
+            
+ JPSLEGANT_E          JP_LEG DHARP 0.     0.     ! ARP is bottom of pre-amp base
+ JPSLEGANT_E          JP_LEG SLWPC 0.0328 0.1215 ! slant ht to widest point of casing 
+                    
+ JPSREGANT_SD_E       JPRSDE DHARP 0.     0.     ! ARP is
+ JPSREGANT_SD_E       JPRSDE SLWPC 0.0585 0.1855 ! slant ht to widest point of casing 
+
+ JPSREGANT_DD_E       JPRDDE DHARP 0.     0.     ! ARP is
+ JPSREGANT_DD_E       JPRDDE SLWPC 0.0585 0.1855 ! slant ht to widest point of casing 
+
+ JPSREGANT_DD_I       JPRDDE DHARP 0.     0.     ! ARP is
+ JPSREGANT_DD_I       JPRDDE SLWPC 0.0585 0.1855   slant ht to widest point of casing 
+
+ JPSREGANT_SD_I       JPRSDI L1PHC 0.     0.     ! ARP is        
+ JPSREGANT_SD_I       JPRDDI L1PHC 0.     0.     ! ARP is        
+
+ JNSMARANT_GGD        JNSMAR DHARP 0.     0.     ! ARP is
+ JNSMARANT_GGD        JNSMAR SLTGP 0.0606 0.0700 ! slant ht to top edge of ground plane    
+ JNSMARANT_GGD        JNSMAR SLBGP 0.0576 0.0700 ! slant ht to bottom edge of ground plane 
+
+ JAV_TRIUMPH-1        JAVTR1 DHARP 0.     0.     | ARP is bottom of antenna case
+ JAV_TRIUMPH-1        JAVTR1 SLBCB 0.055  0.0888 | slant ht to bottom of center belt
+ JAV_TRIUMPH-1        JAVTR1 SLTAC 0.0960 0.0888 | slant ht to top of antenna case 
+ 
+ JAV_TRIUMPH-1R       JAVT1R DHARP 0.     0.     | ARP is bottom of antenna case
+ 
+ JAVRINGANT_DM        JGNGDM DHARP 0.     0.     | ARP is bottom of preamp below choke ring (NGS)
+ JAVRINGANT_DM        JGNGDM SLBCR 0.0345 0.190  | slant ht to bottom edge of choke ring
+ 
+ JAVTRIANT_A          JAVTRA DHARP 0.     0.     | ARP is
+ 
+ JAVTRIANT_B          JAVTRB DHARP 0.     0.     | ARP is 
+
+ JNSCHOKERING_DM      JNSCHR DHARP 0.     0.     | ARP is                   
+
+ JAVGRANT_G5T         JAVG5T DHARP 0.     0.     | ARP is  
+ JAVGRANT_G5T+GP      JVG5TG DHARP 0.     0.     | ARP is  
+ JAVRINGANT_DM        JVRGDM DHARP 0.     0.     | ARP is  
+ JAVRINGANT_G5T       JVRGG5 DHARP 0.     0.     | ARP is  
+
+#  
+           
+# The following cover most of the Leica antennas with GRT 44 carrier and height hook:
+#        LC_201 LC299I LC399I LC_201 LC202N LC202G LC302G LC302N
+ LEIAT201             LC_201 DHARP 0.     0.     ! ARP is
+ LEIAT201             LC_201 DHHHK -0.345 0.     ! direct height w/ height hook tape 
+                               
+# The following applies also to the LC_303 with radome (LC303R)
+#      Note: DHHHK value for AT303 changed from ..345 to .360 rwk 080916
+ LEIAT303             LC_303 DHARP 0.     0.     ! ARP is bottom of choke rings         
+ LEIAT303             LC_303 DHBCR 0.     0.     ! direct height to bottom of choke rings
+ LEIAT303             LC_303 DHHHK -0.360 0.     ! direct height w/ height hook tape 
+ LEIAT303             LC_303 SLBCR 0.     0.1525 ! slant height to bottom of choke rings 
+
+ LEIAT501             LC_501 DHARP 0.     0.     ! ARP is bottom of pre-amp          
+ LEIAT501             LC_501 DHHHK -0.360 0.     ! direct height w/ height hook tape 
+
+ LEIAT502             LC_502 DHARP 0.     0.     ! ARP is bottom of pre-amp    
+ LEIAT502             LC_502 DHHHK -0.360 0.     ! direct height w/ height hook tape 
+
+ LEIAT503             LC_503 DHARP 0.     0.     ! ARP is bottom of choke rings      
+ LEIAT503             LC_503 DHBCR 0.     0.     ! direct height to bottom of choke rings   
+ LEIAT503             LC_503 DHHHK 0.360  0.     ! direct height w/ height hook tape 
+ LEIAT503             LC_503 SLBCR 0.0    0.1525 ! slant height ot bottom of choke rings    
+
+ LEIAT504             LC_504 DHARP 0.     0.     ! ARP is bottom of pre-amp    
+ LEIAT504             LC_504 DHBCR 0.0378 0.     ! direct height to bottom of choke rings 
+ LEIAT504             LC_504 DHHHK -0.360 0.     ! direct height w/ height hook tape 
+ LEIAT504             LC_504 SLBCR 0.0378 0.1897 ! slant height ot bottom of choke rings    
+
+ LEIAT504GG           LC504G DHARP 0.     0.     ! ARP is bottom of pre-amp    
+ LEIAT504GG           LC504G DHBCR 0.0378 0.     ! direct height to bottom of choke rings 
+ LEIAT504GG           LC504G DHHHK -0.360 0.     ! direct height w/ height hook tape 
+ LEIAT504GG           LC504G SLBCR 0.0378 0.1897 ! slant height to bottom of choke rings    
+
+ LEIAX1202            LC1202 DHARP 0.     0.     ! ARP is       
+ LEIAX1202GG          LC02GG DHARP 0.     0.     ! ARP is     
+ LEIAX1230GG          LC30GG DHARP 0.     0.     ! ARP is
+
+ LEIAR25              LCAR25 DHARP 0.     0.     | ARP is bottom of preamp
+ LEIAR25              LCAR25 SLBCR 0.032  0.1901 | slant height to bottom of choke rings      
+ LEIAR25.R3           LCR253 DHARP 0.     0.     | ARP is bottom of preamp       
+ LEIAR25.R3           LCR253 SLBCR 0.032  0.1901 | slant height to bottom of choke rings
+ LEIAR25,R4           LCR254 DHARP 0.     0.     | ARP is bottom of preamp
+ LEIAR25.R4           LCR254 SLBCR 0.032  0.1901 | slant height to bottom of choke rings
+ 
+               
+ MPLL1/L2_SURV        MPLL12 DHARP 0.     0.     ! ARP is
+ MPL1230              MPLCHR DHARP 0.     0.     ! ARP is
+ MPREGP MP-1372W      MPREGP DHARP 0.     0.     ! ARP is
+ MP-1372FW+REGP       MPREGW DHARP 0.     0.     ! ARP is
+ MPL_WAAS_2224NW      MPLWNW DHARP 0.     0.     ! ARP is
+
+ MAG105645            MAG645 DHARP 0.     0.     ! ARP is
+
+ MACRII               MACRII DHARP 0.     0.     ! ARP is bottom of pre-amp base 
+                                               
+ MINXDP               MINXDP DHARP 0.     0.     ! ARP is bottom of pre-amp base 
+                       
+ NAVAN2004T           AN2004 DHARP 0.     0.     ! ARP is
+ NAVAN2004T           AN2004 DHBGP 0.0239 0.     ! direct ht to bottom outer edge of radome 
+ NAVAN2004T           AN2004 DHBGP 0.0239 0.0731 ! slant ht to bottom outer edge of radome 
+
+ NAVAN2008T           AN2008 DHARP 0.     0.     ! ARP is bottom of pre-amp base 
+ NAVAN2008T           AN2008 SLBGP 0.     0.0731 ! slant  ht to bottom outer edge of antenna
+
+ NAVCOM SF-2040G      SF204G DHARP 0.     0.     ! ARP is bottom of pre-amp base
+ NAVCOM SF-2040G      SF204G SLBBC 0.     0.0952 ! slant  ht to edge of battery compartment
+ NAVCOM SF-2040G      SF204G SLCBE 0.1018 0.1319 ! slant  ht to center of bumper edge 
+
+ NAVCOM RT-3010S      RT301S DHARP 0.     0.     ! ARP is bottom of pre-amp base
+ NAVCOM RT-3010S      RT301S SLBBC 0.     0.0952 ! slant  ht to edge of battery compartment    
+ NAVCOM RT-3010S      RT301S SLCBE 0.1018 0.1319 ! slant  ht to center of bumper edge 
+
+ NAX3G+C              NAX3GC DHARP 0.     0.     | ARP is bottom of pre-amp base
+ NAX3G+C              NAX3GC SLOAC 0.0454 0.0859 | slant ht to outermost edge of antenna cover  
+
+ NOV501               NO501N DHARP 0.     0.     ! ARP is
+ NOV501+CR            NO501C DHARP 0.     0.     ! ARP is
+ NOV502               NO502N DHARP 0.     0.     ! ARP is
+ NOV502+CR            NO502C DHARP 0.     0.     ! ARP is
+ NOV503+CR            NO503C DHARP 0.     0.     ! ARP is
+ NOV503+CR            NO503C DHBCR 0.     0.     ! ARP is
+ NOV503+CR+RD    DOME NO503R DHARP 0.     0.     ! ARP is
+ NOV512               NOV512 DHARP 0.     0.     ! ARP is
+ NOV531               NO531N DHARP 0.     0.     ! ARP is
+ NOV531+CR            NO531C DHARP 0.     0.     ! ARP is      
+ NOV533+CR       RADM NO533R DHARP 0.     0.     ! ARP is
+ NOV600               NOV600 DHARP 0.     0.     ! ARP is
+ NOV_WAAS_600         NOV6WA DHARP 0.     0.     ! ARP is
+ NOV702_2.02          NO7022 DHARP 0.     0.     ! ARP is bottom of antenna structure
+ NOV702_2.02          NO7022 SLOAC 0.040  0.0925 ! slant ht to bottom outermost edge of antenna cover 
+ NOV702_3.00          NO7023 DHARP 0.     0.     ! ARP is probably bottom of antenna structure (like 702_2)
+ NOV750.R4            NOV7R4 DHARP 0.     0.     ! ARP is
+ NOV750.R5            NOV7R5 DHARP 0.     0.     ! ARP is
+
+ SEN67157514          SENS14 DHARP 0.     0.     ! ARP is top of choke rings?
+ SEN67157514          SENS14 DHTCR 0.     0.     ! ARP is top of choke rings?
+ SEN67157514+CR       SEN14R DHARP 0.     0.     ! ARP is top of choke rings?
+ SEN67157514+CR       SEN14R DHTCR 0.     0.     ! ARP is top of choke rings?
+ SEN67157549          SENS49 DHARP 0.     0.     ! ARP is top of choke rings?
+ SEN67157549          SENS49 DHTCR 0.     0.     ! ARP is top of choke rings?
+ SEN67157549+CR       SEN49R DHARP 0.     0.     ! ARP is top of choke rings?
+ SEN67157549+CR       SEN49R DHTCR 0.     0.     ! ARP is top of choke rings?
+ SEN67157596          SENS96 DHARP 0.     0.     ! ARP is top of choke rings?
+ SEN67157596          SENS96 DHTCR 0.     0.     ! ARP is top of choke rings?
+ SEN67157596+CR       SEN96R DHARP 0.     0.     ! ARP is top of choke rings?
+ SEN67157596+CR       SEN96R DHTCR 0.     0.     ! ARP is top of choke rings?
+     
+ SOK700               SOKGD3 DHARP 0.     0.     ! ARP is
+ SOK700               SOKGD3 DHTGP 0.064  0.     ! direct height to top of ground plane         
+ SOK700               SOKGD3 SLHGP 0.065  0.1737 ! slant ht to outside of holes in ground plane          
+ SOK700               SOKGD3 SLLGP 0.065  0.184  ! slant height outside of ground plane    
+
+ SOK RADIAN_IS        SOKRAD DHARP 0.     0.     ! ARP is
+ SOK502               SOK502 DHARP 0.     0.     ! ARP is    
+ SOK702               SOK702 DHARP 0.     0.     ! ARP is    
+ SOKA11               SOKA11 DHARP 0.     0.     ! ARP is    
+ SOKA12               SOKA12 DHARP 0.     0.     ! ARP is    
+ SOKSTR               SOKSTR DHARP 0.     0.     ! ARP is    
+ SOK600               SOK600 DHARP 0.     0.     ! ARP is  
+# This last same as NOV500 (Missing) or something else?
+                                   
+ SERTR5S              SRTR5S DHARP 0.     0.     ! ARP is
+ SERNR52              SRNR52 DHARP 0.     0.     ! ARP is
+                                                         
+ SPP91564_1           SPP642 DHARP 0.     0.     | ARP is bottom of preamp
+ SPP91564_2           SPP642 DHARP 0.     0.     | ARP is bottom of preamp
+
+ STH82VHX-BS601A      STH82V DHARP 0.     0.     ! ARP is bottom of preamp
+ STHCR3-G3            STHCG3 DHARP 0.     0.     ! ARP is bottom of preamp
+ STHCR3-G3            STHCG3 DHBGP 0.0475 0.     ! direct height to bottom of ground plane
+ STHCR3-G3            STHCG3 SLBGP 0.0475 0.1610 ! slant height bottom of ground plane
+ STHCR4               STHCR4 DHARP 0.     0.     ! ARP is bottom of preamp
+ STHS82_7224V3.0      STHS82 DHARP 0.     0.     ! ARP is bottom of preamp
+ STHS82HX-BS601A      STH82H DHARP 0.     0.     ! ARP is bottom of preamp
+ STHS86_7224V3.1      STHS86 DHARP 0.     0.     ! ARP is bottom of preamp
+ STHS86HX-BS611A      STH86H DHARP 0.     0.     ! ARP is bottom of preamp
+                                   
+ DSNNAP_002           SRNAP2 DHARP 0.     0.     ! ARP is lowest point of treads of 3 permant attachment screws
+ DSNNAP_002           SRNAP2 SLBGP 0.0080 0.0715 ! slant height bottom of ground plane
+ DSNNAP_002           SRNAP2 SLTGP 0.0107 0.0715 ! slant height top of ground plane
+                                             
+# The following cover all versions of the TI4100 helical antennas: TI_100 TI2000 TI4000
+ TI4100_4000          TI4000 DHARP 0.     0.     ! ARP is
+ TI4100_4000          TI4000 SLPAB 0.     0.0842 ! slant ht to edge of pre-amp base
+
+ TI4100_100           TI_100 DHARP 0.     0.     ! ARP is
+ TI4100_100           TI_100 SLPAB 0.     0.0842 ! slant ht to edge of pre-amp base
+
+ FRPA-2               FRPA-2 DHARP 0.     0.     ! ARP is
+        
+ TIAPENG2100R         TIA21R DHARP 0.     0.     ! ARP is
+ TIAPENG2100B         TIA21B DHARP 0.     0.     ! ARP is
+
+ TPSHIPER_G           TPSHIP DHARP 0.     0.     ! ARP is bottom of 3 cm cylinder under the rcvr base (NGS)
+ TPSHIPER_G           TPSHIP SLPAS 0.0305 0.0763 ! slant ht to bottom side of receiver base 
+                                    
+ TPSHIPER_GGD         TPSHIG DHARP 0.     0.     ! ARP is bottom of 3 cm cylinder under the rcvr base (NGS)
+ TPSHIPER_GGD         TPSHIG SLPAS 0.0305 0.0763 ! slant ht to bottom side of receiver base                
+                                                                                                           
+ TPSHIPER_LITE        TPSLIT DHARP 0.     0.     ! ARP is bottom of 3 cm cylinder under the rcvr base
+ TPSHIPER_LITE        TPSLIT SLPAS 0.0305 0.039  ! slant ht to bottom side of rcvr
+    
+ TPSHIPER_PLUS        TPSPLS DHARP 0.     0.     ! ARP is bottom of 3 cm cylinder under the rcvr base
+ TPSHIPER_PLUS        TPSPLS SLPAS 0.0305 0.0778 ! slant ht to bottom side of rvcr
+                               
+ TPSLEGANT_G          TPSLGG DHARP 0.     0.     ! ARP is 
+ TPSLEGANT_G          TPSLGG SLCGP 0.0311 0.0617 ! slant ht to outer edge of GP casing
+                                   
+ TPSLEGANT2           TPSLG2 DHARP 0.     0.     ! ARP is 
+                                    
+ TPSLEGANT3_UHF       TPSLG3 DHARP 0.     0.     ! ARP is bottom of attachment screw
+ TPSLEGANT3_UHF       TPSLG3 SLCGP 0.0808 0.1233 ! slant ht to outer edge of GP case 
+                                     
+ TPSODYSSEY_I         TPSODY DHARP 0.     0.     ! ARP is 
+                                    
+ TPSPG_A1             TPSPGA DHARP 0.     0.     ! ARP is bottom of pre-amp
+ TPSPG_A1             TPSPGA SLSGP 0.0275 0.0684 ! slant height to bottom side notch of square GP
+ TPSPG_A1             TPSPGA SLCGP 0.0275 0.0897 ! slant height to bottom conner of GP
+                                            
+ TPSPG_A1+GP          TPSPGG DHARP 0.     0.     ! ARP is bottom of pre-amp
+ TPSPG_A1+GP          TPSPGG SLSGP 0.0275 0.1000 ! slant height to bottom edge of GP
+ 
+ TPSPG_A1_6+GP        TPSPG6 DHARP 0.     0.     ! ARP is bottom of pre-amp
+ TPSPG_A1_6+GP        TPSPG6 SLSGP 0.0275 0.1000 ! slant height to bottom edge of GP
+
+ TPSPG_A5             TPSPG5 DHARP 0.     0.     ! ARP is 
+
+ TPSCR3_GGD           TPSC3D DHARP 0.     0.     ! ARP is 
+ TPSCR3_GGD           TPSC3D SLBCR 0.003  0.163  ! slant height to bottom outside edge of choke ring
+                                    
+ TPSCR4               TPSCR4 DHARP 0.     0.     ! ARP is 
+ TPSCR4               TPSCR4 SLBCR 0.0345 0.190  ! slant height to bottom outside edge of choke ring 
+
+ TPSCR.G3             TPSCG3 DHARP 0.     0.     ! ARP is bottom of antenna mount
+ TPSCR.G3             TPSCG3 DHBCR 0.0345 0.     ! Direct height to bottom of chokering
+ TPSCR.G3             TPSCG3 DHTCR 0.1015 0.     ! Direct height to top of chokering
+ TPSCR.G3             TPSCG3 SLBCR 0.0345 0.1900 ! Slant height to bottom of chokering
+ TPSCR.G3             TPSCG3 SLTCR 0.1015 0.1900 ! Slant height to top of chokering
+                                    
+ TPSCR.G5             TPSCG5 DHARP 0.     0.     ! ARP is bottom of pre-amp
+ TPSCR.G5             TPSCG5 DHBCR 0.0345 0.     ! Direct height to bottom of chokering
+ TPSCR.G5             TPSCG5 DHTCR 0.0885 0.     ! Direct height to top of chokering
+ TPSCR.G5             TPSCG5 SLBCR 0.0345 0.1900 ! Slant height to bottom of chokering
+ TPSCR.G5             TPSCG5 SLTCR 0.0885 0.1900 ! Slant height to top of chokering
+
+ TPSCR.G5C            TPSC5C DHARP 0.     0.     ! ARP is bottom of pre-amp
+ TPSCR.G5C            TPSC5C DHBCR 0.0345 0.     ! Direct height to bottom of chokering
+ TPSCR.G5C            TPSC5C DHTCR 0.0885 0.     ! Direct height to top of chokering
+ TPSCR.G5C            TPSC5C SLBCR 0.0345 0.1900 ! Slant height to bottom of chokering
+ TPSCR.G5C            TPSC5C SLTCR 0.0885 0.1900 ! Slant height to top of chokering
+
+ TPSGR3               TPSGR3 DHARP 0.     0.     | ARP is bottom of preamp
+ TPSGR3               TPSGR3 SLBCE 0.170  0.0967 | slant height to bottom of case edge
+                                   
+ TOP72110             TPS721 DHARP 0.     0.     ! ARP is bottom of pre-amp
+ TOP72110             TPS721 DHBCR 0.0417 0.     ! direct height to bottom of choke rings
+ TOP72110             TPS721 SLBCR 0.0417 0.0699 ! slant height to bottom of choke rings
+ TOP72110             TPS721 DHTCR 0.1424 0.     ! direct height to top of choke rings
+
+ TRM11877.10+RGP      TRSLMC DHARP 0.     0.     ! ARP is  
+ TRM11877.10+RGP      TRSLMC SLPAS 0.     0.1413 ! slant ht to side of pre-amp base         
+ TRM11877.10+RGP      TRSLMC SLPAC 0.     0.099  ! slant ht to corner of pre-amp base       
+ TRM11877.10+RGP      TRSLMC SLBGP 0.050  0.2413 ! slant ht to bottom edge of ground plane  
+ TRM11877.10+RGP      TRSLMC SLTGP 0.051  0.2413 ! slant ht to top edge of ground plane     
+ 
+ TRM11877.10+SGP      TRMSXD DHARP 0.     0.     ! ARP is bottom of pre-amp
+ TRM11877.10+SGP      TRMSXD SLPAS 0.     0.0984 ! slant ht to side of pre-amp base           
+ TRM11877.10+SGP      TRMSXD SLPAC 0.     0.1392 ! slant ht to corner of pre-amp base         
+ TRM11877.10+SGP      TRMSXD SLCGP 0.048  0.4153 ! slant ht to bottom corner of ground plane     
+     
+ TRM12562.00+SGP      TRSXDS DHARP 0.     0.     ! ARP is bottom of pre-amp
+ TRM12562.00+SGP      TRSXDS SLSGP 0.0478 0.3048 ! slant ht to bottom side of square ground plane
+ TRM12562.00+SGP      TRSXDS SLBGP 0.0478 0.4153 ! slant ht to bottom corner of ground plane
+
+ TRM12562.10+RGP      TRSLDR DHARP 0.     0.     ! ARP is bottom of pre-amp
+ TRM12562.10+RGP      TRSLDR SLBGP 0.495  0.2413 ! slant ht to bottom of round ground plane
+                                   
+ TRM14177.00          TRSTL1 DHARP 0.     0.     ! ARP is bottom of pre-amp
+ TRM14177.00          TRSTL1 DHBGP 0.060  0.     ! direct ht to bottom of ground plane           
+ TRM14177.00          TRSTL1 SLBGP 0.060  0.2403 ! slant ht to bottom outer edge of ground plane 
+ TRM14177.00          TRSTL1 SLMGP 0.0615 0.2413 ! slant ht to middle outer edge of ground plane 
+ TRM14177.00          TRSTL1 SLTGP 0.063  0.2403 ! slant ht to top    outer edge of ground plane 
+ TRM14177.00          TRSTL1 SLTGN 0.063  0.2334 ! slant ht to top of ground plane in notch      
+ TRM14177.00          TRSTL1 SLBGN 0.060  0.2334 ! slant ht to bottom of ground plane in notch   
+                                                  
+ TRM14532.00          TRMSST DHARP 0.     0.     ! ARP is bottom of pre-amp
+ TRM14532.00          TRMSST DHBGP 0.060  0.     ! direct ht to bottom of ground plane            
+ TRM14532.00          TRMSST SLBGP 0.060  0.2403 ! slant ht to bottom outer edge of ground plane  
+ TRM14532.00          TRMSST SLMGP 0.0615 0.2413 ! slant ht to middle outer edge of ground plane  
+ TRM14532.00          TRMSST SLTGP 0.063  0.2403 ! slant ht to top    outer edge of ground plane  
+ TRM14532.00          TRMSST SLTGN 0.063  0.2334 ! slant ht to top of ground plane in notch       
+ TRM14532.00          TRMSST SLBGN 0.060  0.2334 ! slant ht to bottom of ground plane in notch    
+
+ TRM14532.10          TRSSEK DHARP 0.     0.     ! ARP is 
+                                    
+ TRM22020.00+GP       TRMSSE DHARP 0.     0.     ! ARP is pre-amp base
+ TRM22020.00+GP       TRMSSE DHBGP 0.0556 0.     ! direct ht to bottom of ground plane           
+ TRM22020.00+GP       TRMSSE SLBGP 0.0556 0.2413 ! slant ht to bottom outer edge of ground plane 
+ TRM22020.00+GP       TRMSSE SLMGP 0.0574 0.2413 ! slant ht to middle outer edge of ground plane 
+ TRM22020.00+GP       TRMSSE SLTGP 0.0591 0.2413 ! slant ht to top    outer edge of ground plane 
+ TRM22020.00+GP       TRMSSE SLTGN 0.0591 0.2334 ! slant ht to top of ground plane in notch      
+ TRM22020.00+GP       TRMSSE SLBGN 0.0556 0.2334 ! slant ht to bottom of ground plane in notch   
+                                    
+ TRM22020.00-GP       TRMKIN DHARP 0.     0.     ! ARP is 
+                                    
+ TRM23903.00          TRPERM DHARP 0.     0.     ! ARP is antenna base
+ TRM23903.00          TRPERM SLBGN 0.0631 0.2334 ! slant ht to bottom of ground plane in notch
+ TRM23903.00          TRPERM SLBGP 0.0631 0.2413 ! slant ht to bottom outer edge of ground plane
+                                    
+ TRM26738.00          TRUSCG DHARP 0.     0.     ! ARP is 
+                                    
+ TRM27947.00+GP       TRRUGG DHARP 0.     0.     ! ARP is 
+ TRM27947.00-GP       TRRUGN DHARP 0.     0.     ! ARP is
+                                  
+ TRM5800              TR5800 DHARP 0.     0.     ! ARP is receiver base
+
+ TRM33429.00+GP       TRMICG DHARP 0.     0.     ! ARP is pre-amp base  
+ TRM33429.00+GP       TRMICG DHBGP 0.0556 0.     ! direct ht to bottom of ground plane           
+ TRM33429.00+GP       TRMICG SLBGP 0.0556 0.2413 ! slant ht to bottom outer edge of ground plane 
+ TRM33429.00+GP       TRMICG SLMGP 0.0574 0.2413 ! slant ht to middle outer edge of ground plane 
+ TRM33429.00+GP       TRMICG SLTGP 0.0591 0.2413 ! slant ht to top    outer edge of ground plane 
+ TRM33429.00+GP       TRMICG SLTGN 0.0591 0.2334 ! slant ht to top of ground plane in notch      
+ TRM33429.00+GP       TRMICG SLBGN 0.0556 0.2334 ! slant ht to bottom of ground plane in notch   
+
+ TRM33429.00-GP       TRMICN DHARP 0.     0.     ! ARP is pre-amp base 
+ TRM33429.00-GP       TRMICN SLBGP 0.0556 0.0914 ! slant height to innner edge of side if ground plane 
+
+ TRM33429.20+GP       TRMIC2 DHARP 0.     0.     ! ARP is pre-amp base
+  
+ TRM36569.00+GP       TRMI13 DHPAB 0.     0.     | 
+         
+ TRM29659.00          TRMDMG DHARP 0.     0.     ! ARP is pre-amp base
+ TRM29659.00          TRMDMG DHBCR 0.035  0.     ! direct ht to bottom of choke ring          
+ TRM29659.00          TRMDMG SLBCR 0.035  0.1905 ! slant height to bottom edge of choke ring  
+ TRM29659.00          TRMDMG DHTCR 0.1016 0.     ! direct ht to top of choke ring (JPL)       
+
+ TRM59800.00          TR5980 DHARP 0.     0.     ! ARP is pre-amp base
+ TRM59800.00          TR5980 DHBCR 0.035  0.     ! direct ht to bottom of choke ring          
+ TRM59800.00          TR5980 SLBCR 0.035  0.1905 ! slant height to bottom edge of choke ring  
+ TRM59800.00          TR5980 DHTCR 0.1016 0.     ! direct ht to top of choke ring (JPL)       
+                                   
+ TRM39105.00          TRMZEP DHARP 0.     0.     ! ARP is bottom of antenna (preamp)
+ TRM39105.00          TRMZEP SLTEP 0.0387 0.0937 ! slant ht to top edge of protrusion
+
+ TRM41249.00          TRMZGP DHARP 0.     0.     ! ARP is pre-amp base
+ TRM41249.00          TRMZGP DHBGP 0.0444 0.     ! direct ht to bottom of ground plane       
+ TRM41249.00          TRMZGP SLBGP 0.0444 0.1698 ! slant ht to bottom outer edge of GP cover        
+ TRM41249.00          TRMZGP SLMGP 0.0444 0.1703 ! slant ht to middle outer edge of GP cover 
+ TRM41249.00          TRMZGP SLTGP 0.0474 0.1708 ! slant ht to top  outer edge of GP cover   
+ TRM41249.00          TRMZGP SLTGN 0.0474 0.1698 ! slant ht to top of GP cover in notch      
+ TRM41249.00          TRMZGP SLBGN 0.0444 0.1698 ! slant ht to bottom of GP cover in notch      
+
+ TRM41249USCG         TRMZRC DHARP 0.     0.     ! ARP is pre-amp base
+ TRM41249USCG         TRMZRC DHBGP 0.0444 0.     ! direct ht to bottom of ground plane       
+ TRM41249USCG         TRMZRC SLBGP 0.0444 0.1698 ! slant ht to bottom outer edge of GP cover        
+ TRM41249USCG         TRMZRC SLMGP 0.0444 0.1703 ! slant ht to middle outer edge of GP cover 
+ TRM41249USCG         TRMZRC SLTGP 0.0474 0.1708 ! slant ht to top  outer edge of GP cover   
+ TRM41249USCG         TRMZRC SLTGN 0.0474 0.1698 ! slant ht to top of GP cover in notch      
+ TRM41249USCG         TRMZRC SLBGN 0.0444 0.1698 ! slant ht to bottom of GP cover in notch   
+         
+ TRM55971.00          TRMZGN DHARP 0.     0.     ! ARP is pre-amp base
+ TRM55971.00          TRMZGN DHBGP 0.0444 0.     ! direct ht to bottom of ground plane       
+ TRM55971.00          TRMZGN SLBGP 0.0444 0.1698 ! slant ht to bottom outer edge of GP cover        
+ TRM55971.00          TRMZGN SLMGP 0.0444 0.1703 ! slant ht to middle outer edge of GP cover 
+ TRM55971.00          TRMZGN SLTGP 0.0474 0.1708 ! slant ht to top  outer edge of GP cover   
+ TRM55971.00          TRMZGN SLTGN 0.0474 0.1698 ! slant ht to top of GP cover in notch      
+ TRM55971.00          TRMZGN SLBGN 0.0444 0.1698 ! slant ht to bottom of GP cover in notch      
+
+ TRM57971.00          TRMZGS DHARP 0.     0.     ! ARP is pre-amp base
+ TRM57971.00          TRMZGS DHBGP 0.0444 0.     ! direct ht to bottom of ground plane       
+ TRM57971.00          TRMZGS SLBGP 0.0444 0.1698 ! slant ht to bottom outer edge of GP cover        
+ TRM57971.00          TRMZGS SLMGP 0.0444 0.1703 ! slant ht to middle outer edge of GP cover 
+ TRM57971.00          TRMZGS SLTGP 0.0474 0.1708 ! slant ht to top  outer edge of GP cover   
+ TRM57971.00          TRMZGS SLTGN 0.0474 0.1698 ! slant ht to top of GP cover in notch      
+ TRM57971.00          TRMZGS SLBGN 0.0444 0.1698 ! slant ht to bottom of GP cover in notch      
+
+ TRM115000.00         TRMZG3 DHARP 0.     0.     ! ARP is pre-amp base
+ TRM115000.10         TRMZGB DHARP 0.     0.     | ARP is pre-amb base
+
+ TRM55970.00          TRZG2L DHARP 0.     0.     ! ARP is pre-amp base
+ TRM55970.00          TRZG2L DHTAM 0.0387 0.     ! direct ht top of antenna mark
+ TRM55970.00          TRZG2L SLTAM 0.0387 0.0937 ! slant ht to top of inside top edge of antenna mar
+
+ TRM57970.00          TRZG2R DHARP 0.     0.     ! ARP is pre-amp base
+ TRM57970.00          TRZG2R DHTAM 0.0387 0.     ! direct ht top of antenna mark
+ TRM57970.00          TRZG2R SLTAM 0.0387 0.0937 ! slant ht to top of inside top edge of antenna mar
+
+ TRM159800.00         TR1598 DHARP 0.     0.     ! ARP is base of pre-amp
+ TRM159800.00         TR1598 DHBPA 0.     0.     ! ARP is base of pre-amp
+ TRM159800.00         TR1598 DHBCR 0.0350 0.     ! Direct height to bottom of choke rings
+ TRM159800.00         TR1598 DHTCR 0.1020 0.     ! Direct height to top of choke rings
+ TRM159800.00         TR1598 SLBCR 0.0350 0.1905 ! Slant height to bottom of choke rings
+ TRM159800.00         TR1598 SLTCR 0.1020 0.1905 ! Slant height to top of choke rings
+                 
+ TRM36569.00+GP       TRMI13 DHARP 0.     0.     ! ARP is
+
+ TR4800               TR4800 DHARP 0.     0.     ! ARP is receiver base 
+ TR4800               TR4800 DHTGP 0.124  0.     ! direct ht to top of outermost circumference (height hook attachment point) 
+ TR4800               TR4800 SLTGP 0.124  0.1098 ! slant ht to top of outermost circumference
+# CHECK: .109 or .1098
+
+ TRMR6                TRM_R6 DHARP 0.     0.     | ARP is bottom of antenna mount (BAM)
+ TRMR6-2              TRMR62 DHARP 0.     0.     | ARP is bottom of antenna mount (BAM)
+ TRMR6-3              TRMR63 DHARP 0.     0.     | ARP is bottom of antenna mount (BAM)
+ TRMR6-4              TRMR64 DHARP 0.     0.     | ARP is bottom of antenna mount (BAM)
+ 
+ TRMAG25              TRAG25 DHARP 0.     0.     | ARPis
+ 
+ CHCX90D-OPUS         CHCX90 DHARP 0.     0.     | ARP is
+ 
+ WM-102               WM-102 DHARP 0.     0.     ! ARP is                                          
+ WM-102               WM-102 DHHHK -0.250 0.     ! direct ht to height hook  
+
+ ACC_G5ANT_52AT1      ACC52A DHARP 0.     0.     | ARP is bottom of antenna case
+
+ ACCG8ANT_52A4TC      ACCG8T DHARP 0.     0.     | ARP is bottom of pre-amp/ground-plane
+
+ 3S-02-TSADM          3STSDM DHARP 0.     0.     | ARP is
+                                  
+ TWIVP6000            TWIVP6 DHARP 0.     0.     | ARP is bottom of antenna mount
+ TWIVP6000            TWIVP6 DHTAM 0.1245 0.     | Direct height to top of antenna mark
+ 
+ ATMETS               ATMETS DHARP 0.     0.     | ARP is bottom of pre-amp 
+
+ HITAT35101CP         HIT35P DHARP 0.     0.     | ARP is bottom of pre-amp 
+ HITAT35101CR         HIT35R DHARP 0.     0.     | ARP is bottom of pre-amp 
+ HITAT45101CP         HIT45P DHARP 0.     0.     | ARP is bottom of pre-amp 

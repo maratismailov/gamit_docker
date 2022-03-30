@@ -1,0 +1,24 @@
+#!/bin/csh
+if ($#argv == 0) then
+   echo ' '                                       
+   echo ' Rename USGS RINEX files from SSSSYYYYMMDDad to '
+   echo '                         to   SSSSDDD0.YYd'
+   echo ' '
+   echo ' No arguments: renames all files in the directory '
+   echo ' '
+ foreach file ( *ad ) 
+   set site  = `ls $file | awk '{print substr($1,1,4)}'` 
+   set year = `ls $file | awk '{print substr($1,5,4)}'`
+   set yr    = `ls $file | awk '{print substr($1,7,2)}'`
+   set month = `ls $file | awk '{print substr($1,9,2)}'`
+   set day  =  `ls $file | awk '{print substr($1,11,2)}'`
+   set ddd =  `doy $year $month $day | tail -n -3 | head -n 1 | awk '{printf "%03d",$6}'`
+   set ext =  $yr  
+   \mv -i $site$year$month{$day}ad $site{$ddd}0.{$ext}d
+ end #for
+endif
+
+
+
+
+

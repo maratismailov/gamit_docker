@@ -1,0 +1,213 @@
+#!/bin/tcsh -f
+#
+#doc Special logic to download ultra-rapid orbit files from the CDDIS or SOPAC archives 
+#doc Called by sh_get_orbits 
+#
+# RWK 180501 based on code from the pre-10.62 sh_get_orbits 
+# MAF 210209: Added CDDIS secure FTP address when no ~/.netrc file exists
+#             and added call to sh_get_ftp_info to define $ftplogin[2]
+# MAF 210628: Changed arguments to sh_uncompress from "${prod}${gpsw}'?_??.sp3.Z'" to
+#             "${prod}${gpswlast}${gpsdlast}_18.sp3.Z ${prod}${gpsw}${gpsd}_{00,06,12,18}.sp3.Z"
+
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "====================================================================================="
+  echo " Get ultra-rapid sp3 files from CDDIS or SOPAC  "
+  echo " Script will return as {prod}{WWWW}{D}.sp3 the most recent file " 
+  echo "  "                         
+  echo " Required: "
+  echo " " 
+  echo " sh_get_ultrarapids -orbt <orbt>  -yr <yr> -doy <doy> -norename -x" 
+  echo " "      
+  echo " <orbt>   igsu siou  "                               
+  echo " <yr> 4 char year of sp3 file requested  "
+  echo " <doy> 3 char day of year of sp3 file  data requested "         
+  echo " <-norename> if set, keep the original file name with the hour included "
+  echo " <-x >   if set, keep temporary files and all of the downloaded sp3 files "
+  echo " " 
+  echo "====================================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS #############################   
+#
+# Setup necessary paths and filenames 
+set orbt = '' 
+set year = ''
+set yr = ''
+set doy = ''
+set fail = 'F'    
+set rename = 'yes'
+# MOD TAH 180531: Changed "erase" to "clean" to be consistent with sh_get_orbits
+set clean = 'yes'
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -orb*:
+      set orbt = $input[2] 
+    breaksw
+    case -y*:
+      set year = $input[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+      set yr = `sh_year -year $year`
+    breaksw 
+    case -d*:
+      set doy = $input[2]  
+    breaksw                                                                      
+    case -norename:
+      set rename = 'no'
+    breaksw                                                    
+    case -x:
+      set clean = 'no'
+    breaksw
+ endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+    
+# Test which program to use for download
+if ( -e `which curl` ) then  # curl exists (preferred due to better directory listing and wget is not native on macOS)
+  set prog = 'curl -s -f -L'
+else if ( -e `which wget` ) then  # wget exists
+  set prog = 'wget -nv'
+else  # Neither curl nor wget available
+  echo 'Neither curl nor wget available to download ultra-rapid SP3 files from CDDIS.' && exit 1
+endif
+
+# -- Get the GPS week and day plus the previous day since it may be the most recent ultra-rapid
+
+set gpsw = `doy ${yr[1]} ${doy} | tail -n -2 | head -n 1 | awk '{printf "%04d \n", $3}'`
+set gpsd = `doy ${yr[1]} ${doy} | tail -n -2 | head -n 1 | awk '{printf "%1d  \n", substr($7,1,1)}'` 
+@ doylast = `echo "ibase=10; ${doy} - 1" | bc`
+set doylast = `echo $doylast |  awk '{printf "%03d \n", $1}'` 
+set gpswlast = `doy ${yr[1]} ${doylast} | tail -n -2 | head -n 1 | awk '{printf "%04d \n", $3}'`
+set gpsdlast = `doy ${yr[1]} ${doylast} | tail -n -2 | head -n 1 | awk '{printf "%1d  \n", substr($7,1,1)}'`
+
+# Set the 3-character sp3 ID   
+set prod = `echo $orbt | cut -c 1-2,4`
+
+# We'll try to download the last 6-hr file from the previous day and all 4 from this day, then find
+# the most recent one.  All files are 48-hrs long, centered on the designated epoch and hence 
+# contain at least 24h in the past and precitions for the future
+
+# set ts = "`hostname`:`date +"%H%M%S"`"              
+# echo DEBUG $ts                                                                                    
+# echo 'LOG for ultra-rapid ftp command ' >! tmp.$ts 
+if ( $prod == igu ) then
+  set ftplogin  = (`sh_get_ftp_info -archive cddis | cut -d- -f2`)
+  set log = `date "+get_ultrarapids_cddis_%Y%m%d%H%M%z.log"`
+  echo "Attempting to download IGS ultra-rapids from CDDIS "             
+  #$prog ftp://cddis.gsfc.nasa.gov/gps/products/$gpswlast/${prod}${gpswlast}${gpsdlast}'_18.sp3.Z' 
+  #$prog ftp://cddis.gsfc.nasa.gov/gps/products/$gpsw/${prod}${gpsw}${gpsd}'_00.sp3.Z'             
+  #$prog ftp://cddis.gsfc.nasa.gov/gps/products/$gpsw/${prod}${gpsw}${gpsd}'_06.sp3.Z'             
+  #$prog ftp://cddis.gsfc.nasa.gov/gps/products/$gpsw/${prod}${gpsw}${gpsd}'_12.sp3.Z'             
+  #$prog ftp://cddis.gsfc.nasa.gov/gps/products/$gpsw/${prod}${gpsw}${gpsd}'_18.sp3.Z'             
+  if ( `echo $prog | awk '{print $1}'` == 'curl' ) then
+    if ( -e ~/.netrc ) then  # Use authenticated secure HTTP
+      cat << END >! tmp.curl.cfg
+url = "https://cddis.nasa.gov/archive/gnss/products/$gpswlast/${prod}${gpswlast}${gpsdlast}_18.sp3.Z"
+-O
+url = "https://cddis.nasa.gov/archive/gnss/products/$gpsw/${prod}${gpsw}${gpsd}_{00,06,12,18}.sp3.Z"
+-O
+END
+      $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -b .urs_cookies -c .urs_cookies -n -R -O -K tmp.curl.cfg >! $log ||\
+       $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -b .urs_cookies -c .urs_cookies -n --ciphers 'DEFAULT@SECLEVEL=1' -R -O -K tmp.curl.cfg >! $log
+    else if ( `curl --version | awk '{if (NR == 1) print substr($2,1,4)}' | sed 's/\.//g'` >= 711 ) then  # Use anonymous secure FTP (requires curl version >= 7.11.0)
+      cat << END >! tmp.curl.cfg
+url = "ftp://gdc.cddis.eosdis.nasa.gov/gnss/products/$gpswlast/${prod}${gpswlast}${gpsdlast}_18.sp3.Z"
+-O
+url = "ftp://gdc.cddis.eosdis.nasa.gov/gnss/products/$gpsw/${prod}${gpsw}${gpsd}_{00,06,12,18}.sp3.Z"
+-O
+END
+      if ( `curl --version | awk '{if (NR == 1) print substr($2,1,4)}' | sed 's/\.//g'` >= 720 ) then  # Use newer "--ssl" option
+        set ssl_opt = '--ssl'
+      else  # Use older "--ftp-ssl" option
+        set ssl_opt = '--ftp-ssl'
+      endif
+      $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -u anonymous:$ftplogin[2] $ssl_opt -R -O -K tmp.curl.cfg >! $log ||\
+       $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -u anonymous:$ftplogin[2] $ssl_opt --ciphers 'DEFAULT@SECLEVEL=1' -R -O -K tmp.curl.cfg >! $log
+    endif
+    \rm tmp.curl.cfg
+  else if ( `echo $prog | awk '{print $1}'` == 'wget' ) then
+    if ( -e ~/.netrc ) then  # Use authenticated secure HTTP
+      cat << END >! tmp.wget_urls
+https://cddis.nasa.gov/archive/gnss/products/$gpswlast/${prod}${gpswlast}${gpsdlast}_18.sp3.Z
+https://cddis.nasa.gov/archive/gnss/products/$gpsw/${prod}${gpsw}${gpsd}_00.sp3.Z
+https://cddis.nasa.gov/archive/gnss/products/$gpsw/${prod}${gpsw}${gpsd}_06.sp3.Z
+https://cddis.nasa.gov/archive/gnss/products/$gpsw/${prod}${gpsw}${gpsd}_12.sp3.Z
+https://cddis.nasa.gov/archive/gnss/products/$gpsw/${prod}${gpsw}${gpsd}_18.sp3.Z
+END
+      $prog -o $log --load-cookies .urs_cookies --save-cookies .urs_cookies --keep-session-cookies --auth-no-challenge -N -i tmp.wget_urls
+    else if ( `wget --version | awk '{if (NR == 1) print substr($3,1,4)}' | sed 's/\.//g'` >= 118 ) then  # Use anonymous secure FTP (requires wget version >= 1.18)
+      cat << END >! tmp.wget_urls
+ftp://gdc.cddis.eosdis.nasa.gov/gnss/products/$gpswlast/${prod}${gpswlast}${gpsdlast}_18.sp3.Z
+ftp://gdc.cddis.eosdis.nasa.gov/gnss/products/$gpsw/${prod}${gpsw}${gpsd}_00.sp3.Z
+ftp://gdc.cddis.eosdis.nasa.gov/gnss/products/$gpsw/${prod}${gpsw}${gpsd}_06.sp3.Z
+ftp://gdc.cddis.eosdis.nasa.gov/gnss/products/$gpsw/${prod}${gpsw}${gpsd}_12.sp3.Z
+ftp://gdc.cddis.eosdis.nasa.gov/gnss/products/$gpsw/${prod}${gpsw}${gpsd}_18.sp3.Z
+END
+      $prog -o $log --ftp-user anonymous --ftp-password $ftplogin[2] -N -i tmp.wget_urls
+    endif
+    \rm tmp.wget_urls
+  endif
+  sh_uncompress ${prod}${gpswlast}${gpsdlast}_18.sp3.Z ${prod}${gpsw}${gpsd}_{00,06,12,18}.sp3.Z
+endif 
+# Download from SOPAC if siu or if the CDDIS igu failed  (check the earliest file)
+if( ! -e  ${prod}${gpswlast}${gpsdlast}'_18.sp3'  ) then
+  set fail = 'T'                   
+  echo "Download from CDDIS failed, try SOPAC "
+endif       
+if ( $prod == siu || $fail == T ) then
+  set ftplogin  = (`sh_get_ftp_info -archive sopac | cut -d- -f2`)
+  set log = `date "+get_ultrarapids_sopac_%Y%m%d%H%M%z.log"`
+  echo "Attempting to download $prod from SOPAC "
+  #$prog ftp://garner.ucsd.edu/products/$gpswlast/${prod}${gpswlast}${gpsdlast}'_18.sp3' 
+  #$prog ftp://garner.ucsd.edu/products/$gpsw/${prod}${gpsw}${gpsd}'_00.sp3' 
+  #$prog ftp://garner.ucsd.edu/products/$gpsw/${prod}${gpsw}${gpsd}'_06.sp3' 
+  #$prog ftp://garner.ucsd.edu/products/$gpsw/${prod}${gpsw}${gpsd}'_12.sp3' 
+  #$prog ftp://garner.ucsd.edu/products/$gpsw/${prod}${gpsw}${gpsd}'_18.sp3' 
+  if ( `echo $prog | awk '{print $1}'` == 'curl' ) then
+    $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -u anonymous:$ftplogin[2] -R -O -K - << END >! $log
+url = "ftp://garner.ucsd.edu/products/$gpswlast/${prod}${gpswlast}${gpsdlast}_18.sp3.Z"
+-O
+url = "ftp://garner.ucsd.edu/products/$gpsw/${prod}${gpsw}${gpsd}_{00,06,12,18}.sp3.Z"
+-O
+END
+  else if ( `echo $prog | awk '{print $1}'` == 'wget' ) then
+    $prog -o $log --user anonymous --password $ftplogin[2] -N -i << END
+ftp://garner.ucsd.edu/products/$gpswlast/${prod}${gpswlast}${gpsdlast}_18.sp3.Z
+ftp://garner.ucsd.edu/products/$gpsw/${prod}${gpsw}${gpsd}_00.sp3.Z
+ftp://garner.ucsd.edu/products/$gpsw/${prod}${gpsw}${gpsd}_06.sp3.Z
+ftp://garner.ucsd.edu/products/$gpsw/${prod}${gpsw}${gpsd}_12.sp3.Z
+ftp://garner.ucsd.edu/products/$gpsw/${prod}${gpsw}${gpsd}_18.sp3.Z
+END
+  endif
+  sh_uncompress ${prod}${gpswlast}${gpsdlast}_18.sp3.Z ${prod}${gpsw}${gpsd}_{00,06,12,18}.sp3.Z
+endif                  
+                   
+ls ${prod}${gpswlast}${gpsdlast}_??.sp3 >! tmp.list 
+ls ${prod}${gpsw}${gpsd}_??.sp3 >> tmp.list
+sort -d tmp.list >! tmp.sortedlist         
+echo "Files downloaded:"
+cat tmp.sortedlist 
+set sp3file =  `tail -n -1 tmp.sortedlist` 
+echo "Using ultra-rapid $sp3file "
+# MOD TAH 180531: Add explicit DOWNLOADED message.
+if( $rename == 'yes' ) then 
+  \mv $sp3file ${prod}${gpsw}${gpsd}'.sp3'
+  echo "File renamed to ${prod}${gpsw}${gpsd}.sp3 "
+  if( -e ${prod}${gpsw}${gpsd}.sp3 ) echo "DOWNLOADED ${prod}${gpsw}${gpsd}.sp3"
+else
+  foreach sp3f ( `cat tmp.sortedlist` ) 
+     echo "DOWNLOADED $sp3f"
+  end
+endif 
+if( $clean == 'yes' ) then 
+  \rm tmp.list tmp.sortedlist  
+  \rm  ${prod}${gpswlast}${gpsdlast}_??.sp3 ${prod}${gpsw}${gpsd}_??.sp3
+endif 
+
+exit 

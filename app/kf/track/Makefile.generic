@@ -1,0 +1,25 @@
+# Generic Makefile for kf/track - see documentation at libraries/comlib/Makefile.generic
+# Created T. Herring October 12, 1999.
+
+#LABELS: track_lib:NONE:track_lib:NONE
+#LABELS: track:track:NONE:track
+
+#SHARELIB: .:track_lib
+#SHARELIB: ../gen_util:gen_util_lib
+#SHARELIB: ../../libraries/matrix:kinv_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+
+#OBJ_track_lib assign_con comp_clock ds_to_ymdhms
+#OBJ_track_lib earth_to_inert get_elev get_miss   get_obsfile               
+#OBJ_track_lib get_site   geoxyz     get_svsrun   lowerc  neph_to_xyz              
+#OBJ_track_lib read_bat   read_nav   read_nav_clk ymdhms_to_ds                
+#OBJ_track_lib save_head  clean_sp3_clk   init_track   read_all_rinex               
+#OBJ_track_lib est_pos    theory search  atm_lib  rd_rinex_head             
+#OBJ_track_lib rd_rinex_obs  rx_obs    openfile   remap_rx            
+#OBJ_track_lib read_nav   smooth     read_antmod  intantmod
+#OBJ_track_lib ionex_lib  cslip_repair assign_dattyp check_gnss 
+#OBJ_track_lib NLx_est
+#OBJ_track_lib zero_vec8 step2diu step2lon norm8 sprod st1idiu 
+#OBJ_track_lib st1isem st1l1 dehanttideinel taiutc ephred ephtrp 
+#OBJ_track_lib admint etutc eval juldat leap mday recurs 
+#OBJ_track_lib shells spline toymd tdfrph hardisp vmf1_grid

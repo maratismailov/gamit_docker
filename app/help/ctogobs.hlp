@@ -1,0 +1,328 @@
+CTOGOBS: Not used
+
+CTOGOBS  Version 3.33 HELP
+
+This is the pre-processor program for the SOLVG GPS Kalman
+filter program.  Its main task is merge a set of user specified
+c-files and generate the Gobs_file for SOLVG.  The runstring for
+the program is:
+
+% ctogobs <command file> <Gobs_file> <descp> <cf series> [....list of cfiles...]
+
+where <command file> is an optional command file (commands are
+        given in the ctogobs.hlp file).   If no command file is
+        given (default file generation) then '' should be used
+        as a place holder in the runstring
+    <Gobs_file> is the optional name for the output (binary)
+        Gobs_file.  The options here are
+         (1) If no name is given (just '' in runstring)
+             then file will not be generated.
+         (2) if . is given the default gobs file name 
+             will be generated as gYYMMDDS.gobs
+             where yymmdd is the year, month, day of the data from
+             c-files and S is the series character from the cfile.
+         (3) A single character is given, and it will used as the
+             series designator
+         (4) A full arbitary file name (along with directory
+             information is given).
+  <descp> is the experiment description enclosed in single
+          quotes e.g. 'TREX00 Day 1'
+  <cf series> is a single characater to denote the new cfile
+          series to be written out.  If no character given (i.e., ' '
+          used) then no updated cfiles will be written.  Special
+          characters that can be used are:
+          .   -- Overwrite the input cfiles
+          +   -- Increment the cfile series letter, converting 
+                 numeric series values to a.
+*NOTE*  Unless, . is used existing cfiles will not be overwritten.
+    [....list of cfiles...] is the list of cfiles to be merged.
+
+CTOGOBS Commands:
+-----------------
+I the description @ denotes at least one blank at the beginning of a
+line
+
+Command Description
+@END     
+        Last command issued.  An end-of-file (EOF) will have the same
+        effect.
+ 
+@RNG_JUMP_TOL [n-allan sd] [min jump (usec)]
+        Tolerances for detecting clock jumps. The first value is the number of 
+        times the clock stability will be considered at jump and the 
+        second is the minimum which will be considered a jump in 
+        microseconds .i.e., both numbers must be exceeded for a clock 
+        jump to be flagged.
+
+@CLK_RESET_TOL [jump difference (usec)]
+        Tolerance for jump to be taken as a millisecond reset in the 
+        clock (usec)
+ 
+@RNG_RESID_TOL [n-sigma] [min error (m)]
+        Tolerance for bad range residuals.  The first is multiplier on
+        the sigma on the range data and second is the minimum value 
+        in meters.
+
+@ION_JUMP_TOL [Reciever code/ALL] [max gap (sec)] [Multiplier] [Min dIon (cyc)] [Max dIon]
+        Lets user set the tolerances for detection cycles slips in the
+        ionospheric delay (LG).  The maximum jump allowed is set by
+        mininum of the [Max dIon] and the maximum of the [multiplier] by 
+        the last change in the ion delay and the [Min dIon (cyc)].  That is
+        tolerance will fall somewhere bewteen Min dIon and Max dIon with
+        the intermediate values set by the multiplier by the last change.
+
+@RNG_NOISE [Reciever code/ALL] [noise (mm)] 
+        Lets user specify the noise in the range measurements
+        by site (units, mm) (initial values only.  They will be 
+        updated during ctogobs run.)
+
+@MAX_RCLK_ITERATIONS [max iterations]
+        Maximum nnumber of range clock iterations
+ 
+@REL_CLK_WEIGHT [weight] 
+        Weight to be given to the clock noise model realtive to data
+        noise in estimating the clocks
+ 
+@RNG_CLK_ROOT [range clock root of file names]
+        Lead part of the name to be given to the range clock
+        solution output.  If no root is given then the range clock
+        solution will not be output.  For example crng will produce
+        output files named crng.ARON.  A cplot command file will also
+        be generated called <root>.plt
+
+@PHS_CLK_ROOT [phase clock root of file names]
+        Lead part of the name to be given to the phase clock
+        solution output.  If no root is given then the phase clock
+        solution will not be output.  See rng_clk_root.
+ 
+@PHS_RES_ROOT [phase residual root of file names] <number type>
+        Lead part of the name to be given to the phase 
+        residual output.  If no root is given then the phase residuals
+        will not be output.  See rng_clk_root and residual_site.
+Added Version 3.33 130329: Optional number type argument added:
+        <number type> MULTIPLE (multiple files: One PRN per file)
+                      SINGLE (all PRN's output to single file per site)
+                      NONE  No output (eqivalent to not using command).
+
+@SNG_DIFF_ROOT [single difference file root]
+        Lead part of the name for single difference files
+       (These may be used with the program mon_data to processing single
+        difference kinematic data).  The single differences are between
+        first site and subsequent sites.  The residual_site list is used 
+        select which sites to write to single difference files.
+
+@RESIDUAL_SITE [List of four character codes/ALL/NONE]
+        Lets the user specify which sites should be output
+        to the phase residual or single difference files 
+
+@SUMMARY_FILE [Name of summary file/6]
+         Name of a summary file.  If command is not given or 6 is
+         given as the file name then the summary is written to stdout.
+
+@RCV_ALLAN_SD [site code/ALL] [Allan standard deviation (ppb@100sec)]
+        Allows the user to specify the Allan standard deviations
+        of the clocks at each site. (Updated during ctogobs run).
+
+@REMOVE_BIAS_COND [Chi**2 Ratio] [min chi**2] [max gap]  <large gap scale>
+        Sets the constrasts for removing biases
+        The four values specified are:
+         (1) Chi**2 ratio
+         (2) minimum value of smallest chi**2 and
+         (3) Gap over which double difference biases will not be
+             attempted (seconds)
+         (4) The <large gap scale> is optional and it sets the multiplier
+             on the chi**2 quality value given below based on the ratio
+             of the gap in the data to the minimum number of points being
+             used in the patch.
+        The formula used used is that X = C2/(C1+min*exp(-C1/min)) > ratio
+        to remove the bias flag, where C1 is the smallest Chi**2 during
+        fix to integer values; C2 is the next smallest; min is argument
+        (2) in the command; and ratio is argument (1).  In addition, the
+        gap must be smaller than (3).  If <large gap scale> have been 
+        specified then the value of X computed from the data is reduced
+        by 1 + <large gap scale>*atan(gap/min data)) where gap is the gap
+        in the data and min data is the smaller of the number of data in the
+        left and right segments about the gap.  The default value of 
+        <large gap scale> is 2.0 
+
+@ALLOW_ONE_BG [YES/NO]
+        Allows user to specify whether gaps or biases flags on all
+        satellites at about the same time should be patched over.
+
+
+@USE_GAMIT_ELEV [YES/NO] 
+        Allows user to specify if the GAMIT Elevation cut-off angle 
+        should be used or not. If Yes is specified then the gamit cutoff
+        is used.  Low elevation data wil be reweighted in the output
+        c-files (See new_cf_series in runstring)
+
+@USE_CVIEW_EDIT [YES/NO]
+        Allows user to specify if the CVIEW editing flag (-1) should 
+        be used or not. If Yes is specified then cview flags -1 will
+        not be used.
+
+@USE_MM_RANGE [YES/NO]
+        Allows user to specify if MiniMac range measurements should
+        be used.  Default is not to use them.  (If ranges are not 
+        used then MiniMac should be connected to a very good clock.)
+
+@IGNORE_GAPS [YES/NO]
+        Lets user specify that gaps should be ignored when
+        forming acceptable double difference during cleaning.  
+        This option should only be used for cleaned data when the
+        GAMIT elevation cutoff and cview edits are used.
+
+@FLAG_GAPS [YES/NO]
+        Lets user specify if gaps in the one-way data should be
+        flagged with a bias flag.  This option is automatically
+        set when the allow_one_bg yes is given.  
+
+@GAP_SIZE [cf_code/ALL] [number of epochs]
+        Lets user specify the number of epochs allowed in a gap
+        so that it will not be flagged.  At setting of 1 (default)
+        will cuase all gaps to be flagged.  Automatically turns on
+        the flag_gaps option.   (Only used when gaps are flagged).
+
+@REMOVE_MS_JUMP [YES/NO]
+        Lets user decide if millisecond jumps are in the clock are
+        removed when cfiles are written (to remove the jumps is the
+        standard).
+
+@REMOVE_FIRST_BIA [YES/NO] 
+        Lets user determine if the first bias flag on one-way sequences
+        should be removed before c-cfiles are written.  This option
+        conflicts with generation of the single difference files and
+        should not be used when single difference files are written.
+
+@EDIT_SITE_SV [Site Code] [PRN] [Start Epoch] [Stop Epoch]
+        Allows user to specify site/satellite combinations over
+        specific epoch ranges to be edited and not used in determining
+        clock behavior and double difference editing.  Useful for 
+        treating bad satellite range data.  
+        ALL may be used for the site code and all sites 
+           will be deleted for the specified specified satellite.  
+        0 may be used for the PRN number and all satellites will be 
+           deleted over the specified epoch range.
+
+
+@PHS_FIT_TOL [4 values all in cycles]  
+        Tolerances in deciding if a cycle slip has occurred in 
+        the pre-fit clock fit to the phase data.  The 4 values
+        given are:
+        (1) Deviation of mean phase from range solution (pass1)
+        (2) Deviation of worst phase residual from range solution
+        (3) Deviation of mean phase from phase solution from pass 1
+        (4) Deviation of worst phase residual from phase solution
+            from pass 2.  (Values 3 and 4 are normally much less than
+            values 1 and 2).
+         Actual deviations being flagged can be viewed by setting
+         status_report Pass1_slips Pass2_slips.
+
+@STATUS_REPORT [List of options]
+        Allows user to tailor the output of the program by selecting
+        which quanities will be output.  The options come from the 
+        following list:
+          CLK_JMP_PROC - possible clock jump detection 
+          CLK_JMP_VAL  - value of clock jump when one is found
+          BIAS_ADDED   - BIAS flag added during one-way phase processing
+          PASS1_SLIPS  - Number of cycles added in Pass 1 one-way clean
+          PASS2_SLIPS  - Number of cycles added in Pass 2 one-way clean
+          DD_TRIALS    - List each double difference combination tried
+          DD_ESTIMATES - Estimates of cylcle slip during the DD fix.    
+          DD_SCAN      - Details of scan flag showing sites and svs used.
+          ELEV_DIST    - Distribution of final (weighted) data by elev
+          RUN_PARAMS   - Dump of parameters used in run 
+        ALL may also be used, and then -option to turn off particular
+        output, e.g., STATUS_REPORT ALL -CLK_JMP_PROC
+        The status reports are sent to stdout.
+
+@DD_REPORT [DD Report file name] [option]
+        Allows user to specify a file of the format readable by cview
+        and to specify which types of double differences should
+        by output to this file (i.e., ALL, FIXED, NOT_FIXED).  If the
+        file name dd.srt is used then the file can be directly read 
+        into cview to allow checking of the cleaning results.
+
+
+@MIN_ELEVATION [Min elevation (deg)]
+        Minimum elevation to which data will be cleaned. Once this
+        value has been set in ctogobs, the data below this elevation 
+        will not be useable later without further cleaning.
+ 
+@TRIM_ONEWAY_TOL [min_dtl_bias] [min_good_bias] [min_dtr_end] [min_good_end]
+        Lets user set the tolerances in triming the
+        oneway data to remove small segments of data.  The four values
+        input are:
+        min_dtl_bias  - mininum time in seconds between bias flags
+        min_good_bias - minunum number of epochs between bias flags and
+                        maximum time over which a bias flag will be
+                        removed in one-way data.
+        min_dtr_end   - Fraction of total duration of data allowed for
+                        a bias flag at the end of one-way sequence.
+        min_good_end  - Number of epochs of data allowed before last bias
+                        flag.
+        If these conditions are not meet then the one-way data are flagged.
+
+@DD_RETURN_SIZE [Max WL] [Max LC] [Max LG] <One way fix tol>
+        Set the number of data to be used for cycle skip repair:
+        Max WL - widelane estimates 
+        Max LC - LC (ionosphere free observable)
+        Max LG - LG (ionospheric contribution to LG)
+        These values can not be set less than 5.
+        <One way fix tol> is an optional arguments that sets the
+        maximum duration over which one-way L1/L2 range data will
+        be be patched using the Widelane and LG.   
+
+@DD_FIT_TOL  [WL Ratio] [WL Min] [WL Max] [LC Ratio] [LC Min] [LC Max]
+        Lets user set tolerances for flagging cycle slips in wide-lane [WL]
+        and LC double differences [LC].  The parameters for each of these
+        are:
+        [Ratio] - Ratio allowed for jump compared to local rms or last
+                  change 
+        [Min]   - Minimum value for a jump that will be flagged (cyc)
+        [Max]   - Maximum value above which all jumps will be flagged (cyc).
+        (The tolerance on the maximum jump allowed will fall between
+         Min and Max with the local rms times the ratio setting the
+        intermediate values.)
+
+@SCAN_SITES [All/None/list of site names]
+        Lets user specify which sites should be scanned before double
+        difference cleaning.  If UNFLAGGED slips are found during 
+        double difference cleaning this command should be used. All will
+        set all sites to be scanned; clear will set no sites to be 
+        scanned.  A minus sign before a site name will remove this
+        site from list (e.g., -PIN1 will remove Pin1 from the scan list.)
+
+
+EXPLANATION OF OUTPUTS:
+----------------------
+
+DD_TRIALS Line
+..............
+ Ep   114 S1/C1   2 13 S2/C2   1  2 dL1/2 slip      0.0     0.0 cycles  NumLR  23 18 EpLR    111   114 dchi, Chiqual     1.7   102.9    30.3
+ where Ep    epoch number,
+       S1/C1 is site number and channel for one way.
+       S2/C2 is site number and channel for double difference.  If these values 
+             are zero then there was no double difference formed.
+       dL1/2 slip is the change in number of cycles at L1 and L2
+       NumLR is the number of data in left and right segments (May actually
+             be less than this if unflagged bias found. 
+       EpLR  is the epoch numbers accross the gap or bias flag being patched,
+       dchi, Chiqual are the lowest to chi**2 increments when integer cycles
+             are tired, and Chiqual is the Ratio used to see if bias flag
+             can be used.
+
+Bias FLAG Line test (Always printed)       
+....................................
+ Epoch  114 Site MOJ1 PRN 20 L1 from     0.0 to     0.0 L2 from     0.0 to     0.0 Reliable?  T   30.34 BFLG OneBG F Force F
+where Epoch  epoch number
+      Reliable?  T indictates bias flag removed;  Values given next is Chiqual,
+      BFLG or GAP says whether bias flag or gap being patched,
+      OneBG F or OneBG T indicates that we have allowed one bias flag or gap
+             to do the patch.
+      Force F or Force T indicates that the one-way were forced to have the
+             bias flag removed so that on other combinations could have one
+             bias or gap.
+
+      
+

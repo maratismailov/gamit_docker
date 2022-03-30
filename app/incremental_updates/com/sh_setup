@@ -1,0 +1,303 @@
+#!/bin/csh -f
+#
+#doc Check and setup the GAMIT tables directory
+#doc
+#
+# Last modified 2003/6/9 by S. McClusky
+# Modified 2006/1/4 by R. King to make new-format station.info and l-file default
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "==========================================================================================="
+  echo " Set up tables for GAMIT processing  " 
+  echo " "
+  echo "   Primary mode:  Link or copy all necessary files from gg/tables into the experiment tables directory"
+  echo " "
+  echo "      sh_setup -yr <yr> [-update <links/files/all>  -apr <apr> -series <eop> -topt <topts> "
+  echo "                         -localeop  ]"
+  echo "  "           
+  echo "      Executed from the experiment directory.  Only the year is required."
+  echo " "
+  echo "      Action:  1) Execute links.tables to link the required EOP, ephemeris, station, satellite," 
+  echo "                  and ocean tide files.  Default EOP is usno.  "
+  echo "               2) Copy the required control files: process.defaults, sites.defaults, "
+  echo "                  sestbl., sittbl., autcln.cmd, apriori coordinates.  The default for "
+  echo "                  coordinates is igb14_comb.apr. " 
+  echo "               3) No files or links that exist will be overwritten unless"
+  echo "                  the -update option is specified"  
+  echo "   "
+  echo "      Optional commands:" 
+  echo " "     
+  echo "        <update> Set this to update (overwrite existing) links <links>, files <files>, "
+  echo "                links and files <all>. [Default no] " 
+  echo "        <eop> The pole and ut1 series to be used. [Default usno] "      
+  echo "        <localeop> Set if you want to link eop files to pole.series and ut1.series "
+  echo "                   in the local directory [Default no] " 
+  echo "        <apr> The file for coordinates that are not to be updated by GAMIT [Default igb14_comb.apr] "
+  echo "        <oldfmt_lfile> copy to local tables and use the old GAMIT l-file format lfile " 
+  echo " "
+  echo '        <topts> defines the list of table files to be removed and relinked [Default none]'
+  echo '  none all nutabl. soltab. luntab. gdetic.dat guess_rcvant.dat leap.sec svnav.dat svs_exclude.dat'
+  echo '  tform.dat antmod.dat rcvant.dat dcb.dat atmdisp.dat imfgrid.dat vmfgrid.dat core pole ut1'   
+  echo "  "  
+  echo " "
+  echo "  Secondary mode:  Called by sh_gamit for each day to create links and files if they do not exist"
+  echo "                   and to update the lfile. from the apr file"
+  echo "  "
+  echo "      sh_setup -yr <yr> -doy <doy> -update <links/files/all> -apr <apr> -series <eop> -localeop  "
+  echo "                        -upd_l -tables <dir> > "
+  echo "  "
+  echo "        where <doy>    3-character day of year."
+  echo "              <upd_l>  Update the l-file with coordinates from the globk.apr file"
+  echo "  "      
+  echo "==========================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+set yr = ''
+set doy = ''
+set series = usno
+set update = no
+set upd_l = no
+set localeop = no 
+set oldfmt_stinfo = no
+set oldfmt_lfile = no
+set apr  = igb14_comb.apr
+set tables = '~/gg/tables'
+set mailto = `whoami`
+set machine = `hostname`
+set topts = 'none'
+##################### DECIPHER COMMAND LINE #######################
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -a*:
+      set apr  = $input[2]  
+    breaksw 
+    case -upda*:
+      set update  = $input[2]  
+    breaksw 
+    case -upd_l:
+      set upd_l  = "yes"  
+    breaksw 
+    case -local*:
+      set localeop  = "yes"  
+    breaksw 
+    case -s*:
+      set series = $input[2] 
+    breaksw 
+    case -ta*:
+      set tables = $input[2] 
+    breaksw 
+    case -y*:
+      set year = $input[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+      set yr = `sh_year -year $year`
+    breaksw 
+    case -d*:
+      set doy = $input[2]  
+    breaksw 
+    case -oldfmt_l*:
+      set oldfmt_lfile = yes  
+    breaksw 
+    case -to*:
+      set topts =  (`echo $argv | cut -d- -f2`); shift topts 
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ############################         
+
+echo "EXECUTING sh_setup"
+
+# Set timestamp hostname variable
+set ts = "`hostname`:`date +"%H%M%S"`"
+
+# Check all required info given.
+if ( ${year} == '' ) then
+  echo "Not all required fields given -- yr: $year --Stop"
+  exit
+endif
+
+# Move to the tables directory. Make it if it doesn't exist
+if ( ! -e tables ) then
+  mkdir tables
+endif
+pushd tables
+
+#Update links
+if ( ${update} == 'links' || ${update} == 'all' ) then 
+  echo "Removing existing links"
+  if ( -e antmod.dat )  \rm antmod.dat >&! /dev/null
+  if ( -e core       )  \rm core       >&! /dev/null
+  if ( -e gdetic.dat )  \rm gdetic.dat >&! /dev/null
+  if ( -e leap.sec   )  \rm leap.sec   >&! /dev/null
+  if ( -e luntab.    )  \rm luntab.    >&! /dev/null  
+  if ( -e ut1.       )  \rm ut1.       >&! /dev/null
+  if ( -e nutabl.    )  \rm nutabl.    >&! /dev/null
+  if ( -e pole.      )  \rm pole.      >&! /dev/null
+  if ( -e rcvant.dat )  \rm rcvant.dat >&! /dev/null
+  if ( -e soltab.    )  \rm soltab.    >&! /dev/null
+  if ( -e svnav.dat  )  \rm svnav.dat  >&! /dev/null
+  if ( -e tform.dat  )  \rm tform.dat  >&! /dev/null   
+  if ( -e svs_exclude.dat  )  \rm svs_exclude.dat  >&! /dev/null
+  if ( -e otlcmc.dat       )  \rm otlcmc.dat  >&! /dev/null
+  if ( -e dcb.dat          )  \rm dcb.dat  >&! /dev/null
+  if ( -e eq_rename )  \rm eq_rename  >&! /dev/null
+
+endif
+
+# Remove links to standard tables ut1 and pole tables. Use a local set.
+echo "localeop: $localeop"
+if ( ${localeop} == 'yes' ) then
+
+  echo "Linking pole. and ut1. to local files: ln -s ./ut1.${series} ut1. ; ln -s ./pole.${series} pole."
+
+  if ( $series != `ls -l ut1.  | awk '{print $NF}' | awk -F"." '{print $NF}'` )  \rm  ut1.  >&! /dev/null 
+  if ( $series != `ls -l pole. | awk '{print $NF}' | awk -F"." '{print $NF}'` )  \rm  pole. >&! /dev/null
+
+  ln -s ./ut1.${series} ut1. >& /dev/null
+  ln -s ./pole.${series} pole. >& /dev/null
+  
+  if ( ! -e pole. || ! -e ut1. ) then
+    echo "Local EOP information was not found in local tables directory as specified: pole.$series ut1.$series STOP."
+    exit 1
+  endif   
+  
+else
+
+# If necessary, make a local copy of requested pole and ut1 files
+# Link  pole. and ut1. files to the requested series. 
+# These files will get validated and updated if necessary by sh_update_eop.
+
+  if ( ! -e ut1.${series}  ) \cp -p ~/gg/tables/ut1.${series}  .
+  if ( ! -e pole.${series} ) \cp -p ~/gg/tables/pole.${series} .
+
+  if ( $series != `ls -l ut1.  | awk '{print $NF}' | awk -F"." '{print $NF}'` )  \rm  ut1.  >&! /dev/null 
+  if ( $series != `ls -l pole. | awk '{print $NF}' | awk -F"." '{print $NF}'` )  \rm  pole. >&! /dev/null
+
+  ln -s ./ut1.${series} ut1. >& /dev/null
+  ln -s ./pole.${series} pole. >& /dev/null
+  
+endif
+
+# Run links.tables
+echo "Checking links: sh_links.tables -frame J2000 -year ${yr[1]} -eop ${series} -topt $topts"
+sh_links.tables -frame J2000 -year ${yr[1]} -eop ${series} -topt $topts >&! /dev/null
+  
+# Update tables
+if ( ${update} == 'files' || ${update} == 'all' ) then
+  echo "Removing  files"
+  if ( -e station.info ) \rm  station.info >&! /dev/null
+  if ( -e sestbl. )      \rm  sestbl.      >&! /dev/null
+  if ( -e sittbl. )      \rm  sittbl.      >&! /dev/null
+  if ( -e autcln.cmd )   \rm  autcln.cmd   >&! /dev/null
+  if ( -e lfile. )       \rm  lfile.       >&! /dev/null
+  if ( -e $apr )         \rm  $apr         >&! /dev/null
+endif                        
+
+# See if station.info is available
+if ( ! -e station.info ) then 
+   \cp ${tables}/station.info ./station.info
+   echo "Copied ${tables}/station.info ./station.info " 
+endif
+
+# See if sestbl. is available
+if ( ! -e sestbl. ) then
+  \cp ${tables}/sestbl. .
+  echo "Copied ${tables}/sestbl. . "    
+endif
+
+# See if sittbl. is available
+if ( ! -e sittbl. ) then
+  \cp ${tables}/sittbl. ./sittbl.
+  echo "Copied ${tables}/sittbl. ./sittbl. "    
+endif
+
+# See if autcln.cmd is available
+if ( ! -e autcln.cmd ) then
+  \cp ${tables}/autcln.cmd .
+  echo "Copied ${tables}/autcln.cmd . "    
+endif
+
+# See if apriori l-file is available
+if ( ! -e lfile. ) then
+  if ( ${oldfmt_lfile} == 'yes' ) then 
+    \cp ${tables}/lfile.spherical ./lfile. 
+    echo "Copied ${tables}/lfile.spherical ./lfile. "
+  else
+    echo "Using .apr format lfile."
+    \cp ${tables}/lfile.apr ./lfile. 
+    echo "Copied ${tables}/lfile.apr ./lfile. "
+  endif    
+endif
+
+# See if the ITRF apr file is available
+if ( ! -e $apr ) then
+  \cp ${tables}/$apr .
+  echo "Copied ${tables}/$apr . " 
+  chmod +w $apr   
+endif    
+
+# See if process.defaults is available
+if ( ! -e process.defaults ) then
+  \cp ${tables}/process.defaults .
+  echo "Copied ${tables}/process.defaults . "    
+endif    
+
+# See if sites.defaults is available
+if ( ! -e sites.defaults ) then
+  \cp ${tables}/sites.defaults .
+  echo "Copied ${tables}/sites.defaults . "    
+endif    
+
+# Update l-file with .apr file coordinates if requested
+if ( $upd_l == "yes" && -e $apr ) then 
+  echo "Updating lfile. with coordinates from: $apr "
+  \cp lfile. lfile.old
+  if ( -e tmp.lfile ) \rm tmp.lfile
+  \cp lfile. tmp.lfile     
+# Check what sort of l-file you want to use (sprerical [old] or cartesian [apr]).
+  set l_type = `check_lfile lfile.`
+  if ( $l_type == "old" ) then
+    gapr_to_l $apr lfile.$apr '' $yr[1] $doy >! /dev/null 
+    tail -n +2 lfile.$apr  | awk '{print $1}' >! tmp.apr_names   
+    foreach site ( `cat tmp.apr_names` )
+#   MOD TAH 990713: Make sure name is at start of line  
+#   RWK 020321:  This statement takes 25s to execute on prey with 370 stations---very inefficient
+      grep -i -v "^$site" tmp.lfile >! tmp.lfile1    
+      \mv tmp.lfile1 tmp.lfile
+    end  
+    tail -n +2 tmp.lfile >! tmp.lfile1 
+    cat lfile.$apr tmp.lfile1 >! lfile.
+    \rm tmp.apr_names tmp.lfile tmp.lfile1
+  else if ( $l_type == "apr" ) then
+# MOD TAH 161002: Used updated merge_apr which will evalute the non-linear terms.
+# MDO TAH 191228: Used just $yr[1] rather than yr array
+    echo "New Version merge_apr $apr lfile. lfile.merged $yr[1] $doy"
+    merge_apr $apr lfile. lfile.merged $yr[1] $doy
+    \mv lfile.merged lfile.  
+#    cat $apr | awk 'substr($0,1,1) == " " {print $1}' >! tmp.apr_names   
+#    foreach site ( `cat tmp.apr_names` )
+#   MOD TAH 990713: Make sure name is at start of line  
+#   RWK 020321:  This statement takes 25s to execute on prey with 370 stations---very inefficient
+#      cat tmp.lfile | awk ' substr($0,1,1) == " " && $1 != site {print $0}' site=$site >! tmp.lfile1    
+#      \mv tmp.lfile1 tmp.lfile
+#    end
+#    cat $apr tmp.lfile >! lfile.
+#    \rm tmp.apr_names tmp.lfile tmp.lfile1 >& /dev/null
+  else
+    echo "Unknown l-file type: $l_type"
+    exit 1
+  endif
+ 
+else if ( $upd_l == "yes" && ! -e $apr ) then
+  echo "Apr file: ${apr} missing. CANNOT update l-file as requested "
+endif  
+ 
+#Thats it!!
+
+popd >& /dev/null
+
+exit

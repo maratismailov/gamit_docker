@@ -1,0 +1,53 @@
+#!/bin/csh -f
+# 
+# Script to add updated l-file copy to the gamit bat file
+#
+if( $#argv < 1 ) then
+    grep '^## ' $0 | awk '{print substr($0,3)}'
+## Usage: sh_bf_update <bat file> <dyr> <doy> <expt>
+## where <bat file> is name of bat file to be updated
+##       <dyr> is single digit year
+##       <doy> is day of year
+##       <expt> is the campaign name
+##
+    exit
+endif
+
+# Set the varibales
+set bat = $1
+set dyr = $2
+set doy = $3
+set expt = $4
+
+# Copy top part of batch file
+set start = `nl $bat | grep 'Post-fit editing and solution'`
+if( $#start > 0  ) then
+   @ beg = $start[1] - 1
+   head -n $beg $bat >! tmp.bat
+
+# Get the name of lfile to update
+   set lnk = `\ls -l l${expt}${dyr}.${doy} | awk '{print substr($0,1,1)}'`
+   if( $lnk == 'l' ) then
+      set lfname = `\ls -l l${expt}${dyr}.${doy} | awk '{print $NF}'`
+   else
+      set lfname = l${expt}${dyr}.${doy}
+   endif
+
+#  Now add new commands to batch file
+   echo "# Update the lfile for sites with large coord adjustments" >> tmp.bat
+   echo $expt $doy | awk '{printf "set rms = `grep Pre q%sp.%s | head -n 1 | awk \047 $6 > 1.0 {print 1} \047 `\n",$1,$2}' >> tmp.bat
+#   echo 'if ( $rms[1] != 1 ) \cp '"l${expt}a.${doy} $lfname" >> tmp.bat
+   echo ${expt} ${doy} $lfname | awk '{printf "if ( $rms != 1 ) \134cp l%sa.%s %s \n",$1,$2,$3}' >> tmp.bat
+   echo "#" >> tmp.bat
+
+#  Now add in the rest of the bat file
+   tail -n +$start[1] $bat >> tmp.bat
+   
+#  Now copy back the .bat file
+   \mv tmp.bat $bat
+else
+   echo $bat does not seem to be a postfit run
+endif
+
+#### Thats all
+exit

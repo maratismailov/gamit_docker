@@ -1,0 +1,5 @@
+#!/bin/csh -e    
+  echo "  "
+  echo "  Script renamed sh_cvedt    June 1997 "
+  echo "  "
+  exit

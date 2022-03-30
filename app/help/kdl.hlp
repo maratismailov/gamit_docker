@@ -1,0 +1,23 @@
+KDL: VLBI program to list directory and contents of KalObs files
+ 
+KDL: directory program for KalObs files 
+  
+RUNSTRING:
+CI> KDL mask <O=option> <l=filename> <a=archive>
+  
+where:
+mask is a file mask to be used when seaching for KalObs files.  The 
+      conventions for the mask are the same as those for CI dl command. 
+      e.g., K@I::53 -- find all IRIS KalObs files on cart 53
+O=    is an option specification.  The options are: 
+      O=s -- short output.   Gives the KalObs file name and experiement 
+             description (Default if O= not given or invalid) 
+      O=l -- long output. Gives Readin time, data base name, version, 
+             CALC version,and the arcjhive information given is A=
+             option, in addition to the S option output.
+L=    allows specification of output device.  May be an LU or a file. 
+      If the file exists the output will be appended to the end of the
+      file. (Default is user's terminal)
+A=    archive informarion.  Output with O=L.  Should be 5 character string
+      with the KO tape number and save number. (Default is None)
+ 

@@ -1,0 +1,64 @@
+DISPLACE: Okada fault slip displacement computation
+
+RUNSTRING:
+
+% displace <input setup and site file> <output displacement file>
+
+The inout file contains a header block and then entries for either
+grid caculations or calculations at specific GPS site locations.
+
+Input file contains header: 
+       The first can have either
+          eq_def <CODE> YY MM DD HR MIN
+       of 
+          Globk Lat Long Depth (km) : Used to generate EQ_DEF line
+       Number of faults
+       faultlong faultlat faultstrike         -- repeat each fault
+       depth dip length width u1 u2 u3 units  -- repeat each fault
+The u3 (tensile) and units (mm,cm,dm or m) are optional.  Output formats are 
+taylored for mm units in terms of number of significant digits.
+NOTE: Depth is to the bottom of the fault and hence width*sin(dip) < Depth (error -5 if not)
+If the eq_def form is used, displace will compute the lat/long and depth of
+the center of the first fault plane and fit the globk earthquake model to this location.
+If the numeric lat/long depth is used (earlier verions), this position will 
+be used.
+Outout options: 
+ For GRID
+       makegrid(=0)
+       longitude latitude of origin (deg)
+       xmin xinc xnum ymin yinc ynum (km for min and inc values)
+
+ For station info:
+       makegrid(=1) numsta=n
+       long1 lat1 name1(<= 5 characters)
+       long2 lat2 name2
+       ...
+       longn latn namen
+(Note the numsta value is not used, lines are counted until end of file.
+
+The output file constains the cosesimic offsets estimates (mod lines) and
+eq_def, eq_rename amd eq_cosesi lines fit bassed on the first line in the
+input giles.
+
+Example: 
+For GRID form	.
+eq_def P6 2010 01 01 00 00
+1
+   235.6120    40.0257     40.074
+   25.0      16.552     32.671     35.101   0.000 0.000  -300.0 mm
+0 
+ 236.8808   40.2250
+ -150 25 12 -150 25 18
+
+For Long/Lat form.
+eq_def P6 2010 01 01 00 00
+1
+   235.6120    40.0257     40.074
+   25.0      16.552     32.671     35.101   0.000 0.000  -300.0 mm
+
+1 24
+ 237.58512   40.99763 P060
+ 236.09388   40.02444 P156
+ 236.30666   40.11926 P164
+ 236.14674   40.24555 P165
+ ....

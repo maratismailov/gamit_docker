@@ -1,0 +1,167 @@
+#!/bin/csh -f 
+#
+#doc Script to archive daily GAMIT solutions
+#doc
+#
+# Last modified 99/04/21 by Simon McClusky
+
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "====================================================================================="
+  echo " Make archive of daily GAMIT solutions. (Run script from the day dir being archived) " 
+  echo "  "
+  echo " Usage: sh_archive_soln -expt <expt> -yr <yr> -doy <doy> -archpth <dir> -level <val> "
+  echo "                        -dirext <extn> -filext <extn> "
+  echo "  "
+  echo "        <expt> 4 char id of experiment to archive [Required] "
+  echo "        <yr>  4 char year of solution to be archived [Required] "
+  echo "        <doy> 4 char day of year of solution to be archived [Required] " 
+  echo "        <dir> Directory where solution is to be archived [Required]  "
+  echo "        <val> Level of archive. Ie what do you want to save. [Default 1] "
+  echo "        <dirext> An extension added to the archive directory "
+  echo "        <filext> An extension added to the files written to the archive directory " 
+  echo "                 NOTE: Only h-files, o-files, q-files, and autcln files get filext "
+  echo "        <compress> If specified large uncompressed files such as  h-files are "
+  echo "                   compressed in the archive directory. [Default no] "      
+  echo "  "      
+  echo "        Level 1 = autcln.cmd autcln.post.sum  h-files o-files q-files k-files "
+  echo "                        x-files d-files i-files l-file j-files g-files session.info "
+  echo "        Level 2 = autcln.post.sum h-file o-file q-file "      
+  echo "  " 
+  echo " NOTE: Archive is created in the directory given by your -archive and -doy entries. "
+  echo "       Ie -archive /data35/simon/emed98 -doy 235 --> /data35/simon/emed98/235  " 
+  echo "  " 
+  echo " Examples: sh_archive_soln -archpth /data35/simon/emed98/ -expt emed -yr 1998 -doy 235 "
+  echo "           sh_archive_soln -archpth /data35/simon/emed98/ -expt emed -yr 1998 -doy 235 -level 2"
+  echo "           sh_archive_soln -archpth ../ -expt emed -yr 1998 -doy 235 -level 2 -filext test1"
+  echo "  "
+  echo "====================================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS #############################   
+set expt = ''
+set dirext = ''
+set filext = ''
+set compress = no
+set year = ''
+set yr = ''
+set doy = ''
+set archivepth = ''
+set level = 1
+set mailto = `whoami`
+set machine = `hostname`
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -a*:
+      set archivepth  = $input[2]  
+    breaksw 
+    case -c*:
+      set compress = yes 
+    breaksw 
+    case -e*:
+      set expt = $input[2] 
+    breaksw 
+    case -y*:
+      set year = $input[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+      set yr = `sh_year -year $year`
+    breaksw 
+    case -do*:
+      set doy = $input[2]  
+    breaksw 
+    case -di*:
+      set dirext = $input[2]  
+    breaksw 
+    case -fi*:
+      set filext = "."$input[2]  
+    breaksw 
+    case -l*:
+      set level = $input[2] 
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ############################
+# Set timestamp hostname variable
+set ts = "`hostname`:`date +"%H%M%S"`"
+
+#Check required fields
+if ( ${year} == '' || ${doy} == '' || ${archivepth} == '' || ${expt} == '' ) then
+  echo "Required fields not complete:- yr: $year doy: $doy archivepth: $archivepth expt: $expt --Stop "
+  exit
+endif
+
+# Make the archive directory if it doesn't exist.
+if ( ! -e ${archivepth}/${doy}${dirext} ) then
+  \mkdir -p ${archivepth}/${doy}${dirext}
+endif
+
+# If the archive still doesn't exits stop and abuse!!!.
+if ( ! -e ${archivepth}/${doy}${dirext} ) then
+  echo "Can't find or make this archive. Check the archive path you gave: $archivepth/${doy}${dirext}"
+  exit
+endif
+
+# Copy the files to be archived.
+if ( ${level} == 1 ) then 
+  echo "Writing Level 1 archive: "
+  \cp autcln.cmd             $archivepth/${doy}${dirext}/autcln.cmd${filext} >! /dev/null          
+  \cp autcln.post.sum        $archivepth/${doy}${dirext}/autcln.post.sum${filext} >! /dev/null     
+  \cp h${expt}a.${yr[2]}${doy}  $archivepth/${doy}${dirext}/h${expt}a.${yr[2]}${doy}${filext} >! /dev/null
+  \cp h${expt}p.${yr[2]}${doy}  $archivepth/${doy}${dirext}/h${expt}p.${yr[2]}${doy}${filext}  >! /dev/null
+  \cp o${expt}a.${doy}       $archivepth/${doy}${dirext}/o${expt}a.${doy}${filext} >! /dev/null    
+  \cp o${expt}p.${doy}       $archivepth/${doy}${dirext}/o${expt}p.${doy}${filext} >! /dev/null    
+  \cp q${expt}a.${doy}       $archivepth/${doy}${dirext}/q${expt}a.${doy}${filext} >! /dev/null    
+  \cp q${expt}p.${doy}       $archivepth/${doy}${dirext}/q${expt}p.${doy}${filext} >! /dev/null    
+  \cp session.info           $archivepth/${doy}${dirext} >! /dev/null        
+  \cp k*.${doy}*             $archivepth/${doy}${dirext} >! /dev/null         
+  \cp x*.${doy}*             $archivepth/${doy}${dirext} >! /dev/null        
+  \cp d${expt}*.${doy}       $archivepth/${doy}${dirext} >! /dev/null    
+  \cp i${expt}*.${doy}       $archivepth/${doy}${dirext} >! /dev/null   
+  \cp j*.${doy}              $archivepth/${doy}${dirext} >! /dev/null           
+  \cp g*.${doy}              $archivepth/${doy}${dirext} >! /dev/null           
+  echo "Level 1 archive written: "
+
+# Compress bigger files not already compressed
+  if ( ${compress} == yes ) then
+    echo "Compressing large files in Level 1 archive "
+    gzip -v $archivepth/${doy}${dirext}/h${expt}a.${yr[2]}${doy}${filext}
+    gzip -v $archivepth/${doy}${dirext}/h${expt}p.${yr[2]}${doy}${filext}
+    gzip -v $archivepth/${doy}${dirext}/o${expt}a.${doy}${filext}
+    gzip -v $archivepth/${doy}${dirext}/o${expt}p.${doy}${filext}
+    gzip -v $archivepth/${doy}${dirext}/q${expt}a.${doy}${filext}
+    gzip -v $archivepth/${doy}${dirext}/q${expt}p.${doy}${filext}
+    gzip -v $archivepth/${doy}${dirext}/k*.${doy}*
+    gzip -v $archivepth/${doy}${dirext}/x*.${doy}*
+  endif
+
+else if ( ${level} == 2 ) then
+  echo "Writing level 2 archive: "
+  \cp autcln.post.sum        $archivepth/${doy}${dirext}/autcln.post.sum${filext} >! /dev/null     
+  \cp h${expt}a.${yr[2]}${doy}  $archivepth/${doy}${dirext}/h${expt}a.${yr[2]}${doy}${filext} >! /dev/null
+  \cp o${expt}a.${doy}       $archivepth/${doy}${dirext}/o${expt}a.${doy}${filext} >! /dev/null    
+  \cp q${expt}a.${doy}       $archivepth/${doy}${dirext}/q${expt}a.${doy}${filext} >! /dev/null    
+  echo "Level 2 archive written: "
+
+# Compress bigger files not already compressed
+  if ( ${compress} == yes ) then
+    echo "Compressing large files in level 2 archive "
+    gzip -v $archivepth/${doy}${dirext}/h${expt}a.${yr[2]}${doy}${filext}
+    gzip -v $archivepth/${doy}${dirext}/o${expt}a.${doy}${filext}
+    gzip -v $archivepth/${doy}${dirext}/q${expt}a.${doy}${filext}
+  endif
+
+else if ( ${level} >= 3 ) then
+  echo "I dunno what you want to archive. Edit the sh_archive_solution script "
+  echo "to suit your achviving taste "
+
+endif
+
+# Thats it
+exit

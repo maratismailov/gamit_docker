@@ -1,0 +1,89 @@
+c     
+      integer maxnet,maxexp,maxsit,maxobs,nnet,dim
+      parameter (maxnet=500,maxexp=200,maxsit=500)
+      parameter (maxobs=50000) 
+
+      real*8 x(maxnet),y(maxnet),vx(maxnet),vy(maxnet) 
+      real*8 z(maxnet),vz(maxnet) 
+      common/sited/dim,nnet,x,y,z,vx,vy,vz
+ 
+      real*8 mmtom, mtomm
+      parameter (mmtom=1.0d-3,mtomm=1.0d3)
+
+      real*8 ref_x(maxnet),ref_y(maxnet)
+      real*8 ref_z(maxnet),ref_tim(maxnet)
+      real*8 ref_vx(maxnet),ref_vy(maxnet),ref_vz(maxnet)
+      character*8 ref_nam(maxnet)
+      integer n_ref
+      common/ref_d/ref_x,ref_y,ref_z,ref_vx,
+     .   ref_vy,ref_vz,ref_tim,ref_nam,n_ref
+
+      real*8 sla(maxnet),slo(maxnet),srad(maxnet)
+      real*8 ve(maxnet),vn(maxnet),vu(maxnet)
+      integer comode,outmod
+      common/coorm/outmod,comode,sla,slo,srad,ve,vn,vu
+
+      character*32 infil,outfil,mapfil,netfil,site_list
+      character*32 in_list,net_list,newnet,ref_net,renam_fil
+      character*80 infmt,netfmt,in_opt,net_opt
+      common/filelib/infil,outfil,mapfil,netfil,site_list,
+     .      in_list,net_list,newnet,ref_net,renam_fil
+      common/fmtlib/infmt,netfmt,in_opt,net_opt
+
+      integer iomode(10),net_style,in_style
+      common/io_opt/iomode,net_style,in_style
+
+      integer itime(maxexp,2)
+      integer iexp,nsit,igroup(maxexp),lblsit(maxsit*3)
+      integer iesit(maxnet),itype(maxnet)
+      common/expd/iexp,nsit,itime,igroup,itype,iesit,lblsit
+
+      integer itoj(maxnet),jtoi(maxnet)
+      common/shift/itoj,jtoi
+
+      real*8 aerr(maxnet*3),berr(maxnet*3)
+      common/emdl/aerr,berr
+
+c     can handle about 235 sites (each site 3 parameters)
+      real*8 cov_sol(maxsit*(maxsit+1))
+      common/scov/cov_sol
+
+      integer igobs(maxobs),idobs(maxobs,2),inobs(maxexp)
+      real*8 data(maxobs),erd(maxobs)
+      common/sdata/igobs,idobs,inobs,data,erd
+
+      character*8 sname(maxnet)
+      real*8 rtime
+      common/sitn/rtime,sname
+ 
+c     <quake> -- earthquake correction related arrays
+      integer nquake,iq_sit,quake_sit(maxnet)
+      integer iq_ind(50)
+      real*8  quake_time(50),quake_ce(maxnet)
+      real*8  quake_cn(maxnet),quake_cu(maxnet)
+      common/quake/nquake,iq_sit,quake_sit,iq_ind
+      common/quake2/quake_time,quake_ce,quake_cn,quake_cu
+
+      integer cmode,vmode,ngp,ngsit,mopt(10),idgs(maxnet)
+      character*32 modfil,quakfil
+      character*64 modfrm
+      common/vmd1/modfil,modfrm,quakfil
+      common/vmd2/cmode,vmode,ngp,ngsit,mopt,idgs
+
+      real*8 vxt,vyt,xrc,yrc,wrot(20)
+      real*8 xori,yori,dvxx,dvxy
+      real*8 dvyx,dvyy,vxori,vyori
+      common/vmdr1/vxt,vyt,xrc,yrc,wrot
+      common/vmdr2/xori,yori,dvxx,dvxy,dvyx,dvyy,vxori,vyori
+ 
+      integer nmode
+      real*8 var1,var2
+      common/noism/var1,var2,nmode
+    
+      real*8 radius,finv,tx,ty,tz
+      common/geolab/radius,finv,tx,ty,tz
+
+      real*8 pi,dtor,rtod
+      parameter (pi = 3.14159265358979312d0)
+      parameter (dtor = pi/180.0d0)
+      parameter (rtod = 180.0d0/pi)

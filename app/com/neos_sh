@@ -1,0 +1,67 @@
+#!/bin/csh -f
+#
+# Script to extract NEOS values from file "finals.data" from USNO 
+# (anon ftp to maia.usno.navy.mil - cd to ser7).
+#
+# P. Tregoning 
+# 22nd June 1995
+
+echo ' '
+echo ' sh_neos :  A script to make gamit/globk NEOS files. '
+echo ' '
+echo " It works as follows: "
+echo ' '
+echo "     If the file 'finals.data' exists then it converts it."
+echo "     If it doesn't then the script will ftp to usno to get"
+echo "      it and then convert it. "
+echo " " 
+echo " ************************************************************"
+echo " *** NOTE:  It is up to YOU to decide when to remove the  ***"
+echo " ***        finals.data file and update NEOS        ***"        
+echo " ************************************************************"
+echo " " 
+
+# read file finals.data and write out pmu.neos
+    echo ' ftping to maia.usno.navy.mil ....... '
+    ftp -i -v -n maia.usno.navy.mil <<    ! 
+    user anonymous tah@mtglas.mit.edu  
+    cd ser7
+    pwd
+    get finals.data
+!
+  endif
+echo 'extracting neos values from finals.data -> pmu.neos'
+  
+set curr_date = `date | awk '{print $3, $2, $6, $4}'`
+set file_date = `ls -l finals.data | awk '{print $5,$6,$7}'`
+
+echo '*NEOS values from finals.data. Converted '$curr_date >! pmu.neos
+
+cat finals.data | awk '{print " ",substr($0,1,2),substr($0,3,2),substr($0,5,2)," 0 "," 0 ",substr($0,18,38),substr($0,59,20),substr($0,16,3)} ' | awk ' {if (NF == 12) {print $0} } ' >> pmu.neos 
+#
+# Now remove the last 300 lines of the file so as to reduce the 
+# number of predicted values
+set nlt = `wc pmu.neos`
+@ nl = `echo $nlt | awk '{print $1}'` - 300 
+
+head -n $nl pmu.neos >&! pmu.neos.$nl
+utc_to_tai pmu.neos.$nl pmu.tai
+
+# Now get the date of predicted values
+@ nl = `echo $nlt | awk '{print $1}'` - 300 
+set pred_date = `grep 'P $' pmu.neos.$nl | head -n 1 | awk '{print substr($0,2,8)}'`
+
+echo ' Converting to gamit format - files will be ut1.neos pole.neos '
+
+echo pmu.tai       >! erptab.inp
+echo ut1.neos      >> erptab.inp
+echo pole.neos     >> erptab.inp
+echo 'NEOS values from finals.data: Prediction from '$pred_date': Converted '$curr_date  >> erptab.inp
+echo n             >> erptab.inp
+
+#data13/rwk/gamit/utils/test/erptab < erptab.inp
+erptab < erptab.inp
+
+echo ' files ut1.neos and pole.neos created '
+
+exit

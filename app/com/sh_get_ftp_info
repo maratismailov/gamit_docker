@@ -1,0 +1,173 @@
+#!/bin/csh -f
+#
+#doc Get information about ftp archives from ftp_info file.
+#doc
+#
+# Created 06/13/2002 by: Simon McClusky, Adapted from code by PT 05/2002.
+# Last modified for templates--> tables switch by R. King 06/25/2003
+# modified for wget option by O. Charade 12/13/2005
+# wget option adapted to http(s) sites (not only ftp) by O. Charade 03/14/2008
+# Modified to fix wget and some archive-specific options by O. Charade 2009/4/20
+# Modified to fix problems with forming email "password" for signing in to FTP
+#  servers that require it when multiple domain names are given in /etc/resolv.conf,
+#  and adding a default domain name for system where no /etc/resolv.conf exists,
+#  e.g. Cygwin. M. Floyd 2017-06-22
+
+# Note on wget:
+# wget was first implemented to deal with a restrictive firewall which
+# prevented a regular ftp to directly reach its target. Therefore wget and ftp
+# could not correspond to the same parameters in the ftp_info file. Here follows an
+# example of a ftp_info file for sopac at IPGP in Paris:
+#  sopac address             gw-ipgp      charade@ipgp.jussieu.fr
+#  sopac login               anonymous@lox.ucsd.edu
+#  sopac password            charade@ipgp.jussieu.fr
+#  sopac waddress            lox.ucsd.edu
+#  sopac wlogin              anonymous
+#  sopac wpassword
+# This worked because of a modification of ~/.wgetrc or /etc/wgetrc:
+#  ftp_proxy = ftp://gw-ipgp
+# wget on a http server is something easier which does not need any
+# similar modification. But http protocol does not accept queries with wild
+# characters (* or ?). curl command is used to get the html source of the page
+# in which we will look for links we want to get through wget. So curl has to be
+# implemented as well for the script to work.
+#                                                            OCh
+
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "===================================================================================="
+  echo " Get ftp/http info from the ftp_info file."
+  echo " Given an archive and data type the script will return:" 
+  echo "      ftp address, login name, password, remote directory, and ftp command" 
+  echo "  "
+  echo " Usage: sh_get_ftp_info -archive <archive> -data_type <type> -info"
+  echo "  "
+  echo "        <archive>  One of the archives specified in ftp_info [Default sopac] "
+  echo "        <type> The type of data you want to extract from the archive select the ftp program to be used [default rinex]"
+  echo "        <info> List the available data_types for all archives"
+  echo "  "      
+  echo " Examples: sh_get_ftp_info -archive sopac -type rinex "
+  echo "           sh_get_ftp_info -archive cddis -type sp3"
+  echo "           sh_get_ftp_info -info "
+  echo "  "
+  echo "===================================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS #############################   
+#
+if ( -e ./ftp_info ) then
+  set ftp_info = './ftp_info'
+else if ( -e ../tables/ftp_info ) then
+  set ftp_info = '../tables/ftp_info'
+else if ( -e ~/gg/tables/ftp_info ) then
+  set ftp_info = '~/gg/tables/ftp_info'
+else 
+  echo "sh_get_ftp_info: Unable to locate files ../tables/ftp_info, ~/gg/tables/ftp_info or ./ftp_info"
+  exit 1
+endif
+
+set archive = sopac
+set type = rinex
+set ftpaddress = 'none'
+set login = 'none'
+set ftpdir = 'none'
+set ftpcmd = 'ftp -inv'
+set httpcmd = ''
+set info = no
+set wlogin = ''
+set woption = ''
+set wprotocol = 'ftp'                                   ###OCh
+
+if ( -s /etc/resolv.conf ) then
+  set domain = `grep -w domain /etc/resolv.conf | awk 'END {print $2}'`  
+  if ( "$domain" == '' ) then
+    set domain = `grep -w search /etc/resolv.conf | awk 'END {print $2}'`
+  endif
+else
+  set domain = `domainname`
+endif
+if ( "$domain" == '' ) then
+  set domain = 'net'
+endif
+set anon_email = `whoami`'@'`hostname | cut -d '.' -f 1`'.'`echo $domain`
+
+##################### DECIPHER COMMAND LINE #######################   
+#
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -a*:
+      set archive  = $input[2]  
+    breaksw 
+    case -t*:
+      set type = $input[2] 
+    breaksw 
+    case -i*:
+      set info = yes
+    breaksw 
+#    case -si*:
+#       set rxlist = (`echo $argv | cut -d- -f2`); shift rxlist
+#    breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+
+##################### READ THE USER_FTPSITES TEMPLATE ############################    
+#
+set archives = (`cat $ftp_info | awk ' substr($0,1,1) == " " {print $1}' | uniq `)
+
+##################### GET THE JOB DONE ############################    
+#
+set good_archive = false
+foreach i ($archives)
+  if("$i" == "$archive") set good_archive = true
+end
+   
+if("$good_archive" == 'false')then
+  echo "Archive $archive is not defined in $ftp_info" 
+  echo "Available archives are: $archives" 
+  exit 1
+endif
+
+# Set timestamp hostname variable
+set ts = "`hostname`:`date +"%H%M%S"`"
+
+if ( "$info" == 'yes' ) then
+  cat $ftp_info | grep -i directory
+else
+# Setup archive site login and ftp address 
+  if (`awk 'substr($0,1,1) == " " {print $0}' $ftp_info  | grep "${archive} " | grep -i ' login ' | grep -iv command | wc -l` > 0) then
+    set login = (`awk 'substr($0,1,1) == " " {print $0}' $ftp_info  | grep "${archive} " | grep -i ' login ' | grep -iv command | awk '{print $3}'` \
+                 `awk 'substr($0,1,1) == " " {print $0}' $ftp_info | grep  "${archive} " | grep -i ' password ' | grep -iv command | awk '{print $3}' `)
+    if (`echo $login | wc | awk '{print $2}'` == 1) set login = ($login $anon_email)
+  endif
+  set ftpsite = `awk 'substr($0,1,1) == " " {print $0}' $ftp_info | grep "${archive} " | grep -i ' address ' | awk '{print $3}'`
+  if ("$ftpsite" == '') set ftpsite='none'
+  if (`awk 'substr($0,1,1) == " " {print $0}' $ftp_info | grep "${archive} " | grep -i command | wc -l ` > 0) then
+    set ftpcmd  = `awk 'substr($0,1,1) == " " {print $0}' $ftp_info | grep "${archive} " | grep -i command | awk '{for (i=4;i<=NF;i++) {print $i}}' | sed s/"login"/$login[1]/ | sed s/"password"/$login[2]/ `
+  endif
+  set ftpcmd = `echo $ftpcmd $ftpsite`
+  set ftpdir = `awk 'substr($0,1,1) == " " {print $0}' $ftp_info | grep "${archive} " | grep -i "$type directory" | awk '{print $4}'`
+  if ( $#ftpdir <= 0 ) then
+    echo "Data type: $type Is not specified in $ftp_info, or not available form this archive"
+    exit 1
+  endif
+  if ( "`echo $ftpdir | cut -c1`" != '/' ) set ftpdir = "/$ftpdir"   ##OCh
+  set wlogin = (`awk 'substr($0,1,1) == " " {print $0}' $ftp_info  | grep "${archive} " | grep -i wlogin | awk '{print $3}'` \
+               `awk 'substr($0,1,1) == " " {print $0}' $ftp_info | grep  "${archive} " | grep -i wpassword | awk '{print $3}' `)
+  if (`echo $wlogin | wc | awk '{print $2}'` == 1) set wlogin = ($wlogin $anon_email)
+  if (`awk 'substr($0,1,1) == " " {print $0}' $ftp_info  | grep "${archive} " | grep -i wprotocol | awk '{print $3}' | wc -l` > 0) then
+    set wprotocol = `awk 'substr($0,1,1) == " " {print $0}' $ftp_info  | grep "${archive} " | grep -i wprotocol | awk '{print $3}'`
+  endif
+  set wgetsite = `awk 'substr($0,1,1) == " " {print $0}' $ftp_info | grep "${archive} " | grep -i waddress | awk '{print $3}'`
+  if ("$wgetsite" != '') set wgetsite = "${wprotocol}://${wgetsite}"
+  if ((`echo $wlogin | wc -w ` > 0) && ("$wgetsite" != '')) set woption = (-wlogin $wlogin -wgetsite $wgetsite)
+
+  echo "-ftpsite $ftpsite -ftplogin $login $woption -ftpdir $ftpdir -ftpcmd $ftpcmd"
+
+endif
+
+exit

@@ -1,0 +1,36 @@
+#!/bin/csh
+#
+# Script to map GNSS processing extent code to system letters
+# Code sequence is
+#  Ind e   shr SYS   CODE
+#       1   2   3    4
+#   1  GD  mit G     G--
+#   2  ED  mie E     E--
+#   3  RD  mir R     R--
+#   4  CD  mic C     C--
+#   5  AD  mia GREC  MUL
+#   6  BD  mib GR    GR-
+#   7  DD  mid GE    GE-
+#   8  HD  mih GRE   GRE
+#   9  ID  mii RE    RE-
+#  10  FD  mif XXX   FIN
+#
+set ind = 0
+
+set inp = $1
+
+set opts = `echo "GD  mit G     G-- ED  mie E     E-- RD  mir R     R-- CD  mic C     C-- AD  mia GREC  MUL  BD  mib GR    GR- DD  mid GE    GE- HD  mih GRE   GRE ID  mii RE    RE- FD  mif XXX   FIN"`
+
+set ind = `echo $inp $opts | awk '{for ( k=1 ; k<NF ; k++ ) {if( $k == $1 ) ind = k-1 }} END {if( ind > 0 ) {print int(ind/4)*4+1} else {print ind}}'`
+
+if( $ind > 0 ) then
+  echo $ind $opts | awk '{for( k = $1+1; k<$1+5; k++) {print $k}}'
+else
+  echo "Unknown or no option $inp"
+  exit 1
+endif
+
+
+
+
+

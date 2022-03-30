@@ -1,0 +1,58 @@
+ALOAD: Program to compute atmospheric pressure loading signals
+
+Runstring:
+% aload <options>
+where options are:
+-c <command file name> specifies the name of the command file for aload
+    (commands are given below)
+-r <reference field>  Reference pressure file in GRIB format
+-o <ocean mask> Ocean mask file.  File containing 0 (ocean) 1 (land) on 
+    the same grid size as the atmospheric pressure fields
+-u <root> Root to be used in constructing output file names.
+-l <list file>  File containing list of pressure files in GRIB format to 
+    process.
+    
+Command File:
+Aload command files supports the following comamnds
+(All command lines must have at least one blank character at the 
+start of the line.  Lines with non-blank characters in first column
+are treated as comments.  Only unique starting part of command need
+be given).
+
+REF_FILE <File name> -- Reference pressure field file (same as -r above)
+OCE_FILE <File name> -- Ocean mask file (same as -o).  If not given, 
+                        ocean.mask is used as file name.
+OUT_ROOT <Root>      -- Specifies the root to be used in constructing file
+                        names.  Two files are generated <root>.lst which 
+			contains lat and long of points at which load is
+			computed and <root>.neu constains North East and Up 
+			position changes (see below).
+IN_LIST <File name>  -- Name of file containing names of pressure files 
+                        usually generated with an ls of files
+SITE <name> <long> <lat> -- Specification of site at which to compute the
+                         load. Long and Lat are in degrees. Command can be
+			 issued multiple times.
+GRID <long LL> <lat LL> <long UR> <lat UR> <Dlong> <Dlat> -- Specifies grid
+                         The grid is given by lower left (LL) longitude and 
+			 latitude, upper right (UR) longtide and latitude,
+			 and spacing in longitude and latitude (all values in
+			 degrees). Command may be issued multiple times.
+			 In forming the grid, only non-oceanic sites are used
+			 and therefore the -o or oce_file should be given 
+			 before hand if the ocean mask is different from the 
+			 default ocean.mask file.
+
+Output NEU file:
+ Year        Long    Lat     DPres    dN     dE     dU    name
+              deg     deg     mbar    mm     mm     mm
+ 1999.0000  104.32   52.22  -16.97   1.22   0.01   3.79  irkt_gps
+ 1999.0000   50.61   26.21  -16.97   0.34   0.12  -2.73  bahr_gps
+ 1999.0007  104.32   52.22  -16.24   1.03   0.22   3.97  irkt_gps
+ 1999.0007   50.61   26.21  -16.24   0.29   0.20  -3.81  bahr_gps
+ .....
+Dpres is local pressure difference from the reference field value
+dN, dE, dU are local North, East and Up displacements at the site.
+(These will be zero at the time of the reference pressure field)
+ 
+
+						

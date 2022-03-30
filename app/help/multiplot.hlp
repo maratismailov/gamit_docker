@@ -1,0 +1,31 @@
+MULTIPLOT: Multiple page plots of time series data
+
+ PROGRAM  MULTIPLOT
+ 
+ Program to read a values file, and to output multiple plots
+ num on a page a time.  The root passed in the runstring gives
+ the root part of the name of the baseline files to be created
+ and the name of the meta file to be saved by PLOT.
+ 
+ Runstring:
+ Multiplot,<values>,<num>, <start y,m,d>, <end y,m,d>, y_grad,
+                   <edit_file>, <sigma_limit>, <root> <start>, <skip>
+ 
+where
+ <values>      is name of values file
+ <num>         is number of plots per per page.  If a negative value
+               if given then the residuals to the slope computed in
+               blsum, ensum, bcsum will be plotted.
+ <start y,m,d> is start yr,mon,day. If not given plot sets values.
+ <end y,m,d>   is end yr,mon,day
+ <y_grad>      is graduated steps for y_axis (m)
+ <edit file>   is name of file for editted data.  These are greater
+               than sigma_limit or sigma > 1 meter.  Defualt is 
+               standard out.
+ <sigma_limit> number of sigmas off for data to edited. Default 10.
+ <root>        is the root for the baseline files and the meta
+               file. Default is mp_.
+ <start>       is number of values in to start with. Default 1.
+ <skip>        is number of values to skip. Default 0
+ 
+ 

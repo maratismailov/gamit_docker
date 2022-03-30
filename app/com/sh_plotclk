@@ -1,0 +1,121 @@
+#!/bin/csh -f
+#
+# Plot clocks
+# Use" 
+# wget ftp://cddis.nasa.gov/gnss/products/${week{/"igs${week}?.clk.Z"
+# to get IGS clocks.
+# 
+echo "sh_plotclk 0/1 <SITE/Gxx> files.clk ..."
+echo "   0 -- overlay clocks only; 1 -- plot diferences as well"
+if( $#argv == 0 ) exit
+set dec = $1
+set ss = $2
+set files = ($argv)
+
+#
+# OK Loop over files and extract clock in ns.
+set n = -1
+set m = 0
+foreach f ( $files )
+   if( $n > 0 ) then
+     if( $dec == 1 ) then
+        grep "^A. $ss " $f | awk '{mn = $6*60+$7+$8/60} {if( int(mn/5)*5-mn == 0) {printf(" %4d %2d %2d %2d %2d %3.1f %10.4f %8.4f\n", $3,$4,$5,$6,$7,$8, $10*1.e9, $11*1.e9)}}' > $ss.${n}
+     else
+        grep "^A. $ss " $f | awk '{printf(" %4d %2d %2d %2d %2d %3.1f %10.4f %8.4f\n", $3,$4,$5,$6,$7,$8, $10*1.e9, $11*1.e9)}' > $ss.${n}
+     endif
+     echo $f Values `wc -l $ss.${n}`
+   endif
+   @ m++ ; @ n++
+end
+@ n--
+set nl = `wc -l $ss.1`
+if( $nl[1] == 0 ) then
+   echo "No data ar Reference site $ss in $files[1]"
+   \rm $ss.[1-$n]
+   exit
+endif
+
+
+# Now create cplotx file
+echo "* Clock plot .plt file" >! $ss.plt
+echo " head 0 0 " >> $ss.plt
+echo " x_f 0 1 6" >> $ss.plt
+echo ' y_f 1 7 0 "'$ss' Clock ns"' >> $ss.plt
+echo " read" >> $ss.plt
+echo " fit 1 1 A" >> $ss.plt
+echo " axes " >> $ss.plt
+echo " poi 1" >> $ss.plt
+echo " line 31" >> $ss.plt
+echo " draw" >> $ss.plt
+echo " line 1" >> $ss.plt
+set pss = ""
+foreach k ( `seq 2 $n ` )
+   set nl = `wc -l $ss.${k}`
+   echo "Lines $k $nl"
+   if( $nl[1] > 0 ) then
+      echo " file #${k}" >> $ss.plt
+      echo " read" >> $ss.plt
+      echo " fit 1 1 A" >> $ss.plt
+      echo "  pop_sc" >> $ss.plt
+      echo "  pen $k" >> $ss.plt
+      echo " draw" >> $ss.plt
+   endif
+   set pss = `echo $pss $ss.${k}`
+end
+echo "  key" >> $ss.plt
+
+echo "=================================="
+echo cplotx $ss.dplt '' $ss.1 0 0 $pss
+echo "=================================="
+cplotx $ss.plt '' $ss.1 0 0 $pss
+
+if( $dec == 1 ) then 
+# Now create cplotx file for differencing data
+   echo "=================================="
+   echo " DIFFERENCE PLOTS"
+   echo "=================================="
+   echo "* Clock plot .plt file" >! $ss.dplt
+   echo " head 0 0 " >> $ss.dplt
+   echo " x_f 0 1 6" >> $ss.dplt
+   echo ' y_f 1 7 0 "'$ss' Clock ns"' >> $ss.dplt
+   echo " poi 1" >> $ss.dplt
+   echo " line 1" >> $ss.dplt
+   echo " read" >> $ss.dplt
+   echo " fit 1 1 A" >> $ss.dplt
+   echo " axes " >> $ss.dplt
+   echo " erase " >> $ss.dplt
+   set pss = ""
+   foreach k ( `seq 2 $n ` )
+      set nl = `wc -l $ss.${k}`
+      echo "Lines $k $nl"
+      if( $nl[1] > 0 ) then
+         echo " file #1" >> $ss.dplt
+         echo " read" >> $ss.dplt
+         echo " file #${k}" >> $ss.dplt
+         echo " ydiff " >> $ss.dplt
+         echo " read" >> $ss.dplt
+         echo " fit 1 0 A" >> $ss.dplt
+         echo " y_s -0.25 0.25" >> $ss.dplt
+         echo " pen $k" >> $ss.dplt
+         echo " draw" >> $ss.dplt
+      endif
+      set pss = `echo $pss $ss.${k}`
+   end
+   echo " pen 1 " >> $ss.dplt
+   echo " axes " >> $ss.dplt
+   echo "  key" >> $ss.dplt
+
+   echo "=================================="
+   echo cplotx $ss.dplt '' $ss.1 0 0 $pss
+   echo "=================================="
+
+   cplotx $ss.dplt '' $ss.1 0 0 $pss
+
+endif
+
+
+echo "clean up"
+\rm $ss.[1-$n] $ss.*plt 
+
+
+# grep ' RO$' ../2014_005GD?/autcln.post.sum | awk '{if( $6 < 0.1 ) {printf("%d %s/mit*clk %s %d \n", substr($1,11,1),substr($1,1,13),$2,$3)}}' | sort -k 3

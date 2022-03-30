@@ -1,0 +1,811 @@
+#!/bin/csh -f  
+#
+#doc Plot time series of GAMIT zenith delays from o-files
+#doc
+#
+# Script to plot time series of GAMIT zenith delays from o-files
+# Written originally by M. Burc Oral, June, 1994; last modified by R. King 970102   
+# updated by Ergin TARI in order to plot gradient parameters March, 1999
+# modified by Ergin TARI in order to plot NS and EW gradient parameters March, 1999
+
+if ( $#argv == 0 ) then
+echo " "
+echo " Use GMT to make a multiple panel GAMIT atmospheric parameters  plots  with uncertainty scaling"
+echo "  "
+echo "  requirements  : GMT(netcdf/gmt/ghostscript)"
+echo "                : gamit/utils/poly01"
+echo "  "
+echo "  USAGE :    sh_gamit_atmos   <options>. "
+echo "  "
+echo "  EXAMPLE:   sh_gamit_atmos  -o o* -sites PIN2 VNDP PIN2 YAM2" 
+echo "  " 
+echo "=+=+=+=+=+=+=+=+=+=+=+=+=+ OPTIONS +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+"   
+echo " "
+echo " -o[files]     list    : o-file names. MUST have this." 
+echo "   		     " 
+echo " -f[ile]       file    : Site names. "
+echo "   		     " 
+echo " -g[rad]               : command line argument for plotting graidents instead of atmospheric zenith delays.    " 
+echo "   		     " 
+echo " -sites   list    : command line argument for selected sites.    " 
+echo "   		     " 
+echo "   		      IF -f and -b are both omitted, all sites are plotted." 
+echo "   		     " 
+echo " -free  		    : Biases free  solution Default." 
+echo " -fixed  		: Biases fixed solution."
+echo " -both 		    : Biases free with fixed solution. Fixed is dashed. stats refere to free sol."
+echo "   		     " 
+echo " -d[elete]    <sites etc> :  names of unwanted sites."
+echo "   		     " 
+echo " -t[otal]        : total atmospheric zenith delay (Default is adjustment to a priori model)."
+echo "  "
+echo " -df              file   : file contains the names of unwanted sites. M"
+echo " -[delete_file]          : Makes life easier for -d"  
+echo " "
+echo " -u[nc_scale]   value   : scale all uncertainties with this number. Default is 1." 
+echo " "
+echo " -y[scale]   min max   : vertical   scale.  If not issued it will be calculated."
+echo "  " 
+echo " -x[scale]   min max   : horizontal scale.  If not issued it will be calculated."
+echo "  " 
+echo " -frame      value     : gmt border day-axis frame  ticks. Default is  1. " 
+echo "  " 
+echo " -anot       value     : gmt border day-axis label intervals. Default is  1. " 
+echo "  " 
+echo " -a         ext        : Add more descriptors to postscript file name. Default is psgamit.#" 
+echo "  " 
+exit
+else
+endif
+##################### SET UP DEFAULTS ############################################################
+set xmin     =  0
+set xmax     =  0
+set ymin     =  0
+set ymax     =  0
+set order    =  0
+set frame    =  2 
+set anot     =  1 
+set unc_scale = 1
+set ofiles   = ""
+set sites   = ""
+set file   = ""
+set ADD = ""
+set time_series = yes 
+set delete = ""   
+set delete_file = ""
+set  free      =  yes
+set  fixed     =  no
+set  both      =  no
+set  total     =  no
+set  grad      = no
+set  Ey        = "-Ey0.05i/1p"
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+# decipher command line
+while ($#argv > 0 )
+set input = ( $argv )
+switch($input[1])
+        case -f:
+        case -file:
+		set file     =   $input[2] 
+		breaksw
+        case -anot:
+                set anot     =   $input[2]  
+        breaksw
+        case -g:
+        case -grad:
+                set  grad      =  yes
+		breaksw
+        case -free:
+                set  free      =  yes
+                set  fixed     =  no
+		breaksw
+        case -fixed:
+                set fixed     =   yes
+                set free      =   no
+		breaksw
+        case -both:
+                set fixed     =   yes
+                set free      =   yes
+		breaksw
+        case -t:
+        case -total:
+		         set total     =   yes 
+		breaksw
+        case -frame:
+                set frame     =   $input[2]  
+		breaksw
+        case -time:
+        case -time_series:
+                set time_series     =   no
+		breaksw
+	case -x:
+	case -xscale:
+		set xmin = $input[2] 
+		set xmax = $input[3] 
+		shift input
+                breaksw
+	case -y:
+	case -yscale:
+		set ymin =  $input[2]
+		set ymax =  $input[3]
+		shift input
+                breaksw
+        case -u:
+        case -unc:
+        case -unc_scale:
+                set unc_scale     =  $input[2]
+	echo ">>>>>> scaling uncertainties by : "  $unc_scale 
+                breaksw
+        case -a:
+        case -add:
+                set ADD     =  "."$input[2]
+                breaksw
+	case -d:
+	case -delete:
+                set delete   =   ( $delete $input[2] )
+                shift input; shift input
+                while ( $#input > 0 &&   `echo  $input[1]  | cut -c1 ` != "-" )
+                        set inarg =  $input[1]
+                        if ( `echo  $inarg | cut -c1 ` != "-" ) then
+                                set delete    =   ( $delete $inarg )
+				if ( $#input == 1 ) goto alldone
+                                shift input
+                        endif
+                end
+if ( $#input == 0 ) goto alldone
+                        breaksw
+	case -delete_file:
+		set delete_file =  $input[2]
+		breaksw
+	case -s:
+	case -sites:
+		set sites   =   ( $sites $input[2] ) 
+	if ( $#input == 2 ) goto alldone
+		shift input
+		shift input 
+		while ( $#input > 0 &&   `echo  $input[1]  | cut -c1 ` != "-" ) 
+			set inarg =  $input[1]
+			if ( `echo  $inarg | cut -c1 ` != "-" ) then
+				set sites    =   ( $sites $inarg ) 
+				shift input
+			endif
+		end
+if ( $#input == 0 ) goto alldone
+			breaksw
+	case -o:
+	case -ofiles:
+		set ofiles   =   ( $ofiles $input[2] ) 
+		shift input; shift input 
+		while ( $#input > 0 &&   `echo  $input[1]  | cut -c1 ` != "-" ) 
+			set inarg =  $input[1]
+			if ( `echo  $inarg | cut -c1 ` != "-" ) then
+				set ofiles    =   ( $ofiles $inarg ) 
+				if ( $#input == 0 ) goto alldone
+				shift input
+			endif
+		end
+if ( $#input == 0 ) goto alldone
+			breaksw
+endsw
+if ( $#argv > 0 ) shift argv
+end
+alldone:
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+set username = `whoami`
+
+echo "PROCESSING gamit o-files"
+
+\rm tmpr.ofile tmpx.ofile; touch tmpr.ofile tmpx.ofile
+if ( $grad != yes) then
+if ( $free == yes ) then  
+  if ( $total == no ) then
+    foreach of (`echo $ofiles`)
+       if( $of:e == 'Z' ) then
+          zcat $of | grep "ATM_ZEN R" |  awk '{print $3,$5,$6,$7,$8,$9,$10,$12}' | grep -v q-file  | decyr_atm day   >> tmpr.ofile 
+       else
+          cat $of | grep "ATM_ZEN R" |  awk '{print $3,$5,$6,$7,$8,$9,$10,$12}' | grep -v q-file  | decyr_atm day   >> tmpr.ofile 
+       endif
+     end
+  else
+    foreach of (`echo $ofiles`)
+       if( $of:e == 'Z' ) then
+          zcat $of | grep "ATM_ZEN R" |  awk '{print $3,$5,$6,$7,$8,$9,$13,$12}' | grep -v q-file  | decyr_atm day   >> tmpr.ofile 
+       else
+          cat $of | grep "ATM_ZEN R" |  awk '{print $3,$5,$6,$7,$8,$9,$13,$12}' | grep -v q-file  | decyr_atm day   >> tmpr.ofile 
+       endif
+     end
+  endif
+endif
+if ( $fixed == yes ) then   
+  if ( $total == no ) then
+    foreach of (`echo $ofiles`)
+       if( $of:e == 'Z' ) then
+          zcat $of | grep "ATM_ZEN X" |  awk '{print $3,$5,$6,$7,$8,$9,$10,$12}' | grep -v q-file  | decyr_atm day   >> tmpx.ofile 
+       else
+          cat $of | grep "ATM_ZEN X" |  awk '{print $3,$5,$6,$7,$8,$9,$10,$12}' | grep -v q-file  | decyr_atm day   >> tmpx.ofile 
+       endif
+     end
+  else
+    foreach of (`echo $ofiles`)
+       if( $of:e == 'Z' ) then
+          zcat $of | grep "ATM_ZEN X" |  awk '{print $3,$5,$6,$7,$8,$9,$13,$12}' | grep -v q-file  | decyr_atm day   >> tmpx.ofile 
+       else
+          cat $of | grep "ATM_ZEN X" |  awk '{print $3,$5,$6,$7,$8,$9,$13,$12}' | grep -v q-file  | decyr_atm day   >> tmpx.ofile 
+       endif
+     end
+  endif
+endif 
+
+if ( $file != "") then
+#	cat $file >! tmp.sites 
+	echo " " >! tmp.sites
+   if ( $fixed == yes )  then
+	  cat tmpx.ofile | cut -c1-9 | sort -u >! tmp.allsites 
+	  foreach ib ( `cat $file` ) 
+		grep -i $ib tmp.allsites >> tmp.sites 
+	  end  
+   else
+	  cat tmpr.ofile | cut -c1-9 | sort -u >! tmp.allsites 
+	  foreach ib ( `cat $file` ) 
+		grep -i $ib tmp.allsites >> tmp.sites 
+	  end
+   endif  
+	echo "SITES: " `cat tmp.sites `
+else	if ( $sites[1] == "" ) then 
+   if ( $fixed == yes )  then
+	  cat tmpx.ofile | cut -c1-9 | sort -u >! tmp.sites 
+	  echo  SITES are written to FILE: tmp.sites 
+   else
+	  cat tmpr.ofile | cut -c1-9 | sort -u >! tmp.sites 
+	  echo  SITES are written to FILE: tmp.sites
+   endif 
+else 
+	echo $sites >! tmp.sites
+endif 
+
+set COL = 1 
+set PAGE = 1
+set ROW  = 0
+set psfile = psatmos$ADD
+
+\rm -r $psfile.* >&! /dev/null
+
+# scaling/title  information
+        gmt gmtdefaults -Du >! gmt.conf
+        gmt gmtset GMT_COMPATIBILITY 5
+        gmt gmtset FONT_LABEL 10p \
+                   FONT_ANNOT_PRIMARY 12p \
+                   PROJ_LENGTH_UNIT i
+
+if ( $delete_file != "")  set delete = ( $delete `cat $delete_file` )
+if ( $delete != ""  ) then 
+	   foreach i( $delete )
+		grep -v  $i tmp.sites  >!  tmp.sites1
+		/bin/mv  tmp.sites1 tmp.sites 
+	   end 
+	echo  deleted :  $delete 
+endif
+
+echo "0. 0." >!  tmp.0 
+
+##### loop over each site #########
+foreach i ( `cat  tmp.sites  ` )  
+
+  if ( $free == yes ) then
+     grep $i tmpr.ofile |  awk '{print $2, $3*100.,$4*100.}' >! tmp.datR
+  endif
+  if ( $fixed == yes ) then 
+     grep $i tmpx.ofile |  awk '{print $2, $3*100.,$4*100.}' >! tmp.datX 
+  endif 
+  if ( $free == yes   &&  $fixed == yes ) then
+    grep $i tmpx.ofile |  awk '{print $2+0.05, $3*100.,$4*100.}' >! tmp.datX
+  endif
+
+  if ( $free == yes) then
+#     if ( `cat tmp.datR | wc | awk '{print $1}' ` < 2 )  echo "FIX THIS.  one entry"
+     set RANGE = `gmt gmtinfo -I1/5  tmp.datR`  
+  else 
+#     if ( `cat tmp.datX | wc | awk '{print $1}' ` < 2 )  echo "FIX THIS.  one entry"
+     set RANGE = `gmt gmtinfo -I1/5  tmp.datX`
+  endif  
+# set some space for error  bars
+#   set r = ( `echo $RANGE |  cut -c3- | awk '{FS="/"} {print $1  - ($2-$1)*.10 ,$2 + ($2-$1)*.10,  $3 - ($4-$3)*.10,  $4 + ($4-$3)*.10 }' ` )
+   set r = ( `echo $RANGE |  cut -c3- | awk -F/ '{print $1  - ($2-$1)*.10 ,$2 + ($2-$1)*.10,  $3 - ($4-$3)*.10,  $4 + ($4-$3)*.10 }' ` )
+
+   if ( $xmin != 0 ) set r[1] = $xmin 
+   if ( $xmax != 0 ) set r[2] = $xmax
+   if ( $ymin != 0 ) set r[3] = $ymin 
+   if ( $ymax != 0 ) set r[4] = $ymax
+
+#make sure that horizontal min-max has an aperture
+   if( $r[1] ==  $r[2]  ) then
+	set r[1] = `echo $r[1] | awk '{print $1 - 1 }'`
+	set r[2] = `echo $r[2] | awk '{print $1 + 1 }'`
+   endif
+
+#make sure that vertical min-max has an aperture
+   if( $r[3] ==  $r[4]  ) then
+	set r[3] = `echo $r[3] | awk '{print $1 - 5 }'`
+	set r[4] = `echo $r[4] | awk '{print $1 + 5 }'`
+   endif
+
+   set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4]
+#  echo $RANGE
+
+	set yanot  = 5 
+	set yframe = 2.5 
+	set yanot   = 2
+	set yspread = `echo  $r[4]  $r[3] | awk '{ printf "%6d",  $1 - $2}'`
+	if ( $yspread > 20 )  set yanot  = 5
+	if ( $yspread > 40 )  set yanot  = 10
+	if ( $yspread > 80 )  set yanot  = 20
+	if ( $yspread > 160)  set yanot  = 40
+	if ( $yspread > 500)  set yanot  = 200
+	set  yframe = ` echo $yanot | awk '{print $1 / 2 }'`
+
+#       Repeat same scaling for the X-axis	
+	set anot  = 2 
+	set frame = 1 
+	set anot   = 2
+	set spread = `echo  $r[2]  $r[1] | awk '{ printf "%6d",  $1 - $2}'`
+	if ( $spread > 20 )  set anot  = 5
+	if ( $spread > 40 )  set anot  = 10
+	if ( $spread > 80 )  set anot  = 20
+	if ( $spread > 160)  set anot  = 40
+	if ( $spread > 500)  set anot  = 200
+	set  frame = ` echo $anot | awk '{print $1 / 2 }'`
+	
+	set xl = `echo  $r[4]  $r[3] | awk '{ printf "%6d", ( ( $1 - $2 ) / 100 ) + 1   }'`
+	set anot   = ` echo $anot   $xl |  awk '{ print  $1 * $2 }' `
+	set frame  = ` echo $frame  $xl |  awk '{ print  $1 * $2 }' ` 
+	
+	set SCALE = "-Bxa${anot}f$frame -Bya${yanot}f$yframe"
+
+@ ROW = $ROW + 1 
+if ( $ROW == 5 ) then 
+set ROW = 1 
+@ PAGE = $PAGE + 1 
+endif
+
+if ( $free == yes ) then 
+echo $i            |   awk '{printf".4 1.2  SITE: %8s  FREE \n",$1}'                                                          >! tmp.txt
+poly01 yes 0  no   <   tmp.datR >!  tmp.stat
+if ( `gmt gmtget PS_CHAR_ENCODING` =~ 'Standard*' ) head -n 1   tmp.stat |   awk '{printf".02 1.1 wmean(cm)= %9.1f \\234 %6.1f  nrms= %5.2f  wrms= %5.1f\n",$2,$3,$13,$15}' >> tmp.txt
+if ( `gmt gmtget PS_CHAR_ENCODING` =~ 'ISOLatin*' ) head -n 1   tmp.stat |   awk '{printf".02 1.1 wmean(cm)= %9.1f \\261 %6.1f  nrms= %5.2f  wrms= %5.1f\n",$2,$3,$13,$15}' >> tmp.txt
+endif
+
+if ( $fixed == yes ) then 
+echo $i            |   awk '{printf".4 1.2  SITE: %8s  FIXED \n",$1}'                                                          >! tmp.txt
+poly01 yes 0  no   <   tmp.datX >!  tmp.stat
+if ( `gmt gmtget PS_CHAR_ENCODING` =~ 'Standard*' ) head -n 1   tmp.stat |   awk '{printf".02 1.1 wmean(cm)= %9.1f \\234 %6.1f  nrms= %5.2f  wrms= %5.1f\n",$2,$3,$13,$15}' >> tmp.txt
+if ( `gmt gmtget PS_CHAR_ENCODING` =~ 'ISOLatin*' ) head -n 1   tmp.stat |   awk '{printf".02 1.1 wmean(cm)= %9.1f \\261 %6.1f  nrms= %5.2f  wrms= %5.1f\n",$2,$3,$13,$15}' >> tmp.txt
+endif
+
+if ( $free == yes && $fixed == yes) then 
+echo $i            |   awk '{printf".4 1.2  SITE: %8s  FREE  with FIXED \n",$1}'                                                >! tmp.txt
+poly01 yes 0  no   <   tmp.datR >!  tmp.stat
+if ( `gmt gmtget PS_CHAR_ENCODING` =~ 'Standard*' ) head -n 1   tmp.stat |   awk '{printf".02 1.1 wmean(cm)= %9.1f \\234 %6.1f  nrms= %5.2f  wrms= %5.1f\n",$2,$3,$13,$15}' >> tmp.txt
+if ( `gmt gmtget PS_CHAR_ENCODING` =~ 'ISOLatin*' ) head -n 1   tmp.stat |   awk '{printf".02 1.1 wmean(cm)= %9.1f \\261 %6.1f  nrms= %5.2f  wrms= %5.1f\n",$2,$3,$13,$15}' >> tmp.txt
+endif
+
+if ( $ROW == 1 ) then 
+	gmt pstext tmp.txt   -R0/1/0/1 -JX6.5i/1.8i -K -F+f9p+jTL -P -N    -Y8.5i    >!   $psfile.$PAGE	
+else
+	gmt pstext tmp.txt   -R0/1/0/1 -JX6.5i/1.8i -K -F+f9p+jTL -P -O -N -Y-2.5i   >>   $psfile.$PAGE	
+endif
+
+if ( $free == yes && $fixed == no ) then
+if ( $ROW != 4   ) then 
+	gmt psxy tmp.datR $Ey  $RANGE -Sc0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE+l'ATM Zenith Delay(cm)' -BWeSn  -P   >>   $psfile.$PAGE
+else
+	gmt psxy tmp.datR $Ey  $RANGE -Sc0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE+l'ATM Zenith Delay(cm)' -BWeSn  -P   >>   $psfile.$PAGE
+   echo ".4 1.2  PAGE" $PAGE >! tmp.page
+	gmt pstext tmp.page   -R0/1/0/1 -JX -F+f9p+jTL -P -O -N -Y-2.5i   >>   $psfile.$PAGE	
+
+endif
+endif
+
+if ( $free == no  &&  $fixed == yes ) then
+if ( $ROW != 4   ) then 
+	gmt psxy tmp.datX $Ey  $RANGE -St0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE+l'ATM Zenith Delay(cm)' -BWeSn  -P   >>   $psfile.$PAGE
+else
+	gmt psxy tmp.datX $Ey  $RANGE -St0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE+l'ATM Zenith Delay(cm)' -BWeSn  -P   >>   $psfile.$PAGE
+   echo ".4 1.2  PAGE" $PAGE >! tmp.page
+	gmt pstext tmp.page   -R0/1/0/1 -JX -F+f9p+jTL -P -O -N -Y-2.5i   >>   $psfile.$PAGE	
+
+endif
+endif
+
+ if ( $free == yes && $fixed == yes ) then
+if ( $ROW != 4   ) then 
+	gmt psxy tmp.datR $Ey         $RANGE -Sc0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE+l'ATM Zenith Delay(cm)' -BWeSn  -P   >>   $psfile.$PAGE
+	gmt psxy tmp.datX $Ey  -W1p,,.  $RANGE -St0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE+l'ATM Zenith Delay(cm)' -BWeSn  -P   >>   $psfile.$PAGE 
+else
+	gmt psxy tmp.datR $Ey         $RANGE -Sc0.05i  -JX6.5i/1.8i   -G0 -K  -O   $SCALE+l'ATM Zenith Delay(cm)' -BWeSn  -P   >>   $psfile.$PAGE
+	gmt psxy tmp.datX $Ey  -W1p,,. $RANGE -St0.05i  -JX6.5i/1.8i   -G0 -K  -O   $SCALE+l'ATM Zenith Delay(cm)' -BWeSn  -P   >>   $psfile.$PAGE
+   echo ".4 1.2  PAGE" $PAGE >! tmp.page
+	gmt pstext tmp.page   -R0/1/0/1 -JX -F+f9p+jTL -P -O -N -Y-2.5i   >>   $psfile.$PAGE	
+
+endif
+endif
+#########################################################
+
+echo "Created"  $psfile.$PAGE.$ROW
+
+skip:
+end 
+
+echo ".4 1.2  PAGE" $PAGE >! tmp.page
+gmt pstext tmp.page   -R0/1/0/1 -JX -F+f9p+jTL -P -O -N -Y-2.5i   >>   $psfile.$PAGE	
+
+cleanup: 
+echo "  "
+if ( $PAGE > 1 ) then
+echo "Created  postript files    : "$psfile".1-"$PAGE 
+else 
+echo "  "
+echo "Created  postript files    : "$psfile".1" 
+endif
+echo "  "
+echo "To view  postript files    : gs "$psfile".*"
+echo "  "
+	echo "Hardcopy   postript files  :  lpr -s "$psfile".*"
+
+\rm -rf tmp.datX tmp.datR tmp.datA tmp.0 tmp.sites tmpr.ofile tmpx.ofile tmp.ofile tmp.stat tmp.txt tmp.page
+
+################STARTING POINT for GRADIENTS##############################################################################
+else
+if ( $free == yes ) then  
+  if ( $total == no ) then
+    foreach of (`echo $ofiles`)
+       if( $of:e == 'Z' ) then
+          zcat $of | grep "NS_GRAD R" |  awk '{print $3,$5,$6,$7,$8,$9,$10,$12}' | grep -v q-file  | decyr_atm day   >> tmpr.ofile 
+          zcat $of | grep "EW_GRAD R" |  awk '{print $3,$5,$6,$7,$8,$9,$10,$12}' | grep -v q-file  | decyr_atm day   >> tmpr.ofile2 
+       else
+          cat $of | grep "NS_GRAD R" |  awk '{print $3,$5,$6,$7,$8,$9,$10,$12}' | grep -v q-file  | decyr_atm day   >> tmpr.ofile 
+          cat $of | grep "EW_GRAD R" |  awk '{print $3,$5,$6,$7,$8,$9,$10,$12}' | grep -v q-file  | decyr_atm day   >> tmpr.ofile2 
+       endif
+     end
+  else
+    foreach of (`echo $ofiles`)
+       if( $of:e == 'Z' ) then
+          zcat $of | grep "NS_GRAD R" |  awk '{print $3,$5,$6,$7,$8,$9,$13,$12}' | grep -v q-file  | decyr_atm day   >> tmpr.ofile 
+          zcat $of | grep "EW_GRAD R" |  awk '{print $3,$5,$6,$7,$8,$9,$13,$12}' | grep -v q-file  | decyr_atm day   >> tmpr.ofile2 
+       else
+          cat $of | grep "NS_GRAD R" |  awk '{print $3,$5,$6,$7,$8,$9,$13,$12}' | grep -v q-file  | decyr_atm day   >> tmpr.ofile 
+          cat $of | grep "EW_GRAD R" |  awk '{print $3,$5,$6,$7,$8,$9,$13,$12}' | grep -v q-file  | decyr_atm day   >> tmpr.ofile2 
+       endif
+     end
+  endif
+endif
+if ( $fixed == yes ) then   
+  if ( $total == no ) then
+    foreach of (`echo $ofiles`)
+       if( $of:e == 'Z' ) then
+          zcat $of | grep "NS_GRAD X" |  awk '{print $3,$5,$6,$7,$8,$9,$10,$12}' | grep -v q-file  | decyr_atm day   >> tmpx.ofile 
+          zcat $of | grep "EW_GRAD X" |  awk '{print $3,$5,$6,$7,$8,$9,$10,$12}' | grep -v q-file  | decyr_atm day   >> tmpx.ofile2 
+       else
+          cat $of | grep "NS_GRAD X" |  awk '{print $3,$5,$6,$7,$8,$9,$10,$12}' | grep -v q-file  | decyr_atm day   >> tmpx.ofile
+          cat $of | grep "EW_GRAD X" |  awk '{print $3,$5,$6,$7,$8,$9,$10,$12}' | grep -v q-file  | decyr_atm day   >> tmpx.ofile2
+       endif
+     end
+  else
+    foreach of (`echo $ofiles`)
+       if( $of:e == 'Z' ) then
+          zcat $of | grep "NS_GRAD X" |  awk '{print $3,$5,$6,$7,$8,$9,$13,$12}' | grep -v q-file  | decyr_atm day   >> tmpx.ofile
+          zcat $of | grep "EW_GRAD X" |  awk '{print $3,$5,$6,$7,$8,$9,$13,$12}' | grep -v q-file  | decyr_atm day   >> tmpx.ofile2 
+       else
+          cat $of | grep "NS_GRAD X" |  awk '{print $3,$5,$6,$7,$8,$9,$13,$12}' | grep -v q-file  | decyr_atm day   >> tmpx.ofile
+          cat $of | grep "EW_GRAD X" |  awk '{print $3,$5,$6,$7,$8,$9,$13,$12}' | grep -v q-file  | decyr_atm day   >> tmpx.ofile2
+       endif
+     end
+  endif
+endif 
+
+if ( $file != "") then
+#	cat $file >! tmp.sites 
+	echo " " >! tmp.sites
+   if ( $fixed == yes )  then
+	  cat tmpx.ofile | cut -c1-9 | sort -u >! tmp.allsites 
+#     cat tmpx.ofile2 | cut -c1-9 | sort -u >! tmp.allsites 
+	  foreach ib ( `cat $file` ) 
+		grep -i $ib tmp.allsites >> tmp.sites 
+	  end  
+   else
+	  cat tmpr.ofile | cut -c1-9 | sort -u >! tmp.allsites 
+#     cat tmpr.ofile2 | cut -c1-9 | sort -u >! tmp.allsites 
+	  foreach ib ( `cat $file` ) 
+		grep -i $ib tmp.allsites >> tmp.sites 
+	  end
+   endif  
+	echo "SITES: " `cat tmp.sites `
+else	if ( $sites[1] == "" ) then 
+   if ( $fixed == yes )  then
+	  cat tmpx.ofile | cut -c1-9 | sort -u >! tmp.sites
+#     cat tmpx.ofile2 | cut -c1-9 | sort -u >! tmp.sites
+	  echo  SITES are written to FILE: tmp.sites 
+   else
+	  cat tmpr.ofile | cut -c1-9 | sort -u >! tmp.sites
+#     cat tmpr.ofile2 | cut -c1-9 | sort -u >! tmp.sites
+	  echo  SITES are written to FILE: tmp.sites
+   endif 
+else 
+	echo $sites >! tmp.sites
+endif 
+
+set COL = 1 
+set PAGE = 1
+set ROW  = 0
+set psfileNS = psgradNS$ADD
+set psfileEW = psgradEW$ADD
+
+
+\rm -r $psfileNS.* >&! /dev/null
+\rm -r $psfileEW.* >&! /dev/null
+
+# scaling/title  information
+        gmt gmtdefaults -Du >! gmt.conf
+        gmt gmtset FONT_LABEL 10p \
+                   FONT_ANNOT_PRIMARY 12p
+
+if ( $delete_file != "")  set delete = ( $delete `cat $delete_file` )
+if ( $delete != ""  ) then 
+	   foreach i( $delete )
+		grep -v  $i tmp.sites  >!  tmp.sites1
+		/bin/mv  tmp.sites1 tmp.sites 
+	   end 
+	echo  deleted :  $delete 
+endif
+
+echo "0. 0." >!  tmp.0 
+
+##### loop over each site #########
+foreach i ( `cat  tmp.sites  ` )  
+
+  if ( $free == yes ) then
+     grep $i tmpr.ofile |  awk '{print $2, $3*100.,$4*100.}' >! tmp.datR
+     grep $i tmpr.ofile2 |  awk '{print $2, $3*100.,$4*100.}' >! tmp.datR2
+  endif
+  if ( $fixed == yes ) then 
+     grep $i tmpx.ofile |  awk '{print $2, $3*100.,$4*100.}' >! tmp.datX
+     grep $i tmpx.ofile2 |  awk '{print $2, $3*100.,$4*100.}' >! tmp.datX2 
+  endif 
+  if ( $free == yes   &&  $fixed == yes ) then
+    grep $i tmpx.ofile |  awk '{print $2+0.05, $3*100.,$4*100.}' >! tmp.datX 
+    grep $i tmpx.ofile2 |  awk '{print $2+0.05, $3*100.,$4*100.}' >! tmp.datX2
+  endif
+
+  if ( $free == yes) then
+#     if ( `cat tmp.datR | wc | awk '{print $1}' ` < 2 )  echo "FIX THIS.  one entry"
+     set RANGE = `gmt gmtinfo -I1/5  tmp.datR` 
+     set RANGE2 = `gmt gmtinfo -I1/5  tmp.datR2`
+  else 
+#     if ( `cat tmp.datX | wc | awk '{print $1}' ` < 2 )  echo "FIX THIS.  one entry"
+     set RANGE = `gmt gmtinfo -I1/5  tmp.datX` 
+     set RANGE2 = `gmt gmtinfo -I1/5  tmp.datX2`
+  endif  
+# set some space for error  bars
+#   set r = ( `echo $RANGE |  cut -c3- | awk '{FS="/"} {print $1  - ($2-$1)*.10 ,$2 + ($2-$1)*.10,  $3 - ($4-$3)*.10,  $4 + ($4-$3)*.10 }' ` )
+#   set r = ( `echo $RANGE |  cut -c3- | awk -F/ '{print $1  - ($2-$1)*.10 ,$2 + ($2-$1)*.10,  $3 - ($4-$3)*.10,  $4 + ($4-$3)*.10 }' ` )
+    set r = ( `echo $RANGE |  cut -c3- | awk -F/ '{print $1  - ($2-$1)*.40 ,$2 + ($2-$1)*.40,  $3 - ($4-$3)*.40,  $4 + ($4-$3)*.40 }' ` )
+    set r2 = ( `echo $RANGE2 |  cut -c3- | awk -F/ '{print $1  - ($2-$1)*.40 ,$2 + ($2-$1)*.40,  $3 - ($4-$3)*.40,  $4 + ($4-$3)*.40 }' ` )
+
+
+   if ( $xmin != 0 ) set r[1] = $xmin 
+   if ( $xmax != 0 ) set r[2] = $xmax
+   if ( $ymin != 0 ) set r[3] = $ymin 
+   if ( $ymax != 0 ) set r[4] = $ymax
+
+   if ( $xmin != 0 ) set r2[1] = $xmin 
+   if ( $xmax != 0 ) set r2[2] = $xmax
+   if ( $ymin != 0 ) set r2[3] = $ymin 
+   if ( $ymax != 0 ) set r2[4] = $ymax
+
+
+#make sure that horizontal min-max has an aperture
+   if( $r[1] ==  $r[2]  ) then
+	set r[1] = `echo $r[1] | awk '{print $1 - 1 }'`
+	set r[2] = `echo $r[2] | awk '{print $1 + 1 }'`
+   endif
+   if( $r2[1] ==  $r2[2]  ) then
+	set r2[1] = `echo $r2[1] | awk '{print $1 - 1 }'`
+	set r2[2] = `echo $r2[2] | awk '{print $1 + 1 }'`
+   endif
+
+
+#make sure that vertical min-max has an aperture
+   if( $r[3] ==  $r[4]  ) then
+	set r[3] = `echo $r[3] | awk '{print $1 - 5 }'`
+	set r[4] = `echo $r[4] | awk '{print $1 + 5 }'`
+   endif 
+   if( $r2[3] ==  $r2[4]  ) then
+	set r2[3] = `echo $r2[3] | awk '{print $1 - 5 }'`
+	set r2[4] = `echo $r2[4] | awk '{print $1 + 5 }'`
+   endif
+
+
+   set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4]
+   set RANGE2 = "-R"$r2[1]"/"$r2[2]"/"$r2[3]"/"$r2[4]
+#  echo $RANGE
+
+	set yanot  = 5 
+	set yframe = 2.5 
+	set yanot   = 2
+	set yspread = `echo  $r[4]  $r[3] | awk '{ printf "%6d",  $1 - $2}'`
+	if ( $yspread > 20 )  set yanot  = 5
+	if ( $yspread > 40 )  set yanot  = 10
+	if ( $yspread > 80 )  set yanot  = 20
+	if ( $yspread > 160)  set yanot  = 40
+	if ( $yspread > 500)  set yanot  = 200
+	set  yframe = ` echo $yanot | awk '{print $1 / 2 }'`
+
+	set yanot2  = 5 
+	set yframe2 = 2.5 
+	set yanot2   = 2
+	set yspread2 = `echo  $r2[4]  $r2[3] | awk '{ printf "%6d",  $1 - $2}'`
+	if ( $yspread2 > 20 )  set yanot2  = 5
+	if ( $yspread2 > 40 )  set yanot2  = 10
+	if ( $yspread2 > 80 )  set yanot2  = 20
+	if ( $yspread2 > 160)  set yanot2  = 40
+	if ( $yspread2 > 500)  set yanot2  = 200
+	set  yframe2 = ` echo $yanot2 | awk '{print $1 / 2 }'`
+
+
+#       Repeat same scaling for the X-axis	
+	set anot  = 2 
+	set frame = 1 
+	set anot   = 2
+	set spread = `echo  $r[2]  $r[1] | awk '{ printf "%6d",  $1 - $2}'`
+	if ( $spread > 20 )  set anot  = 5
+	if ( $spread > 40 )  set anot  = 10
+	if ( $spread > 80 )  set anot  = 20
+	if ( $spread > 160)  set anot  = 40
+	if ( $spread > 500)  set anot  = 200
+	set  frame = ` echo $anot | awk '{print $1 / 2 }'`
+
+	set anot2  = 2 
+	set frame2 = 1 
+	set anot2   = 2
+	set spread2 = `echo  $r2[2]  $r2[1] | awk '{ printf "%6d",  $1 - $2}'`
+	if ( $spread2 > 20 )  set anot2  = 5
+	if ( $spread2 > 40 )  set anot2  = 10
+	if ( $spread2 > 80 )  set anot2  = 20
+	if ( $spread2 > 160)  set anot2  = 40
+	if ( $spread2 > 500)  set anot2  = 200
+	set  frame2 = ` echo $anot2 | awk '{print $1 / 2 }'`
+	
+	set xl = `echo  $r[4]  $r[3] | awk '{ printf "%6d", ( ( $1 - $2 ) / 100 ) + 1   }'`
+	set anot   = ` echo $anot   $xl |  awk '{ print  $1 * $2 }' `
+	set frame  = ` echo $frame  $xl |  awk '{ print  $1 * $2 }' ` 
+	
+	set SCALE = "-Bxa${anot}f$frame -Bya${yanot}f$yframe"
+
+	set xl2 = `echo  $r2[4]  $r2[3] | awk '{ printf "%6d", ( ( $1 - $2 ) / 100 ) + 1   }'`
+	set anot2   = ` echo $anot2   $xl2 |  awk '{ print  $1 * $2 }' `
+	set frame2  = ` echo $frame2  $xl2 |  awk '{ print  $1 * $2 }' ` 
+	
+	set SCALE2 = "-Bxa${anot2}f$frame2 -Bya${yanot2}f$yframe2"
+
+
+
+@ ROW = $ROW + 1 
+if ( $ROW == 5 ) then 
+set ROW = 1 
+@ PAGE = $PAGE + 1 
+endif
+
+if ( $free == yes ) then 
+echo $i            |   awk '{printf".4 1.2  SITE: %8s  FREE \n",$1}'                                                          >! tmp.txt
+echo $i            |   awk '{printf".4 1.2  SITE: %8s  FREE \n",$1}'                                                          >! tmp.txt2
+poly01 yes 0  no   <   tmp.datR >!  tmp.stat
+poly01 yes 0  no   <   tmp.datR2 >!  tmp.stat2
+head -n 1   tmp.stat |   awk '{printf".02 1.1  wmean(cm)= %9.1f @\+_ %6.1f  nrms= %5.2f  wrms= %5.1f\n",$2,$3,$13,$15}' >> tmp.txt
+head -n 1   tmp.stat2 |   awk '{printf".02 1.1  wmean(cm)= %9.1f @\+_ %6.1f  nrms= %5.2f  wrms= %5.1f\n",$2,$3,$13,$15}' >> tmp.txt2
+endif
+
+if ( $fixed == yes ) then 
+echo $i            |   awk '{printf".4 1.2  SITE: %8s  FIXED \n",$1}'                                                          >! tmp.txt
+echo $i            |   awk '{printf".4 1.2  SITE: %8s  FIXED \n",$1}'                                                          >! tmp.txt2
+poly01 yes 0  no   <   tmp.datX >!  tmp.stat
+poly01 yes 0  no   <   tmp.datX2 >!  tmp.stat2
+head -n 1   tmp.stat |   awk '{printf".02 1.1  wmean(cm)= %9.1f @\+_ %6.1f  nrms= %5.2f  wrms= %5.1f\n",$2,$3,$13,$15}' >> tmp.txt
+head -n 1   tmp.stat2 |   awk '{printf".02 1.1  wmean(cm)= %9.1f @\+_ %6.1f  nrms= %5.2f  wrms= %5.1f\n",$2,$3,$13,$15}' >> tmp.txt2
+endif
+
+if ( $free == yes && $fixed == yes) then 
+echo $i            |   awk '{printf".4 1.2  SITE: %8s  FREE  with FIXED \n",$1}'                                                >! tmp.txt
+echo $i            |   awk '{printf".4 1.2  SITE: %8s  FREE  with FIXED \n",$1}'                                                >! tmp.txt2
+poly01 yes 0  no   <   tmp.datR >!  tmp.stat
+poly01 yes 0  no   <   tmp.datR2 >!  tmp.stat2
+head -n 1   tmp.stat |   awk '{printf".02 1.1  wmean(cm)= %9.1f @\+_ %6.1f  nrms= %5.2f  wrms= %5.1f\n",$2,$3,$13,$15}' >> tmp.txt
+head -n 1   tmp.stat2 |   awk '{printf".02 1.1  wmean(cm)= %9.1f @\+_ %6.1f  nrms= %5.2f  wrms= %5.1f\n",$2,$3,$13,$15}' >> tmp.txt2
+endif
+
+if ( $ROW == 1 ) then 
+	gmt pstext tmp.txt   -R0/1/0/1 -JX -K -P -N -F+f9p+jTL -Y8.5i    >!   $psfileNS.$PAGE
+	gmt pstext tmp.txt2   -R0/1/0/1 -JX -K -P -N -F+f9p+jTL -Y8.5i    >!   $psfileEW.$PAGE
+else
+	gmt pstext tmp.txt   -R0/1/0/1 -JX -K -P -O -N -F+f9p+jTL -Y-2.5i   >>   $psfileNS.$PAGE
+	gmt pstext tmp.txt2   -R0/1/0/1 -JX -K -P -O -N -F+f9p+jTL -Y-2.5i   >>   $psfileEW.$PAGE
+endif
+
+if ( $free == yes && $fixed == no ) then
+if ( $ROW != 4   ) then 
+	gmt psxy tmp.datR $Ey  $RANGE -Sc0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE+l'NS Gradients(cm)' -BWeSn  -P   >>   $psfileNS.$PAGE
+   gmt psxy tmp.datR2 $Ey  $RANGE2 -Sc0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE2+l'EW Gradients(cm)' -BWeSn  -P   >>   $psfileEW.$PAGE
+else
+	gmt psxy tmp.datR $Ey  $RANGE -Sc0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE+l'NS Gradients(cm)' -BWeSn  -P   >>   $psfileNS.$PAGE
+   gmt psxy tmp.datR2 $Ey  $RANGE2 -Sc0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE2+l'EW Gradients(cm)' -BWeSn  -P   >>   $psfileEW.$PAGE
+   echo ".4 1.2  PAGE" $PAGE >! tmp.page
+	gmt pstext tmp.page   -R0/1/0/1 -JX -P -O -N -F+f9p+jTL -Y-2.5i   >>   $psfileNS.$PAGE
+	gmt pstext tmp.page   -R0/1/0/1 -JX -P -O -N -F+f9p+jTL -Y-2.5i   >>   $psfileEW.$PAGE
+
+endif
+endif
+
+if ( $free == no  &&  $fixed == yes ) then
+if ( $ROW != 4   ) then 
+	gmt psxy tmp.datX $Ey  $RANGE -St0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE+l'NS Gradients(cm)' -BWeSn  -P   >>   $psfileNS.$PAGE
+   gmt psxy tmp.datX2 $Ey  $RANGE2 -St0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE2+l'EW Gradients(cm)' -BWeSn  -P   >>   $psfileEW.$PAGE
+else
+	gmt psxy tmp.datX $Ey  $RANGE -St0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE+l'NS Gradients(cm)' -BWeSn  -P   >>   $psfileNS.$PAGE
+   gmt psxy tmp.datX2 $Ey  $RANGE2 -St0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE2+l'EW Gradients(cm)' -BWeSn  -P   >>   $psfileEW.$PAGE
+   echo ".4 1.2  PAGE" $PAGE >! tmp.page
+	gmt pstext tmp.page   -R0/1/0/1 -JX -P -O -N -F+f9p+jTL -Y-2.5i   >>   $psfileNS.$PAGE	
+   gmt pstext tmp.page   -R0/1/0/1 -JX -P -O -N -F+f9p+jTL -Y-2.5i   >>   $psfileEW.$PAGE
+
+endif
+endif
+
+ if ( $free == yes && $fixed == yes ) then
+if ( $ROW != 4   ) then 
+	gmt psxy tmp.datR $Ey         $RANGE -Sc0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE+l'NS Gradients(cm)' -BWeSn  -P   >>   $psfileNS.$PAGE
+	gmt psxy tmp.datX $Ey  -W1p,,.  $RANGE -St0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE+l'NS Gradients(cm)' -BWeSn  -P   >>   $psfileNS.$PAGE 
+   gmt psxy tmp.datR2 $Ey         $RANGE2 -Sc0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE2+l'EW Gradients(cm)' -BWeSn  -P   >>   $psfileEW.$PAGE
+	gmt psxy tmp.datX2 $Ey  -W1p,,.  $RANGE2 -St0.05i  -JX6.5i/1.8i   -G0 -K -O   $SCALE2+l'EW Gradients(cm)' -BWeSn  -P   >>   $psfileEW.$PAGE 
+else
+	gmt psxy tmp.datR $Ey         $RANGE -Sc0.05i  -JX6.5i/1.8i   -G0 -K  -O   $SCALE+l'NS Gradients(cm)' -BWeSn  -P   >>   $psfileNS.$PAGE
+	gmt psxy tmp.datX $Ey  -W1p,,. $RANGE -St0.05i  -JX6.5i/1.8i   -G0 -K  -O   $SCALE+l'NS Gradients(cm)' -BWeSn  -P   >>   $psfileNS.$PAGE
+	gmt psxy tmp.datR2 $Ey         $RANGE2 -Sc0.05i  -JX6.5i/1.8i   -G0 -K  -O   $SCALE2+l'EW Gradients(cm)' -BWeSn  -P   >>   $psfileEW.$PAGE
+	gmt psxy tmp.datX2 $Ey  -W1p,,. $RANGE2 -St0.05i  -JX6.5i/1.8i   -G0 -K  -O   $SCALE2+l'EW Gradients(cm)' -BWeSn  -P   >>   $psfileEW.$PAGE
+   echo ".4 1.2  PAGE" $PAGE >! tmp.page
+	gmt pstext tmp.page   -R0/1/0/1 -JX -P -O -N -F+f9p+jTL -Y-2.5i   >>   $psfileNS.$PAGE	
+ 	gmt pstext tmp.page   -R0/1/0/1 -JX -P -O -N -F+f9p+jTL -Y-2.5i   >>   $psfileEW.$PAGE	
+
+
+endif
+endif
+#########################################################
+
+echo "Created"  $psfileNS.$PAGE.$ROW
+echo "Created"  $psfileEW.$PAGE.$ROW
+
+skip:
+end 
+
+echo ".4 1.2  PAGE" $PAGE >! tmp.page
+gmt pstext tmp.page   -R0/1/0/1 -JX -P -O -N -F+f9p+jTL -Y-2.5i   >>   $psfileNS.$PAGE	
+gmt pstext tmp.page   -R0/1/0/1 -JX -P -O -N -F+f9p+jTL -Y-2.5i   >>   $psfileEW.$PAGE	
+
+cleanup: 
+echo "  "
+if ( $PAGE > 1 ) then
+echo "Created  postript files    : "$psfileNS".1-"$PAGE 
+echo "Created  postript files    : "$psfileEW".1-"$PAGE 
+else 
+echo "  "
+echo "Created  postript files    : "$psfileNS".1" 
+echo "Created  postript files    : "$psfileEW".1" 
+endif
+echo "  "
+echo "To view  postript files    : gs "$psfileNS".*  "$psfileEW".* "
+echo "  "
+	echo "Hardcopy   postript files  :  lpr -s "$psfileNS".* "$psfileEW".*"
+
+\rm -rf tmp.datX tmp.datR tmp.datA tmp.0 tmp.sites tmpr.ofile tmpx.ofile tmp.ofile tmp.stat tmp.txt tmp.page
+\rm -rf tmp.datX2 tmp.datR2 tmp.datA tmp.0 tmp.sites tmpr.ofile2 tmpx.ofile2 tmp.ofile tmp.stat tmp.txt tmp.page
+
+endif
+
+exit

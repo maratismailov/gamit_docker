@@ -1,0 +1,51 @@
+#!/bin/csh -f
+#
+#doc Convert one or more GLOBK binary h-files to SINEX
+#doc
+#
+if ($#argv == 0) then
+   echo ' '                                       
+   echo ' Create a batch file to convert one or more GLOBK binary h-files to SINEX'
+   echo ' '
+   echo ' Usage: sh_glbtosnx -f [files] -ext [comextent]'
+   echo ' ' 
+   echo '   where [files] are GLOBK binary file names (minus the extent) to be converted'
+   echo '                 wildcards are allowed'   
+   echo ' ' 
+   echo '   The output files will be named [files].snx ' 
+   echo ' ' 
+   echo ' Example: sh_glbtosnx  -f H* -ext glx  > glbtosnx.bat  '
+   echo ' ' 
+   echo '          csh glbtosnx.bat   '
+   echo ' '
+   echo '    will convert H9912071159.glx '
+   echo '                 H9912081159.glx '
+   echo '                 ... '
+   echo ' '
+   echo '      to         H9912071159.snx '
+   echo '                 H9912081159.snx '
+   echo '                 ... '
+   echo ' '                              
+# Written by Simon McClusky 14 Apr 2000; last modified by R. King 11 Oct 2000
+else   
+
+ while ($#argv > 0 )
+   set input = ( $argv )     
+   switch($input[1])    
+     case -ext
+        set extent = $input[2]  
+     breaksw
+     case -f
+        set names = (`echo $argv | cut -d- -f2`); shift names 
+     breaksw
+   endsw
+   if ( $#argv > 0 ) shift argv
+ end
+      
+ foreach file_ext ( $names)
+   set file = `echo $file_ext | awk -F. '{print $1}'`
+   echo glbtosnx . "' '" $file.$extent $file.snx  
+ end
+
+endif
+

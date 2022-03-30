@@ -1,0 +1,103 @@
+#!/bin/csh -f              
+#
+#doc Fix ASHTECH L12, M12 and LM12 RINEX files that contain 45 micro sec timing errors.
+#doc
+#
+# Written by Simon McClusky  May 2000; modified to use file-list input by R King November 2008
+######################## INSTRUCTIONS #############################
+if ( $#argv == 0 ) then
+  echo "======================================================================================="
+  echo "Fix RINEX files from Ashtech codeless L2 receivers contain timing errors."   
+  echo "The error in the original is -45 microseconds, leading to an error in E in "
+  echo "northern mid-latitudes of (+) 20-60 mm."
+  echo "  "
+  echo "USAGE:  sh_fixash -f <list>"
+  echo "  "
+  echo "        <list> file with list of RINEX files in format "
+  echo "   "
+  echo "sunr1540.95o"
+  echo "fran1560.95o"
+  echo " ..."
+  echo "  "
+  echo "The list may be compiled with a grep on 'REC #' in the RINEX header."
+  echo "Codeless receivers are usually identified by receiver types L-XII, LM-XII,"
+  echo "LM-XIIC, or M-XII with firmware 6A or 7A.  Receivers LM-XII3 and LM-XII"
+  echo "with firmware 7AP6, 6C, 6G, or 6M have P2 available and do not have a "
+  echo "timing error."   
+  echo " " 
+  echo "Script should be run in the rinex data directory"
+  echo "  "
+  echo "OUTPUT: Old rinex file copied to directory ASHL12, corrected RINEX file has original name."  
+  echo "        Corrected files have the following comment added to the header:"    
+  echo " " 
+  echo "        ASHTECH L-XII clock offset fixed by  45   usec              COMMENT"
+  echo " " 
+  echo "======================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+# Current best guess (I mean estimate) of the offset is -45 micro sec's (correct by +45 usec)
+set offset = 0.000045
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+       case -f*:
+       set rxlist  =  $input[2]  
+		breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+######################## GET THE JOB DONE #########################
+if ( $rxlist == '' ) then
+  echo "No RINEX list input --Stop"
+  exit
+endif               
+
+#cat rxlist >! rxf 
+
+foreach rxf (`cat $rxlist`)  
+# Check to see if file in the directory   
+  gunzip -f  {$rxf}.Z >& /dev/null 
+  gunzip -f  {$rxf}.gz >& /dev/null
+  if( -e $rxf ) then
+#   Check to see if already fixed
+    set fixd = `grep "ASHTECH L-XII clock offset" $rxf | wc`
+    if( $fixd[2] == 0 ) then
+#     Offset has not been fixed.  
+      set rxyr = `echo $rxf:e | awk '{print substr($1,1,2)}'`
+      set rxu = $rxf 
+   
+      awk -v yr=$rxyr -v off=$offset ' \
+      {if ($1 == yr) {{gsub("G"," ")} {split($0,prns); n = NF} \
+      {printf " %2d %2d %2d %2d %2d %10.7f %2d %2d",$1,$2,$3,$4,$5,$6+off,$7,$8; \
+      for (i=9;i<=n;i++) printf " %2d",prns[i]; printf"\n"}} else {print $0}}' $rxu >! t.${rxyr}o
+
+      awk -v off=$offset '{if( substr($0,61,11) == "MARKER NAME") \
+      {printf "%-36s %-4d %-17s %-7s\n%s\n","ASHTECH L-XII clock offset fixed by ",off*1.0e+06,"usec","COMMENT",$0} \
+         else {print $0}}' t.${rxyr}o >! u.${rxyr}o
+
+#     Copy the original file to the ASHL12 directory
+      if ( ! -e ASHL12 ) mkdir ASHL12
+      gzip -f  $rxu ; \mv $rxu.gz ASHL12
+      mv u.${rxyr}o $rxu
+
+#      Tell users
+       echo $rxu | awk '{printf("%s %s Updated/Original moved to ASHL12\n",$1,$2)}'
+    else
+       echo $rxu | awk '{printf("%s %s Already has been updated\n",$1,$2)}'
+    endif
+    gzip -f $rxu 
+  else
+      echo "Requested file " $rxf "not available, skip "
+  endif
+end
+
+#Clean up (will exist unless no files found)
+if( -e tmp.files ) then  
+  \rm tmp.files t.${yr[2]}o 
+endif
+
+# The end    
+exit

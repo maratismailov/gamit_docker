@@ -1,0 +1,11 @@
+GLOUT: GLOBK basic output program (generates .prt file)
+
+Runstring:
+
+% glout <output> <options> <com_file>
+where <options> are given in the glorg help file.
+The com_file command must specified in the globk command file and the
+the del_scra command must be set to N or not used.
+
+
+

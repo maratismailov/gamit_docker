@@ -1,0 +1,28 @@
+RMS_phase: VLBI program to computes RMS of phase data 
+  
+ Proper runstring is
+  
+CI> RMS_phase <file> [<exp_out>] [<glb_out>] [<msk>] [<qual>] <site1> <site2> 
+  
+ where
+  
+   <file>     is the KalObs data file descriptor
+  
+   <expt_out> is the output file for the experiment, into which the 
+          residual phases as a function of epoch and channel are written
+  
+   <glb_out>  is the "global" output file, appended to which is a one-line
+          summary of the experiment with the average and RMS phases as
+          a function of channel.  (If this file does not exist, it will 
+          be created) 
+  
+   <msk>      is a mask for the DATA_FLAG in the KalObs file (DEFAULT = 0)
+  
+   <qual>     is the minimum FRNGE quality to be excepted (DEFAULT = 0) 
+  
+   <site1> and <site2> are the site names for the baseline to be processed. 
+              RMS_PHASE currently processes only a single baseline. 
+  
+ Bracketed [] parameters are optional.
+  
+ 

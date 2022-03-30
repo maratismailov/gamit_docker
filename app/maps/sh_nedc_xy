@@ -1,0 +1,14 @@
+#!/bin/csh -f
+#
+# Shell script to make CEQnVelV.xy files form NEDC screen output
+# file
+#
+set if = eqs_96_0402.nedc
+set mags = `echo 2 3 4 5`
+foreach m (`echo $mags`)
+   set of = CEQ${m}VelV.xy
+   echo Creating $of
+   grep '^ PDE ' $if | awk -v m=$m '{if ( substr($0,50,4) > m ) {printf(" %9.4f %8.4f %6.2f\n",$7+360,$6,substr($0,50,4))}}' >! $of
+end
+
+# PDE   1997   04 22 152846.14  37.69 -121.63  16 2.90 MDGM    .... .......

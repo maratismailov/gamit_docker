@@ -1,0 +1,92 @@
+  ==========================================
+       SOLVEM version:  0.17 TEST       
+  ==========================================
+  running time:  1993/ 2/18   16:16:55
+  operator:  dong            
+  apriori value file:                ngsdat.pri                                 
+  input data file:                   solvem.ngs.dat                             
+  earthquake correction file:                                                   
+  sequential data file:                                                         
+  output file:                       solvem.ngs.out                             
+  mapping file:                      solvem.ngs.map                             
+  residual file:                     solvem.ngs.res                             
+  strain_file:                       solvem.ngs.str   2                         
+  event record file:                 solvem.ngs.evt                             
+  reference frame:                   NAD27                                      
+  parameter mode, site name format:  geocentric  char_8                         
+  reference coordinate, rtime:       geodetic 1950.0                            
+  solution combination mode:         Gauss_Markov model                         
+  minimum observation condition:     1      1                                   
+  criteria for angle,length,coor and velo(s,m,m,m/y):   3.0  1.0   0.1  0.03    
+  loose constraints on e,n,u,Ve,Vn,Vu(m,m/y): 100.0 100.0 100.0  1.0 1.0 0.01   
+  control key:       2                                                          
+  apr_frame:  enu                                                               
+  apr_value for coor. and velo.:  all  2.0 2.0 0.001    0.1 0.1 0.001           
+  constraint commands:                                                          
+  fix_parameters:  xyzuvw  LOS2                                                 
+  link_direction:  xyuv LOS2 GAV2                                               
+  experiment number:    5
+  total sites from data file:    4
+  ill sites:    0
+  bridge sites:    0
+  healthy sites:    4
+  fixed site:  LOS2_NGS
+  ======================================
+* solution model:   Gauss-Markov   
+* combined by:  Gauss-Markov   <horizon. angle><basel. length ><defle. correc.>
+   data
+* fix site (LOS2) solution
+* 
+   site     parameter            aprior           adjust       sigma         final
+ ARGU_NGS geoc x ( m)       -2673148.39509       0.088695      0.148   -2673148.30640
+ ARGU_NGS geoc y ( m)       -4527172.22846      -0.036887      0.196   -4527172.26535
+ ARGU_NGS geoc z ( m)        3600025.69653       0.019341      0.180    3600025.71587
+ ARGU_NGS geod lat (dms)    34 34 58.04393       0.023491      0.219   34 34 58.04469
+ ARGU_NGS geod lon (dms)   239 26 22.29671       0.095130      0.212  239 26 22.30044
+ ARGU_NGS height ( m)            626.40000       0.000000      0.001        626.40000
+ ARGU_NGS Vx (mm/year)             0.00000       2.031394      2.744          2.03139
+ ARGU_NGS Vy (mm/year)             0.00000       0.932863      3.493          0.93286
+ ARGU_NGS Vz (mm/year)             0.00000       2.663531      3.102          2.66353
+ ARGU_NGS Ve (mm/year)             0.00000       1.274907      3.826          1.27491
+ ARGU_NGS Vn (mm/year)             0.00000       3.235089      3.705          3.23509
+ ARGU_NGS Vu (mm/year)             0.00000       0.000105      0.995          0.00010
+
+ LOS2_NGS geoc x ( m)       -2666604.79725
+ LOS2_NGS geoc y ( m)       -4508050.99464
+ LOS2_NGS geoc z ( m)        3628285.81833
+ LOS2_NGS geod lat (dms)    34 53 37.55991
+ LOS2_NGS geod lon (dms)   239 23 41.32722
+ LOS2_NGS height ( m)            466.60000
+ LOS2_NGS Vx (mm/year)             0.00000       0.000000      0.000          0.00000
+ LOS2_NGS Vy (mm/year)             0.00000       0.000000      0.000          0.00000
+ LOS2_NGS Vz (mm/year)             0.00000       0.000000      0.000          0.00000
+ LOS2_NGS Ve (mm/year)             0.00000       0.000000      0.000          0.00000
+ LOS2_NGS Vn (mm/year)             0.00000       0.000000      0.010          0.00000
+ LOS2_NGS Vu (mm/year)             0.00000       0.000000      0.010          0.00000
+
+ TEPU_NGS geoc x ( m)       -2633204.91578      -0.286220      0.211   -2633205.20200
+ TEPU_NGS geoc y ( m)       -4526904.78977       0.455088      0.169   -4526904.33469
+ TEPU_NGS geoc z ( m)        3630058.21915       0.357465      0.145    3630058.57662
+ TEPU_NGS geod lat (dms)    34 54 36.54755       0.435907      0.177   34 54 36.56169
+ TEPU_NGS geod lon (dms)   239 48 51.62479      -0.476228      0.251  239 48 51.60603
+ TEPU_NGS height ( m)            958.50000       0.000000      0.001        958.50000
+ TEPU_NGS Vx (mm/year)             0.00000      -3.760490      3.888         -3.76049
+ TEPU_NGS Vy (mm/year)             0.00000       5.373021      3.224          5.37302
+ TEPU_NGS Vz (mm/year)             0.00000       3.946053      3.034          3.94605
+ TEPU_NGS Ve (mm/year)             0.00000      -5.952145      4.530         -5.95215
+ TEPU_NGS Vn (mm/year)             0.00000       4.811855      3.633          4.81185
+ TEPU_NGS Vu (mm/year)             0.00000       0.000155      0.995          0.00016
+
+ GAV2_NGS geoc x ( m)       -2647038.59445      -0.001481      0.003   -2647038.59593
+ GAV2_NGS geoc y ( m)       -4548468.22811       0.002999      0.007   -4548468.22511
+ GAV2_NGS geoc z ( m)        3592677.83376       0.002688      0.006    3592677.83644
+ GAV2_NGS geod lat (dms)    34 30  6.55745       0.003261      0.007   34 30  6.55756
+ GAV2_NGS geod lon (dms)   239 48  7.89717      -0.002788      0.006  239 48  7.89706
+ GAV2_NGS height ( m)            716.81000       0.000000      0.001        716.81000
+ GAV2_NGS Vx (mm/year)             0.00000       0.000053      0.420          0.00005
+ GAV2_NGS Vy (mm/year)             0.00000      -0.000096      0.714         -0.00010
+ GAV2_NGS Vz (mm/year)             0.00000      -0.000095      0.580         -0.00009
+ GAV2_NGS Ve (mm/year)             0.00000       0.000094      0.118          0.00009
+ GAV2_NGS Vn (mm/year)             0.00000      -0.000110      0.138         -0.00011
+ GAV2_NGS Vu (mm/year)             0.00000      -0.000007      0.995         -0.00001
+

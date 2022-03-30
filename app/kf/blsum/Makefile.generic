@@ -1,0 +1,32 @@
+# Generic Makefile for kf/blsum - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King 9 November 2010
+
+#LABELS: tslib:NONE:tslib:NONE
+#LABELS: blsum:blsum:NONE:blsum
+#LABELS: ensum:ensum:NONE:ensum
+#LABELS: tssum:tssum:NONE:tssum
+#LABELS: tsfit:tsfit:NONE:tsfit 
+#LABELS: tscon:tscon:NONE:tscon 
+#LABELS: tscomp:tscomp:NONE:tscomp 
+#LABELS: xysum:xysum:NONE:xysum
+#LABELS: xyzsave:xyzsave:NONE:xyzsave
+#LABELS: enfit:enfit:NONE:enfit
+#LABELS: blavg:blavg:NONE:blavg
+#LABELS: bcsum:bcsum:NONE:bcsum
+#LABELS: makebase:makebase:NONE:makebase  
+#LABELS: tsjumps:tsjumps:NONE:tsjumps 
+#LABELS: enfit2apr:enfit2apr:NONE:enfit2apr   
+#LABELS: eulvect:eulvect:NONE:eulvect
+
+
+#SHARELIB: .:tslib
+#SHARELIB: ../glfor:glfor_lib
+#SHARELIB:  ../gen_util:gen_util_lib
+#SHARELIB:  ../../libraries/matrix:kinv_lib
+#SHARELIB:  ../../libraries/comlib:com_lib
+
+#OBJ_tslib tsutil
+#OBJ_tslib tsdesc
+#OBJ_tslib tsread
+#OBJ_tslib tsutcon
+#OBJ_tslib get_unr_ant

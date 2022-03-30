@@ -1,0 +1,50 @@
+#!/bin/csh -e
+if ($#argv == 0) then
+   echo ' '
+   echo ' Create executables from the source code for the GAMIT/GLOBK common libraries '
+   echo ' '
+   echo '    - call script unimake to update machine-dependent Makefiles '
+   echo "    - execute 'make' to compile and link the subroutines"
+   echo ' '
+   echo ' Useage:'
+   echo ' '          
+   echo '   make_libraries [target_dir]  '
+   echo ' '
+   echo '      where [target_dir] is the absolute path to the directory above /libraries'
+   echo ' '
+   echo ' Example:'
+   echo ' '
+   echo '   make_libraries/home/me/stdrel '
+   echo ' '
+   exit
+else
+
+#
+# Script to make the GAMIT/GLOBK/SOLVK common libraries
+
+echo ' '
+echo ++++++++++++++++++++++++++++++++++
+echo Making the GAMIT/GLOBK libraries
+echo ++++++++++++++++++++++++++++++++++
+     
+# remember the target working directory  
+set TARGETDIR = $1/libraries
+ 
+# make the libraries
+     
+cd $TARGETDIR
+unimake -m comlib
+cd comlib; make; ; touch tmp.o; \rm -f *.o
+cd ../
+unimake -m matrix
+cd matrix; make; ; touch tmp.o; \rm -f *.o
+
+
+# Done
+echo ''
+echo ++++++++++++++++++++
+echo Libraries installed 
+echo ++++++++++++++++++++
+echo ''
+  
+endif

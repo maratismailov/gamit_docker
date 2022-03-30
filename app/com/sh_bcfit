@@ -1,0 +1,217 @@
+#!/bin/csh -f
+#
+#doc Creates a best fit broadcast gfile and tfile with partials
+#doc This version uses command-line inputs rather than bctot.inp 
+#doc created by MAKEXP.
+#doc             
+# Modified by R. King 2001/1/24 for new orbfit input format.
+# Modified by R. King 2015/12/10 for GNSS
+
+#
+######################## INSTRUCTIONS #############################
+if ( $#argv == 0 ) then
+echo "============================================================"
+echo " Create a best fit broadcast gfile and tfile with partials"
+echo "  "
+echo " Usage:  sh_bcfit  -f <nav-files> -d <year doy> -gnss <gnss> -o <orbit-name> -m <tol>"
+echo "  "          
+echo "  <nav-file> RINEX navigation file  (required)"
+echo " " 
+echo "  <year doy>  year and day-of-year; if omitted, day and span taken"
+echo "              from session.info"
+echo " "                  
+echo "  <gnss>  GNSS system (G R C E J), defaults to G "
+echo " " 
+echo "  <orbit-name> 4-character code for output t-file; default, taken from "
+echo "               nav-file name, e.g., tbrdc[y].[ddd] "
+echo " "
+echo "  <tol>  maximum rms in meters for a satellite to be included "
+echo "============================================================"
+exit
+endif 
+###################################################################
+
+# initialize variables
+set brdcfile = ""
+set orbt = ""
+set doy = ""
+set yr = ""  
+set year = ""
+set baddate = "n"
+set sesfo = session.info
+set max_fit_tol = 0 
+   
+# get user options
+foreach a ($argv)
+switch($a)
+  case -f
+     set brdcfile = $argv[2]
+     breaksw
+  case -d
+     set userdoyy = "yes" 
+#    Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+     set yr = `sh_year -year $argv[2]`
+     set doy = `echo $argv[3] | awk '{printf "%03d \n",$1}'`
+     breaksw  
+  case -gnss
+     set gnss = $argv[2]
+     breaksw 
+  case -o:
+     set orbt = $argv[2]
+     breaksw  
+   case -m:
+     set max_fit_tol = $argv[2]
+     breaksw 
+endsw
+shift
+end
+
+# Must have a navigation file    
+if( $brdcfile == "" ) then 
+   echo " "
+   echo "No broadcast ephemeris files input--stop"
+   exit
+endif  
+
+# If no date input, get it from session.info or the navigation file name
+       
+if ( $yr[1] == '' ) then
+#  read session date from session.info  {this doesn't seem to work -- rwk 010124)
+ if( -e $sesfo && ! -z $sesfo ) then
+    set slines = `cat session.info | wc -l`
+#   set ydoy = `head -n 3 session.info | tail -n -1`  
+    if ( $year != '' && $doy != '' ) then
+      set year = `head -n 3 $sesfo | tail -n -1 | awk ' $1 >= 1 && $1 <= 2100 && $2 >= 1 && $2 <= 366 {printf "%4d ", $1}'` 
+      set doy  = `head -n 3 $sesfo | tail -n -1 | awk ' $1 >= 1 && $1 <= 2100 && $2 >= 1 && $2 <= 366 {printf "%03d ", $2}'`
+      set yr = `sh_year -year $year`
+    else
+      set slines = 0
+  endif
+ endif
+ # Check year and day-of-year for reasonableness
+ if( $yr[1] <= 1980 || $yr[1] >= 2050 ) then
+   echo "Unreasonable year from session.info " $yr[1] "; try to get from nav-file name"
+   set baddate = "y" 
+ endif
+ if( $doy << 1 || $doy >> 366 ) then   
+   echo "Unreasonable day-of-yr from session.info " $doy[1] "; try to get from nav-file name"
+   set baddate = "y"
+ endif
+endif
+
+if ( $yr[1]  == "" || $baddate == "y" ) then
+  set year = `echo $brdcfile | awk '{print substr($1,10,2)}'`   
+  echo $year
+  set yr = `sh_year -year $year`
+  echo $yr
+  set doy = `echo $brdcfile | awk '{print substr($1,5,3)}'` 
+  echo $doy
+# Check year and day-of-year for reasonableness
+  if( $yr[1] <= 1980 || $yr[1] >= 2050 ) then
+    echo "Unreasonable year -- stop " $yr[1]
+    exit 
+  endif
+  if( $doy < 0 || $doy > 366 ) then
+    echo "Unreasonable day-of-year -- stop " $doy
+    exit 
+  endif
+endif
+
+# If not orbit name input, get it from the navigation-file name
+if( $orbt == "" ) then 
+   set orbt = `echo $brdcfile | awk '{print substr($1,1,4)}'`
+   echo " "
+   echo "Orbit name not given, set to: $orbt "
+endif  
+
+
+# Make sure session.info exists and is valid
+set slines = 0
+if( -e $sesfo && ! -z $sesfo ) then
+# MOD TAH 090217: Check to see if the year and day are valid. If not then generate a
+# new session.info files. (This code is needed when sh_brdcfit is run in the igs directory
+# where orbit g-files are normally generated from sp3 file.
+# slines is set zero if values not valid
+   set syrdoy = `head -n 3 $sesfo | tail -n -1 | awk '{print $1,$2}'`
+   set slines = `echo $yr[1] $doy $syrdoy | awk '{if($1 == $3 && $2 == $4) {print " 3 "} else {print " 0"}}'`
+   if( $slines == 0 ) then
+      echo "** WARNING ** session.info file is not valid, Creating new file."
+   else
+      echo "Using existing session.info"
+   endif
+endif
+
+# Create session.info if needed
+if( $slines == 0 ) then
+#  session.info invalid format (neglect it!!!)
+# MOD TAH 090217: Session.info is not value and is needed by bctot so create at
+# at this point.  Remove any existing file incase it is a link (to stop link
+# file being overwritten
+#   set slines = 0
+#   Get the list of satellites in the emphemeris file. 
+    set pns = `grep '^[ 0123]. [0,0-9]. ' $brdcfile | awk '{print $1}' | sort -n -u`
+    \rm session.info >&! /dev/null
+    echo "# Session.info : free format, non-blank first column is comment" >! session.info
+    echo "#Year Day  Sess#  Interval  #Epochs  Start hr/min  Satellites" >> session.info
+    echo $yr[1] $doy | awk '{printf(" %4d %3d  1        30     2880      0  0  ",$1,$2,$4)}' >> session.info
+    echo $pns >> session.info
+endif
+
+
+#--------- Run BCTOT: generating broadcast gfile and tfile(s) -------- 
+echo "  "
+echo "Running BCTOT"    
+echo "============="  
+ bctot $yr[1] $doy $brdcfile t$orbt$yr[3].$doy 
+if ( -e "BCTOT.fatal" ) then
+   echo "BCTOT.fatal exists, stop in sh_bcfit"
+   exit
+endif
+                                          
+
+#--------- Run ARC: integrating broadcast gfile from BCTOT --------
+echo "  "
+echo "Running ARC ITER1"  
+echo "================="
+arc < bc_arc.inp 
+
+
+#----- Run ORBFIT: fitting integrated tfile to broadcast tfile ----
+echo "  "
+echo "Running ORBFIT"  
+echo "=============="
+echo  " trans:  0 0 0" >! orbfit.cmd              
+echo  " i_rot:  0 0 0" >> orbfit.cmd            
+echo  " t_rot:  1 1 0" >> orbfit.cmd             
+echo  " scale:  0"     >> orbfit.cmd             
+echo  " pos:    1 1 1" >> orbfit.cmd             
+echo  " vel:    1 1 1" >> orbfit.cmd             
+echo  " srad:   1 1 1 0 0 0 0 0 0" >> orbfit.cmd 
+echo  " exclude:" >> orbfit.cmd                         
+echo  " max_fit_tol: $max_fit_tol" >> orbfit.cmd
+set tfile = t$orbt$yr[3].$doy
+set gfile = `tail -n -6 bc_arc.inp | head -n 1`  
+# Old format:
+# orbfit tfile.tmp $tfile broadcast.rms 0
+orbfit orbfit.cmd broadcast 0 tfile.tmp $tfile
+/bin/mv gfile.tmp.fit $gfile
+
+#--------- Run ARC: reintegrating the fitted broadcast gfile-------
+echo "  "
+echo "Running ARC ITER2"  
+echo "================="
+arc < bc_arc.inp            
+/bin/mv $tfile $tfile.unfitted
+/bin/mv tfile.tmp $tfile   
+#------- Give some information about what files were created ------
+echo "  "
+echo "Normal end to sh_bcfit"  
+echo "======================"
+echo "  "
+echo 'fitted tfile in: ' $tfile
+echo 'fitted gfile in: ' $gfile
+echo 'rms fit file in: broadcast.rms' 
+echo "  "
+exit
+ 
+

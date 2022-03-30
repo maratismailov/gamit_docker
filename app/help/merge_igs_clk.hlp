@@ -1,0 +1,17 @@
+MERGE_IGS_CLK: Program to merge IGS clock files from different networks 
+
+Program MERGE_IGS_CLK
+
+Program to merge igs formatted clock files into a single clock
+file
+
+Usage:
+% merge_igs_clk <options>
+Where options are
+-o <file>           -- Output file name.  Must be specified
+-i <list of files>  -- list of input clock files
+-r <list of 4-char> -- list of reference frame sites.
+-a                  -- Absolute PCV (set by default; 200723).
+-s <Sampling (sec)> -- Sampling interval (seconds).  Muset be commensurate with
+                       interval in clock files (default use value from files)
+                       (Added 200928 for mixed sample rate clocks)

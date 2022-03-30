@@ -1,0 +1,14 @@
+SIMGRAD: Adds simulated atmospheric delay gradients to cfile
+
+SIMGRAD: Simulation to add gradient signals to cfile
+
+% simgrad <in cfile> <out cfile> <LNS> <LEW>
+
+where <in cfile> is input cfile
+      <out cfile> is output cfile.  If same name as input
+                 then original renamed with .o extext
+      <LNS>  North-South gradient (mm).  1.0 causes 30 mm delays
+                 at 10 degrees.
+      <LEW>  East-West  gradient (mm).  1.0 causes 30 mm delays
+                 at 10 degrees.
+

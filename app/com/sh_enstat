@@ -1,0 +1,127 @@
+#!/bin/csh -f
+# 
+#doc Generates statistics from ensum file.
+#doc
+#
+#
+if ( $#argv == 0 ) then
+   echo "Shell script to generate worst, best and median statistics from an ensum file."
+   echo
+   echo "Usage sh_enstat -f <ensum file> [options]"
+   echo "Option are"
+   echo "  -m   -- Report median only"
+   echo "  -n <num> -- Minimum number of deterimations (default 2)"
+   echo "  -c   -- Summaries about constant mean value and not rate"
+   exit
+endif
+
+set ensf = 'NONE'
+set medianonly = N
+set nummin = 2
+set num = 4
+set col = 11
+
+while ($#argv > 0 )
+   set input = ( $argv )
+   switch($input[1])
+      case -f:
+         set ensf = $input[2]
+         breaksw
+      case -m
+         set medianonly = Y
+         breaksw
+      case -n
+         set nummin = $input[2]
+         breaksw
+      case -c
+         set col = 7
+         breaksw
+
+    
+endsw
+shift argv
+end
+#
+set num = 4
+#
+# Loop over components
+if ( $ensf == 'NONE' ) then
+   echo "No ensum file given, use sh_enstat to get help"
+   exit
+endif
+
+if ( ! -e $ensf ) then
+   echo "ensum file $ensf does not exist"
+   exit
+endif
+
+# Remove all the _X sites so that they do not bias statistics
+grep -v "_X..-" $ensf | grep -v '\*\*\*\*\*' >! NoX.ens
+
+set tot = `grep 'N  1' NoX.ens | awk -v nummin=$nummin '{if ($4 >= nummin ) {print $0}}' | wc -l`
+set med = `grep 'N  1' NoX.ens | awk -v nummin=$nummin '{if ($4 >= nummin ) {print $0}}' | wc -l | awk '{printf("%d",int($1/2+.5))}'`
+echo "In $ensf there are $tot sites, Median at $med sites measured at least $nummin times"
+if( $medianonly == "N" ) then
+   if( $col == 11 ) then
+      echo "North Statistics: Best                                                            WRMS  NRMS  Dur   Mean"
+   else
+      echo "North Statistics: Best                             WRMS NRMS                                  Dur   Mean"
+   endif
+   grep 'N  1' NoX.ens | awk -v nummin=$nummin '{if ($4 >= nummin ) {print $0}}' | sort -n -k ${col} | head -${num}
+   if( $col == 11 ) then
+      echo "North Statistics: Worst                                                           WRMS  NRMS  Dur   Mean"
+   else
+      echo "North Statistics: Worst                            WRMS NRMS                                  Dur   Mean"
+   endif
+   grep 'N  1' NoX.ens | awk -v nummin=$nummin '{if ($4 >= nummin ) {print $0}}' | sort -n -k ${col} | tail -${num}
+endif
+if( $col == 11 ) then
+   echo "North Statistics: Median                                                          WRMS  NRMS  Dur   Mean"
+else
+   echo "North Statistics: Median                           WRMS NRMS                                  Dur   Mean"
+endif
+grep 'N  1' NoX.ens | awk -v nummin=$nummin '{if ($4 >= nummin ) {print $0}}' | sort -n -k ${col} | head -${med} | tail -1 
+#
+if( $medianonly == "N" ) then
+   if( $col == 11 ) then
+      echo "East  Statistics: Best                                                            WRMS  NRMS  Dur   Mean"
+   else
+      echo "East  Statistics: Best                             WRMS NRMS                                  Dur   Mean"
+   endif
+   grep 'E  1' NoX.ens | awk -v nummin=$nummin '{if ($4 >= nummin ) {print $0}}' | sort -n -k ${col} | head -${num}
+   if( $col == 11 ) then
+      echo "East  Statistics: Worst                                                           WRMS  NRMS  Dur   Mean"
+   else
+      echo "East  Statistics: Worst                            WRMS NRMS                                  Dur   Mean"
+   endif
+   grep 'E  1' NoX.ens | awk -v nummin=$nummin '{if ($4 >= nummin ) {print $0}}' | sort -n -k ${col} | tail -${num}
+endif
+if( $col == 11 ) then
+   echo "East  Statistics: Median                                                          WRMS  NRMS  Dur   Mean"
+else
+   echo "East  Statistics: Median                           WRMS NRMS                                  Dur   Mean"
+endif
+grep 'E  1' NoX.ens | awk -v nummin=$nummin '{if ($4 >= nummin ) {print $0}}' | sort -n -k ${col} | head -${med} | tail -1 
+#
+if( $medianonly == "N" ) then
+   if( $col == 11 ) then
+      echo "Height Statistics: Best                                                           WRMS  NRMS  Dur   Mean"
+   else
+      echo "Height Statistics: Best                            WRMS NRMS                                  Dur   Mean"
+   endif
+   grep 'U  1' NoX.ens | awk -v nummin=$nummin '{if ($4 >= nummin ) {print $0}}' | sort -n -k ${col} | head -${num}
+   if( $col == 11 ) then
+      echo "Height Statistics: Worst                                                          WRMS  NRMS  Dur   Mean"
+   else 
+      echo "Height Statistics: Worst                           WRMS NRMS                                  Dur   Mean"
+   endif
+   grep 'U  1' NoX.ens | awk -v nummin=$nummin '{if ($4 >= nummin ) {print $0}}' | sort -n -k ${col} | tail -${num}
+endif
+if( $col == 11 ) then
+   echo "Height Statistics: Median                                                         WRMS  NRMS  Dur   Mean"
+else
+   echo "Height Statistics: Median                          WRMS NRMS                                  Dur   Mean"
+endif
+grep 'U  1' NoX.ens | awk -v nummin=$nummin '{if ($4 >= nummin ) {print $0}}' | sort -n -k ${col} | head -${med} | tail -1 
+#
+

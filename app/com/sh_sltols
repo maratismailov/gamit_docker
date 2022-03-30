@@ -1,0 +1,155 @@
+#!/bin/csh -f
+#
+#doc Script to convert back and forth between IGS short and long product names
+#
+# sh_sltols
+# 
+# Convert short->long and long->short IGS product names
+#
+# Forms:
+# MOD TAH 201218: Added letters for C--, reassigned GE-, Added RE-
+#
+# sh_sltols shortname <Proc> <vers> <sp3 sample> <clk sample>
+# shortname of form:
+# mie<wwww><s>.sp3/snx/clk/sum/erp
+# Codes are: 
+# mit -> G--
+# mie -> E--
+# mir -> R--
+# mic -> C--
+# mia -> MUL (GREC)
+# mib -> GR-
+# mid -> GE-
+# mig -> GRE
+# mih -> RE-
+# mif -> FIN
+# where optional:
+# <Proc>  -- Processing; default R03
+# <vers>  -- Version (default 0)
+# <sp3 sample> -- Sampling rate SP3 (default 15M) 
+# <clk sample> -- Sampling rate CLK (default 05M)
+#
+# sh_sltols longame
+# Converts back to shortnames using above codes:
+# MIT0R03G--YYYYDDD0000_01D_01D_SOL.SNX  mit<wwww><d>.snx
+# 
+
+# by Tom Herring 07/22/2020
+# end doc
+
+if ($#argv < 1) then
+        sed -e "1d" -e "/end doc/q" -e "s/#//" $0
+        exit
+endif
+
+# Set defaults:
+set proc = "R03"
+set vers = "0"
+set Osmp = "15M"
+set Csmp = "05M"
+
+# Get inname
+set inname = $1
+if( $#argv > 1 ) set proc = $2
+if( $#argv > 2 ) set vers = $3
+if( $#argv > 3 ) set Osmp = $4
+# MOD TAH 210222: Fixed Csmp assignment
+if( $#argv > 4 ) set Csmp = $5
+
+#echo $inname $proc $vers $Osmp $zCsmp
+# Strip any directory informaton from file
+set dir = $inname:h
+set file = $inname:t
+# See if file is compressed name:
+set cmp = $file:e
+if( $cmp == 'gz' ) then
+    set file = $file:r
+else
+    set cmp = ""
+endif
+
+if( `echo $file | wc -c` < 15 ) then
+#  short name: Get the peices we need
+   set cen = `echo $file | awk '{if( substr($1,1,2)=="mi" ) {print "MIT"}}'`
+   if( $#cen == 0 ) set cen = `echo $file | awk '{if( substr($1,1,2)=="ig" ) {print "IGS"}}'`
+   if( $#cen == 0 ) set cen = `echo $file | awk '{if( substr($1,1,2)=="co" ) {print "COD"}}'`
+   if( $#cen == 0 ) then
+     echo "$file center not known"
+     exit -1
+   endif
+
+#  Now get type:
+   set tail =""
+   if( $file:e == "sp3" ) set tail = "01D_${Osmp}_ORB.SP3"
+   if( $file:e == "clk" ) set tail = "01D_${Csmp}_CLK.CLK"
+   if( $file:e == "snx" ) set tail = "01D_01D_SOL.SNX"
+   if( $file:e == "sum" ) set tail = "07D_01D_SUM.SUM"
+   if( $file:e == "erp" ) set tail = "07D_01D_ERP.ERP"
+   if( `echo $tail | wc -c` < 5 ) then
+     echo "$file extent not known"
+     exit -2
+   endif
+
+#  Now get 3-letter code for solution
+#  MOD TAH 201218: Use the sh_ecode script 
+   set inp = `echo $file | awk '{print substr($1,1,3)}'`
+   # sh_cecode will return: sh_ecode mit -> GD mit G G--
+   set lst = `sh_ecode $inp`
+   if( $? == 0 ) then
+      set code = $lst[4]
+   else
+      echo "Error return from sh_ecode with input $inp"
+      exit 1
+   endif
+#  set code = `echo $file | awk '{if( substr($1,3,1)=="t" ) {print "G--"}}'`
+#  if( $#code == 0 ) set code = `echo $file | awk '{if( substr($1,3,1)=="e" ) {print "E--"}}'`
+#  if( $#code == 0 ) set code = `echo $file | awk '{if( substr($1,3,1)=="r" ) {print "R--"}}'`
+#  if( $#code == 0 ) set code = `echo $file | awk '{if( substr($1,3,1)=="c" ) {print "C--"}}'`
+#  if( $#code == 0 ) set code = `echo $file | awk '{if( substr($1,3,1)=="a" ) {print "MUL"}}'`
+#  if( $#code == 0 ) set code = `echo $file | awk '{if( substr($1,3,1)=="b" ) {print "GR-"}}'`
+#  if( $#code == 0 ) set code = `echo $file | awk '{if( substr($1,3,1)=="d" ) {print "GE-"}}'`
+#  if( $#code == 0 ) set code = `echo $file | awk '{if( substr($1,3,1)=="g" ) {print "GRE"}}'`
+#  if( $#code == 0 ) set code = `echo $file | awk '{if( substr($1,3,1)=="h" ) {print "RE-"}}'`
+#  if( $#code == 0 ) set code = "FIN"
+
+
+#  Now get date
+   set week = `echo $file | awk '{print substr($1,4,4)}'`
+   set dow  = `echo $file | awk '{print substr($1,8,1)}'`
+   if( $dow == "7" ) set dow = 0
+   set yd = `doy ${week}W $dow | head -1 | awk '{printf("_%4.4d%3.3d0000_",substr($2,1.4),$6)}'`
+   echo ${cen}${vers}${proc}${code}${yd}$tail
+
+else
+
+#  Make the short name
+   set cen = `echo $file | awk '{print tolower(substr($1,1,2))}'`
+   set yd = `echo $file | awk '{print substr($0,12,4),substr($0,16,3)}'`
+   set wd = `doy $yd | head -2 | tail -1 | awk '{printf("%4.4d %1d", $3, $7)}'`
+   set ext = `echo $file:e | awk '{print tolower($1)}'`
+   if( $ext == "erp" || $ext == "sum" ) set wd[2]=7
+
+#  Now get code letter
+   set type = `echo $file | awk '{print substr($0,8,3)}'`
+   set code = "t"
+   if( $type == "FIN" ) set code = "f"
+   if( $type == "G--" ) set code = "t"
+   if( $type == "R--" ) set code = "r"
+   if( $type == "E--" ) set code = "e"
+   if( $type == "MUL" ) set code = "a"
+   if( $type == "GR-" ) set code = "b"
+   if( $type == "GE-" ) set code = "c"
+   if( $type == "GRE" ) set code = "d"
+
+   echo ${cen}${code}${wd[1]}${wd[2]}"."${ext}
+
+endif
+
+#MIT0R03R--_20140050000_01D_15M_ORB.ERP
+
+
+
+
+ 
+
+

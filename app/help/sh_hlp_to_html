@@ -1,0 +1,52 @@
+#!/bin/tcsh -f
+#
+#doc Make .html pages from .hlp documents.
+#doc
+#
+# Last modified 07/07/04 by Simon McClusky
+#
+# location of raw help files
+set help_dir = "/data30/rwk/active/help"
+# location of help.htm links file. 
+set html_root = "/chandler/home/simon/public_html/gtgk"
+# location of hlp.htm files. 
+set html_dir = "/chandler/home/simon/public_html/gtgk/help"
+#
+#Add new incrementals text area.
+#
+# Setup header info for help.htm links file.
+\rm -r help.htm
+touch help.htm
+echo "<html>" >! help.htm
+echo "<head>" >> help.htm
+echo "<title>KF help files</title>" >> help.htm
+echo "</head>" >> help.htm
+echo "<body>" >> help.htm
+echo '<table border="0" align="left" bgcolor="#FFFFFF">' >> help.htm
+# Loop over .hpl files making .hlp.htm files and adding entries to help.htm as we go.
+set file_list = `ls -1 ${help_dir}/*.hlp`
+foreach i ( ${file_list} )
+  set file_name = `echo ${i} | awk -F"/" '{print $NF}'`
+  set name = `echo ${file_name} | awk -F"." '{print $1}'`
+  head -1 $i | awk -v fn=$file_name -v name=$name '{print "<tr\><td\><a href=\"http\://geoweb.mit.edu/~simon/gtgk/help/"fn".htm\"\>"name"</a\></td\><td\>"$0"</td\></tr\>"}' >> help.htm
+  echo "<html>" >! ${i}.htm
+  echo "<head> </head>" >> ${i}.htm
+  echo "<body>" >> ${i}.htm
+  echo "<pre>" >> ${i}.htm
+#  cat $i >> ${i}.htm
+  awk '{gsub("<","\\&LT;")} {gsub(">","\\&GT;")} {print $0}' $i >> ${i}.htm
+
+  echo "</pre>" >> ${i}.htm
+  echo "</body>" >> ${i}.htm
+  echo "</html>" >> ${i}.htm
+# Link the .hlp.htm file to a directory accessable by the web server.   
+  ln -s ${i}.htm ${html_dir}/${file_name}.htm
+end
+# Setup footer info for help.htm links file
+echo "</table>" >> help.htm
+echo "</body>" >> help.htm
+echo "</html>" >> help.htm
+# Link the help.htm file to a directory accessable by the web server.   
+ln -s ${help_dir}/help.htm ${html_root}/help.htm
+#All done
+exit

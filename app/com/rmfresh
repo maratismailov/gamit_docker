@@ -1,0 +1,83 @@
+#!/bin/csh -f
+if ($#argv == 0) then
+   echo ' '
+   echo ' Force fresh installation of GAMIT/GLOBK modules '
+   echo '  '
+   echo ' Usage:  '
+   echo ' '
+   echo '   rmfresh -d directory [-p path] [-ao] [-M] '
+   echo ' '
+   echo '     -d   directory to be refreshed: gamit, kf, solvk, or libraries (required)'
+   echo ' '
+   echo '     -p   absolute path for directory above gamit | kf | libraries --'
+   echo '          may be omitted if executed from this directory'
+   echo ' '
+   echo '     -ao  remove all .a and .o files from module directories, forcing'
+   echo '          recompilation of source '
+   echo '   '
+   echo '     -M   remove Makefile from module directories, forcing re-creation'
+   echo '          of Makefile from Makefile.generic (for new operating system'
+   echo '          new compiler, or new switches in Makefile.config '  
+   echo '  '
+   echo '     -bak remove residual *.bak files from module directories' 
+   echo ' '
+   echo '     Any residual *.trace files will always be removed.'
+   echo ' '
+   echo '     R. King from T. Herring script  -  Last modified by rwk 970110 '
+  
+else
+
+ # set defaults
+ set dir = ""
+ set progpath = .
+ set rmao =   no
+ set rmmake = no
+ set rmbak = no
+
+ # sort out user options
+ foreach a ($argv)
+ switch($a)
+	case -d:  
+       set dir = $argv[2]
+		breaksw
+	case -p:
+		set progpath = $argv[2]
+		breaksw
+	case -ao:
+		set rmao = y
+		breaksw
+	case -M:
+		set rmmake = y
+		breaksw
+   case -bak:
+       set rmbak = y
+       breaksw
+ endsw
+ shift
+ end
+         
+ if ( $dir == "" ) then
+    echo "No directory specified - exit" ; exit
+ endif
+
+ if ( $rmao == "y" ) then
+    echo Removing object and archive files from $dir directories
+    find $progpath/$dir  \( ! -type d -name '*.[oa]' \) -exec rm {} \;
+ endif
+         
+ if ( $rmmake == "y" ) then     
+    echo Removing machine-specific Makefiles from $dir directories
+    find $progpath/$dir \( ! -type d -name 'Makefile' \) -exec rm {} \;
+ endif          
+ 
+ if ( $rmbak == "y" ) then     
+    echo Removing residual bak files from $dir directories
+    find $progpath/$dir \( ! -type d -name '*.bak' \) -exec rm {} \;
+ endif          
+
+echo Removing residual trace files from $dir directories
+find $progpath/$dir \( ! -type d -name '*.trace' \) -exec rm {} \; 
+
+ endif
+
+

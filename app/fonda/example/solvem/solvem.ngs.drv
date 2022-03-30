@@ -1,0 +1,41 @@
+=========================================================================
+*          << key word controlled driving file format >>                *
+* symbol ":" must exist in command lines as index pointor               *
+* any non-blank character at first column means comment line            *
+* empty after ":" means comment line too, but line apears in out file   *
+=========================================================================
+---------- part 1 -- general i/o informations
+  apriori value file:                ngsdat.pri
+  input data file:                   solvem.ngs.dat
+  earthquake correction file:
+  sequential data file:               
+  output file:                       solvem.ngs.out
+  mapping file:                      solvem.ngs.map
+  residual file:                     solvem.ngs.res
+  strain_file:                       solvem.ngs.str   2
+  event record file:                 solvem.ngs.evt         
+* global h-file:                     hngstst.dat
+* modified network file:
+  reference frame:                   NAD27
+  parameter mode, site name format:  geocentric  char_8
+  reference coordinate, rtime:       geodetic 1950.0 
+  solution combination mode:         Gauss_Markov model
+  minimum observation condition:     1      1
+  criteria for angle,length,coor and velo(s,m,m,m/y):   3.0  1.0   0.1  0.03
+  loose constraints on e,n,u,Ve,Vn,Vu(m,m/y): 100.0 100.0 100.0  1.0 1.0 0.01
+  control key:       2
+  end: 
+---------- part 2 -- apriori informations
+  apr_frame:  enu
+  apr_value for coor. and velo.:  all  2.0 2.0 0.001    0.1 0.1 0.001
+* apr_value for coor. and velo.:  LOS2  0.01 0.01 0.01    0.001 0.001 0.001
+---------- part 3 -- constraint options
+.... Currently the constraints are in Cartesian frame.  If you want to fix
+.... the parameters in geodetic frame, please use part 2 approach.
+  constraint commands:
+* fix_parameters:  xyz  all
+  fix_parameters:  xyzuvw  LOS2
+* link_site:       LOS2 GAV2 ARGU
+  link_direction:  xyuv LOS2 GAV2
+* link_length:     xyzuvw LOS2 GAV2
+  exit:  

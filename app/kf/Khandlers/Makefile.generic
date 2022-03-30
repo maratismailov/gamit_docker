@@ -1,0 +1,16 @@
+# Generic Makefile for kf/Khandlers - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King July 22, 1996
+
+#LABELS: KalObs_hndl_lib:NONE:KalObs_hndl_lib:NONE
+  
+#SHARELIB:
+
+#OBJ_KalObs_hndl_lib   out_header    rw_KalObs_he  rw_KalObs_bl   open_KalObs   close_KalObs
+#OBJ_KalObs_hndl_lib   create_KalOb  corrupt_KalO  report_edit    wr_site_mark  extended_hea
+#OBJ_KalObs_hndl_lib   open_simulat  ifmar         rw_solvk_blo   open_solvk    close_solvk
+#OBJ_KalObs_hndl_lib   create_solvk  rw_common     rw_covar       rw_glb_covar  read_kalfile
+#OBJ_KalObs_hndl_lib   rw_Globk_blo  rw_Ema_block  open_globk     close_GLOBK   create_GLOBK
+#OBJ_KalObs_hndl_lib   clear_ema     rw_globk_com  globk_sum      rw_glb_heade  rw_names_blo
+#OBJ_KalObs_hndl_lib   get_name_fro  add_to_list   eq_name_chng   add_to_buffe  decode_code
+#OBJ_KalObs_hndl_lib   switch_ema8   switch_ema4   save_glb_apr   inc_kalver    wread
+#OBJ_KalObs_hndl_lib   wwrit         inc_rename    read_sinf_recs read_svinf_rec

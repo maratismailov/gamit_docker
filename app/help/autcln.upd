@@ -1,0 +1,76 @@
+NEW FEATURES ADDED AT VERSION 3.00
+----------------------------------
+Three new features were at a ver 3.00 of autcln.  These features are
+all assoicated with generating usuable one-way residuals from autcln
+and being able  to edit these residuals.
+
+The new commands are:
+---------------------
+
+@USE_POSTFIT <mfile name>
+
+where <mfile name> is part or all of the name of the mfile to use to
+generate the postfit residuals.  If no argument is given then the name
+is assumed to be m[dfnm]a.ddd where [dfnm] are the four characters from
+the dfile name  given in the autcln runstring.  If 1 character is given 
+hen this is assumed to the series name (i.e. a,b..) If less than 7 
+seven characters are passed then these are used as the beginning of the 
+name of the mfile.  If 7 or more characters are passed then these will 
+be used as the mfile name.
+
+If the Mfile can not be opened then a warning message is printed and
+not postfit residuals will be used.  The mfile does not need to contain
+all of the sites being used by autlcn.
+
+NOTE: Care should be taken that the mfile goes with the current cfiles
+(i.e., that model has not been re-run using different parameter values
+since the mfile was generated.)
+
+
+@APPLY_PHS_CLK [MAX Iter] [Non-int] [Converged %] [Over shoot]
+
+This command will invoke a new feature in autcln which will generate
+one-way phase residuals which should have all the clock effects from
+the ground sites and satellites removed.  The processs is done iteratively
+and the arguments allow the user to control this process.  The arguments
+are: [MAX Iter] -- Maximum number of iterations (default is 30)
+     [Non-int]  -- Number of iterations before use of non-integer bias
+                   parameters will be used in estimating the clock parameters.
+                   (Default is 3).
+     [Converged %] -- % change in the RMS of the one-way residuals between
+                   iterations that will be taken to mean the solution has
+                   converged.  (Default is 0.1 %)
+     [Over shoot] -- This option can be used to speed convergence.  At each
+                   iteration, the mean offsets of the one-way residuals are 
+                   computed and removed.  The over shoot is a multiplier
+                   used so that more that more than the mean is removed at
+                   each iteration.  The default is 1.5, and values greater
+                   2 seem to cause solutions to diverge.
+
+All of the arguments are optional with the default being used for any 
+values not passed. 
+Invoking this option will normally double the autcln runtime and should
+not effect the quality of a solve solution.  However, the RMS scatters of 
+the one-way residuals are computed and added to the summary file.  These
+can be useful when attempting to diagnose problems.
+NOTE:  The one-way residuals will only look flat when the same mfile is
+used in autcln and when data are viewed with cview.
+
+
+@POSTFIT_EDIT [Start Iter] [Nsigma] [Max Restore]
+
+This commands allows editing of phase residuals using an n-sigma
+criterion.  Apply_phs_clk is invoked when this option is used.  The
+arguments are:
+    [Start Iter] -- Start iteration number in apply_phs_clk before
+                    editting starts.  Several iterations should be
+                    made before editing.  The default is 9.
+    [Nsigma]     -- Number of sigma data to delete.  The sigma used 
+                    is the RMS scatter of the LC phase data from each
+                    site.  The default is 4.0.  LC residuals that are
+                    less than n-sigma that have been flagged due to close
+                    bias flags can be restored provided they are less
+                    then <max_restore>.
+    [Max Restore] -- Maxiumize size of an LC residual that can be restored
+                    during the n-sigma edting.  (Default is 0.5 cycles).
+

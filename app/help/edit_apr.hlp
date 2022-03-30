@@ -1,0 +1,14 @@
+EDIT_APR: VLBI data apriori editor
+
+program edit_apr
+
+This program will edit an apr file to truncate the coordinates
+to a level given by the input.  The runstring for the program is:
+
+% edit_apr [edit file] [trunc]
+
+where [edit_file] is a file containing a list of dates to be
+    "editted", acheived by placing * in column one.
+and   [trunc] is an integer giving the truncation level in meters
+
+

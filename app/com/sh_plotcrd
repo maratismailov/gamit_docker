@@ -1,0 +1,195 @@
+#!/bin/csh -f                                                  
+#
+#doc Make time series plots and histograms from glred output.
+#doc  
+# S. McClusky December 2000
+#
+if ( $#argv == 0 ) then
+  echo " Use GMT to make a histogram and/or time series plots from glred output."
+  echo " "
+  echo " USAGE: sh_plotcrd -f <files> -s <span> -k <sites>"
+  echo "  "
+  echo " OPTIONS: "
+  echo " -f[ile]      file  : Input glred or globk format .org or .prt file/s [Required]" 
+  echo " -s[pan]      span  : (long or short) Long- or short time span plots. [Default: short]"
+  echo " -e[xpt]      name  : Experiment name; optional, used for naming files and labeling plots"
+  echo " -k[ill]      sites : sites to remove from plotting."    
+  echo " -mb                : Do not remove mb_ files (save for tsview) [Default: remove]"
+  echo " -u[scale]    value : Scale uncertainties by this value"
+  echo " -res[iduals]       : Plot timeseries as residuals"
+  echo " -c[ols]      value : Number of timeseries columns to plot (1 or 2)[Default: 2]"
+  echo " -o[rder]     value : (0 or 1) Order of polynonial to fit to data [Default: 0]"
+  echo " -b[ase]      name  : Name of file containing sites to be used (blank in col 1) [Default: all]."
+  echo " -v[ert]            : Do not estimate vertical rate. [Default: estimate]"
+  echo " -cut[sig]    nsigma: Flag any N - sigma outliers in the time series. [Default: none]"
+  echo " -maxsigne    value : Maximum north and east sigma to plot in time series. [Default: all]" 
+  echo " -maxsigu     value : Maximum up sigma to plot in time series. [Default: all]" 
+  echo " -minnum      value : Minimum number of epochs for plot [Default 2] "
+  echo " -y[scale]   min max: vertical scale. If not given it will be calculated."
+  echo " -x[scale]   min max: horizontal scale. If not given it will be calculated."
+  echo " -reg[ion]   min_lat min_lon max_lat max_lon: lower left and upper right corners for region of interest."
+  echo "  " 
+  echo " EXAMPLES:   sh_plotcrd -f *.org -expt emed00"
+  echo "  " 
+  exit
+endif    
+###################### SET UP DEFAULTS ##########################
+set files = ''
+set span = 'short'
+set kill = ''
+set vert = ''
+set uscale = 1
+set res = 'no'
+set cols = 2
+set order = 0
+set orderset = 'no'
+set expt = 'ensum' 
+set minnum = 2
+set base = ''
+set edit = ''
+set maxsigne = ''
+set maxsigu = ''
+set xmin     =  0
+set xmax     =  0
+set ymin     =  0
+set ymax     =  0
+set xscale = ''
+set yscale = ''     
+set keepmb = 'no' 
+set region = ''
+################### DECIPHER COMMAND LINE #######################
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+	 case -f*:
+       set files = (`echo $argv | cut -d- -f2`); shift files
+    breaksw
+	 case -s*:
+		set span =  $input[2]
+    breaksw
+	 case -k*:
+       set kill = (`echo $argv | cut -d- -f2`); shift kill      
+    breaksw
+	 case -mb:
+		set keepmb = 'yes'
+    breaksw
+	 case -u*:
+		set uscale =  $input[2]
+    breaksw   
+    case -minnum
+      set minnum = $input[2]
+    breaksw
+	 case -res*:
+		set res =  '-res'
+    breaksw
+	 case -v*:
+		set vert =  '-vert'
+    breaksw
+	 case -c*:
+		set cols =  $input[2]
+    breaksw
+	 case -e*:
+		set expt =  $input[2]
+    breaksw    
+	 case -b*:
+		set base =  ('-s ' $input[2])
+    breaksw
+	 case -o*:
+		set order =  $input[2]
+       set orderset = "yes"
+    breaksw
+	 case -F*:
+       set FILE       =    $input[2] 
+		\rm -rf tmp.files[1-7]
+       cat  $FILE | awk 'NR >    0 && NR <=  600  {printf"%-50s ", $1 }' >! tmp.files1
+       cat  $FILE | awk 'NR >  600 && NR <= 1200  {printf"%-50s ", $1 }' >! tmp.files2
+       cat  $FILE | awk 'NR > 1200 && NR <= 1800  {printf"%-50s ", $1 }' >! tmp.files3
+       cat  $FILE | awk 'NR > 1800 && NR <= 2400  {printf"%-50s ", $1 }' >! tmp.files4
+       cat  $FILE | awk 'NR > 2400 && NR <= 3000  {printf"%-50s ", $1 }' >! tmp.files5
+       cat  $FILE | awk 'NR > 3000 && NR <= 3600  {printf"%-50s ", $1 }' >! tmp.files6
+       cat  $FILE | awk 'NR > 3600 && NR <= 4200  {printf"%-50s ", $1 }' >! tmp.files7
+	 breaksw
+    case -cut*:
+       set edit = ('-edit ' $input[2])
+    breaksw
+    case -maxsigne:
+       set maxsigne = ('-max_signe ' $input[2])
+    breaksw
+    case -maxsigu:
+       set maxsigu = ('-max_sigu ' $input[2])
+    breaksw
+    case -x:
+    case -xscale:
+       set xmin = $input[2] 
+       set xmax = $input[3]
+       set xscale = ('-x ' $xmin $xmax) 
+    breaksw
+    case -y:
+    case -yscale:
+       set ymin =  $input[2]
+       set ymax =  $input[3]
+       set yscale = ('-y ' $ymin $ymax) 
+    breaksw
+    case -reg*:
+       #set region = (`echo $argv | cut -d- -f2`); shift region     
+       # Modified to allow negative arguments, i.e. those that begin with "-", by MAF (2016-01-29, MIT)
+       set region = ( `echo "$argv" | awk -v FS=" -[bcefkmorsuvxy]" '{print $1}' | sed 's/^-reg *//'` )
+    breaksw
+  endsw
+  
+  shift argv
+end    
+             
+echo  "DEBUG expt" $expt
+echo "DEBUG edit" $edit
+
+###################### GET THE JOB DONE #########################
+# For longterm (long span) plots set the poly order = 1 by default.  
+if ( $orderset == 'no' && $span == "long" ) set order = 1
+
+#ensum <minnum> <summary_file> <values_file> <Input solution files ....>
+ensum $minnum SUM.$expt VAL.$expt $files   
+
+if ( $region[1] != '' ) then
+  echo "Plotting time series for sites contained within the region: $region"
+  if ( -e tmp.region ) \rm -r tmp.region; touch tmp.region
+# Get site names that are within the geographic range specified.
+# Extract the velocity summary from the .org file
+  foreach i ( $files )
+   cat $i | awk '/SUMMARY POSITION ESTIMATES FROM GLOBK/,/PARAMETER ESTIMATES FROM GLOBK/ {print}' | awk -v lat1=$region[1] -v lat2=$region[3] -v lon1=$region[2] -v lon2=$region[4] \
+           '{ if (substr($0,1,2) == "  " && NF == 10 &&  $2 >= lat1 && $1 >= lon1 && $2 <= lat2 && $1 <= lon2 ) {print $0}}' >> tmp.region
+  end
+  cat tmp.region | awk '{print substr($10,1,8)}' | sort -k 10 | uniq | awk '{print " ",$1}'>! region.base
+  set base = '-s region.base'
+endif
+
+# sh_historgam -f <file> -prog <name> -type <type>
+if ( $span == "short" ) then
+  sh_tshist -f SUM.$expt -prog ensum -type wrms -sk $kill -u $uscale
+  sh_tshist -f SUM.$expt -prog ensum -type nrms -sk $kill -u $uscale 
+else
+  sh_tshist -f SUM.$expt -prog ensum -type vel_wrms -sk $kill -u $uscale
+  sh_tshist -f SUM.$expt -prog ensum -type vel_nrms -sk $kill -u $uscale
+endif
+
+# multibase <values_file> <-s file> <-r/-m> <-name root> <-day> <-year> <-max_sig..>
+if ( $span == "short" ) then
+    multibase VAL.$expt -day $base $maxsigne $maxsigu
+else
+    multibase VAL.$expt -year $base $maxsigne $maxsigu
+endif
+
+#sh_baseline 
+if ($span == "short" ) then
+  echo "sh_baseline -n 3 -cols $cols -o $order -ps $expt $vert -u $uscale $edit $xscale $yscale -f mb_*"
+  sh_baseline -n 3 -cols $cols -o $order -ps $expt $vert -u $uscale $edit $xscale $yscale -f mb_* 
+else
+  echo "sh_baseline -n 3 -cols $cols -o $order $res -ps $expt $vert -u $uscale -xt $edit $xscale $yscale -f mb_*"  
+  sh_baseline -n 3 -cols $cols -o $order $res -ps $expt $vert -u $uscale -xt $edit $xscale $yscale -f mb_*   
+endif
+
+# cleanup          
+if ( $keepmb == 'no' ) then
+ \rm -r mb_*   
+endif
+\rm -r tmp.region tmp.line tmp.redt tmp.r1 tmp.dat.scale tmp_cp_wrms tmp_cp_nrms >&! /dev/null

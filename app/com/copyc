@@ -1,0 +1,19 @@
+#!/bin/csh
+if ($#argv == 0) then
+   echo ' '                                       
+   echo ' copy a bunch of C-files '
+   echo '               '
+   echo ' useage: copyc b a'
+   echo ' '
+   echo ' will COPY (not MOVE)  b-series C-files to a-series'
+   echo ' '
+else
+ foreach file ( c????$1.??? )
+   set oldser = `ls $file | awk '{print substr($1,6,1)}'`
+   set newser = $2
+   set code4  = `ls $file | awk '{print substr($1,2,4)}'`
+   set code3  = `ls $file | awk '{print substr($1,8,3)}'`
+   \cp -i c$code4$oldser.$code3 c$code4$newser.$code3
+ end #for
+endif
+

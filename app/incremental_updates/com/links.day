@@ -1,0 +1,188 @@
+#!/bin/csh -f     
+
+#  Script links.day to link from a day directory to a ../tables directory
+#  Last modified by tah 190627
+
+if ($#argv == 0) then
+   echo ' '
+   echo '    LINKS.DAY creates generic GAMIT links a day directory to an'
+   echo '    experiment tables directory'
+   echo ' '
+   echo '      e.g.  ut1.             ==> ../tables/ut1.'
+   echo '            l[expt][y].[day] ==> ../tables/lfile.'
+   echo ' '           
+   echo '      Link of session.info is optional to allow creating a new one '
+   echo '      with MAKEXP.'  
+   echo ' '
+   echo '      Use LINKS.COM to link directly to standard tables'
+   echo ' '
+   echo ' FORMAT' 
+   echo ' '
+   echo '    links.day year day expt'
+   echo ' '
+   echo ' REQUIRED '               
+   echo ' '
+   echo '    year, day, expt  = year, day-of-year, 4-char experiment name '
+   echo '                       for L-file linkname, set to l[expt][y].[day]'
+   echo ' '                                       
+   echo ' EXAMPLE'                               
+   echo ' '
+   echo '    links.day 1992 181 trex'
+   echo '  '
+   echo '  '    
+   echo ' NOTES:  1.  If you plan to run MAKEXP to produce session.info from'
+   echo '             input,  you must remove the link (rm session.info) '
+   echo '             after running this script and before running MAKEXP' 
+   echo ' '
+   echo '         2.  Also links to a read-only "core" file in gs/tables to block'
+   echo '             HP machines from dumping core ' 
+   echo ' '
+   echo '         3.  Now links autcln.cmd to ../tables.  In order to protect saved'
+   echo '             manual edit_site_sv entries, however, an existing autcln.cmd'
+   echo '             file is not removed before attempting the link.' 
+   echo '  '
+   echo '         4.  Query added Jan 98 to avoid overwriting station.info, session.info,'
+   echo '             sestbl., and sittbl.' 
+   echo ' '
+   echo '         5.  If the link to 'nbody' is empty, indicating the absence of a PEP or JPL ephemeris, "
+   echo "             then arc, model, and ngstot will revert to the old luntab., soltab., and nutabl. "
+   echo "             Otherwise, the nbody ephemeris will be read and the nutation computed by calling "
+   echo "             gamit/lib/MHB_2000 (copy of routine of same name in kf/gen_util/precess.f). "
+   echo '  '
+   echo ' '
+#   echo ' CURRENT LINKS:'  (now skipped, see below)
+#   echo '  '
+
+else      
+# create standard links in a working directory
+# 
+
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+   set yr = `sh_year -year $1`
+
+#  Link this group of global files regardless, overwriting previous tables or links
+   /bin/rm -f ut1.
+   /bin/rm -f pole.
+   /bin/rm -f nutabl.
+   /bin/rm -f soltab.
+   /bin/rm -f luntab.  
+# MOD TAH 200223: Don't remove local cooy or link                 
+#  /bin/rm -f nbody
+   /bin/rm -f gdetic.dat
+   /bin/rm -f leap.sec   
+   /bin/rm -f hi.dat
+# MOD TAH 190627: Only link svnav.dat if a local copy does
+#  not exist.  Allows use of igs_metadata.snx file. 
+#   /bin/rm -f svnav.dat
+   /bin/rm -f svs_exclude.dat
+   /bin/rm -f tform.dat  
+   /bin/rm -f antmod.dat    
+   /bin/rm -f rcvant.dat 
+   /bin/rm -f dcb.dat
+   /bin/rm -f otlcmc.dat
+   /bin/rm -f otl.grid     
+   /bin/rm -f otl.list     
+   /bin/rm -f atml.grid     
+   /bin/rm -f atml.list     
+   /bin/rm -f atl.grid     
+   /bin/rm -f atl.list     
+   /bin/rm -f map.grid     
+   /bin/rm -f map.list     
+   /bin/rm -f met.grid     
+   /bin/rm -f met.list     
+   /bin/rm -f gpt.grid     
+   /bin/rm -f eq_rename     
+
+   /bin/rm -f core
+
+# MOD TAH 190606: Tested on nbody and only link old files
+# if nbody does not exist.
+# MOD TAH 200223: See if there is ../tables/ version of nbody.  If there
+#  is use this version (same a svnav.dat below).  Use local copy if present.
+   if( ! -e nbody ) then
+      if( -e ../tables/nbody ) then
+         ln -s ../tables/nbody .
+#     Original code 
+      else if ( ! -e ~/gg/tables/nbody ) then
+         ln -s  ~/gg/tables/nutabl.${yr[1]}       nutabl. 
+         ln -s  ~/gg/tables/soltab.${yr[1]}.$1    soltab. 
+         ln -s  ~/gg/tables/luntab.${yr[1]}.$1    luntab.  
+      else   
+         ln -s  ~/gg/tables/nbody                 nbody 
+      endif
+   endif 
+
+   ln -s  ../tables/gdetic.dat      gdetic.dat  
+   ln -s  ../tables/hi.dat          hi.dat
+   ln -s  ../tables/leap.sec        leap.sec
+# MOD TAH 190627: Only link svnav.dat if a local copy does
+#  not exist.  Allows use of igs_metadata.snx file. 
+   if( ! -e svnav.dat ) then
+      ln -s  ../tables/svnav.dat       svnav.dat
+   endif
+   ln -s  ../tables/svs_exclude.dat svs_exclude.dat
+   ln -s  ../tables/tform.dat       tform.dat     
+   ln -s  ../tables/antmod.dat      antmod.dat  
+   ln -s  ../tables/rcvant.dat      rcvant.dat    
+   ln -s  ../tables/dcb.dat         dcb.dat    
+   ln -s  ../tables/otlcmc.dat      otlcmc.dat
+   ln -s  ../tables/ut1.            ut1.    
+   ln -s  ../tables/pole.           pole.      
+   ln -s  ../tables/otl.grid        otl.grid   
+   ln -s  ../tables/otl.list        otl.list   
+   ln -s  ../tables/atml.grid       atml.grid   
+   ln -s  ../tables/atml.list       atml.list   
+   ln -s  ../tables/atl.grid        atl.grid   
+   ln -s  ../tables/atl.list        atl.list   
+   ln -s  ../tables/map.grid        map.grid   
+   ln -s  ../tables/map.list        map.list   
+   ln -s  ../tables/met.grid        met.grid   
+   ln -s  ../tables/met.list        met.list    
+   ln -s  ../tables/gpt.grid        gpt.grid  
+   ln -s  ../tables/core            core 
+   ln -s  ../tables/eq_rename       eq_rename
+
+# MOD TAH 180620: Add otides.dat for arc integration: Implemented active 190606.
+# MOD TAH 200503: Checked to see if local valid copy.  If so than link to gg/tables
+#  not made.
+   if( ! -e otides.dat ) then
+      ln -sf ~/gg/tables/otides.dat            otides.dat
+   endif
+
+# Possibly unique and valuable local tables--link only if no file in directory
+   if (-e autcln.cmd) then
+     echo "autcln.cmd exists--do not create a link"
+   else
+     ln -s  ../tables/autcln.cmd   autcln.cmd
+   endif      
+   if (-e station.info) then
+     echo "station.info exists--do not create a link"
+   else
+     ln -s  ../tables/station.info station.info
+   endif
+   if (-e session.info) then
+     echo "session.info exists--do not create a link"
+   else
+     ln -s  ../tables/session.info session.info
+   endif
+   if (-e sestbl.) then
+     echo "sestbl. exists--do not create a link"
+   else
+     ln -s  ../tables/sestbl. sestbl.
+   endif
+   if (-e sittbl.) then
+     echo "sittbl. exists--do not create a link"
+   else
+     ln -s  ../tables/sittbl. sittbl.
+   endif
+
+    /bin/rm -f    l$3${yr[3]}.$2                                              
+    ln -s ../tables/lfile.   l$3${yr[3]}.$2                       
+#   
+endif
+#ls -l `find . -type l -print`
+# MOD TAH 971215: Only do ls -l if there are links in the directory
+# MOD TAH/RWK: Skip this now because of the large number of obs-file links
+# if ( `find  . -type l -print | wc | awk '{print $1}'` > 0 ) ls -l `find  . -type l -print`
+
+

@@ -1,0 +1,8 @@
+# Generic makefile for unimake
+#
+# Fonda/help directory
+
+#LABELS: help_fonda:help_fonda:NONE:fonda
+
+#SHARELIB: ../com:foncom
+

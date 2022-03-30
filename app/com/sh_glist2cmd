@@ -1,0 +1,108 @@
+#!/bin/csh -f     
+# 
+#doc Read a GLOBK glist file and create one or more input files for globk, unify_apr, and sh_makeeqdef
+#                                               
+# R. King 31 October 2013 (with mods to kf/utils/glist2cmd)
+
+if($#argv < 1) then
+more << EOF
+
+ sh_glist2cmd calls kf/utils/glist2cmd to read a glist file and create input files
+ for globk (use_site), unify_apr, and/or sh_makeeqdef using  time 
+ and space criteria specified by the user.  Output of a sig_neu source file for
+ globk and an equate source file for glorg not yet implemented
+
+   Usage: sh_glist2cmd -f [glist-file] -span [mini-span] -num [min-num] -edit [edit-file]
+                       -colloc -root [file-root] -uniapr -vel -eqdef
+
+    where [glist-file] : name of the input glist file  (only required argument)
+          [min-span]   : minimum span in years for site to be used (default 0)
+          [min-num ]   : minimum number of observations (h-files) for site to be used (default 1)
+          [edit-file]  : input controls on editing of the site list (format below)
+          colloc       : include sites within 2 km of sites included by min-span and min-num (default no)
+          [root]       : root name for the use_site and other three output files below (default 'glist')
+          uniapr       : output an input file for unify_apr 
+          vel          : output a velocity file for plotting
+          eqdef        : output an input file for sh_makeeqdef
+            
+          The use_site file is always output; others are optional.
+          
+          Format of edit_file (column 1 blank if not comment)
+           USE site1 site2 site3 ..
+           XCL site1 site2 site3 ..
+           BOX minlat minlon maxlat maxlon
+           (case insensitive, multiple USE/XCL commands allowed, up to 8 sites per keyword line)
+         
+          
+EOF
+   
+exit
+endif
+#-----   
+
+# set defaults    
+set glistfile = "''"
+set minspan = 0
+set minnum = 1
+set editfile = "''" 
+set colloc = '' 
+set root = "glist"
+set uniapr = "N"                  
+set uniaprfile = "''"
+set vel = "N"   
+set velfile = "''"  
+set eqdef = "''"    
+set eqdeffile = "''"  
+
+
+# get the arguments   
+foreach a ($argv)
+switch($a)  
+  case -f:
+    set glistfile = $argv[2]   
+    breaksw 
+  case -span:
+    set span = $argv[2]   
+    breaksw
+  case -num:
+    set num = $argv[2]
+    breaksw
+  case -edit:
+    set edifile = $argv[2]
+    breaksw    
+  case -colloc:
+    set colloc = 'colloc'
+    breaksw
+  case -root:
+    set root = $argv[2]
+    breaksw    
+  case -uniapr:  
+    set uniapr = 'Y'
+    breaksw   
+  case -vel:
+    set vel = 'Y'
+    breaksw    
+ case -eqdef:
+    set eqdef = 'Y'
+    breaksw  
+endsw 
+shift
+end                        
+                       
+# Name the output files  
+set usesitefile = $root.use_site  
+if( $uniapr == 'Y' ) then
+  set uniaprfile = $root.uniapr
+endif
+if( $vel == 'Y' ) then
+  set velfile = $root.vel
+endif                    
+if( $eqdef == 'Y' ) then
+  set eqdeffile = $root.eqsites
+endif
+                               
+# Run the program
+echo "Running glist2cmd "  
+glist2cmd $glistfile $minspan $minnum $editfile $colloc $usesitefile $uniaprfile $velfile $eqdeffile
+# glist2cmd $glistfile $minspan $minnum $editfile
+exit

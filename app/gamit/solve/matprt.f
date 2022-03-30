@@ -1,0 +1,29 @@
+      SUBROUTINE MATPRT(AMAT,WORK,IDIM,IFORM)
+C
+C PRINT A SYMMETRIC MATRIX
+C       
+      implicit none
+
+      integer*4 i,j,icnt,idim,iform,ij
+
+      REAL*8 WORK(*),AMAT(*)
+      ICNT=0
+      DO 152 I=1,IDIM
+      DO 162 J=1,I
+      ICNT=ICNT+1
+      WORK(J)=0.D0
+      WORK(J)=AMAT(ICNT)
+162   CONTINUE
+      IF(IFORM.EQ.1) WRITE(6,170) (WORK(IJ),IJ=1,I)
+CD     IF(IFORM.EQ.1) WRITE(26,170) (WORK(IJ),IJ=1,I)
+      IF(IFORM.EQ.2) WRITE(6,180) (WORK(IJ),IJ=1,I)
+CD     IF(IFORM.EQ.2) WRITE(26,180) (WORK(IJ),IJ=1,I)
+      IF(IFORM.EQ.3) WRITE(6,190) (WORK(IJ),IJ=1,I)
+CD     IF(IFORM.EQ.3) WRITE(26,190) (WORK(IJ),IJ=1,I)
+170   FORMAT(9(1X,F10.4))
+180   FORMAT(9(1X,F10.6))
+190   FORMAT(6(1X,D11.4))
+152   CONTINUE
+C
+      RETURN
+      END

@@ -1,0 +1,198 @@
+#!/bin/csh -f
+#
+#doc Find raw and rinex data using the paths that are set in tables/process.defaults
+#doc
+#
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "===================================================================================="
+  echo " Find raw and rinex data using the paths that are set in tables/process.defaults "
+  echo " "
+  echo " Usage: sh_find_data <options> "
+  echo "  "
+  echo " Where the following command-line arguments are required: " 
+  echo "  "
+  echo " -d yr day            where yr and day are to processed e.g. 1997 153 " 
+  echo " -type all/raw/rinex  sets type of data to find "
+  echo " -expt expt           4 char experiment ID (used to get correct list from sites.defaults)"
+  echo " -cmdfile             name of the file containing the sh_gamit command line arguments [default tmp.cmds]"  
+  echo "  "
+  echo " Notes:  1) procdir must be set as an environment variable before call script"
+  echo "         2) rnxfnd and/or rawfnd in process.defaults constain the paths of the directories to be searched"
+  echo "         3) localrx with the expt name must be set in sites.defaults"
+  echo "  "
+  echo "===================================================================================="
+  exit
+endif
+
+##################### SET UP DEFAULTS #############################   
+set type = 'all'
+set yr = ''
+set year = ''
+set doy = ''
+set localrx = ''
+set expt = ''
+set cmdfile = 'tmp.cmds'
+set sd = ''
+
+######## GET SAVED COMMAND FILE NAME FROM COMMANDLINE IF GIVEN  #########   
+set argv_save = `echo $argv`
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -cmdfile: 
+        set cmdfile =  $argv[2] 
+    breaksw  
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+set argv = `echo $argv_save`
+
+# Now source the process.defaults file
+source ${procdir}/tables/process.defaults 
+
+# Reset commandline options.
+source ${cpth}/$cmdfile
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+     case -d:
+        set year = $argv[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+        set yr = `sh_year -year $year`
+        set doy = $argv[3]
+
+#       Get the gpsweek
+        set jd   = `doy $yr[1] $doy | tail -n -3 | head -n 1 | awk '{print $8}'`
+        set gpsw = `doy $jd | tail -n -2 | head -n 1 | awk '{printf "%04d \n", $3}'`
+        set gpsd = `doy $jd | tail -n -2 | head -n 1 | awk '{printf "%1d  \n", substr($7,1,1)}'`
+        set year = `doy $jd | tail -n -3 | head -n 1 | awk '{printf "%04d \n", substr($2,1,4)}'`
+        set yr = `sh_year -year $year`
+        set doy  = `doy $jd | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+        breaksw
+     case -t*:
+        set type = $argv[2]
+        breaksw
+     case -e*:
+        set expt = $argv[2]
+        breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv 
+end
+
+##################### GET THE JOB DONE ############################
+#Check required fields
+if( $year == '' || $doy == '' ) then
+   echo " sh_find_data required fields not complete:- yr: $year doy: $doy "
+   exit
+endif
+
+set ts = "`hostname`:`date +"%H%M%S"`"
+
+# Tell user what is happening
+if( ($type == 'all' || $type == 'rinex') && $rnxfnd != '' ) then
+    echo 'RINEX data will be searched for in: '$rnxfnd
+endif
+if( ($type == 'all' || $type == 'raw') && $rawfnd != '' ) then
+    echo 'RAW data will be searched for in: '$rawfnd
+endif
+
+# Get list of site names for sites to be extracted from the
+# rinex find directory.
+set localrx = `sh_get_defaults -token localrx -expt $expt $sd`
+
+#------------------------------------------------------------------------
+# Start with RAW and see what we find.
+set lraw = `echo $rawfnd | wc -w`
+if( ($type == 'all' || $type == 'raw') && $lraw > 0 ) then
+   
+   pushd ${rawpth} >&! /dev/null
+
+#  Search for trimble data
+   find $rawfnd -name "????"${doy}"?.[dD]*" -print          >! tmp.1.$ts
+   find $rawfnd -name "????"${gpsw}"."${gpsd}"*" -print     >> tmp.1.$ts
+   find $rawfnd -name "????"${gpsw}${gpsd}"*" -print  >> tmp.1.$ts
+   find $rawfnd -name B"?????"${yr[2]}.${doy}"*" -print        >> tmp.1.$ts
+   find $rawfnd -name S"?????"${yr[2]}.${doy}"*" -print        >> tmp.1.$ts
+   find $rawfnd -name b"?????"${yr[2]}.${doy}"*" -print        >> tmp.1.$ts
+   find $rawfnd -name s"?????"${yr[2]}.${doy}"*" -print        >> tmp.1.$ts
+
+#  Remove any links that already exist
+   find . -type l -name "????"${doy}"?.[dDmM]*" -print       >! tmp.2.$ts
+   find . -type l -name "????"${gpsw}"."${gpsd}"*" -print    >> tmp.2.$ts
+   find . -type l -name "????"${gpsw}${gpsd}"aa.cmp*" -print >> tmp.2.$ts
+   find . -type l -name "????"${gpsw}${gpsd}"aa.trb*" -print >> tmp.2.$ts
+   find . -type l -name B"????"${yr[2]}.${doy}"*" -print        >> tmp.2.$ts
+   find . -type l -name S"????"${yr[2]}.${doy}"*" -print        >> tmp.2.$ts
+   find . -type l -name b"????"${yr[2]}.${doy}"*" -print        >> tmp.2.$ts
+   find . -type l -name s"????"${yr[2]}.${doy}"*" -print        >> tmp.2.$ts
+
+   awk '{print "\\rm -f "$1}' tmp.2.$ts >! tmp.rm.$ts
+   csh tmp.rm.$ts  >&! /dev/null
+
+#  Now make the raw links
+   cat tmp.1.$ts | awk -F/ '{print "ln -s "$0,tolower($NF)}' >! tmp.lnk.$ts
+
+   echo 'Making the following RAW links'
+   cat tmp.lnk.$ts
+   csh tmp.lnk.$ts >&! /dev/null
+
+#  Now clean up and remove temporary files:
+   \rm tmp.1.$ts tmp.2.$ts tmp.rm.$ts tmp.lnk.$ts
+   popd
+endif
+
+#----------------------------------------------------------------------
+# Now search for rinex files.  This is easier
+set lrnx = `echo $rnxfnd | wc -w`
+if( ($type == 'all' || $type == 'rinex') && $lrnx > 0 ) then
+
+   pushd ${rpth}
+
+#  Search for RINEX data
+   if ( -e tmp.1.$ts ) \rm tmp.1.$ts; touch tmp.1.$ts
+# MOD TAH 991004: Changed loop to a single find command (since this can take
+# a long time) and then egreped over output.  Also changed to egrep to allow
+# either | or blank separted list.
+   echo find $rnxfnd -name \'"????"${doy}"?."${yr[2]}"[oOdD]*"\' -print >! find.cmd.$ts
+   csh find.cmd.$ts >&! tmp.2.$ts
+   cat tmp.2.$ts
+# NOTE: There is a problem here if the directory name contains the name
+# of one of the stations (e.g., /data26/simon/tubi/rinex will cause all
+# rinex files to be linked if site tubi is desired.  Can be solved by adding
+# start of day number after the site names in the localrx variable.   
+  foreach i ( $localrx )
+     if ( ${i} == 'all_sites' ) then
+       cat tmp.2.$ts >> tmp.1.$ts 
+     else  
+       cat tmp.2.$ts | egrep -i "/${i}" >> tmp.1.$ts
+     endif 
+  end
+
+#  Remove any links that already exist
+   echo find . -type l -name \'"????"${doy}"?."${yr[2]}"[oOdD]*"\' -print >! find.cmd.$ts
+   csh find.cmd.$ts >&! tmp.2.$ts   
+#   find . -type l -name "????"${doy}"?."${yr[2]}"[oOdD]*" -print       >! tmp.2.$ts
+   awk '{print "\\rm -f "$1}' tmp.2.$ts >! tmp.rm.$ts
+   csh tmp.rm.$ts  >&! /dev/null
+
+#  Now make the new links
+   cat tmp.1.$ts | awk -F/ '{print "ln -s "$0,tolower($NF)}' >! tmp.lnk_z.$ts
+   sed -e 's/\.z$/.Z/g' tmp.lnk_z.$ts >! tmp.lnk.$ts 
+
+   echo 'Making the following RINEX links'
+   cat tmp.lnk.$ts
+   csh tmp.lnk.$ts >&! /dev/null
+#  Now clean up
+   \rm tmp.1.$ts tmp.2.$ts tmp.rm.$ts tmp.lnk.$ts tmp.lnk_z.$ts find.cmd.$ts
+   popd >&! /dev/null
+endif
+
+# Thats all
+
+
+ 
+

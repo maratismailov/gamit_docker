@@ -1,0 +1,316 @@
+ 
+*     This include file contains the defintions for the ema
+*     part of the GLOBK_COMMON block.  Here we include
+*     the large dimensioned quantities such as site positions
+*     source positions, markov and apriori variables.
+*
+*                                  9:31 AM  MON.,  3  AUG., 1987
+ 
+*   glb_ema     - First word of this part of the common 
+ 
+      integer*4 glb_ema
+ 
+*   gtai_utc    - TAI-UTC for current experiment
+*   sum_type_num(max_chi_types) - Number of values in the statistics
+*               - of the posttfit parameter residuals
+ 
+      integer*4 gtai_utc, sum_type_num(max_chi_types)
+ 
+*   apr_axo(2,max_glb_sites)       - apriori sigmas for
+*               - axis offsets and rates. (m and m/year)
+*   apr_etd_coeff(2,max_etd_coeff,max_etd_sites) - apriro
+*               - sigma for in and out of phase tidal
+*               - coefficients (m)
+*   apr_gamma  - Apriori sigma for gamma.
+*   apr_nut_ang(8) - Apriori sigmas for nutation in longitude
+*               - and obliquity angles and rates (mas and
+*               - mas/year)
+*   apr_nut_coeff(2,max_nut_coeff) - Apriori sigmas for
+*               - in and out of phase nutation series coefficient
+*               - corrections (mas).
+*   apr_ut1_coeff(2,max_ut1_coeff) - Apriori sigmas for in and
+*                 out of phase ut1 diurnal and semidiurnal 
+*                 coefficients.
+*   apr_xy_coeff(2,max_xy_coeff)   - Apriori sigmas for in and
+*                 out of phase xy diurnal and semidiurnal
+*                 coefficients.
+*   apr_rao     - Apriori sigma for ra origin for each experimemt
+*   apr_site(3,2,max_glb_sites)    - Apriori sigmas for
+*               - site XYZ and XYZ rate values (m and m/year).
+*   apr_atm(max_glb_sites)         - Apriori sigmas for zenith atmospheric
+*                 delays at sites (m)
+*   apr_neu(3,2,max_glb_sites)     - Apriori sigmsa for site NEU (m,m/y)
+*   apr_source(2,2,max_glb_sources)    - Apriori sigmas for
+*               - the source Ra Dec and Ra Dec rate values (mas
+*               - and mas/year).
+*   apr_svs(max_svs_elem, max_glb_svs)    - Apriori sigmas for the 
+*                 max_svs_elem orbital
+*                 parameters of a satellite (X,Y,Z, Xdot, Ydot, Zdot,
+*                 Along, cross and radial forces (m and m/s for
+*                 positions
+*   apr_tid(3,max_glb_sites)   - Tidal apriori sigmas (h,l
+*               - and lag) (dimensionless and deg)
+*   apr_tran(3,2) - sigmas for translation parameters and rates.
+*   apr_scale(2)  - Apriori sigmas for scale (ppb) and rate of
+*                   change (ppb/yr).
+*   apr_wob(8)  - Apriori sigmas for wobble x and y for
+*               - offset, rate, seasonal offset and rate, and
+*               - random walk and integrated random walk (mas
+*               - mas/year)
+*   apr_ut1(6)  - Apriori sigmas for UT1-AT offset, rate
+*               - and two different seasonal terms (usually
+*               - annual and semiannual)  (mas and mas/year)
+*   apr_eor_ut1(4) - Apriori sigmas for the diurnal and semidiurnal
+*                 ut1 cos and sin signals (mas)
+*   apr_eor_xy(6)  - Apriori sigmas for the diurnal and semidiurnal
+*                 xy pole position. (mas)
+*   apr_eor_etd(12,max_glb_sites) - Apriori sigmas for the diurnal 
+*                 and semidiurnal extended Earth tide parameters.(m)
+*   apr_rot(3,2) -- Apriori sigmas for rotation parameters (mas and mas/day)
+
+*   mar_tran(3,3)  - Markov variances for translations (m**2/yr)  and
+*                    rates (m/yr)**/yr; and a white noise process which
+*                    different networks at the same epoch to translate
+*                    by different amounts.
+* MOD TAH 130716: Added white noise process noise to markov scale parameter
+*   mar_scale(4)   - Markov variances for scale (ppb**2/yr and
+*                    (ppb/yr)**2/yr. Element 3: White noise (ppb**2)
+*                    4th element needed for padding
+*   mar_axo(2,max_glb_sites)       - markov variances for
+*               - axis offsets and rates. (m**2/year and
+*               - (m/year)**2/year)
+*   mar_nut_ang(8) - Markov variances for nutation in longitude
+*               - and obliquity angles and rates (mas**2/year and
+*               - (mas/year)**2/year
+*   mar_site(3,2,max_glb_sites)    - Markov variances for
+*               - site XYZ and XYZ rate values (m**2/year and
+*               - (m/year)**2/year.
+*   mar_atm(max_glb_sites) - Markov variances for atmospheric delays (m^2/yr)
+*   mar_neu(3,2,max_glb_sites)     - Markov variances for site NEU 
+*                 position and rate (m**2/yr and (m/y)**2/y
+*   mar_source(2,2,max_glb_sources)    - Markov variances for
+*               - the source Ra Dec and Ra Dec rate values
+*               - (mas**2/year and (mas/year)**2/year.
+*   mar_svs(max_svs_elem,max_glb_svs)  - Markov varinaces for the SV
+*                 orbit parameters. (Unit**2/year)
+*   mar_wob(8)  - Markov variances for wobble x and y for
+*               - offset, rate, seasonal offset and rate, and
+*               - random walk and integrated random walk
+*               - (mas**2/year and (mas/year)**2/year
+*   mar_ut1(6)  - Markov variances for UT1-AT offset, rate
+*               - and two different seasonal terms (usually
+*               - annual and semiannual)  (mas**2/year and
+*               - (mas/year)**2/year)
+*   mar_eor_ut1(4) - Random walk parameter for eor_ut1 (mas**2/yr)
+*   mar_eor_xy(6)  - Ransom walk parameter for eor_xy (mas**2/yr)
+*   mar_eor_etd(12,max_glb_sites) - Random walk for eor_etd (m**2/yr)
+*   mar_rot(3,3)   - Rotation markov process noise (mas**2/yr and
+*                 (mas/day)**2/year, mas**2 as a time independent 
+*                    offset process noise
+ 
+*   nut_period  - Period of FCN (days)
+*   nut_Q       - disipation Q for FCN
+ 
+*   sum_type_wgh(max_chi_types) - Weightes for rms scatter of of
+*               - post fit parameter residuals
+*   sum_type_res(max_chi_types) - Summ of residuals**2*wgh
+ 
+*   sw_freq(2)  - Seasonal wobble frequencies for x anf y pole
+*               - (cycles/year)
+*   sw_damp(2)  - Seasonal damping constants for x and y pole
+*               - (/year)
+*   su_freq(2)  - Two seasonal frequencies for UT1 (cycles/year)
+*   su_damp(2)  - two seasonal dampings for UT1 (/year)
+ 
+*   wob_period  - Period of chandler wobble (days)
+*   wob_Q       - dispation Q for wobble
+*   sig_val_site(3,2,max_glb_sites)    - Sigmas of Apriori values for
+*               - site XYZ and XYZ rate values (m and m/year).  If not
+*                 in apr_files, then assummed large (1 m and 1 m/y)
+ 
+      real*4 apr_axo(2,max_glb_sites), 
+     .    apr_etd_coeff(2,max_etd_coeff,max_etd_sites),
+     .    apr_gamma, apr_nut_ang(8), apr_nut_coeff(2,max_nut_coeff),
+     .    apr_ut1_coeff(2,max_ut1_coeff), apr_xy_coeff(2,max_xy_coeff),
+     .    apr_rao, apr_site(3,2,max_glb_sites), 
+     .    apr_neu(3,2,max_glb_sites), apr_atm(max_glb_sites),
+     .    apr_source(2,2,max_glb_sources), 
+     .    apr_svs(max_svs_elem,max_glb_svs),
+     .    apr_tid(3,max_glb_sites),
+     .    apr_tran(3,2), apr_scale(2), apr_wob(8), apr_ut1(6),
+     .    apr_eor_ut1(4), apr_eor_xy(6), apr_eor_etd(12,max_glb_sites),
+     .    apr_rot(3,2),
+     .    mar_tran(3,3), mar_scale(4), 
+     .    mar_axo(2,max_glb_sites), mar_nut_ang(8),
+     .    mar_site(3,2,max_glb_sites), mar_neu(3,2,max_glb_sites),
+     .    mar_atm(max_glb_sites), mar_source(2,2,max_glb_sources), 
+     .    mar_svs(max_svs_elem,max_glb_svs), 
+     .    mar_wob(8), mar_ut1(6), 
+     .    mar_eor_ut1(4), mar_eor_xy(6), mar_eor_etd(12,max_glb_sites), 
+     .    mar_rot(3,3),
+     .    nut_period, nut_Q,
+     .    sum_type_wgh(max_chi_types), sum_type_res(max_chi_types),
+     .    sw_freq(2), sw_damp(2), su_freq(2), su_damp(2), wob_period,
+     .    wob_Q, sig_val_site(3,2,max_glb_sites)
+C    .   , dummy4
+ 
+*   apr_val_axo(2,max_glb_sites)       - apriori values for
+*               - axis offsets and rates. (m and m/year)
+*   apr_val_etd_coeff(2,max_etd_coeff,max_etd_sites) - apriro
+*               - value for in and out of phase tidal
+*               - coefficients (m)
+*   apr_val_gamma  - Apriori value for gamma.
+*   apr_val_nut_ang(8) - Apriori values for nutation in longitude
+*               - and obliquity angles and rates (mas and
+*               - mas/year)
+*   apr_val_nut_coeff(2,max_nut_coeff) - Apriori values for
+*               - in and out of phase nutation series coefficient
+*               - corrections (mas).
+*   apr_val_ut1_coeff(2,max_ut1_coeff) - Apriori values for in and
+*                 out of phase ut1 diurnal and semidiurnal
+*                 coefficients.
+*   apr_val_xy_coeff(2,max_xy_coeff)   - Apriori values for in and
+*                 out of phase xy diurnal and semidiurnal
+*                 coefficients.
+
+*   apr_val_site(3,2,max_glb_sites)    - Apriori values for
+*               - site XYZ and XYZ rate values (m and m/year).
+*   apr_val_mar(max_glb_sites) - Apriori values for the atmospheric 
+*                 delays (m)
+*   apr_val_log(3,max_glb_sites)  - Apriori values for the log terms
+*                 at a site (assumes eq_rename used). (m)
+*   apr_val_source(2,2,max_glb_sources)    - Apriori values for
+*               - the source Ra Dec and Ra Dec rate values (mas
+*               - and mas/year).
+*   apr_val_svs(max_svs_elem,max_glb_svs) - Apriori values for the satellite
+*                 orbits.  These values are read from a file as the
+*                 solution runs.   Values initialized to -999 to test
+*                 for change.
+*   apr_val_ant(3,max_glb_svs) -- User set antenna offsets which will
+*                 replace the values in the svs_file. 
+*   apr_val_tid(3,max_glb_sites)   - Tidal apriori values (h,l
+*               - and lag) (dimensionless and deg)
+*   apr_val_wob(8)   - Apriori values for wobble x and y for
+*               - offset, rate, seasonal offset and rate, and
+*               - random walk and integrated random walk (mas
+*               - mas/year)
+*   apr_val_ut1(6)  - Apriori values for UT1-AT offset, rate
+*               - and two different seasonal terms (usually
+*               - annual and semiannual)  (mas and mas/year)
+*   apr_val_mul_pmu(2,3,max_mul_pmu)  - Apriori values for the 
+*                 multiple pmu values.
+*   apr_val_eor_ut1(4) - apriori values for eor_ut1 
+*   apr_val_eor_xy(6)  - apriori values for eor_xy (mas**2/yr)
+*   apr_val_eor_etd(12,max_glb_sites) - apriori values for 
+*                        eor_etd (m**2/yr)
+*   apr_val_nonsec(8,max_nonsec)  - Non-secular parameters for station
+*                  positions.  The order is:
+*                  JD -- Julian date either for periodic 0 phase
+*                        of start of exponential/logarithm/steps
+*                  parameter -- Either period or delay times (days)
+*                  Paired for X Y and Z (read in as NEU and converted)
+*                  coef 1    -- Exponential/logarithm constant;
+*                               cosine term or offset (m)
+*                  coef 2    -- skipped for exponential and log,
+*                               sine term (m) or rate change (m/yr)
+*                  (see also I*4 param_nonsec(2,max_nonsec)
+*   est_val_nonsec(8,max_nonsec) -- Parameters for the estimated values
+*       of the non-secular terms.  (param_est_nons defines the other 
+*       parameters of the non-secular estimates).
+
+*   vnut_ang_apr(8) - New values of nutation angles (only first two
+*                 used.
+ 
+*   axo_epoch(max_glb_sites)    - Epochs for the axis offset values
+ 
+*   gnut_ang_apr(8) - Nuatation angle aprioris used to process the
+*               - the data.  These values updated for each experiment
+*   gwob_apr(8) - Apriori values for wobble parmeters used in
+*               - processing the SOLVK run.
+*   gut1_apr(6) - Apriori values for UT1 model used to processed
+*               - the data in SOLVK run.
+*   gepoch_end  - Epoch at end of global solution (last eperiment)
+*   gepoch_expt - Epoch of current experiment
+*   gepoch_out  - Epoch for output of solution and binary hfile. 
+*                 Normally this is gepoch_expt unless midp option is
+*                 selected.
+*   gepoch_prev - Epoch of previous experiment
+*   gepoch_start    - Epoch at start of global solution (first exp)
+
+*   gmul_pmu_ep(max_mul_pmu) -  List of epochs for the multi-pmu
+*                 parameters for the current global file.
+ 
+*   site_epoch(max_glb_sites)   - epochs of the site positions
+*               - read from apriori file
+*   source_epoch(max_glb_sources)   - Epochs of the source positions
+*               - read from apriori file
+*   svs_epoch(max_glb_svs)          - Epochs of the SV ephemeris.
+*               May change as data are read in.
+
+      real*8 apr_val_axo(2,max_glb_sites),
+     .    apr_val_etd_coeff(2,max_etd_coeff,max_etd_sites), 
+     .    apr_val_gamma,
+     .    apr_val_nut_ang(8), apr_val_nut_coeff(2,max_nut_coeff),
+     .    apr_val_ut1_coeff(2,max_ut1_coeff), 
+     .    apr_val_xy_coeff(2,max_xy_coeff), 
+     .    apr_val_site(3,2,max_glb_sites), apr_val_atm(max_glb_sites),
+     .    apr_val_log(3,max_glb_sites), 
+     .    apr_val_source(2,2,max_glb_sources),
+     .    apr_val_svs(max_svs_elem, max_glb_svs), 
+     .    apr_val_ant(max_svs_elem, max_glb_svs), 
+     .    apr_val_tid(3,max_glb_sites), apr_val_wob(8), apr_val_ut1(6),
+     .    apr_val_mul_pmu(2,3,max_mul_pmu),
+     .    apr_val_eor_ut1(4), apr_val_eor_xy(6), 
+     .    apr_val_eor_etd(12,max_glb_sites), vnut_ang_apr(8),
+     .    axo_epoch(max_glb_sites), gnut_ang_apr(8), gwob_apr(8),
+     .    gut1_apr(6), gepoch_end, gepoch_expt, gepoch_out, 
+     .    gepoch_prev, gepoch_start, site_epoch(max_glb_sites),
+     .    source_epoch(max_glb_sources), svs_epoch(max_glb_svs),
+     .    gmul_pmu_ep(max_mul_pmu), apr_val_nonsec(8,max_nonsec),
+     .    est_val_nonsec(8,max_nonsec)
+
+* apr_sig_nonsec(2,max_nonsec) -- Apriori sigmas for the estimated 
+*     non-secular terms
+
+      real*4 apr_sig_nonsec(2,max_nonsec) 
+
+*   last_glb_ema    - Last word of this section of the common file
+*   glb_ema_dummy(127)   - Padding at the end for when file is
+*                   - read.
+ 
+ 
+      integer*4 last_glb_ema, glb_ema_dummy(127)
+
+*-------------------------------------------------------------------
+*     Common Declaration
+ 
+      common / glb_ema_block / glb_ema, gtai_utc, sum_type_num,
+     .    apr_axo, apr_etd_coeff, apr_gamma, apr_nut_ang,
+     .    apr_nut_coeff, apr_ut1_coeff, apr_xy_coeff,
+     .    apr_rao, apr_site,  apr_neu, apr_atm,apr_source, 
+     .    apr_svs, apr_tid,
+     .    apr_tran, apr_scale, apr_wob, apr_ut1, apr_val_mul_pmu,
+     .    apr_eor_ut1, apr_eor_xy, apr_eor_etd, apr_rot,
+     .    mar_tran, mar_scale, 
+     .    mar_axo, mar_nut_ang, mar_site, mar_neu, mar_atm, 
+     .    mar_source, mar_svs, mar_wob, mar_ut1, 
+     .    mar_eor_ut1, mar_eor_xy, mar_eor_etd, mar_rot,
+     .    nut_period, nut_Q,
+     .    sum_type_wgh, sum_type_res, sw_freq, sw_damp, su_freq,
+     .    su_damp, wob_period, wob_Q, sig_val_site, 
+C    .    dummy4,
+     .    apr_val_axo, apr_val_etd_coeff,
+     .    apr_val_gamma, apr_val_nut_ang, apr_val_nut_coeff,
+     .    apr_val_ut1_coeff, apr_val_xy_coeff,
+     .    apr_val_site, apr_val_atm, apr_val_log, apr_val_source, 
+     .    apr_val_svs, apr_val_ant,
+     .    apr_val_tid, apr_val_wob,
+     .    apr_val_ut1, apr_val_eor_ut1, apr_val_eor_xy, apr_val_eor_etd,
+     .    vnut_ang_apr, axo_epoch, gnut_ang_apr, gwob_apr, gut1_apr,
+     .    gepoch_end, gepoch_expt, gepoch_prev, gepoch_start,
+     .    site_epoch, source_epoch, svs_epoch, gmul_pmu_ep, 
+     .    apr_val_nonsec, est_val_nonsec,
+     .    apr_sig_nonsec, gepoch_out,
+ 
+     .    last_glb_ema, glb_ema_dummy
+ 

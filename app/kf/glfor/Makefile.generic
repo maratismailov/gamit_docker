@@ -1,0 +1,57 @@
+# Generic Makefile for kf/glfor - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King July 23, 1996
+
+#LABELS: glfor:glfor_main:glfor_lib:glfor
+ 
+#SHARELIB: ../globk:globk_lib 
+#SHARELIB: ../Khandlers:KalObs_hndl_lib  
+#SHARELIB: ../gen_util:gen_util_lib
+#SHARELIB: ../../libraries/matrix:kinv_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+
+#OBJ_glfor_lib glfor
+#OBJ_glfor_lib decode_glfor
+#OBJ_glfor_lib	get_param_co
+#OBJ_glfor_lib	glb_o_minus_
+#OBJ_glfor_lib	compute_OC
+#OBJ_glfor_lib	site_OC
+#OBJ_glfor_lib	source_OC
+#OBJ_glfor_lib	glb_partials
+#OBJ_glfor_lib	clear_pnt
+#OBJ_glfor_lib	compute_part
+#OBJ_glfor_lib	site_partial
+#OBJ_glfor_lib	site_rate_pa
+#OBJ_glfor_lib	pmu_part
+#OBJ_glfor_lib	add_partial
+#OBJ_glfor_lib	source_parti
+#OBJ_glfor_lib	nut_ang_part
+#OBJ_glfor_lib	scan_parm
+#OBJ_glfor_lib	nut_coeff_pa
+#OBJ_glfor_lib	gamp_parts
+#OBJ_glfor_lib	get_max_glbd
+#OBJ_glfor_lib	coeff_OC
+#OBJ_glfor_lib	glb_for_filt
+#OBJ_glfor_lib	glb_predict
+#OBJ_glfor_lib	out_cov
+#OBJ_glfor_lib	get_trans_co
+#OBJ_glfor_lib	init_glb_cov
+#OBJ_glfor_lib	glb_kalman_g
+#OBJ_glfor_lib	glb_dot_part
+#OBJ_glfor_lib	glb_update
+#OBJ_glfor_lib	eq_glb_pred
+#OBJ_glfor_lib	eq_effected
+#OBJ_glfor_lib find_preq
+#OBJ_glfor_lib	glb_inc_pref
+#OBJ_glfor_lib	remove_param
+#OBJ_glfor_lib	codes_to_par
+#OBJ_glfor_lib	glb_upd_apr
+#OBJ_glfor_lib	rn_app_dpos
+#OBJ_glfor_lib	get_mar_svs
+#OBJ_glfor_lib read_pmu_inp
+#OBJ_glfor_lib print_pmu
+#OBJ_glfor_lib app_ptide
+#OBJ_glfor_lib mul_pmu_pred
+#OBJ_glfor_lib eval_nonsec
+#OBJ_glfor_lib change_load
+#OBJ_glfor_lib ptd_status
+

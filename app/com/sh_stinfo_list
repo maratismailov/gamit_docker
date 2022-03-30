@@ -1,0 +1,44 @@
+#!/bin/csh -f
+
+# Null input or help test
+if ( $#argv == 0 || "$argv" =~ '*[ -]-h*' ) then
+  cat << END && exit
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+  Program:     sh_stinfo_list
+  Written by:  Michael A Floyd (2012/01/21, MIT)
+  Last edited:
+
+  Usage: sh_stinfo_list -f <list of RINEX files> -s <list of station.info files>
+
+  Description:
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+END
+endif
+
+# Parse command line arguments
+while ( $#argv )
+  switch ( $argv[1] )
+    case -f:  # RINEX files
+      set rinex = ( `echo $argv[2-] | awk -F' -[fs]' '{print $1}'` )
+      breaksw
+    case -s:  # station.info files
+      set stinfo = ( `echo $argv[2-] | awk -F' -[fs]' '{print $1}'` )
+      breaksw
+    default:
+      breaksw
+  endsw
+  shift
+end
+
+# Get list of sites from RINEX file names
+set sites = ( `ls -1 $rinex | awk -F'/' '{print substr($NF,1,4)}' | tr '[:upper:]' '[:lower:]' | sort -u` )
+
+# For each site, read station.info files for entries
+rm -f stinfo.list
+foreach site ( $sites )
+  set found = ( `grep -Hi "^ $site" $stinfo | cut -d':' -f1 | awk -F'/' '{print $NF}' | sed 's/station\.info\.//' | sort -u` )
+  echo "$site $found" >> stinfo.list
+end
+

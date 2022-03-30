@@ -1,0 +1,370 @@
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+                      Release Notes for GAMIT/GLOBK 10.71
+
+                              Monday 9 March 2020
+
+--------------------------------------------------------------------------------
+
+Release 10.71 consolidates incremental updates made since release 10.70 of June
+2018 and completes modifications to GAMIT following recommendations for the
+IGS's repro3. Significant changes of which most users should be aware are:
+
+- The radiation pressure model is expanded from 9 to 13 parameters, adding two
+  twice-per-revolution (2/rev) and two 4/rev terms. GAMIT will carry all 13
+  parameters, designated "ECOMC" (for Empirical CODE Models 1 and 2 combined) in
+  tables/sestbl. In generating fits to the IGS orbits, we recommend using ECOMC
+  (the default). Note that if you estimate orbits in GAMIT ("RELAX." in
+  tables/sestbl.) you cannot mix in GLOBK the 10.71 processing with pre-10.71
+  processing that uses the 9-parameter (BERNE or ECOM1) models. When combining
+  regional processing with MIT or SIO global h-files, you should always run
+  GAMIT without orbit estimation ("BASELINE" in tables/sestbl.), as we have long
+  recommended. Even with the same version, different choices of orbit modeling
+  parameters are likely to make the MIT combined binary-files incompatible with
+  recently processed. If BASELINE model is used in the GAMIT processing, the
+  incompatibilities will be minor but in RELAX mode they can be severe (high
+  chi^2 increments). Removing all "apr_svs", "mar_svs", "apr_rad" and "mar_rad"
+  options in the GLOBK command file should minimize the effects of
+  incompatibilities.
+
+- Beidou processing now uses L6/C6 (B3 at 1268.53 MHz) rather than L7/C7 (B2b at
+  1207.140 MHz) as the lower-frequency observable to accommodate the tracking
+  configuration of most of the current GNSS receivers providing public data.
+  Based on a sampling of 230 RINEX files from the archives, about 50% include
+  only L6/C6 compared with about 5% that include only L7/C7. The higher-
+  frequency observable will remain L2/C2 (B1-2 at 1561.098 MHz) since very few
+  of the public RINEX files contain L1/C1 from the B1 at 1575.42 MHz transmitted
+  by BDS 3 satellites. If L7/C7 is the only observable present (i.e., no L6/C6),
+  GAMIT will try to process the data along with L7/C7 receivers but there may be
+  ambiguity resolution issues. Users should assess data files and process
+  together only those sites with the same frequency data. There are still some
+  issues with clock estimates for Beidou data and pre-fit editing in autcln.
+
+- The default tables/sestbl. now has the 2nd-order ionosphere model turned on.
+  The IGSG IONEX files will be used by default. If processing near-real time,
+  the "-ion igrg" option should be used with sh_gamit. We also recommend always
+  including the "Inertial Reference System" option (current default "IAU0A")
+  explicitly.
+  
+- tables/svnav.dat is now linked to the IGS satellite metadata SINEX file
+  (igs_metadata.snx). Release 10.70 and earlier versions of GAMIT cannot read
+  this file format and svnav.dat needs to be linked to svanv.dat.allgnss, which
+  will be maintained for the foreseeable future. Several changes to files in the
+  tables/ directory may be incompatible with early versions of GAMIT.
+
+- The tables/station.info file now accommodates another optional column
+  ("AntDAZ" in the header line) to specify the azimuth (clockwise from true
+  north) of the antenna. Conventionally antennas are aligned with true north but
+  some (and likely many others that we don't know about yet) are recorded as set
+  to another azimuth. The "AntDAZ" azimuth is read to rotate the phase center
+  offsets (PCOs) and phase center variations (PCVs) from the ANTEX file
+  (tables/antmod.dat) to correct for the azimuth of the antenna. sh_upd_stnfo
+  can extract this information from IGS log files if the AntDAZ header is
+  included (users should ensure that there are no non-numeric values in the
+  columns below AntDAZ; white space in OK). The IGS will not implement this
+  feature until ITRF2020 is released (that is, it will be part of repro3 but not
+  the operational processing).
+
+- We have changed many symbolic links in tables/ to be relative, rather than
+  absolute, which assume that users install a local GRIDS/ directory at the same
+  level as the source code (e.g. gamit/, libraries/, kf/, maps/, tables/, etc.),
+  where grids downloaded from ftp://everest.mit.edu/pub/GRIDS/ should be stored.
+  Creation of specific symbolic links, e.g. atml.grid, map.grid, met.grid, by
+  the user to the corresponding grid files is then no longer necessary.
+
+- sh_gamit now will remake g-files from SP3 files each time it is run to ensure
+  that the orbit models in tables/sestbl. are consistent with the sh_sp3fit
+  models (these models are now read from sestbl. provided a copy can be found in
+  the standard processing directories). For sub-network processing, g-files
+  should be made once before proceeding to process each sub-network (assumed to
+  be in parallel) using the "-remakeg N" option used with sh_gamit.
+
+- We remind users that when processing GLONASS data the ambiguity free (.glr) 
+  binary h-files should be used in GLOBK. Also remember that a multi-GNSS orbit
+  file should be used as well.
+
+- The format for the "apr_svs" and "mar_svs" radiation parameters specification
+  in the GLOBK command file has changed, with the unused "zrad" and "xrad"
+  entries removed (see Pre 5.32 and Post 5.32 discussion in help/globk.hlp). The
+  options using the "<nn.nn>R" format remains unchanged. Older globk commands
+  with explicit radiation parameter constraints and process noise may need to be
+  updated.
+
+- GLOBK has moved to using "<GNSS><SVN>_<PRN>" syntax for satellite identifiers
+  in output files (e.g. the .org-file), where <GNSS> is G, R, E or C, and SVN
+  and PRN are Satellite Vehicle Number and Pseudo-Random Noise code,
+  respectively. For GPS, the default is still PRN<PRN>_<SVN>. The new format for
+  GPS can be invoked with the "use_prn n" command near the top of the command
+  file. (See help/globk.hlp.)
+
+- New wild card features in file names now allow dates and times to be used
+  based on the date and time of the h-file being processed. (See 5.32 features
+  in help/globk.hlp.)
+
+- GLOBK can now do reference frame realization in back solutions. This will
+  happen automatically if GLORG is invoked in a GLOBK command file with the
+  "bak_file" option included.
+
+- We will no longer provide GMT .grd-files in the maps/ directory to reduce the
+  size of the archive (.tar) files. Instead we now provide a new script,
+  sh_dem, which will download and create a local copy of a chosen digital
+  elevation model (DEM) over a geographic region, both selected using the script
+  options. The script is now called by sh_plotvel if the "-topo", "-topo_file"
+  and/or "-illu_file" options are used; if the latter is given without an
+  argument, sh_plotvel will create a .grd-file of the gradient for plotting
+  shaded-relief (illumination) from the topographic .grd-file named or created
+  with the "-topo_file" option. Both sh_dem and sh_plotvel require GMT to run.
+
+- GMT version 6.0.0 was released in November 2019. Scripts in com/ that use GMT
+  to produce plots were updated for GAMIT/GLOBK 10.6 to accommodate major
+  changes in the syntax of GMT version 5 commands (see relnote.10.6); the old
+  scripts, using GMT 4 syntax, are still available in com_preGMT5/ but are no
+  longer maintained. Although we have not done extensive testing yet, we
+  understand that GMT 6 is fully backwards compatible with GMT 5 (e.g.
+  https://docs.generic-mapping-tools.org/6.0/migrating.html) and should work
+  seamlessly with our scripts currently in com/, which explicitly call "gmt"
+  (now the sole GMT executable) throughout.
+
+- We have become aware that the GMT installation available via the software
+  repository for Ubuntu 16.04 LTS does not include the supplemental programs,
+  most significantly psvelo for GAMIT/GLOBK. We recommend upgrading your
+  Ubuntu operating system or building GMT from source. See
+  https://gmt.soest.hawaii.edu/projects/gmt/wiki/Installing#Linux and our "Known
+  Issues" web page at http://geoweb.mit.edu/gg/issues.php for more information.
+
+- We have also become aware that there seems to be an issue with the
+  implementation of gfortran version 7 on at least Ubuntu 18.04 LTS and openSUSE
+  Leap 15.1 operating systems, resulting in failed compilation with segmentation
+  fault error messages, including "See <file:///usr/share/doc/gcc-7/README.Bugs>
+  for instructions." We recommend upgrading to another version of gcc/gfortan,
+  or downgrading to gcc/gfortran version 6. See our "Known Issues" web page at
+  http://geoweb.mit.edu/gg/issues.php for more information.
+
+--------------------------------------------------------------------------------
+
+Summary of specific changes for 10.71 (by directory):
+
+- com/
+
+links.arc, links.com, links.day: Updated to link otides.dat and to avoid linking
+                                 the old ephemeris files (soltab., luntab.,
+                                 nutabl.) if ~/gg/tables/nbody exists. Fixed
+                                 typos.
+
+sh_cleanup: Added missing closing curly bracket in test to remove n-files on
+            lines 386 and 387. Floyd/Pickle 190507
+
+sh_gamit: Revert to using GPS-only RINEX 2 instead of MGEX RINEX 3 nav files
+          when processing GPS data since sh_rx2apr (svpos/svdiff) doesn't yet
+          recognize RINEX 3.
+          Fix bug in naming files for -jclock sp3 option.
+          Fixed a typo in call to sh_setup causing the lfile not to be updated
+          from the .apr-file.
+          Correct version number - now 10.70 2019/8/14.
+
+sh_get_orbits: Placed $noclean variable in quotes in if-test at end to ensure a
+               string match rather than interpretation as a test, which causes
+               an error.
+
+sh_glred: Removed debug statement that forced archiving of the binary h-files.
+
+sh_hector: Minor edits to some awk commands.
+
+sh_makex: Initialize the sp3file variable to avoid a problem when running stand-
+          alone.
+
+sh_otlcmc: New script to create tables/otlcmc.dat file from .cmc-files at
+           http://holt.oso.chalmers.se/loading/CMC/.
+
+sh_plot_elmean: Updated color scheme to work with GMT 5. Small changes to line
+                widths.
+
+sh_rx2apr: Updated grep commands to select only records that begin with a space
+           before the site ID, ignoring any "EXTENDED" records that may be in
+           the .apr file.
+
+sh_sp3fit: Fix bug in writing model names for the ARC input file.
+
+sh_tshist: Updated script to fully implement pos_res type. Original only
+           partially updated from com_pre5GMT version.
+
+sh_upd_stnfo (and kf/htoglb/mstinf.[fh]): Added -debug option to help diagnose
+                                          problems with bad year in IGS logfiles
+                                          and fixed a bug associated with first
+                                          antenna starting after the first
+                                          receiver entry.
+
+sh_update_dcb: Added explicit internal test for presence of tables/svnav.dat,
+               needed for gamit/utils/dcbtab2.
+
+sh_update_eop: Updated to circumvent the shutdown of maia.usno.navy.mil and
+               toshi.nofs.navy.mil from 2019-10-24 to 2020-04-30.
+
+- gamit/
+
+orbits/kouba_gps.f, orbits/oversn.f; arc/ertorb.f, arc/earthradTUM.f,
+  arc/aversn.f; lib/gpsblock.f, lib/lversn.f: Updated for Block IIIA SV.
+                                              WARNING: Will recongize GPS Block
+                                              IIIA but use IIF values for Earth
+                                              radiation pressure and yaw.
+
+arc/satprop.f, arc/earthradTUM.f: Updated for Block III SV. Temporarily use IIF
+                                  Earth radiation model for Block IIIA for NCLE1
+                                  (set for TUM1) and remove debug print from
+                                  earthradTUM.f.
+
+arc/sbfn: Fix bug in effect of General Relativity on satellite (~8 mm over 24
+          hrs).
+
+includes/makex.h, lib/rrinex.f: Increase maximum line length to 1024, and
+                                associated maximum observables allowed in
+                                rrinex.f and "MAXOBT" in makex.h to 63, to
+                                accommodate long records in RINEX 3 files.
+
+lib/clkera: Erroneous extra read of "clkoff", apparently a problem with Intel
+            compiler but not gfortran.
+
+lib/linear.f, model/get_antinfo.f, model/get_antpcv.f, model/get_svantpcv.f:
+                          Fix problem with interpolation of elevation-only PCVs.
+
+lib/rrxhed.f: Skipped reading of SV-dependent wavelength factors in a RINEX
+              header since this feature is not yet supported.
+
+lib/sel_obtyp.f: Fix problem with omitted Beidou observable.
+                 Remove debug print statements.
+
+makex/get_navclk.f: Fix bug in not recognizing GNSS code "I" on the nav file.
+
+makex/getsp3.f: Added test for sp3d format.
+
+makex/rbatch.f: Add trap for "numsit" > "maxsit" in new-format case.
+                Correct fix of trap for "numsit".
+
+makex/mversn.f, model/j_from_sp3.f, model/getnav.f: Allow reading sp3 "d" and
+                                                    fix getting the program name
+                                                    for warning/fatal messages.
+
+makexp: Assign the sp3 file name when running manually.
+        Revoked Zou/King 180912 update and reverted to version 9.86.
+        Added correct handling of SP3 file name when running manually.
+
+model/call_mag.f, model/iondel.f, model/mag13.f, model/setup.f; fixdrv/bmake.f;
+  tables/sestbl.: Added IGRF13 magnetic field model and changed default from
+                  IGRF12 to IGRF13
+
+model/setup.f: Fix frequency check so that it works for L1-only.
+
+model/update_coords: Add missing "debug" in call to get_antinfo.
+
+utils/metutil: Change linear interpolation routine to be scalar rather than
+               vector.
+
+- help/
+
+displace.hlp: Updated documentation.
+
+- kf/
+
+blsum/tscon.f: Added assumption that UNR/NGL .txyz2 files without a reference
+               frame explicitly in the file name are the latest IGS14 version.
+
+displace: Updated Makefile, grid calculations and added tensile component to
+          calculations.
+
+gen_util/name_to_block.f: Changes BLOCK III to BLOCK IIIA so that correct
+                          satellite number is assigned to the new PRN03.
+
+gen_util/real_stats.f: Updated dimensioning and bounds checking. Very long time
+                       series could cause segmentation violations.
+
+gen_util/sp3_lib.f, includes/sp3_def.h: Updated maximum number of nadir angles
+                                        values and added a dimensioning test.
+
+gen_util/sp3_lib.f: Fixed bug in report_stat call that is invoked in updated
+                    sp3_def.h is not used. Increased max nadir values to 41 for
+                    Galileo chamber calibrations.
+
+globk/read_glb_mar.f: Critical update needed to make the SOURCE command work.
+
+glout/write_iers.f: Updated formats to allow more than 99 reference frame sites.
+
+htoglb/mstinf.[fh] (and com/sh_upd_stnfo): Added -debug option to help diagnose
+                                           problems with bad year in IGS
+                                           logfiles and fixed a bug associated
+                                           with first antenna starting after the
+                                           first receiver entry.
+
+track, gen_util/sp3_lib.f: Updated for Beidou B7 phase and range measurements.
+
+utils/corcom: Updated output formats to allow for fast ice velocities.
+
+utils/glbtog.[fh]: Fixed bugs with writing G-files for non-GPS systems.
+
+libraries/
+
+comlib/proper_runst.f: Removed need for trailing "/" in HELP_DIR definition.
+
+- tables/
+
+luntab.2020.J2000, soltab.2020.J2000, nutabl.2020: Added luni-solar tables for
+                                                   2020 from JPL DE200.
+
+antmod.dat: Now linked to an IGS14 rather than IGS08 ANTEX file, which is no
+            longer updated by the IGS for new launches. As noted in
+            relnote.10.61, this will create a 2-3 mm discontinuity in height for
+            all antennas and 5-10 mm discontinuities in horizontal and height
+            for about 20 antennas.
+            Updated regularly to the latest IGS14 ANTEX file (currently
+            igs14_2091.atx, as of the date of this release). Linked from
+            2019-10-10 (GPS week 2074) onwards to the IGS14 ANTEX file
+            supplemented with calibrations provided by the National Geodetic
+            Survey (NGS) (currently ngs14_2091.atx), plus some additional
+            entries copied from similar records to accommodate antennas without
+            any official calibrations. tables/antmod.dat is linked to
+            tables/ngs14_2091_plus.atx, at the time of this release.
+            Updated GLONASS SVs R801, R802, R855, R856, R858 and R859 to match
+            extended IGS designations (K1A, K1B and M+) in
+            tables/igs_metadata.snx.
+
+igs14_comb_na17.apr: Added new North America plate reference frame ("NA17")
+                     based on Kreemer et al. (2018).
+
+ftp_info: Updated vmf1 address and directory according to change reported by
+          Johannes Boehm in IGS-ACS email #1176.
+          Added HartRAO IGS regional data center and JAXA data center.
+
+globk.cmd: Added inclusion of apr_tran by default and option for apr_rot when
+           using SINEX files.
+           Corrected erroneous "COMB out_glb" output file name to ensure
+           "------" string is parsed properly by prepending "H" to file name.
+
+leap.sec: Extended limit of table to 31 December 2020 with no additional leap
+          seconds, following to IERS Bulletin C 59.
+
+hi.dat: Added TRM159800.00 antenna.
+
+igs_metadata.snx: Added from http://mgex.igs.org/ (currently
+                  igs_metadata_2091.snx, as of the date of this release) and
+                  augmented with a bespoke block for the yaw of each satellite,
+                  currently read from tables/svnav.dat with some assumptions for
+                  some satellites and systems.
+
+rcvant.dat: Fully updated to match IGS codes for all receivers and antennas,
+            following ftp://igs.org/pub/station/general/rcvr_ant.tab. Records of
+            other known antennas, from the old rcvant.dat and those in the NGS
+            ANTEX file (see description of antmod.dat, above), are added. The
+            14th character, indicating support for the receiver or antenna in
+            GAMIT, is updated to identify the source of antenna calibration. See
+            header for more information.
+
+svnav.dat: Metadata for GLONASS (R), Galileo (E), Beidou (C), IRNSS (I) and QZSS
+           (J) fully updated to match tables/igs_metadata.snx (from
+           http://mgex.igs.org/), which will ultimately supercede
+           tables/svnav.dat; metadata for GPS assumed to be good (will be
+           verified ultimately).
+
+otlcmc.dat: Replaced the provisional center-of-mass corrections for FES2012 with
+            new official ones from H. G. Scherneck. The differences are less
+            than 0.05 mm.
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890

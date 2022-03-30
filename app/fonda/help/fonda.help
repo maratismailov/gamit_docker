@@ -1,0 +1,34 @@
+
+..................................... FONDA ........................................
+                                     =======
+
+    FONDA is a FOrward modeling Network Deformation Analysis software.
+It consists of 6 packages.
+
+                                FONDA
+                                  |
+    +-----------+-----------+-----------+-----------+-----------+
+    |           |           |           |           |           |
+  MAKED       SOLVEM      DIAGNO      FMODEL      DISPLY      DESIGN
+
+MAKED  : simulating or transfering data.
+SOLVEM : deriving solution by general constraint approach.
+DIAGNO : data quality diagnosis and pattern recognition. (not finished yet)
+FMODEL : forward modeling  (not finished yet)
+DISPLY : display and figure plot package (not finished yet)
+DESIGN : optimal network design package (not finished yet)
+
+There is another package (UTILITY) to perform various functions:
+UTILITY: assist the user to perform various functions.
+
+To learn how these packages work, just type the package name (lower case).
+
+ <<<< Current FONDA is still unfinished.  Arrest the bug whenever you find it! >>>>
+
+Hope you will enjoy the performance of FONDA.
+Welcome to make your contributions to FONDA (comment, modification, question, criticize, ...)
+
+                                            Danan Dong  92.10.08
+                                            e-mail: dong@freia.jpl.nasa.gov
+                                            (818)393-1827
+

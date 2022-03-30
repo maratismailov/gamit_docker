@@ -1,0 +1,23 @@
+MIT_TO_IRIS: Converts GLOBK PMU files to IRIS format
+
+MIT_TO_IRIS 
+ 
+This program will read a MIT  eop format file (mas and mts) and converts
+it to NGS format iris format for use in update_pmu and compare_pmu.
+
+The MIT Format looks like:
+* Std PMU run using new data (to extend PMU series)
+*                     X (mas)      +-       Y (mas)      +-     UT1-AT (mts)      +-
+ 1991  9 20  6 23    233.754      0.240    465.129      0.257  -25896.1677       0.0135   
+ 1991  9 25  6  5    243.450      0.382    451.036      0.478  -25907.6798       0.0234  
+ 1991  9 26  5 53    244.634      0.312    448.844      0.141  -25910.0949       0.0197 
+ ......
+
+The runstring for the program is:
+% mit_to_iris [input file] [output file]
+
+Output file must be not already exist.  If the file already exists then the
+message 
+IOSTAT  117 occurred creating <file name> in routine mit_to_iris
+will be printed (On Sun systems).
+

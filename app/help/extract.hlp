@@ -1,0 +1,185 @@
+EXTRACT: Program to extract information from ASCII files
+  
+EXTRACT : Program to extract information from ASCII files 
+  
+Runstring:
+  
+CI> EXTRACT <command file> [input file] [output file] 
+  
+where <command file> is the name of a file or LU with commands for
+          extract. (See below)
+      [Input file] is an optional name of a file to be decoded.  If not 
+          given the runstring then name should be given in the command
+          file (see INPUT command)
+      [Output file] is an optional name for the output file.  If not
+          given here or in the command file (See OUTPUT command) then 
+          LU 1 will be the output device. 
+  
+EXTRACT Commands
+----------------
+(Note: all commands may be truncated to minimum unique length, and all
+       commands must be preceeded by at least one blank)
+  
+END     -- Tells program to stop reading the command file (EOF has
+         the same effect) 
+INPUT   -- Name of the input file.  Must be given here or in the runstring. 
+           Usage:  INPUT my_input_file.txt
+OUTPUT  -- Name of the output file.  Defaults to users terminal.  Multiple
+           input files may be read for output to the same output file 
+           by giving new INPUT commands betweem RUN commands (see below)
+           without re-giving the OUTPUT command.
+DESCRIPT-- Allows the specification of the header record describing each
+           each of the fields extracted. Note: the description is enclosed
+           in double quotes (").
+           Usage: DESCRIPT <field #> "<description>" or 
+           where field # is the number of the field to which the description
+              applies. (See field command below)
+TITLE   -- Allows a title to be given to the output file.  This line will 
+           appear as the first line in the output file. 
+           Usage: TITLE "<title>" OR
+                  TITLE <nn>
+           where <title> is the string to be output and must be encloded
+                  in double quotes. 
+                 <nn> is an alternive form and line NN of the input file
+                  will be used as the title.  NOTE: No field information
+                  will extract until after the <nn> line of the input 
+                  file is read. 
+FIELD   -- Tells the program about the information to be extracted from 
+           the data file.  This is a complex command which gives the
+           user a great deal of flexibility in the information extracted. 
+           The format of the command is:
+  
+           FIELD # "<descriptor>" #_args type {Format   0/1 "(format)" or 
+                                              {Readline 0/1 <entries> 
+           OR 
+           FIELD # CLEAR. 
+  
+           where: 
+              # is the field number.  EXTRACT allows the user to specify
+                  upto to 10 fields of information to be extracted. 
+                  There three types of field (See type below also). 
+                  CHaracter -- only one string per field (upto 64 
+                               characters long) 
+                  Integer*2 -- Upto 32 integer values per field 
+                  Real*8    -- Upto  8 real*8 number per field. 
+                  If these numbers of arguments are not large enough
+                  then you can extract the information using a number 
+                  of fields.
+              <descriptor> is an Ascii string which tells extract the 
+                  EXACT string which must be found in the input file
+                  for it to extract the field data from the rest of the 
+                  string. 
+              #_args is the number of arguments in the field to be
+                  extracted (see above for limits)
+              type is the type of field.  Type may CH for charater, 
+                  I4 for integer*4, R8 for real*8. (see restrictions
+                  on number of arguments given above).
+              The next string may be either:
+              FORMAT to extract the field data using a FTN77
+                  format statement OR 
+              READLINE to extract the field data using free format reads
+              Indepenent of the use of Format or Readline, the next 
+              argument 0/1 tells extract whether to get the data from 
+              the line imediately following the <descriptor> (option 0),
+              or from the start of the line (option 1). 
+              When FORMAT is used the 0/1 is followed by the FTN77 format 
+              enclosed in double quotes(don't forget the parentheses
+              around the format,
+              When READLINE is used the 0/1 is followed by #_args values
+              which tell EXTRACT which values for the rest of the line
+              should be used. For expample, if your input line looked like: 
+              string 120  baseline 200 10 20 0.110  -- Line 
+                1     2      3      4   5  6     7  -- Item numbers 
+              then Items 2 4 5 6 and 7 could be read with R8 or I4 (although
+              item 7 would be zero in I4 format).  Any of the items 1-7 
+              could be extracted with a character field (although only one
+              item per field.) [If you wanted a character field with the
+              complete line above, then FORMAT would be the only choice.
+  
+           The other option for the field command is CLEAR which will clear 
+              the information about the field. Thus this field will no
+              longer be searched for. 
+  
+BEGIN   -- Allows the specfication of strings which must be found before
+           a field will be searched for.
+           Usage: BEGIN # number "<string>" 
+           where # is the field number to which the begin applies,
+               number is the number of the begin when more than one string
+               must be found.  Number is currently limited to two ie. upto two
+               different string can be specified before the field will be 
+               extracted. 
+               <string> is the EXACT string to be found (enclosed in double 
+               quotes.
+FINISH  -- Allows the specifiction of a string which will cause EXTRACT to
+           to stop seaching for a field and to reset the field as being 
+           no yet found.
+           Usage: FINISH # "<string>" 
+           where # is the field number and
+              <string> is the EXTRACT string to be found( again enclosed
+              in double quoutes.
+           NOTE: Since extract will only output the field data when all 
+           fields have been found, the FINISH strings should all appear 
+           after all of the FIELD strings in the input file.
+NORESET -- Allows the specifications  of fields which should not have 
+           there found status set False after the field data has been 
+           output.
+           Useage: NORESET  nn nn nn OR 
+                   NORESET  CLEAR 
+           where nn are a list of field numbers to not be reset, the
+              CLEAR option will clear all previously set NORESET values.
+OUTFORM -- Allows the user to specify the output format for each of the 
+           fields.
+           Usage: OUTFORM # "(format)"
+           where # is the field field number, and 
+              (format) is the FTN77 format to be used. (Enclosed in 
+              double quotes.)  NOTE: when strings are output trailing 
+              blanks will be deleted during the output. 
+  
+RUN     -- Tells extract to process the input file with the current 
+           field information.  THIS COMMAND MUST BE GIVEN OR ELSE EXTRACT 
+           WILL DO NOTHING. 
+  
+NOTES:
+------
+      EXTRACT defaults to field 1 searching for EXPERIMENT DATE: with 
+the date read with a format.  This is used for extracting information 
+from the SOLVK and GLBAK solution files.  This field is also set
+for NORESET so that the same exeriment date can be used for many items
+from a SOLVK solution.
+  
+      EXTRACT will resond to a break issued from a system prompt, by
+summaring its progress so far i.e., number of lines read and written, and 
+current status of fields and begins being found. (NOTE: usually a 
+field will appear as not found, since it is reset after each output). 
+The user then has the option of Aborting (stopping EXTRACT immediately),
+of stopping the processing of the current run, or continuing with 
+the current processing. 
+  
+EXAMPLE: The following extract command file will extract the statistics 
+. form a SOLVK solution file. NOTE: Any character in column one will
+. cause the line to be treated as a comment 
+. Line below is a comment but could be used to get pre-fit statistics 
+. instead of postfit. If we wanted to we could do both together.
+.field   2   "pre-fit Chi**2/f is" 1 CH readline 0 1
+  
+. Note we are extracting two things from the same line. 
+ field   2   "All baselines"       1 CH format   0 "(7x,a20)" 
+ field   3   "All baselines"       1 CH format   0 "(34x,a20)"
+  
+. This will get total number of data (see SOLVK output) 
+ field   4   "From"                1 R8 readline 0 1
+ field   5   "DATA   file"         1 CH Readline 0 1
+  
+ outform 2   "(a20)"
+ outform 3   "(2x,a20)" 
+ outform 4   "(1x,I5)"
+ outform 5   "(2x,a12)" 
+  
+ run      ! NOTE COMMAND NEEDED 
+  
+. There are a number of other examples in the /SOLUTIONS/ directory 
+. which contain extract command files. (All have .EXT extensions) 
+  
+  
+  
+ 

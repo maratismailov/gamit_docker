@@ -1,0 +1,186 @@
+    This file is a guide to FONDA
+    FONDA is a Forward mOdeling Network Deformation Analysis software.
+It consists of 6 packages.
+
+                                FONDA
+                                  |
+    +-----------+-----------+-----------+-----------+-----------+
+    |           |           |           |           |           |
+  MAKED       SOLVEM      DIAGNO      FMODEL      DISPLY      DESIGN
+
+#1 Simulating package: (MAKED)
+    1. type of models: 
+        (1) uniform deformation
+        (2) block translation along a fault
+        (3) block rotation
+        (4) = (1)+(2)+(3)
+        (5) dislocation from earthquakes
+        (6) viscoelastic coupling for coseismic deformation
+        (7) some outliers
+    2. station distribution
+        station coordinates
+        group of stations
+    3. observations
+        (1) trilatulation
+        (2) triangulation
+        (3) astronomical azimuth
+        (4) gps
+        (5) vlbi
+    4. noise
+        (1) white noise
+        (2) red noise
+        (3) blue noise
+    5. time interval
+        it is possible for every epoch we have different observations
+        and stations
+    6. covariance matrix and weighting
+    7. input and output
+        geocentric or deodetic coordinates
+        data files and graphics
+    8. input file (maked.in) format
+         (1) model type (i2)
+             (1.1) strain rate
+             (1.2) rotation vector
+             (1.3) block size and fault location
+             (1.4) block velocity
+             (1.5) dislocation geometry and earthquake epoch
+             (1.6) elastic and viscoelastic parameters
+             (1.7) outlier parameters
+         (2) observation group (i3) (loop over group number)
+             (2.1) epoch and station number (loop over stations)
+                   (2.1.1) longitude,latitude,height and uncertainties
+                   or x,y,z (this is reference coordinates at epoch t(0))
+             (2.2) number of observations (loop over observations)
+                   (2.2.1) data type, baseline ends, covariance matrix
+             (2.3) noise parameters
+         (3) visual show option
+             (3.1) display network distribution map
+             (3.2) display displacement and velocity map
+    9. output file (maked.out) format
+         (1) observation group (i3) (loop over group number)
+             (1.1) epoch and station number (loop over stations)
+                   (1.1.1) longitude,latitude,height and uncertainties
+                       (this is reference coordinates at epoch t(0))
+             (1.2) number of observations (loop over observations)
+                   (1.2.1) data type, baseline data, covariance matrix
+
+#2 Deriving solution package: (SOLVEM)
+     This package allows us to combine the modern space deodesy data with
+historical geodetic survey data to get the network deformation estimate.
+We will use current GLOBAK algorithm to construct the solving frame.
+There are several differences should be pointed out:
+     (a) SOLVEM uses simplified input, that means we only need input the
+station coordinates (possible velocity), baseline length or azimuth angle
+and their covariance matrix.  We don't need consider other parameters
+such as orbits, earth rotation, atmosphere and ionosphere.
+     (b) SOLVEM tries to extend the current reference frame to the past
+under the assumption: for a short interval, say 100 years, the extra-
+polation still gives us a reasonable constraint.(cosidering additional
+displacement from other sources such as earthquake etc.)
+     (c) SOLVEM keeps the conventional regular solution (fix one station
+and one azimuth in 2D case); general inverse solution (minimum norm
+solution); inner coordinate solution and outer coordinate solution.  And
+SOLVEM will concentrate in model constraint solution.
+     (d) We will develop 2D algorithm first and extend it to 3D case
+later.
+     (e) SOLVEM should allow multi-stage input files.  That means 
+         (e.1) input original observables to estimate displacement and
+               strain rate.
+         (e.2) input displacement to estimate strain rate.
+         (e.3) input priori values and covariance matrix to test various
+               constraint solutions. 
+    1. input file (solvem.in):
+         (1) number of networks (loop over the number)
+         (2) epoch, type of data, site number, baseline(or angle) number
+             (loop over baselines or other observables)
+             (2.1) baseline data, connected site name, error model
+         (3) solution option 1 (displacement)
+             (3.1) classical (fix one site and azimuth of one baseline)
+                   (3.1.1) site name, azimuth value
+             (3.2) inner coordinate solution
+                   (3.2.1) minimum norm inverse
+                   (3.2.2) part of sites are exempted from the minimi-
+                           zation
+                           specify these sites
+             (3.3) outer coordinate solution
+                   minimize the displacement normal to a direction
+                   specify this direction
+             (3.4) model constraint solution
+                   specify the model
+                   input relevent model parameters
+             (3.5) using initial coordinate or updated coordinate
+         (4) solution option 2 (strain rate)
+             (4.1) strain model
+                   uniform strain
+                   others
+             (4.2) rotation model
+                   no rotation
+                   block rotation (specify relevent parameters)
+         (5) output option
+             (5.1) terse or verbose
+             (5.2) single solution or multi solutions
+             (5.3) residuals file
+             (5.4) plot file (yes or no)
+    2. algorithm
+         (1) Kalman filter or sequential least square
+         (2) compare with direct least square
+         (3) assume the normal matrix is positive defined (remove the
+             rank deficiency), using Cholescky decomposition
+         (4) consider outlier checking
+         (5) weighting
+             (5.1) by reciprocal square standard deviation
+             (5.2) by error model: sigma**2=a**2+(b*l)**2
+             (5.3) by specified weight
+
+#3 Diagnosis package: (DIAGNO)
+     Residual analysis is an inportant ring of the whole chain.  The 
+main theoretical discussion can be found in Segal & Mattews' paper:
+"Displacement calculations from geodetic data and the testing of
+geophysical deformation models", J.G.R., 14954-14966, 1988
+     1. residual checking
+        see if there is systematic pattern left.
+     2. hypothesis testing
+        suppose n is the observation dimension
+                p is the model dimention 
+                q is the rank dificiency of A
+                r(a) is the model independent "pure error"
+                r(l) is the "lack of fit"
+        then we have the relation:
+        P(n,p,q)=[|r(l)**2|/(p-q)]/[|r(a)**2|/(n-p)] = F(p-q,n-p)
+        We using F-test to decide whether the model is acceptable
+        under the confidence level (1-alfa)
+     3. model comparison
+
+#4 Forward modeling package: (FMODEL)
+     Actually, FONDA is an iterative software.  At the beginning, we
+give SOLVEM an initial model.  After DIAGNO, we find there are still
+significant systematic residuals.  Then we try to improve our model
+and input the new model constraint to SOLVEM.  This is one iteration.
+FMODEL will become the most comprihensive package of FONDA.
+     1. rigid translation along a fault
+     2. uniform strain
+     3. block rotation
+     4. half-space elastic material dislocation model (from Okada)
+        4.1 point source
+        4.2 rectangular plane source
+     5. viscoelastic coupling dislocation model (from Li & Rice)
+     6. magma inclusion model (from Wahr ?)
+     7. local deformation correction model (from Humphrey & Soucier)
+     8. fault group interfere model (from Rundle ?)
+     9. back-arc basin spreading and thermal subsidence model (?)
+    10. finite element modeling (using CONMAN)
+
+#5 Display package: (DISPLY)
+     The purposes of this package are trifold:
+     1. visual display
+        The operator can compare the observed displacement or strain
+        with the modeling results simultaneously.
+        (is it possible to modidy parameter simultaneously?)
+     2. print various maps for thesis, meeting and publication.
+     3. commercial display:
+        movie show of FONDA to the people.
+
+#6 Optimal design package: (DESIGN)
+     1. calculate the cross-correlation coefficience between models.
+     2. check the separability and detectability of our models.
+     3. optimal network design for accuracy and model detecting.

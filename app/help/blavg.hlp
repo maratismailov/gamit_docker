@@ -1,0 +1,27 @@
+BLAVG: Coordinate component averaging program
+
+PROGRAM BLAVG 
+
+This program will read any of a solvk/globk solution file or
+a values files produced by blsum/ensum/bcsum (with the line
+VALUES_FILE as the first line, and produce an averaged set of
+lengths or components.
+
+Runstring:
+
+% blavg <min> <summary> <values> <input> <yr> <mon> <day> <duration>
+
+where <min>     is the minimum number of values in an average
+                for it to be output (default = 1)
+      <summary> is the name of the output summary file,
+      <values>  is the name of the output averaged values file
+      <input>   is the input file (either from globk,solvk or a
+                previous values file (see not above)).  The final
+                choice is the most flexible.
+      <yr> <mon> <day> is the year, month, day to start the binning
+                for the averaging
+      <duration> is the number of days in each bin.
+
+The output epochs are the times within eaxh bin that the slope is
+incorrelated with the intercept value.
+

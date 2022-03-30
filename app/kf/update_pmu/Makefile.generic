@@ -1,0 +1,25 @@
+# Generic Makefile for kf/utils - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King July 30, 1996
+
+#LABELS: update_pmu:update_pmu:NONE:update_pmu
+#LABELS: update_pmu_tab:update_pmu_tab:NONE:update_pmu_tab
+#LABELS: fix_ut1_tide:fix_ut1_tide:NONE:fix_ut1_tide
+#LABELS: fix_apr:fix_apr:NONE:fix_apr
+#LABELS: gsfc_to_iris:gsfc_to_iris:NONE:gsfc_to_iris   
+#LABELS: mit_to_iris:mit_to_iris:NONE:mit_to_iris
+#LABELS: gamit_to_iris:gamit_to_iris:NONE:gamit_to_iris
+#LABELS: compare_pmu:compare_pmu:NONE:compare_pmu
+#LABELS: excite_pmu:excite_pmu:NONE:excite_pmu
+#LABELS: nmc_to_iris:nmc_to_iris:NONE:nmc_to_iris
+#LABELS: usno_to_iris:usno_to_iris:NONE:usno_to_iris
+#LABELS: mjd_to_date:mjd_to_date:NONE:mjd_to_date
+#LABELS: utc_to_tai:utc_to_tai:NONE:utc_to_tai
+#LABELS: igs_to_pmu:igs_to_pmu:NONE:igs_to_pmu
+#LABELS: extend_iers:extend_iers:NONE:extend_iers
+
+#SHARELIB: ../utils:gen_ssu_lib
+#SHARELIB: ../Khandlers:KalObs_hndl_lib  
+#SHARELIB: ../gen_util:gen_util_lib
+#SHARELIB: ../../libraries/matrix:kinv_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+

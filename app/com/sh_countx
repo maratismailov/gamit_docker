@@ -1,0 +1,98 @@
+#!/bin/csh  
+#
+#doc Displays all xfile data content for a given day
+#doc
+
+# m.burc oral 12/18/1992 
+# sorts  wrt PRN number, get them from session.info
+# SITE site order 
+# PRN  satellite order
+
+if( $#argv  == 0 )  then
+    echo " "
+    echo "  sh_countx displays the X-file content for a single file"
+    echo "     or all files in a directory"  
+    echo " "
+    echo "      File session.info required"
+    echo " "
+    echo "    Examples: "
+    echo " "
+    echo "       sh_countx xanka9.250 "
+    echo " "
+    echo "       sh_countx x*.250"
+    echo " "
+	echo " creates   PRN  and SITE  files "
+	echo "   "
+	exit
+endif 
+
+
+/bin/rm -f tmp1 tmp2 tmp3 tmp33 tmp333  COUNTX  SITE PRN
+
+#  for any site configuration 
+		set files  = (  $argv )
+
+echo $files	
+echo "  " >! tmp1 
+while( $#files  > 0)
+	set file = $files[1]
+	echo "======  SITE " $file " =============================================================================================">>tmp1
+#	which count.exe
+#	/usr3/stdrel/gamit/bin/countx.exe   $file  >> tmp1
+	countx   $file  >> tmp1
+	shift files
+end
+
+
+	echo "   " >> tmp1 
+	echo "   " >> tmp1 
+	echo "   " >> tmp1 
+	echo "   " >> tmp1 
+	endif
+
+
+#copy tmp1 to SITE 
+
+	cat  tmp1 | grep Epoch | sort -u  >! SITE
+	cat  tmp1 | grep -v Open | grep -v Epoch >> SITE
+	
+	echo "....order with respect to satellites ....... " >! tmp2 
+
+
+#	 grep -v '[A-Z]' session.info | grep -v '[a-z]' | cut -c33- >! tmp333
+	 grep -v '[A-Z]' session.info | grep -v '[a-z]' | awk '{for (i=8;i<=NF;i++) {printf "%3d",$i}}' >! tmp333
+         cat  tmp333 | awk '{OFS="\n"; print  $1,$2,$3,$4,$5,$6,$7,$8,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24 }' >! tmp33
+
+	cat tmp33  | sort -un >! tmp3
+	set prns = ( `cat tmp3`)
+
+	while( $#prns > 0)
+	set prn = $prns[1]
+	echo "======  PRN " $prn " ======================================================================================================">>tmp2
+	cat tmp1 | grep " "$prn" " >> tmp2
+	shift prns
+	end
+
+
+	cat  tmp1 | grep Epoch | sort -u  >! PRN
+	cat   tmp2 >>  PRN
+
+	/bin/rm -f tmp1 tmp2 tmp3 tmp33 tmp333
+
+
+endif
+
+
+echo " created  PRN  : satellite info "
+echo " created  SITE : site      info "
+echo "   "
+echo " To print :  lpf PRN  SITE  "
+echo "   "
+echo " To see   :  cat PRN  SITE  "
+
+
+
+
+
+
+

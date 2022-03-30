@@ -1,0 +1,33 @@
+
+++++ AUTCLN  HELP +++++
+
+This is an automatic cfile cleaner for the GAMIT Package.
+The list of commands that can be used is given the the autcln.hlp
+file.
+The runstring for the program is:
+
+% autcln <command file> <out cf series> [....list of cfiles...] OR
+                                        [dfile name] <in cf series>
+
+where <command file> is an optional command file (commands are
+        given in the ctogobs.hlp file).   If no command file is
+        given (default file generation) then '' should be used
+        as a place holder in the runstring.  If DEFAULTS is given 
+        as the command file then the defaults willl be printed. The
+        program will not act on the rest of the runstring.
+  <cf series> is a single characater to denote the new cfile
+          series to be written out.  If no character given (i.e., ' '
+          used) then no updated cfiles will be written.  Special
+          characters that can be used are:
+          .   -- Overwrite the input cfiles
+          +   -- Increment the cfile series letter, converting 
+                 numeric series values to a.
+
+    [....list of cfiles...] is the list of cfiles to be cleaned 
+OR
+    [dfile name] is the name of a dfile with the list of cfiles 
+                 (xfile names can appear in the dfile)
+    <<in cf series> when the dfile form is used this optional argument
+                 can be used to change the input cfile series from that
+                 in the dfile.
+

@@ -1,0 +1,62 @@
+GLIST: Generates summary of list of GLOBK binary hfiles
+  
+GLIST : Program to list the sites and sources in a global solution
+  
+CORRECT RUNSTRING:
+  
+% glist Input list  <output_file> <sort_direction> [eq_file] [out gdl] [apr file] [use commands]
+  
+where Input list is the name of the file containing the list of global
+          files to be included in the solution. 
+      <Output_file> is the optional name of an output file (Default is user's 
+          terminal. 
+      <sort_direction> optional value which determines in which order the 
+          data will be time sorted.  The default is +1 meaning sort in
+          ascending time order.  -1 may be specified to have data sorted in 
+          decending time order.
+      [eq_file] One or more GLOBK earthquake files to be used in generating the site names
+          When multiple eq-files are needed, input the list separated by :, +,  or =
+          (Feature added 100126)
+          Adding :A (uppercase) at the end of the eq-file list will list all
+          renames in the order applied (see globk.hlp note on renames with hfile
+          dependence and open ended times.)
+          RESET maybe used as file names to reset extents to _GPS (reset command 
+          can also be in the eq_files). Added 130221.
+      [out gdl] Output GDL file sorted in time order according to sort_direction
+           (Feature added 991122)
+      [apr file] A globk apriori file to used in checking the apriori coordinates
+           in the hfiles (Feature addedd 000901)
+           Multiple files may be given by separating wiht :,+ or = (Added 140723)
+           When apr files are given, glist will list the apriori coordinates and 
+           extended apriori model values that will be used by globk.  The screen
+           output lists sites not in the apriori files and site which need to have
+           extended entries copied from another 4-char site name (140723)
+      [use commands] Specifies name of globk command file wiht use_site, use_num 
+           and/or use_pos commands that will be used select sites output.  Adding
+           :<OPT> will interpret lines that start with the <OPT> string (case
+           sensitive.  Added 140723.
+
+grep 'P$' <output file> will generate a list of site locations (long, lat and
+height) along with other statistics of site usage for sites to be used in a globk
+solution.
+
+Feature addedd 000901: GLIST now automatically checks and reports problems with
+the apriori coordinates in the binary files hfiles.  (If good aprioris were used
+in the gamit runs and the hfiles are directly from htoglb, this provides a good
+check on the consistency of the position estimates.)  To aid in checking the
+coordinates, the user can specify an apriori file against which the coordinates
+are checked.
+
+Feature added: TAH 140330: New model reporting section added at end of listing.
+Example output:
+MODEL REPORT and USAGE
+YYYY MM DD    Dur Vers Sites  SVS    Parms Frame     Prec      SRP    Time  OctalGAMIT MOD  OctalLoad  SDEOP   ETIDE   OCEANTIDE  ATMLOAD S1/S2     HYDROLD   NUT     GRAV     ERAD    ANTTh     H-file
+2010 04 10    1.0  1.1    59   31      800 J2000    IAU76    BERNE    GPST        23600013     201403 IERS10   IERS03   FES2004E  NCEP CM ECMWFCMT -------- IAU00    EGM08    NCLE1    ANTB      ../2010/glbf/h10100_1200_net1.glx
+2010 04 10    1.0  1.1    59   31      800 J2000    IAU76    BERNE    GPST        23600013     201403 IERS10   IERS03   FES2004E  NCEP CM ECMWFCMT -------- IAU00    EGM08    NCLE1    ANTB      ../2010/glbf/h10100_1200_net6.glx
+2010 12 11    1.0  1.1    59   31      800 J2000    IAU76    BERNE    GPST        23600013     201403 IERS10   IERS03   FES2004E  NCEP CM ECMWFCMM -------- IAU00    EGM08    -------- --------  ../glbf/h1012111200_net1.glx
+2010 12 12    1.0  1.1    60   31      804 J2000    IAU76    BERNE    GPST        23600013     201403 IERS10   IERS03   FES2004E  NCEP CM ECMWFCMM -------- IAU00    EGM08    -------- --------  ../glbf/h1012121200_net1.glx
+ 
+Feature added: TAH 150827: Added listing of satellite use information as well.
+This is associated with GLOBK 5.29 where the satellite vechicle number has been
+added to the PRN number.
+  

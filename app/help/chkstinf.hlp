@@ -1,0 +1,16 @@
+CHKSTINF: Check consistency of station.info and rinex header
+
+Runstring:
+% chkstinf <station.info> < .. list of rinex files ... >
+
+where <station.info> is name of new format station.info file in the 
+    standard layout
+      < .. list of rinex files ... > list of rinex files to be checked
+
+If a rinex file does not exist, then the site name and date of in station.info
+will be checked (ie. it there an entry for the site).
+If the rinex file exists, then receiver type, antenna type, radome and height
+are checked.
+
+Results are reported as warnings
+

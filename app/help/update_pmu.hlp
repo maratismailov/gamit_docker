@@ -1,0 +1,17 @@
+UPDATE_PMU: VLBI program to update PMU values in KalObs file
+
+ UPDATE_PMU: Updates the polar motion/UT1 tables in a VLBI KalObs data
+             file.
+  
+ Proper runstring is: 
+  
+ % update_pmu <pmu file> <KalObs> <num headers> <ut1_def> <printer>
+
+  where <pmu_file> is the name of the file containing polar motion and
+             UT1 in NGS style.
+        <KalObs> is the KalObs file to be updated.
+        <Num headers> in the number of header records in the file 
+        <ut1_def> is the definition of UT1 - 0 if Tides are removed
+                                           - 2 if tides are still in table.
+        <Printer> is the name of printer file (will be appended to)
+

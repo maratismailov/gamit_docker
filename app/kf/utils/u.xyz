@@ -1,0 +1,5 @@
+* CORTRAN: Transforming coordinates in t.g84 GEOD WGS84   
+*                                   to u.xyz GEOD NAD27   
+*  Site      Latitude (deg)  Longitude (deg)  Height (m)
+* Test point
+ T001_gps   40.003287509   70.000724727      1330.0555

@@ -1,0 +1,36 @@
+# Generic Makefile for kf/plot/g1000 - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King July 23, 1996
+
+#LABELS: g1000:NONE:g1000:NONE
+
+#SHARELIB: 
+ 
+#OBJ_g1000  jiws
+#OBJ_g1000  jmcur
+#OBJ_g1000  jfont
+#OBJ_g1000  jcori
+#OBJ_g1000  jjust
+#OBJ_g1000  jcsiz
+#OBJ_g1000  j2mrk
+#OBJ_g1000  j2mov
+#OBJ_g1000  jr2mv
+#OBJ_g1000  jsett
+#OBJ_g1000  jtexl
+#OBJ_g1000  jtexm
+#OBJ_g1000  jtexh
+#OBJ_g1000  jlstl
+#OBJ_g1000  j2ply
+#OBJ_g1000  j2drw
+#OBJ_g1000  jr2dr
+#OBJ_g1000  jview
+#OBJ_g1000  jwind
+#OBJ_g1000  jcolr
+#OBJ_g1000  jwloc
+#OBJ_g1000  jvtow
+#OBJ_g1000  jclr
+#OBJ_g1000  jmapm
+#OBJ_g1000  jtexp
+#OBJ_g1000  jbegn
+#OBJ_g1000  jend
+#OBJ_g1000  g1000_bd
+

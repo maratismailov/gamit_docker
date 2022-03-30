@@ -1,0 +1,18 @@
+      character*10 function getmac(i)
+c     return the name of the machine
+
+      integer i
+      logical fcheck
+
+      getmac = 'sun'
+
+c     Turn on IEEE error trap if there is a stub file to this effect.
+c     This is a deep dark programmer's secret.
+      if (fcheck('ieee.')) then
+         call ieee
+         write (6,*) 'GETMAC: IEEE floating point trap enabled.'
+      endif
+
+      return
+      end
+

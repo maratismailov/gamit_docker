@@ -1,0 +1,122 @@
+#!/bin/csh  
+#
+#doc Deletes a number of sites from a given file GLOBK output file
+#doc
+#
+# M.Burc Oral 
+if ( $#argv == 0 ) then
+echo "keeps/deletes a number of sites from a given file "
+echo "  "
+echo " -f[ile]   file     : GLOBK back/forward solution file"
+echo "  "
+echo " -sf                : search file."
+echo " [search_file] "
+echo "  "
+echo " -i                 : Turn OFF ignorecase. Makes it case sensitive"
+echo "  "
+echo " -d[elete]          : Delete the occurance of search file contents."
+echo "                      Defaults is ONLY keep  search file contents.  "
+echo "  "
+echo " -o                 : output file. delault is grep_file"
+echo " [out_file] "
+echo "  "
+echo " -[c]opy            : overwrite input file"
+echo "  "
+echo " -[s]ilent          : work silently"
+echo "  "
+echo "  M. Burc Oral     253-2471         oral@gps.mit.edu             Mon Oct  4 13:23:39 EDT 1993"
+echo "  "
+exit
+endif
+
+
+#=#=#=#=#=#=#=# SET DEFAULTS #=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+set file = none
+set out_file = none
+set delete = no 
+set search_file = none 
+set ignorecase  = -i
+set copy    =  no
+set silent    =  no
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+# decipher command line
+while ($#argv > 0 )
+set input = ( $argv )
+switch($input[1])
+        case -f:
+        case -file:
+                set file        =  $input[2]
+		if ( ! -e $file  ) then
+		echo $file doesnot exist.... Exiting......
+		exit
+		endif
+                breaksw
+        case -sf:
+        case -sfile:
+        case -search_file:
+ 	       set search_file  =  $input[2]
+		if ( ! -e $file  ) then
+		echo $file doesnot exist.... Exiting......
+		exit
+		endif
+                breaksw
+        case -d*:
+        case -delete:
+                set delete      =  yes 
+                breaksw
+        case -o*:
+        case -out_file:
+                set out_file       =  $input[2]
+                breaksw
+        case -c*:
+        case -copy:
+                set copy        =  yes
+                breaksw
+        case -s*:
+        case -silent:
+                set silent        =  yes
+                breaksw
+        case -i*:
+        case -ignorecase:
+                set ignorecase      =  "" 
+                breaksw
+endsw
+shift argv
+end
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+
+
+if ( $out_file != none ) then
+set out_file = $out_file
+else
+set out_file = grep_$file
+endif
+
+set sites_search  = ( `cat $search_file | awk 'substr($0,1,1) == " " {print $0}'` )
+
+if ( $delete == no  ) then 
+	if ($silent == no ) echo "Keep the following matches " >! $out_file
+	foreach i ( $sites_search ) 
+		grep $ignorecase  $i $file  >> $out_file
+	end
+
+else if ( $delete == yes   ) then 
+
+	\cp $file  tmp.$file 
+	foreach i (  $sites_search ) 
+	 	grep  -v $ignorecase $i tmp.$file  >! tmp1.$file
+		\mv  tmp1.$file tmp.$file
+	end
+		\mv  tmp.$file $out_file
+endif
+
+if ( $copy == yes   ) then
+\mv $out_file $file
+endif
+
+
+\rm -rf tmp.$file
+
+if ($silent == no ) echo "Created " $out_file
+

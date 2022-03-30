@@ -1,0 +1,4 @@
+#!/bin/csh -f
+grep "#doc" * >! tmp.indx
+sed -e s/"#doc"/" "/ tmp.indx >! com.index
+echo "Created index file com.index" 

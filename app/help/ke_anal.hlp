@@ -1,0 +1,15 @@
+KE_ANAL: VLBI program to analyze group delay residuals
+
+* KE_ANAL -- Program to analysize single baseline group-phase delay
+*            differences
+
+ Runstring:
+
+% ke_anal <out data> <Input KalObs files ..... >
+
+where <out data> is the name of a file for outputing the actuall 
+      differences
+      <Input .. > is a list (max 100 experiments) of input phase connected
+      KalObs file.
+
+Statistics are output to std_out and may be redirected.

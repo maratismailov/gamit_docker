@@ -1,0 +1,32 @@
+READIN: VLBI program to generate KalObs files from Data base
+  
+READIN : Program to read data bases into KalObs files.
+  
+Correct runstring 
+  
+CI> READIN, [log_lu], DBase, version, KalObs file, [alias file],[expt title]
+  
+where [Log_lu] is optional (Defaults to user's LU) and is the LU to which 
+        the summary of the data base read will be printed.  This summary is 
+        useful to keep since it reports the LCODES which readin tried to
+        find but could not find in the data base. 
+      DBase is the name of the data base to be read 
+      Version is the version of the data base to be read. Defaults to 0 
+        (latest version)
+      KalObs file is the name of the KalObs file to create.  An error is
+        generated if the file already exists. 
+     [Alias file] is the optional name of a file containing changes in site 
+        and source names.  This file may be to unify site names which have
+        changed over the years (eg. Maryland point) or to convert source
+        names to IAU names.  There is default name (See Kalman_param.ftni)
+        which will be used if no name is given.  NONE is also a valid name
+        in which case no names will be aliased.  NOTE: READIN will replace
+        all blanks internal to names with the '_' character.  This is done
+        to avoid problems with non-unque names if only the characters to
+        the first blank are used. 
+     [Expt title] is an optional experiment title (24 characters or less).
+        This title has concatinated onto it the first 4 characters of the 
+        names of the sites used in the experiment.  If no title is given
+        then the title from the data base will be used. 
+  
+ 

@@ -1,0 +1,12 @@
+SVSNR: Extracts SNR data from rinex file 
+ 
+Program to output SNR by time, satellite and elevation angle/
+
+The runstring of the program is
+% svsnr [navfile] [data file] <X> <Y> <Z>
+where nav_file is nave file name
+      data_file is the name of the Rinex data file.
+       <X> <Y> <Z> are optional site coordinates (only needed if
+               the ones in the rinex file are corrupt.
+
+ 

@@ -1,0 +1,118 @@
+#!/bin/csh -f
+#
+# Simple script to plot the time series in PBO .pos file.
+#
+if( $#argv == 0 ) then
+  echo "sh_plot_pbots:  Simple plotting script for PBO .pos file"
+  echo "Usage: "
+  echo "sh_plot_pbots <Names of .pos files>"
+  echo "plots will be in same directory as .pos file with .ps extent"
+  echo " "
+  echo "When final and rapid position files are available, the rapid results"
+  echo "will be appended to the finals and plotted in red"
+  exit
+endif
+
+gmt gmtset GMT_COMPATIBILITY 5
+
+# OK Loop over the list of files
+foreach posf ( `echo $argv`)
+#
+#    See if lock is present:
+     while ( -e pbots.lock ) 
+        sleep 1m
+     end
+     touch pbots.lock
+
+#    Get ps file
+     set psf = $posf:r.ps
+     echo -n "Creating $psf "
+#    See if there is a rapid file that goes with it
+     set rapf = `echo $posf | awk '{sub("final","rapid")} {print $0}'`
+     if( -e $rapf ) echo " Appending $rapf"
+     if( ! -e $rapf ) echo " "
+#
+#    extract out the North displacement and convert to mm
+     set verf = `head -n 3 $posf | grep Vers | wc -l`
+     if( $verf == 0 ) then 
+        tail -n +9 $posf | awk '{if( $19 < 0.1 ) {printf(" %10.5f %10.5f %10.5f\n", ($3-51544.0)/365.25+2000,$16*1e3,$19*1e3)}}' >! t.nf
+     else
+        tail -n +10 $posf | awk '{if( $19 < 0.1 ) {printf(" %10.5f %10.5f %10.5f\n", ($3-51544.0)/365.25+2000,$16*1e3,$19*1e3)}}' >! t.nf
+     endif 
+     if( -e $rapf ) then
+         set verr = `head -n 3 $rapf | grep Vers | wc -l`
+         if( $verr == 0 ) then 
+             tail -n +9 $rapf | awk '{if( $19 < 0.1 ) {printf(" %10.5f %10.5f %10.5f\n", ($3-51544.0)/365.25+2000,$16*1e3,$19*1e3)}}' >! t.nr
+         else
+             tail -n +10 $rapf | awk '{if( $19 < 0.1 ) {printf(" %10.5f %10.5f %10.5f\n", ($3-51544.0)/365.25+2000,$16*1e3,$19*1e3)}}' >! t.nr
+         endif
+         cat t.nf t.nr >! t.n
+     else
+         cat t.nf >! t.n
+     endif
+#
+     set scale = `gmt gmtinfo -I0.1/5 t.n` 
+#    Bug in GMT does not seem to do y-limits correct in -C mode.  
+     set limx = `gmt gmtinfo -C -I.1 t.n | awk '{print $1,$2}'`
+     set limy = `gmt gmtinfo -C -I5 t.n | awk '{print $3,$4}'`
+
+
+     gmt psxy t.nf $scale -JX6i/2.5i -Bxa0.2f0.05+l'Year' -Byf5+l'North (mm)' -BSWne -Sc0.04i -G0/0/0 -Y7.5i -Ey0/1p,200/200/200 -K  -P >! $psf
+     if( -e $rapf ) gmt psxy t.nr $scale -JX  -Sc0.03i -W1p,255/0/0 -G255/0/0 -Ey0/2p,250/200/200 -K -O -P >> $psf
+     echo $limx $limy  $posf | awk '{print $1, $4-($4-$3)/12, "File: "$5}' >! t.t
+     gmt pstext t.t -R -JX -F+f12p+jBL -K -N -O >> $psf
+
+#    Do the east component
+     if( $verf == 0 ) then 
+        tail -n +9 $posf | awk '{if( $20 < 0.1 ) {printf(" %10.5f %10.5f %10.5f\n", ($3-51544.0)/365.25+2000,$17*1e3,$20*1e3)}}' >! t.ef
+     else
+        tail -n +10 $posf | awk '{if( $20 < 0.1 ) {printf(" %10.5f %10.5f %10.5f\n", ($3-51544.0)/365.25+2000,$17*1e3,$20*1e3)}}' >! t.ef
+     endif
+     if( -e $rapf ) then 
+         if( $verr == 0 ) then 
+            tail -n +9 $rapf | awk '{if( $20 < 0.1 ){printf(" %10.5f %10.5f %10.5f\n", ($3-51544.0)/365.25+2000,$17*1e3,$20*1e3)}}' >! t.er
+         else 
+            tail -n +10 $rapf | awk '{if( $20 < 0.1 ){printf(" %10.5f %10.5f %10.5f\n", ($3-51544.0)/365.25+2000,$17*1e3,$20*1e3)}}' >! t.er
+         endif
+         cat t.ef t.er >! t.e
+     else
+         cat t.ef >! t.e
+     endif
+#
+     set scale = `gmt gmtinfo -I0.1/5 t.e`   
+     set lims = `gmt gmtinfo -C t.e`
+
+     gmt psxy t.ef $scale -JX6i/2.5i -Bxa0.2f0.05+l'Year' -Byf5+l'East (mm)' -BSWne -Sc0.04i -G0/0/0 -Y-3.2i -Ey0/1p,200/200/200 -K -O -P >> $psf
+     if( -e $rapf ) gmt psxy t.er $scale -JX  -Sc0.03i -W1p,255/0/0 -G255/0/0 -Ey0/2p,250/200/200 -K -O -P >> $psf
+
+#    Do the UP component
+     if( $verf == 0 ) then 
+        tail -n +9 $posf | awk '{if( $21 < 0.2 ) {printf(" %10.5f %10.5f %10.5f\n", ($3-51544.0)/365.25+2000,$18*1e3,$21*1e3)}}' >! t.uf
+     else
+        tail -n +10 $posf | awk '{if( $21 < 0.2 ) {printf(" %10.5f %10.5f %10.5f\n", ($3-51544.0)/365.25+2000,$18*1e3,$21*1e3)}}' >! t.uf
+     endif
+     if( -e $rapf ) then
+         if( $verr == 0 ) then 
+            tail -n +9 $rapf | awk '{if( $21 < 0.2 ){printf(" %10.5f %10.5f %10.5f\n", ($3-51544.0)/365.25+2000,$18*1e3,$21*1e3)}}' >! t.ur
+         else
+            tail -n +10 $rapf | awk '{if( $21 < 0.2 ){printf(" %10.5f %10.5f %10.5f\n", ($3-51544.0)/365.25+2000,$18*1e3,$21*1e3)}}' >! t.ur
+         endif 
+         cat t.uf t.ur >! t.u
+     else
+         cat t.uf >! t.u
+     endif
+#
+     set scale = `gmt gmtinfo -I0.1/5 t.u`   
+     set lims = `gmt gmtinfo -C t.e`
+
+     if( -e $rapf ) then
+        gmt psxy t.uf $scale -JX6i/2.5i -Bxa0.2f0.05+l'Year' -Byf5+l'Height (mm)' -BSWne -Sc0.04i  -G0/0/0 -Y-3.2i -Ey0/1p,200/200/200 -K -O -P >> $psf
+        gmt psxy t.ur $scale -JX  -Sc0.03i -W1p,255/0/0 -G255/0/0 -Ey0/2p,250/200/200  -O -P >> $psf
+     else
+        gmt psxy t.uf $scale -JX6i/2.5i -Bxa0.2f0.05+l'Year' -Byf5+l'Height (mm)' -BSWne -Sc0.04i  -G0/0/0 -Y-3.2i -Ey0/1p,200/200/200 -O -P >> $psf
+     endif
+
+end
+\rm pbots.lock t.n t.e t.u t.nf  t.ef t.uf t.nr t.er t.ur t.t >&! /dev/null
+
+

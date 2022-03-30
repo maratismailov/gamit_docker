@@ -1,0 +1,18 @@
+MULTIPLTSL: VLBI program for multiple plots of VLBI results
+
+MULTIPLTSL: Produces a multiple plot meta file from a single 
+            SOLVK back solution file.
+
+Runstring:
+
+% multipltsl bak_file <num> <element scales> <element scales> ..
+
+Where:
+    bak_file  is the name of the back solution file from SOLVK
+    <num> is the number of plots per page (default is 6)
+    <element scale> is of the form of the element title from
+    pltsl eg. clk_off, atm_off del_resid elev, and scales are
+    to be used (Min and max entered).  
+    If the scales are entered as zero for PLTSL will use its defaults scales.
+
+

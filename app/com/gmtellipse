@@ -1,0 +1,7 @@
+#!/bin/csh
+#
+# usage:  gmtellipse datafile | psxy -M ...
+# datafile has lon lat major minor angle
+# Uses the script gmtellipse_func
+
+awk '{printf " ~/gg/com/gmtellipse_func %s %s %s %s %s\n", $1, $2, $3, $4, $5}' $1 | csh -s

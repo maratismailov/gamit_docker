@@ -1,0 +1,39 @@
+# Generic Makefile for grids - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King 180216
+                       
+#LABELS: grdtab:grdtab:grdtab_lib:grdtab   
+#LABELS: daf2da:daf2da:daf2da_lib:daf2da  
+#LABELS: dafexpand:dafexpand:NONE:dafexpand
+#LABELS: nao2da:nao2da:nao2da_lib:nao2da  
+#LABELS: atmtoasc:atmtoasc:atmtoasc_lib:atmtoasc
+#LABELS: atmtide:atmtide:NONE:atmtide
+#LABELS: update_atmlg:update_atmlg:update_atmlg_lib:update_atmlg 
+#LABELS: update_vmfg:update_vmfg:update_vmfg_lib:update_vmfg
+#LABELS: vmftoasc:vmftoasc:vmftoasc_lib:vmftoasc
+#LABELS: vmfasc2bin:vmfasc2bin:NONE:vmfasc2bin
+#LABELS: atmfilt:atmfilt:atmfilt_lib:atmfilt   
+#LABELS: atl_asc2bin:atl_asc2bin:atl_asc2bin_lib:atl_asc2bin
+#LABELS: atltoasc:atltoasc:atltoasc_lib:atltoasc
+#LABELS: toc2da:toc2da:toc2da_lib:toc2da  
+
+
+#SHARELIB: ../lib:gamit_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+               
+#OBJ_grdtab_lib grdtab  grdtab_bd    gversn   bilin4        geoc_to_geod  geod_to_xyz    
+#OBJ_grdtab_lib get_atl_list   get_map_grid   get_met_list  get_atl_grid  get_atml_list  get_met_grid  get_otl_list
+#OBJ_grdtab_lib get_atml_grid  get_map_list   get_otl_grid  grid_time     harpos_head interp_months
+#OBJ_grdtab_lib rd_atl_grid    rd_atml_list   rd_atml_grid  rd_map_list  rd_otl_grid rd_met_grid  rd_otl_list  rd_atl_list  rd_map_grid   rd_met_list      
+#OBJ_grdtab_lib reduce_zhd     xyz_to_geod    rep_S1S2CoM     
+#OBJ_daf2da_lib gversn
+#OBJ_nao2da_lib gversn
+#OBJ_atmtoasc_lib gversn grid_time
+#OBJ_atmfilt_lib gversn atm_butter filter_atml grid_time read_atml_headers  
+#OBJ_vmftoasc_lib gversn grid_time
+#OBJ_update_atmlg_lib gversn grid_time
+#OBJ_update_vmfg_lib gversn grid_time
+#OBJ_atl_asc2bin_lib gversn
+#OBJ_atltoasc_lib gversn interp_months
+#OBJ_toc2da_lib gversn
+
+

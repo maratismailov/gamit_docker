@@ -1,0 +1,754 @@
+#!/bin/csh -f         
+#
+if ( $#argv == 0 ) then
+  echo " plot output of the block model code"
+  echo " "
+  echo " USAGE: sh_gmt_block -R w/e/s/n -D directory_path [-res -mod -obs -blk -ss -ds -ts ....] "
+  echo "  "
+  echo " OPTIONS: "
+  echo " Required :                                                                            "
+  echo "  "
+  echo "   -R           define the range for graphics  (default is automatic)                  "
+  echo "   -D           Directory path (input and output file)                                 " 
+  echo "  "
+  echo "        -res      plot residual velocity file                                          "
+  echo "        -mod      plot model velocity file                                             "
+  echo "        -obs      plot observed velocity file                                          "
+  echo "        -def      plot elastic deformation (work with block apriori)                   "
+  echo "        -rot      plot long term rotation (work with block apriori)                    "
+  echo "        -uplift   plot uplift rates (work with block apriori)                          "
+  echo "           -upscale   change sclae for the uplift rates                                "
+  echo "        -sta      print the name of the stations                                       "
+  echo "        -blk      plot blocks geometry                                                 "
+  echo "        -ss       plot strike-slip sens                                                "      
+  echo "           -sst       plot strike-slip rates                                           "      
+  echo "           -sse       plot strike-slip rates error                                     "      
+  echo "           -sscal     change the arrow size                                            "      
+  echo "        -ds       plot dip-slip rates                                                  "
+  echo "        -ts       plot tensile rates                                                   "
+  echo "           -tst       plot tensile rates                                               "      
+  echo "           -tse       plot tensile error                                               "      
+  echo "           -tscal     change the tensile arrow size                                    "      
+  echo "        -topo     plot the topography                                                  "
+  echo "        -topof topo_file  give a topo file path                                        "
+  echo "        -topog gradient_file  give a topo illumination file path                       "
+  echo "        -conf XX  confidence limit for the ellipse, default 95%                        "
+  echo "        -sshift XX distance between fault and arrows                                   "
+  echo "        -out  XX if output name need to be different from block.ps                     "
+  echo "        -name  print the name of the segments                                          "
+  echo "        -land  to choose landscape, default is portrait                                "
+  echo "        -seism plot NEIC seismicity                                                    "
+  echo "             -depth define the maximum depth                                           "
+  echo "             -mag define the minimum magnitude                                         "
+  echo "        -cmt plot harvard cmt                                                          "
+  echo "             -depth define the maximum depth                                           "
+  echo "             -mag define the minimum magnitude                                         "
+  echo "             -scmt define the scale for the beach balls, default is                    "
+  echo "        -fault fault file path, plot the faults                                        "
+  echo "  "
+  echo "        -euler  draw a figure with the euler pole                                      "
+  echo "  "
+  echo "        -gs use gs to directly view the figure                                         "
+  echo "  "
+  echo " eg :  sh_plot_block -R 38/62/22/45 -conf 20 -res -blk -ss                             "
+  echo " eg :  sh_plot_block -R 38/62/22/45 -conf 20 -res -blk -sse                            "
+  echo "  "
+  echo " eg :  sh_plot_block -R 38/62/22/45 -conf 20 -res -blk -ts                             "
+  echo " eg :  sh_plot_block -R 38/62/22/45 -conf 20 -res -blk -tse                            "
+  echo "  "
+  echo "  "
+  echo " eg :  sh_plot_block -R 44/55/32/44 -conf 20 -res -blk -ss                             "
+  echo " eg :  sh_plot_block -R 44/55/32/44 -conf 20 -res -blk -tst                            "
+  echo " eg :  sh_plot_block -gs -blk -R 35/37/32.5/34.8 -res -scale 0.2c -tst -tik 0.5 -topof /chandler/raid2/vernaMNT/Gmt_grd_data/Srtm30/sinai_3s.grd -topog /chandler/raid2/vernant/MNT/Gmt_grd_data/Srtm30/sinai_3s_int.grd -white "
+  echo "  "
+  exit
+endif
+#-----------------------------------------------------------------
+# default
+set R      = 40/62/21/45
+set RR     = no
+set D      = .
+set res    = no
+set blk    = no
+set mod    = no
+set obs    = no
+set sta    = no
+set def    = no
+set rot    = no
+set ss     = no
+set sst    = no
+set sse    = no
+set sscal  = 0.4
+set ds     = no
+set dst    = no
+set dse    = no
+set ts     = no
+set tst    = no
+set tse    = no
+set tscal  = 0.4
+set topo   = no
+set bathy  = no
+set eura   = no
+set conf   = 95
+set sshift = 0.2
+set output = block
+set gs = no
+set xscal  = 40
+set yscal  = 21
+set proj   = JM18c
+set rm     = yes
+set name   = no
+set endp   = no
+set P      = yes
+set euler  = no
+set seism  = no
+set cmt    = no
+set scmt   = 1
+set depth  = 600
+set mag    = 0.1
+set uplift = no
+set upscale = '0.5c'
+set hpscale = 2
+set col    = no
+set subs   = _999
+set subs2  = _999
+set tik    = 2
+set scale  = '0.1c'
+set nb     = no
+set fault  = no
+set E      = " "
+set topof = /chandler/raid2/vernant/MNT/Gmt_grd_data/Bathy-30s/med_bath.grd
+set topog = /chandler/raid2/vernant/MNT/Gmt_grd_data/Bathy-30s/med_bath_int.grd
+#-----------------------------------------------------------------
+while ($#argv > 0 ) 
+set input = ( $argv ) 
+switch($input[1])
+	case -R
+		    set R               = $input[2]
+		    set RR              = yes
+		    breaksw
+	case -D
+		    set D       	= $input[2]
+		    breaksw
+	case -res
+		    set res             = yes
+		    breaksw
+	case -mod
+		    set mod		= yes
+		    breaksw
+	case -obs
+		    set obs		= yes
+		    breaksw
+	case -def
+		    set def		= yes
+		    breaksw
+	case -rot
+		    set rot		= yes
+		    breaksw
+	case -sta
+		    set sta		= yes
+		    breaksw
+	case -blk
+		    set blk		= yes
+		    breaksw
+	case -ss
+		    set ss		= yes
+		    breaksw
+	case -sst
+		    set ss		= yes
+		    set sst		= yes
+		    breaksw
+	case -sse
+		    set ss		= yes
+		    set sst		= yes
+		    set sse		= yes
+		    breaksw
+	case -sscale
+		    set ss		= yes
+		    set sscale		= $input[2]
+		    breaksw
+	case -scale
+		    set scale		= $input[2]
+		    breaksw
+	case -proj
+		    set proj		= $input[2]
+		    breaksw
+	case -ds
+		    set ds		= yes
+		    breaksw
+	case -dst
+		    set ds		= yes
+		    set dst		= yes
+		    breaksw
+	case -dse
+		    set ds		= yes
+		    set dst		= yes
+		    set dse		= yes
+		    breaksw
+	case -ts
+		    set ts		= yes
+		    breaksw
+	case -tst
+		    set ts		= yes
+		    set tst		= yes
+		    set ds		= yes
+		    set dst		= yes
+		    breaksw
+	case -tse
+		    set ts		= yes
+		    set tst		= yes
+		    set tse		= yes
+		    set ds		= yes
+		    set dst		= yes
+		    set dse		= yes
+		    breaksw
+	case -tscale
+		    set ts		= yes
+		    set tscale		= $input[2]
+		    breaksw
+	case -topo
+		    set topo		= yes
+		    breaksw
+	case -topof
+		    set topo		= yes
+		    set topof		= $input[2]
+		    breaksw
+	case -topog
+		    set topo		= yes
+		    set topog		= $input[2]
+		    breaksw
+	case -bathy
+		    set topo		= yes
+		    set bathy		= yes
+		    breaksw
+	case -eura
+		    set topo		= yes
+		    set eura		= yes
+		    breaksw
+	case -conf
+		    set conf		= $input[2]
+		    breaksw
+	case -sshift
+		    set sshift		= $input[2]
+		    breaksw
+	case -out
+		    set output		= $input[2]
+		    breaksw
+	case -gs
+		    set gs		= yes
+		    breaksw
+	case -rm
+		    set rm		= no
+		    breaksw
+	case -name
+		    set name		= yes
+		    breaksw
+	case -endp
+		    set endp		= yes
+		    breaksw
+	case -land
+		    set P		= no
+		    breaksw
+	case -euler
+		    set euler		= yes
+		    breaksw
+	case -seism
+		    set seism		= yes
+		    breaksw
+	case -cmt
+		    set cmt		= yes
+		    breaksw
+	case -uplift
+		    set uplift		= yes
+		    breaksw
+	case -nb
+		    set nb		= yes
+		    breaksw
+	case -upscale
+		    set upscale		= $input[2]
+		    set hpscale		= no
+		    breaksw
+	case -scmt
+		    set scmt		= $input[2]
+		    breaksw
+	case -depth
+		    set depth		= $input[2]
+		    breaksw
+	case -mag
+		    set mag		= $input[2]
+		    breaksw
+	case -col
+		    set col		= $input[2]
+		    breaksw
+	case -subs
+		    set subs		= $input[2]
+		    breaksw
+	case -subs2
+		    set subs2		= $input[2]
+		    breaksw
+	case -tik
+		    set tik		= $input[2]
+		    breaksw
+	case -fault
+		    set fault		= $input[2]
+		    breaksw
+	case -hpscale
+		    set hpscale         = $input[2]
+		    breaksw
+	case -white
+		    set E               = -E255
+		    breaksw
+endsw 
+shift argv 
+end
+echo $R'/18/'$tscal'/'$sshift > tmp1.tmp
+set sshiftt = `awk -F / '{print ($6*($2-$1)/$5)+$7}' tmp1.tmp`
+#echo $sshiftt
+#
+#   Phil Vernant mai 2003
+#
+#
+#----------------------------------------------------------------
+#   run rd_segment to extract the information
+set program = rd_segment_new
+set dir = `pwd`
+#echo "$dir"
+cd $D
+echo bsp1.*.segment > param.tmp
+echo bsp1.*.block >> param.tmp
+echo $sshift >> param.tmp
+echo $sshiftt >> param.tmp
+$program < param.tmp
+cd $dir
+\rm -f param.tmp
+#
+#-----------------------------------------------------------------
+#
+#   set Range for graphic
+#   case R defined by the user
+if ( $RR == "yes" ) then
+#  define x and y for scale
+    echo $R > tmp.tmp
+    set xscal = `awk -F / '{print $1}' tmp.tmp`
+    set yscal = `awk -F / '{print $3}' tmp.tmp`
+    rm -f tmp.tmp
+endif
+#  range
+    set R = -R$R
+#
+#   set tick marks
+#if ($tickk == no) then
+#set tk = 100
+#else
+#set tk = $tickk
+#endif
+#if ($tickx == no) then
+#set tx = 1
+#else
+#set tx = $tickx
+#endif
+#if ($ticky == no) then
+#set ty = 1
+#else
+#set ty = $ticky
+#endif
+#if ($tickz == no) then
+#set tz = 1
+#else
+#set tz = $tickz
+#endif
+#
+gmt gmtdefaults -Du >! gmt.conf
+gmt gmtset GMT_COMPATIBILITY 5
+gmt gmtset FONT_TITLE 16p \
+           FONT_LABEL 12p \
+           FONT_ANNOT_PRIMARY 12p \
+           MAP_TICK_LENGTH_PRIMARY=-0.2c \
+           MAP_ANNOT_OFFSET_PRIMARY 0.4c \
+           PROJ_LENGTH_UNIT c
+#  basemap and topo
+#
+#choose lanscape or portrait
+if ( $P == "yes" ) then
+    if ( $topo == "yes" ) then
+#  case with topo
+#	gmt grdimage /chandler/raid2/vernant/MNT/Gmt_grd_data/iran_30s.grd -P $R  -$proj -C/chandler/raid2/vernant/MNT/mnt_nb3.cpt -X1.5 -Y2.5 -K > $D/$output.ps
+
+#	gmt grdimage /chandler/raid2/vernant/MNT/Gmt_grd_data/eura.grd -P $R  -$proj -C/chandler/raid2/vernant/MNT/mnt.cpt -I/chandler/raid2/vernant/MNT/Gmt_grd_data/int_eura.grd -X1.5 -Y2.5 -K > $D/$output.ps
+    if ( $nb == "no" ) then
+gmt gmtset COLOR_NAN 200/220/130
+	if ( $eura == "yes" ) then
+	gmt grdimage $topof -P $R  -$proj -C/chandler/raid2/vernant/MNT/mnt.cpt -I$topog -X1.5c -Y2.5c -K > $D/$output.ps
+	endif
+	if ( $bathy == "yes" ) then
+	gmt grdimage $topof -P $R  -$proj -C/chandler/raid2/vernant/MNT/mnt_bathy.cpt  -I$topog -X1.5c -Y2.5c -K -V > $D/$output.ps
+	else
+	gmt grdimage $topof -P $R  -$proj -C/chandler/raid2/vernant/MNT/mnt.cpt  -I$topog -X1.5c -Y2.5c -K -V > $D/$output.ps
+	endif
+    else
+gmt gmtset COLOR_NAN 255/255/255
+	if ( $eura == "yes" ) then
+	gmt grdimage /chandler/raid2/vernant/MNT/Gmt_grd_data/eura.grd -P $R  -$proj -C/chandler/raid2/vernant/MNT/mnt_nb.cpt -I/chandler/raid2/vernant/MNT/Gmt_grd_data/int_eura.grd -X1.5c -Y2.5c -K > $D/$output.ps
+	endif
+	if ( $bathy == "yes" ) then
+	gmt grdimage $topof -P $R  -$proj -C/chandler/raid2/vernant/MNT/mnt_bathy_nb.cpt  -I$topog -X1.5c -Y2.5c -K -V > $D/$output.ps
+	else
+	gmt grdimage $topof -P $R  -$proj -C/chandler/raid2/vernant/MNT/mnt_bathy_nb.cpt  -I$topog -X1.5c -Y2.5c -K -V > $D/$output.ps
+	endif
+    endif
+
+	gmt psbasemap  $R -Bxa$tik -Bya$tik -$proj -K -O >> $D/$output.ps
+#
+    else
+gmt gmtset COLOR_NAN 255/255/255
+#  case without topo
+	gmt psbasemap  $R -Bxa$tik -Bya$tik -$proj -P -K -X1.5c -Y2.5c > $D/$output.ps
+    endif
+else
+    if ( $topo == "yes" ) then
+#  case with topo
+	gmt grdimage /chandler/raid2/vernant/MNT/Gmt_grd_data/Bathy-30s/med_bath.grd -C/chandler/raid2/vernant/MNT/mnt_bathy.cpt  -I/chandler/raid2/vernant/MNT/Gmt_grd_data/Bathy-30s/med_bath_int.grd $R  -JM26c -X1.5c -Y2.5c -K > $D/$output.ps
+	gmt psbasemap  $R -Bxa$tik -Bya$tik -JM26c -K -O >> $D/$output.ps
+#
+    else
+#  case without topo
+	gmt psbasemap  $R -Bxa$tik -Bya$tik -JM26c -K -X1.5c -Y2.5c > $D/$output.ps
+    endif
+endif
+#
+#  sea and coat line
+#gmt pscoast -R -JM -S240/240/255 -N1 -Df -K -O -W1p >> $D/$output.ps
+if ( $bathy == "no" ) then
+    gmt pscoast -R -JM -S140/140/255 -N1/0.25p,255/0/0,- -W1p  -Di -K -O  >> $D/$output.ps
+else
+    gmt pscoast -R -JM -N1/0.25p,255/0/0,-  -Di -K -O -W1p >> $D/$output.ps
+endif
+#
+#
+#   faults
+#
+if ( $fault != "no" ) then
+    gmt psxy $fault -R -JM -W3p -K -O >> $D/$output.ps
+endif
+#
+# -------------------------------------------------------------------------
+#  seismicity
+#
+if ($seism == yes) then
+awk '{if ($8 <= depth && $9 >= mag) print $7,$6,$8,$9}' depth=$depth mag=$mag /chandler/raid2/vernant/Block_model/blocks_sp1/utils_gmt/neic_seismicity.txt > tmp.seism
+#awk '{ if ($4 < 4.5) print $1,$2}' tmp.seism | psxy -Sp0.05c -G255/125/255  -W1p/0/0/0 -M -R -JM -K -O >> $D/$output.ps
+awk '{ if ($4 < 4.5) print $1,$2}' tmp.seism | psxy -Sc0.08c -G200/200/200 -W1p/0  -M -R -JM -K -O >> $D/$output.ps
+awk '{ if ($4 >= 4.5 && $4 < 5.5) print $1,$2}' tmp.seism | psxy -Sc0.13c -G0/0/255 -W1p/0 -M -R -JM -K -O >> $D/$output.ps
+awk '{ if ($4 >= 5.5 && $4 < 6.5) print $1,$2}' tmp.seism | psxy -Sc0.18c -G180/0/255 -W1p/0 -M -R -JM -K -O >> $D/$output.ps
+awk '{ if ($4 >= 6.5 && $4 < 7.5) print $1,$2}' tmp.seism | psxy -Sc0.23c -G255/0/255 -W1p/0 -M -R -JM -K -O >> $D/$output.ps
+awk '{ if ($4 >= 7.5) print $1,$2}' tmp.seism | psxy -Sc0.28c -G255/0/0 -W1p/0/0/0 -M -R -JM -K -O >> $D/$output.ps
+
+
+#if ($depth == no && $mag == no) then
+#awk '{ if ($8 <= 600 && $9 >= 0.1) print $7,$6}'  /chandler/raid2/vernant/Block_model/blocks_sp1/utils_gmt/neic_seismicity.txt | psxy -Sc0.10c -G255/0/255 -W1p/0/0/0 -M -R -JM -K -O >> $D/$output.ps
+#else
+#if ($depth == no) then
+#awk '{ if ($8 <= 600 && $9 >= mag) print $7,$6}' mag=$mag   /chandler/raid2/vernant/Block_model/blocks_sp1/utils_gmt/neic_seismicity.txt | psxy -Sc0.10c -G255/0/255 -W1p/0/0/0 -M -R -JM -K -O >> $D/$output.ps
+#else
+#if ($mag == no) then
+#awk '{ if ($8 <= depth && $9 >= 0.1) print $7,$6}'  depth=$depth /chandler/raid2/vernant/Block_model/blocks_sp1/utils_gmt/neic_seismicity.txt | psxy -Sc0.10c -G255/0/255 -W1p/0/0/0 -M -R -JM -K -O >> $D/$output.ps
+#else
+#awk '{if ($8 <= depth && $9 >= mag) print $7,$6}' depth=$depth mag=$mag /chandler/raid2/vernant/Block_model/blocks_sp1/utils_gmt/neic_seismicity.txt | psxy -Sc0.10c -G255/0/255 -W1p/0/0/0 -M -R -JM -K -O >> $D/$output.ps
+#endif
+#endif
+#endif
+endif
+#
+if ($cmt == yes) then
+#awk '{if ($3 <= depth && $7 >= mag) print $7,$6}' depth=$depth mag=$mag /chandler/raid2/vernant/MNT/eq_76-05_5_50km_2.cmt_old | psmeca -R -JM -Sc0.1 -H1 -W1/255/0/0 -G255/0/0 -K -O >> $D/$output.ps
+awk '{if ($3 <= depth) print $1,$2,$3,$4,$5,$6,$7,$8,$9,10,$11,$12,$13}' depth=$depth /chandler/raid2/vernant/Block_model/blocks_sp1/utils_gmt/harvard_cmt.gmt | gmt psmeca -R -JM -Sc0.3c/0  -W1p,255/0/0 -G255/0/0 -K -O  -V >> $D/$output.ps
+#awk '{print $$$$$$$$$$$$$$}' /chandler/raid2/vernant/MNT/eq_76-05_5_50km_2.cmt_old -R -JM -Sd15c  -W1p,255/0/0 -G255/0/0 -K -O  -V >> $D/$output.ps
+
+endif      
+#
+# -------------------------------------------------------------------------
+#
+#gmt psxy -R -JM $D/95-IPG-BALK.sta.data -Sc0.06c -G0 -K -O  -V >> $D/$output.ps
+#gmt psvelo $D/95-IPG-BALK.sta.data -A26p+e+p3.5p+g0 -R -W1p -JM -K -O -Se$scale/0.$conf >> $D/$output.ps
+# -------------------------------------------------------------------------
+#  blocks geometry
+#
+if ($blk == yes) then
+    gmt psxy -M $D/boundary.xyz -R -JM -W3p,0/0/0 -K -O >> $D/$output.ps
+endif
+if ( $blk == yes && $ds == no ) then
+#  normal faults
+    gmt psxy $D/ndsl.xyz -R -JM -Sf0.6c/0.2c+l -G0 -W1p -K -O >> $D/$output.ps
+    gmt psxy $D/ndsr.xyz -R -JM -Sf0.6c/0.2c+r -G0 -W1p -K -O >> $D/$output.ps
+#  reverse faults
+    gmt psxy $D/rdsl.xyz -R -JM -Sf0.6c/0.2c+l -G0 -W1p -K -O >> $D/$output.ps
+    gmt psxy $D/rdsr.xyz -R -JM -Sf0.6c/0.2c+r -G0 -W1p -K -O >> $D/$output.ps
+endif
+#
+# -------------------------------------------------------------------------
+#  velocity vectors
+#
+#  model (mod = yes)
+#    awk '{if ($1 <= 180.0) print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.residual.sta.data > vel1.vel 
+#    awk '{if ($1 >= 180.0) print $1-360,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.residual.sta.data > vel2.vel
+#    paste vel1.vel vel2.vel > residual.vel
+#    awk '{if ($1 <= 180.0) print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.model.sta.data > vel1.vel 
+#    awk '{if ($1 >= 180.0) print $1-360,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.model.sta.data > vel2.vel
+#    paste vel1.vel vel2.vel > model.vel
+#    awk '{if ($1 <= 180.0) print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.observed.sta.data > vel1.vel 
+#    awk '{if ($1 >= 180.0) print $1-360,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.observed.sta.data > vel2.vel
+#    paste vel1.vel vel2.vel > observed.vel
+if ( $mod == yes && $sta == no) then
+    awk '{print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.model.sta.data | grep -v $subs | gmt psvelo -A26p+e+p3.5p,255/0/0+g255/0/0 -R -W1p,255/0/0 -JM -K -O -Se$scale/0.$conf >> $D/$output.ps
+endif
+if ( $mod == yes && $sta == yes) then
+    awk '{print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.model.sta.data | grep -v $subs | gmt psvelo -A26p+e+p3.5p,255/0/0+g255/0/0 -R -W1p,255/0/0 -JM -K -O -Se$scale/0.$conf/8 >> $D/$output.ps
+endif
+#  observation (obs = yes)
+if ( $obs == yes && $sta == no) then
+    awk '{print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.observed.sta.data | grep -v $subs | gmt psvelo -A26p+e+p3.5p,0/0/255+g0/0/255 -R -W1p,0/0/255 -JM -K -O -Se$scale/0.$conf $E >> $D/$output.ps
+endif
+if ( $obs == yes && $sta == yes) then
+    awk '{print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.observed.sta.data | grep -v $subs | gmt psvelo -V -A26p+e+p3.5p,0/0/255+g0/0/255 -R -W1p,0/0/255 -JM -K -O -Se$scale/0.$conf/8 $E >> $D/$output.ps
+endif
+#  residuals (res = yes)
+if ( $res == yes && $sta == no) then
+#  if ( $subs == _999 ) then
+#    awk '{print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.residual.sta.data | psvelo -A0.05i/0.36i/0.10i -R -G0/0/0 -W1p/0/0/0 -JM -K -O -Se$scale/0.$conf >> $D/$output.ps
+#  else
+    awk '{print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.residual.sta.data | grep -v $subs | grep -v $subs2 | gmt psvelo -A26p+e+p3.5p+g0 -R -W1p -JM -K -O -Se$scale/0.$conf $E >> $D/$output.ps
+#  endif
+  if ( $col != no ) then
+    awk '{print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.residual.sta.data | grep $col | gmt psvelo -A26p+e+p3.5p,255/0/0+g255/0/0 -R -W1p,255/0/0 -JM -K -O -Se$scale/0.$conf $E >> $D/$output.ps
+  endif
+endif
+if ( $res == yes && $sta == yes) then
+  if ( $subs == _999 ) then
+    awk '{print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.residual.sta.data | gmt psvelo -A26p+e+p3.5p+g0 -R -W1p -JM -K -O -Se$scale/0.$conf/8 $E >> $D/$output.ps
+  else
+    awk '{print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.residual.sta.data | grep -v $subs | gmt psvelo -A26p+e+p3.5p+g0 -R -W1p -JM -K -O -Se$scale/0.$conf/8 $E >> $D/$output.ps
+  endif
+  if ( $col != no ) then
+    awk '{print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.residual.sta.data | grep $col | gmt psvelo -A26p+e+p3.5p,255/0/0+g255/0/0 -R -W1p,255/0/0 -JM -K -O -Se$scale/0.$conf/8 $E >> $D/$output.ps
+  endif
+endif
+#  elastic deformation (def = yes)
+if ( $def == yes && $sta == no) then
+  if ( $subs == no ) then
+    awk '{print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.deformation.sta.data | gmt psvelo -A26p+e+p3.5p,255/0/255+g255/0/255 -R -W1p,255/0/255 -JM -K -O -Se$scale/0.$conf $E >> $D/$output.ps
+  else
+    awk '{print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.deformation.sta.data | grep -v $subs | gmt psvelo -A26p+e+p3.5p,255/0/255+g255/0/255 -R -W1p,255/0/255 -JM -K -O -Se$scale/0.$conf $E >> $D/$output.ps
+  endif
+endif
+if ( $def == yes && $sta == yes) then
+    awk '{print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.deformation.sta.data | gmt psvelo -A26p+e+p3.5p,255/0/255+g255/0/255 -R -W1p,255/0/255 -JM -K -O -Se$scale/0.$conf/8 $E >> $D/$output.ps
+#  rotation long-term (rot = yes)
+endif
+if ( $rot == yes && $sta == no) then
+    awk '{print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.rotation.sta.data | gmt psvelo -A26p+e+p3.5p,0/255/0+g0/255/0 -R -W1p,0/255/0 -JM -K -O -Se$scale/0.$conf $E >> $D/$output.ps
+endif
+if ( $rot == yes && $sta == yes) then
+    awk '{print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.rotation.sta.data | gmt psvelo -A26p+e+p3.5p,0/255/0+g0/255/0 -R -W1p,0/255/0 -JM -K -O -Se$scale/0.$conf/8 $E >> $D/$output.ps
+endif
+#  uplift (uplift = yes) add phil march 09 2005
+endif
+if ( $uplift == yes && $sta == no) then
+    awk '{print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.uplift.sta.data | gmt psvelo -A26p+e+p10p+g0 -R -W1p -JM -K -O -Se$upscale/0.$conf >> $D/$output.ps
+endif
+if ( $uplift == yes && $sta == yes) then
+    awk '{print $1,$2,$3,$4,$5,$6,$7,$10}' $D/bsp1.*.uplift.sta.data | gmt psvelo -A26p+e+p10p+g0 -R -W1p -JM -K -O -Se$upscale/0.$conf/8 >> $D/$output.ps
+endif
+#
+# -------------------------------------------------------------------------
+#euler pole
+#
+#
+#  euler pole
+if ($euler == yes) then
+    gmt psvelo euler_pole.xy -N -R -JM -K -O -A26p+e+p3.5p -Se0.10c/0.95/10 >> $D/$output.ps
+endif
+#
+#-------------------
+# -------------------------------------------------------------------------
+#  slip rates
+#
+#  strike-slip (ss = yes)
+if ( $ss == yes) then
+    awk '{print $1,$2,$3,'$sscal'*$4}' $D/ssr.xyz | gmt psxy -R -SV0.25c+g0/0/255 -W1p,0/0/255 -JM -K -O >> $D/$output.ps
+    awk '{print $1,$2,$3,'$sscal'*$4}' $D/ssl.xyz | gmt psxy -R -SV0.25c+g255/0/0 -W1p,255/0/0 -JM -K -O >> $D/$output.ps
+endif
+if ( $sst == yes && $sse == yes ) then
+    gmt pstext $D/ss.txt -D0.2c/0.2c -O -K -JM -R -F+f,,255/0/125 -G255 -C0c/0c >> $D/$output.ps
+endif
+if ( $sst == yes && $sse == no ) then
+    awk '{print $1,$2,$3"p,"$5,$4,$6,$7}' $D/ss.txt | gmt pstext -D0.2c/0.2c -O -K -JM -R -F+f,,255/0/125+a+j -G255 -C0c/0c >> $D/$output.ps
+endif
+# -------------------------------------------------------------------------
+#  dip slip rates
+#
+#  dip-slip (ds = yes)
+if ( $ds == yes) then
+    gmt psxy $D/ndsl.xyz -R  -W8p,255/0/0 -JM -K -O -M >> $D/$output.ps
+    gmt psxy $D/ndsr.xyz -R  -W8p,255/0/0 -JM -K -O -M >> $D/$output.ps
+    gmt psxy $D/rdsl.xyz -R  -W8p,0/0/255 -JM -K -O -M >> $D/$output.ps
+    gmt psxy $D/rdsr.xyz -R  -W8p,0/0/255 -JM -K -O -M >> $D/$output.ps
+endif
+if ( $dst == yes && $dse == yes ) then
+    gmt pstext $D/ds.txt -N -D0.2c -O -K -JM -R -F+f,,125/0/255 -G255  -C0c/0c >> $D/$output.ps
+endif
+if ( $dst == yes && $dse == no ) then
+    awk '{print $1,$2,$3"p,"$5,$4,$6,$8}' $D/ds.txt | gmt pstext -D0.2c/0.2c -O -K -JM -R -F+f,,125/0/255+a+j -G255 -C0c/0c >> $D/$output.ps
+endif
+# -------------------------------------------------------------------------
+#  tensile slip rates
+#
+#  tensile (ts = yes)
+if ( $ts == yes) then
+#    awk '{print $1,$2,$3,'$tscal'*$4}' $D/tse.xyz | gmt psxy -R -SV0.25c+g255/0/0 -W1p,255/0/0 -JM -K -O >> $D/$output.ps
+#    awk '{print $1,$2,$3,'$tscal'*$4}' $D/tsc.xyz | gmt psxy -R -SV0.25c+g0/0/255 -W1p,0/0/255 -JM -K -O >> $D/$output.ps
+    gmt psxy $D/tse.xyz -R  -W8p,255/0/0 -JM -K -O >> $D/$output.ps
+    gmt psxy $D/tsc.xyz -R  -W8p,0/0/255 -JM -K -O >> $D/$output.ps
+endif
+if ( $tst == yes && $tse == yes ) then
+	gmt pstext $D/ts.txt  -O -K -JM -R -F+f,,125/0/255 -G255 -C0c/0c>> $D/$output.ps
+endif
+if ( $tst == yes && $tse == no ) then
+	awk '{print $1,$2,$3"p,"$5,$4,$6,$8}' $D/ts.txt | gmt pstext  -O -K -JM -R -F+f,,125/0/255+a+j -G255 -C0c/0c >> $D/$output.ps
+endif
+# -------------------------------------------------------------------------
+#  name and endpoints
+#
+if ( $name == yes) then
+    gmt pstext $D/name.xyz -K -O -JM -R -W -C0c/0c >> $D/$output.ps
+endif
+if ( $endp == yes) then
+    gmt pstext $D/endpoint.xyz -K -O -JM -R -G -F+f,,255/0/0 -C0c/0c >> $D/$output.ps
+endif
+# -------------------------------------------------------------------------
+#scale
+#
+if ( $uplift == no && $hpscale != no ) then
+gmt psvelo -N -R -JM -K -O -A26p+e+p3.5p -Se$scale/0.$conf -X1c -Y1c <<fin >> $D/$output.ps
+$xscal $yscal 0.0  $hpscale 0.0 0.0
+$xscal $yscal -$hpscale 0.0 0.0 0.0
+fin
+gmt pstext -N -D0.2c -O -K -JM -R -F+f+a+j -W -C0c/0c <<fin >> $D/$output.ps
+$xscal $yscal 12p,4 0 LB $hpscale mm/yr $conf @!%  confidence
+fin
+endif
+if ( $uplift == yes && $hpscale == no ) then
+gmt psvelo -N -R -JM -K -O -A26p+e+p10p -Se$upscale/0.$conf -X1c -Y1c <<fin >> $D/$output.ps
+$xscal $yscal 0.0 2.0 0.0 0.0
+fin
+gmt pstext -N -D0.2c -O -K -JM -R -F+f+a+j -W -C0c/0c <<fin >> $D/$output.ps
+$xscal $yscal 12p,4 0 LB 2 mm/yr of uplift
+fin
+endif
+
+if ( $seism == yes) then
+######## LEGENDE
+
+set proj = "-JX4.5c" 
+set cadre = "-R0/2.2/1.0/1.8"
+
+# remplir de blanc
+gmt psxy << end $cadre $proj -W3p -L -G255 -O -V -K >> $D/$output.ps
+0   0.
+1.4 0.
+1.4 1.8
+0.  1.8
+end
+
+gmt psxy << end $proj  -Sc0.08c -G200/200/200 -W1p $cadre -K -V -O >> $D/$output.ps
+0.2 1.7  
+end
+
+gmt psxy << end $cadre $proj -Sc0.13c -G0/0/255 -W1p -O -K >> $D/$output.ps
+0.2 1.55
+end
+
+gmt psxy << end $cadre $proj -Sc0.18c -G180/0/255 -W1p -O -K >> $D/$output.ps
+0.2 1.4
+end
+
+gmt psxy << end $cadre $proj -Sc0.23c -G255/0/255 -W1p -O -K >> $D/$output.ps
+0.2 1.25
+end
+
+gmt psxy << end $cadre $proj -Sc0.28c -G255/0/0 -W1p -O -K >> $D/$output.ps
+0.2 1.10
+end
+
+gmt pstext << end $cadre $proj -F+f9p,4+jBL -K -O -V >> $D/$output.ps
+0.3  1.70  M < 4.5 
+0.3  1.55  4.5 @!\137\074 M < 5.5 
+0.3  1.40  5.5 @!\137\074 M < 6.5 
+0.3  1.25  6.5 @!\137\074 M < 7.5 
+0.3  1.10  M @!\137\076 7.5 
+end
+endif
+
+#gmt pstext << end $cadre $proj -F+f10p,4+jML -K -O -V >> $dessin
+#-3.9 44.85 Campagnes
+#end
+
+# Doit etre la dernier ligne!
+#gmt pstext << end $proj $cadre -F+f4p,4+jBC -V -O -N >> $dessin
+#3.0 42.0 .
+#end
+
+#    set title
+set title = `pwd`
+#
+gmt pstext <<ENDD  -R -JM -F+f12p+jMC -N -O -X8c -Y-2c    >>  $D/$output.ps
+$xscal $yscal       $title
+ENDD
+# -------------------------------------------------------------------------
+#euler pole
+#
+set Re = `gmt gmtinfo -I5 euler_pole.xy`
+#echo $Re
+gmt psbasemap  $Re -Bxa10 -Bya10 -JM26c -K -X1.5c -Y2.5c > $D/euler.ps
+#
+#  sea and coat line
+gmt pscoast -R -JM -S240/240/255 -Dc -K -O >> $D/euler.ps
+#
+#  blocks geometry
+gmt psxy -M $D/boundary.xyz -R -JM -W3p,0/0/0 -K -O >> $D/euler.ps
+#
+#  euler pole
+gmt psvelo euler_pole.xy -N -R -JM -O -A26p+e+p3.5p -Se0.10c/0.95/10 >> $D/euler.ps
+#
+#-------------------
+#
+if ( $rm == yes ) then
+\rm -f gmt.conf gmt.history
+\rm -f ndsl.xyz
+\rm -f ndsr.xyz
+\rm -f ds.txt
+\rm -f rdsl.xyz
+\rm -f rdsr.xyz
+\rm -f ssl.xyz
+\rm -f ssr.xyz
+#\rm -f ss.txt
+\rm -f tsc.xyz
+\rm -f tse.xyz
+\rm -f ts.txt
+\rm -f name.xyz
+\rm -f endpoint.xyz
+\rm -f tmp1.tmp
+\rm -f boundary.xyz
+endif
+#
+#
+if ( $gs == no ) then
+    echo " "
+    echo " "
+    echo " To view  postript files    : gs $D/$output.ps " 
+    echo " "
+    echo " "
+endif
+if ( $gs == yes ) then
+    gs $D/$output.ps
+endif
+#end

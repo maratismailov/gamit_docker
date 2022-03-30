@@ -1,0 +1,465 @@
+          elseif( line(1:1).eq.'*' ) then
+            continue
+          elseif( line(14:17).eq.'CODE') then
+cd            print *,'Epoch line ',line
+            read(line,'(2i4,37x,2i3)') stopyr,stopdoy,month,day
+cd            print *,'new span stopyr stopdoy ',stopyr,stopdoy
+            dcbstop(1) = stopyr
+            dcbstop(2) = stopdoy
+            dcbstop(3) = 23
+            dcbstop(4) = 59
+            startyr = stopyr 
+            startdoy = stopdoy - day + 1
+            dcbstart(1) = startyr
+            dcbstart(2) = startdoy
+            do i=3,5
+              dcbstart(i) = 0 
+            enddo               
+            dcbstop(5) = 0 
+            endsvs = .false.            
+            do while( .not.endsvs )                   
+              read(luin,'(a80)',iostat=ioerr) line   
+cd              print *,' line ',line
+              if( ioerr.eq.-1 ) then
+                eof =.true.
+                endsvs =.true.
+              elseif( line(14:17).eq.'CODE') then
+                endsvs =. true.
+                backspace(luin)
+*** Tempoarily skip the GLonass entries since svnav.dat doesn't yet include the entries
+c**              else                                                                     
+              elseif( line(1:1).eq.'G' ) then
+                nl = nl + 1 
+                call checkmax(nl,maxnl)
+                read(line,'(a1,i2,20x,2f12.0)',iostat=ioerr) 
+     .            gnss(nl),prn(nl),dcb(nl),rms(nl)
+cd                print *,'READ nl prn dcb rms '
+cd     .                , nl,prn(nl),dcb(nl),rms(nl)
+                if(ioerr.ne.0) then
+                  write(message,'(a,i6)') 
+     .                  'Error reading input file dcb line ',nl
+                  call report_stat('FATAL','DCBTAB2','Main','dcb.dat'
+     .                            , message,ioerr)
+                endif   
+c               get the SVN and check for a mid-month PRN change
+                call get_times( gnss(nl),prn(nl),dcbstart,dcbstop
+     .                        , svn(nl),start(1,nl),stop(1,nl) )
+cd  DEBUG 
+cd                write(*,'(a,3i4,f8.3,4i5)') 
+cd     .            'nl iprn isvn dcb start stop'
+cd     .            , nl,prn(nl),svn(nl),dcb(nl)
+cd     .            ,(start(i,nl),i=1,2),(stop(i,nl),i=1,2)
+              endif 
+            enddo 
+          endif
+        enddo
+
+      else
+c-------incrementing an existing V2 file
+        eof = .false.
+        do while( .not.eof ) 
+          read(luin,'(a80)',iostat=ioerr) line
+          if( ioerr.eq.-1 ) then
+             eof = .true.
+          elseif( ioerr.ne.0 ) then
+            call report_stat('FATAL','DCBTAB2','Main','dcb.dat'
+     .             , 'Error reading original DCB file ',ioerr)
+          elseif( line(1:1).ne.' ' ) then
+c           comment
+            continue
+          else                
+            nl = nl + 1   
+            call checkmax(nl,maxnl)
+            read(line,'(1x,a1,1x,i4,2x,i2,2(i6,i4,2i3),2f8.0)')  
+     .         gnss(nl),svn(nl),prn(nl) 
+     .        ,(start(i,nl),i=1,5),(stop(i,nl),i=1,5),dcb(nl),rms(nl)
+          endif
+        enddo
+c       read the new monthly values and add them to the arrays
+c       read the header
+        read(lumon,'(a80)',iostat=ioerr) 
+        if( ioerr.ne.0 ) then
+           call report_stat('FATAL','DCBTAB2','Main','dcb.dat',
+     .           'Error reading CODE monthly RINEX.DCB file ',ioerr)
+        elseif( line(8:14).ne.'MONTHLY' ) then
+           call report_stat('FATAL','DCBTAB2','Main','dcb.dat',
+     .          'Unrecognized header on CODE monthly RINEX.DCB file ',0)
+        else
+          read(line,'(45x,i4,8x,i2)',iostat=ioerr) year,month
+          if( ioerr.ne.0 ) 
+     .      call report_stat('FATAL','DCBTAB2','Main','dcb.dat',
+     .      'Error decoding date on CODE monthly RINEX.DCB file ',ioerr)
+c         set the start/stop times as the first and last days of the month 
+          dcbstart(1) = year
+          dcbstart(2) = idoy(year,month,1)
+          if( month.eq.12 ) then
+             dcbstop(2) = idoy(year,month,31)
+          else
+            month = month + 1
+            dcbstop(2) = idoy( year,month,1) -1
+          endif  
+          dcbstop(3) = 23
+          dcbstop(4) = 59       
+          do i=3,5
+            dcbstart(i) = 0 
+          enddo  
+          dcbstop(5) = 0 
+c         skip the rest of the header
+          do i=1,6
+            read(luin,'(a)') 
+          enddo   
+        endif
+c       now read the values
+        do while(.not.eof ) 
+          read(lumon,'(a80)',iostat=ioerr) line
+          if( ioerr.eq.-1.or.line(1:3).eq.'   '  ) then
+            eof = .true.
+          elseif( ioerr.ne.0 ) then
+            call report_stat('FATAL','DCBTAB2','Main','dcb.dat',
+     .            'Error reading Version 2  DCB values ',ioerr)
+          else                                       
+            nl = nl + 1                                              
+            call checkmax(nl,maxnl)
+            read(line,'(a1,i2,20x,2f12.0)',iostat=ioerr)
+     .           gnss(nl),prn(nl),dcb(nl),rms(nl)
+            if( ioerr.ne.0 ) then 
+              write(message,'(a,i6)') 'Error decoding dcb line ',nl
+              call report_stat('FATAL','DCBTAB2','Main',monfile
+     .                          , message,ioerr)
+            else 
+c             get the SVN and check for a mid-month PRN change
+              call get_times( gnss(nl),prn(nl),dcbstart,dcbstop
+     .                      , svn(nl),start(1,nl),stop(1,nl) )
+            endif                                     
+          endif
+        enddo
+c     endif on whether translation or incrementing
+      endif
+                 
+* Populate sub-arrays for each system 
+
+      ng = 0 
+      nr = 0 
+      nc = 0 
+      ne = 0 
+      do i=1,nl
+        if( gnss(i).eq.'G') then
+           ng = ng+1 
+           call insert_arrays( 
+     .          gnss(i),prn(i),svn(i),dcb(i),rms(i),start(1,i),stop(1,i)
+     .        , ng,prng,svng,dcbg,rmsg,startg,stopg )
+        elseif( gnss(i).eq.'R') then
+          nr = nr + 1
+          call insert_arrays( 
+     .          gnss(i),prn(i),svn(i),dcb(i),rms(i),start(1,i),stop(1,i)
+     .        , nr,prnr,svnr,dcbr,rmsr,startr,stopr )
+        elseif( gnss(i).eq.'C') then
+          nc = nc + 1
+          call insert_arrays( 
+     .          gnss(i),prn(i),svn(i),dcb(i),rms(i),start(1,i),stop(1,i)
+     .        ,  nc,prnc,svnc,dcbc,rmsc,startc,stopc )
+        elseif( gnss(i).eq.'E') then
+          ne = ne + 1
+          call insert_arrays( 
+     .          gnss(i),prn(i),svn(i),dcb(i),rms(i),start(1,i),stop(1,i)
+     .        , ne,prne,svne,dcbe,rmse,starte,stope ) 
+        else
+          call report_stat('FATAL','DCBTAB2','Main','dcb.dat'
+     .                  , 'Only gnss G R C E coded',0)
+        endif 
+      enddo
+cd      print *,'G values'
+cd      do i=1,ng
+cd        print *,svng(i),prng(i),dcbg(i)
+cd     .      ,(startg(j,i),j=1,2),(stopg(j,i),j=1,2)
+cd      enddo
+
+*  Within each system, sort by SVN
+                      
+      call sort_svn( ng,svng,prng,dcbg,rmsg,startg,stopg )
+c      call sort_svn( nr,svnr,prnr,dcbr,rmsr,startr,stopr )
+c      call sort_svn( nc,svnc,prnc,dcbc,rmsc,startc,stopc )
+c      call sort_svn( ne,svne,prne,dcbe,rmse,starte,stope )
+  
+cd      print *,'Sorted G values'
+cd      do i=1,ng
+cd        print *,svng(i),prng(i),dcbg(i)
+cd     .  ,(startg(j,i),j=1,2),(stopg(j,i),j=1,2)
+cd      enddo
+                     
+* Change the stop time for the last entry of each SV to 2100 001.
+               
+c** GPS only for now
+      svnlast = svng(1)
+      do i=2,ng   
+        if( svng(i).eq.svnlast ) then
+          continue
+        else 
+          if(i.eq.ng ) then
+            ii=ng
+          else
+            ii=i-1 
+          endif
+          stopg(1,ii) = 2100
+          stopg(2,ii) = 1
+          stopg(3,ii) = 0
+          stopg(4,ii) = 0
+          svnlast = svng(i)
+        endif
+      enddo       
+      
+        
+* Write out the merged file
+                                              
+c     get the date of the update and write the headers
+      call getdat( irunt(1),irunt(2),irunt(3) )
+      write(luout,'(a)')  '* dcb.dat Version 2.0 - units are ns '
+      write(luout,'(a,i4,a,i2,a,i2 )')  
+     .   '* Last updated ',irunt(1),'-',irunt(2),'-',irunt(3)   
+      write(luout,'(a)') 
+     .  '*SYS SVN PRN  Start           Stop            P1-C1   rms'
+c     write the values
+      if( ng.ne.0 ) then
+        do i=1,ng
+          write(luout,'(1x,a1,i6,i4,2(i6,i4,2i3),2f10.3)')
+     .           'G',svng(i),prng(i)
+     .           ,(startg(j,i),j=1,4),(stopg(j,i),j=1,4),dcbg(i),rmsg(i)
+        enddo
+      endif
+** RWK temporary: don't write out the GLonass values since svnav.dat does not yet have the SVN
+      nr = 0 
+**
+      if( nr.ne.0 ) then
+        do i=1,nr
+          write(luout,'(1x,a1,i6,i4,2(i6,i4,2i3),2f10.3)')
+     .           'R',svnr(i),prnr(i)
+     .           ,(startr(j,i),j=1,4),(stopr(j,i),j=1,4),dcbr(i),rmsr(i)
+        enddo
+      endif                                                        
+      if( nc.ne.0 ) then
+        do i=1,nc
+          write(luout,'(1x,a1,i6,i4,2(i6,i4,2i3),2f10.3)')
+     .           'C',svnc(i),prnc(i)
+     .           ,(startc(j,i),j=1,4),(stopc(j,i),j=1,4),dcbc(i),rmsc(i)
+        enddo
+      endif                                                        
+      if( ne.ne.0 ) then
+        do i=1,nc
+          write(luout,'(1x,a1,i6,i4,2(i6,i4,2i3),2f10.3)')
+     .           'E',svne(i),prne(i)
+     .           ,(starte(j,i),j=1,4),(stope(j,i),j=1,4),dcbe(i),rmse(i)
+        enddo
+      endif                                                        
+
+      stop
+      end
+
+c------------------------------------------------------------------------------
+
+      Subroutine get_times( ag,iprn,dcbstart,dcbstop
+     .                    , isvn,newstart,newstop )
+
+*     Check the iprn for a change midmonth and reset the start and
+*     stop times to match the correct SVN
+                 
+      integer*4 maxnl
+      parameter(maxnl= 30000) 
+
+      integer*4 iprn,dcbstart(5),dcbstop(5),isvn,svnstart(5),svnstop(5)
+     .        , newstart(5),newstop(5),startdoy,idum
+      real*8 rdum
+      character*1 ag  
+      character*256 message
+                  
+cd    print *,'ag iprn dcbstart dcbstop ',ag,iprn,dcbstart,dcbstop
+      if( iprn.le.32 ) then
+        call svnav_read( -1,dcbstart(1),dcbstart(2),0,0,ag,iprn,isvn
+     .                 , idum,rdum,rdum,rdum,rdum
+     .                 , svnstart,svnstop )  
+c       if svn is returned as zero, PRN not active at start, search through
+c       the month until it's valid:
+        if( isvn.eq.0 ) then
+          startdoy = dcbstart(2)
+          do while( isvn.eq.0 ) 
+            startdoy = startdoy + 1
+            call svnav_read( -1,dcbstart(1),startdoy,0,0,ag,iprn,isvn
+     .                 , idum,rdum,rdum,rdum,rdum
+     .                 , svnstart,svnstop )  
+cd            print *,'DEBUG iprn isvn,yr doy '
+cd     .            ,iprn,isvn,dcbstart(1),startdoy 
+            if( (startdoy-dcbstart(2)).gt.32 ) then    
+cd              print *,'DEBUG iprn isvn dcbstart startdoy '
+cd     .           , iprn,isvn,dcbstart(2),startdoy
+              write(message,'(a,i3,a,4i5)') 'No valid SVN entry for PRN'
+     .             , iprn,' in span '
+     .             , dcbstart(1),dcbstart(2),dcbstop(1),dcbstop(2)
+              call report_stat('FATAL','DCBTAB2','get_times',' '
+     .                  ,message,0)
+            endif
+          enddo 
+          do i=1,5
+            newstart(i) = svnstart(i)
+            newstop(i) =  dcbstop(i)
+          enddo
+        else
+          do i=1,5   
+            newstart(i) = dcbstart(i)
+            if( svnstop(1).ne.0 ) then
+              if( itimdif(svnstop,dcbstop).lt.0 ) then
+                 newstop(i) = svnstop(i)
+              else
+                newstop(i) = dcbstop(i)    
+              endif 
+            else
+              newstop(i) = dcbstop(i) 
+            endif
+          enddo             
+        endif 
+cd  DEBUG
+cd       write(*,'(a,2i4,4i5)') 'iprn isvn svnstart svnstop '
+cd     .    ,iprn,isvn,(svnstart(i),i=1,2),(svnstop(i),i=1,2)
+      else
+        print *,'** NEW iprn ',iprn
+        iprn = iprn - 50    
+        call svnav_read( -1,dcbstop(1),dcbstop(2),0,0,ag,iprn,isvn
+     .                 , idum,rdum,rdum,rdum,rdum
+     .                 , svnstart,svnstop )  
+        do i=1,5
+          newstart(i) = svnstart(i)
+          newstop(i) = dcbstop(i)
+        enddo    
+cd        write(*,'(a,2i4,4i5)') 'iprn isvn svnstart svnstop '
+cd     .    ,iprn,isvn,(svnstart(i),i=1,2),(svnstop(i),i=1,2)
+      endif 
+
+      return
+      end
+
+             
+c---------------------------------------------------------------------
+
+      Subroutine checkmax(nl,maxnl)
+           
+      integer*4 nl,maxnl
+      character*80 message
+
+      if( nl.gt.maxnl ) then
+         write(message,'(a,i7)') 'Number of dcb entries > maxnl ',maxnl
+         call report_stat('FATAL','DCBTAB2','checkmax',' ',message,0) 
+      endif   
+      end                                                                
+
+c-----------------------------------------------------------------------
+                                                                        
+      Subroutine insert_arrays( cgnss,iprn,isvn,rdcb,rrms,istart,istop 
+     .                        , ng,prng,svng,dcbg,rmsg,startg,stopg )
+
+*     Insert one set of values from the master arrays into the GNSS-
+*     specific arrays. 
+                 
+      integer*4 maxnl
+      parameter(maxnl= 30000) 
+          
+*     Counter for the GNSS-specific array
+      integer*4 ng
+
+*     Values to be inserted 
+      integer*4 iprn,isvn,istart(5),istop(5)
+      real*4 rdcb,rrms
+      character*1 cgnss
+
+*     GNSS-specific arrays
+      integer*4 prng(maxnl),svng(maxnl),startg(5,maxnl),stopg(5,maxnl)
+      real*4 dcbg(maxnl),rmsg(maxnl)
+
+*     Local
+      integer*4 i
+                 
+cd      print *,'INSERT ng iprn isvn rdcb rrms istart istop '
+cd     .        ,ng,iprn,isvn,rdcb,rrms,istart,istop  
+      prng(ng) = iprn
+      svng(ng) = isvn
+      dcbg(ng) = rdcb
+      rmsg(ng) = rrms
+      do i=1,5
+        startg(i,ng) = istart(i)                                   
+        stopg(i,ng) = istop(i)
+      enddo
+                      
+      return
+      end
+
+c-----------------------------------------------------------------------
+      Subroutine sort_svn( n,svn,prn,dcb,rms,start,stop )
+
+*     Sort the DCB arrays by SVN 
+      
+      implicit none
+                 
+      integer*4 maxnl
+      parameter(maxnl= 30000) 
+
+
+      integer*4 n,i,j,k
+     .        , svn(maxnl),prn(maxnl),start(5,maxnl),stop(5,maxnl)
+     .        , svnbuf1,svnbuf2,prnbuf1,prnbuf2
+     .        , startbuf1(5),stopbuf1(5),startbuf2(5),stopbuf2(5)              
+
+      real*4 dcb(maxnl),rms(maxnl),dcbbuf1,dcbbuf2,rmsbuf1,rmsbuf2
+                 
+c     Sort by SVN
+               
+      do i = 1,n-1 
+        do j = 1,n-i
+           svnbuf1 = svn(j)
+           svnbuf2 = svn(j+1)  
+           prnbuf1 = prn(j)
+           prnbuf2 = prn(j+1)
+           dcbbuf1 = dcb(j)
+           dcbbuf2 = dcb(j+1)
+           rmsbuf1 = rms(j)
+           rmsbuf2=  rms(j+1) 
+           do k=1,5
+             startbuf1(k) = start(k,j)      
+             startbuf2(k) = start(k,j+1)
+             stopbuf1(k) = stop(k,j)      
+             stopbuf2(k) = stop(k,j+1)   
+           enddo                                   
+           if( svnbuf1.le.svnbuf2 ) then  
+             svn(j) = svnbuf1
+             svn(j+1) = svnbuf2  
+             prn(j) = prnbuf1
+             prn(j+1) = prnbuf2
+             dcb(j) = dcbbuf1
+             dcb(j+1) = dcbbuf2 
+             rms(j) = rmsbuf1
+             rms(j+1) = rmsbuf2     
+             do k=1,5
+               start(k,j)   = startbuf1(k)
+               start(k,j+1) = startbuf2(k)
+               stop(k,j)   = stopbuf1(k)
+               stop(k,j+1) = stopbuf2(k)
+             enddo
+           else    
+             svn(j) = svnbuf2
+             svn(j+1) = svnbuf1  
+             prn(j) = prnbuf2
+             prn(j+1) = prnbuf1
+             dcb(j) = dcbbuf2
+             dcb(j+1) = dcbbuf1 
+             rms(j) = rmsbuf2
+             rms(j+1) = rmsbuf1     
+             do k=1,5
+               start(k,j)   = startbuf2(k)
+               start(k,j+1) = startbuf1(k)
+               stop(k,j)   = stopbuf2(k)
+               stop(k,j+1) = stopbuf1(k)
+             enddo                   
+           endif 
+         enddo
+      enddo   
+
+      return
+      end
+
+

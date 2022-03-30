@@ -1,0 +1,27 @@
+# Generic Makefile for kf/glorg - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King July 23, 1996
+ 
+#LABELS: glorg:glorg_main:glorg_lib:glorg
+
+# MAKEFILE to compile and ar modules from glorg.f
+
+#SHARELIB: ../glout:glout_lib
+#SHARELIB: ../glfor:glfor_lib
+#SHARELIB: ../globk:globk_lib
+#SHARELIB: ../Khandlers:KalObs_hndl_lib  
+#SHARELIB: ../gen_util:gen_util_lib
+#SHARELIB: ../../libraries/matrix:kinv_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+
+#OBJ_glorg_lib  glorg
+#OBJ_glorg_lib  glorg_util
+#OBJ_glorg_lib  equate
+#OBJ_glorg_lib  equate_parms
+#OBJ_glorg_lib  decode_param
+#OBJ_glorg_lib  force
+#OBJ_glorg_lib  cov_xyz_neu
+#OBJ_glorg_lib  apply_cfull
+#OBJ_glorg_lib  est_plate
+#OBJ_glorg_lib  merge_nonsec
+#OBJ_glorg_lib  balance_cov
+

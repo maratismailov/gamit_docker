@@ -1,0 +1,36 @@
+CALC: VLBI CALC program
+
+-----------------------------------------------------------------------------
+                   CALC 7.0:  Mark III Data Analysis
+             Partials and Contributions Calculation Program
+-----------------------------------------------------------------------------
+
+	Run this program on databases bound for SOLVE in order to
+	calculate the partials and contributions it needs.  This 
+	version is IDENTICAL to the A900 version of CALC 7.0, so
+	everything you know about that version applies to this one.
+	See J. Ryan's CALC 7.0 Release Document for a thorough 
+	explaination of the differences between versions 6.0 and 7.0.
+
+	To install the program simply run 'make'.  To run it, use
+		  calc 0 0 <calcon file name>
+        where the two leading zeros are holdovers from the A900 version.
+	Actually, the second zero can be set to -1 to suppress all output
+	to the screen (stdout).  The calcon file name must be there -- it
+	makes no assumptions as to a "default" calcon file.  The format of 
+	the file is:
+
+<80 character history entry of the CALCed database                         ...>
+<keyname> <version number> <keyname> <version number + 1>
+<list of 62 single digit flow flags.                       ...>
+
+	There must be one such block for each database to be processed, with
+	NO blank lines between blocks.  Each line MUST begin in the first 
+	column.  The actual format of the second line matters:  in FORTRAN
+	format-speak it is (A10,I10,5x,A10,I10).  An example is given below
+	(there is also an example file in this directory):
+
+Test of CALC 7.0 for the Unix world...   891221GGC
+$88JUN30XE         5     $88JUN30XE         6
+00000000000000000000000000000000000000000000000000000000000000
+

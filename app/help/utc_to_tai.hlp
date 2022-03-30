@@ -1,0 +1,14 @@
+UTC_TO_TAI: Convert UTC to TAI in PMU file
+
+ program utc_to_tai
+
+ program to convert a standard globk pmu file with UT1-UTC
+ entries into UT1-TAI entries.
+
+ Program uses the GAMIT leap.sec file which it first tries
+ to open directly.  If this fails it tries to construct the
+ full path from the HELP_DIR name.
+
+ Runstring is:
+ % utc_to_tai <in file> <out file>
+

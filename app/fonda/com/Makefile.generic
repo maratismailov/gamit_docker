@@ -1,0 +1,17 @@
+# Generic Makefile for fonda/com
+# Created by M King 000328 from a makefile created
+# by D Dong; modified by R King and G Ferhat
+ 
+#LABELS: foncom:NONE:foncom:NONE                     
+
+#SHARELIB: 
+
+#OBJ_foncom ata atwa axb blank cdate chi2_dis clnbuf copy1d count_arg 
+#OBJ_foncom fcheck ferror geotab geoxyz get_path getcmd getdat
+#OBJ_foncom gettim getusr iclarg isort isort2 julday latwa leapyr
+#OBJ_foncom latwa_indx laxb_indx lift_arg lowerc match_name museum
+#OBJ_foncom nblen pline remedy_space rtodms satwa sort_int1 sort_intr 
+#OBJ_foncom sort_real1 sph_ca sphxyz strjst trans upperc wdms zero1d
+
+#OBJ_foncom_host mallocg_HHHH
+

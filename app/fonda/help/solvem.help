@@ -1,0 +1,90 @@
+
+                                          SOLVEM
+>>============================================================================================<<
+functions:
+    1. combine geodetic survey data (trilateration, triangulation, ...) with space geodesy solution
+       (VLBI, GPS, ...) to recover site coordinate correction and velocity.
+    2. get strain rate and rotation components (either network average or Delaunay triangle) 
+    3. calculate episodic parameters.
+    4. statistical analyses.
+
+The mathematical model of SOLVEM is based on:
+    Collier et al., On a four-dimensional integerated geodesy, B. G., 62, 71-91, 1988
+
+To run SOLVEM, just type: solvem <driving file name>
+    If the name of driving file is missed, instruction will be given.
+
+To run SOLVEM, you need to prepare:
+    driving file, input data file(MAKED output format), apriori coordinate file(FONDA format) 
+    additional (optional): episodic event list file
+
+Driving file is a keyword controlled style file. It has the following advantages:
+    * Most commands are readable.
+    * The order of command lines is flexible.
+    * The location (column) of input names and options is flexible.
+    * Besides the key word, you can add or omit any words in command part to 
+      strengthen your understanding.
+
+SOLVEM deals with either single input data file or multiple input files as sequential data file.
+  
+    SOLVEM accepts following observation types (for the time being): 
+        1. astrometric azimuth
+        2. horizontal angle
+        3. horizontal direction
+        4. baseline length
+        5. zenith height
+        6. leveling
+ 
+       11. astrometric azimuth rate
+       12. horizontal angle rate
+       13. horizontal direction rate
+       14. baseline length rate
+       15. zenith height rate
+       16. leveling rate
+
+       21. 3-D geocentric coordinate
+       22. 3-D geocentric velocity
+       23. 3-D geodetic coordinate
+       24. 3-D geodetic velocity
+       25. 3-D geocentric baseline vector
+       26. 3-D geocentric baseline rate vector
+       27. 3-D spherical baseline vector
+       28. 3-D spherical baseline rate vector
+
+       31. 3-D spherical coordinate
+       32. 3-D spherical frame velocity
+       33. 3-D Cartesian coordinate
+       34. 3-D Cartesian frame velocity
+
+       41. deflection correction
+
+    SOLVEM accepts various apriori coordinate modes : 
+        1. geocentric spherical coordinate (lat,lon,radius)
+        2. geodetic (ellipsoidal) coordinate (lat,lon,height)
+        3. geocentric Cartesian coordinate (x,y,z)
+        4. topocentric coordinate (x(east),y(north),z(height))
+
+    SOLVEM can perform following constraints (need to be enriched):
+        1. assign specified site coordinate adjustment.
+        2. assign specified site velocity adjustment.
+        3. bind coordinate adjustments for several sites.
+        4. bind velocity adjustments for several sites.
+        5. assign velocity orientation
+        6. freeze baseline length
+        7. fix center of a subnetwork
+        8. fix motion of subnetwork center
+        9. zero horizontal rotation of a subnetwork
+       10. zero vertical rotation of a subnetwork
+       11. link velocity gradient
+       12. inner coordinate constraint
+       12. outer coordinate constraint
+
+**** Current SOLVEM is still being developed.  Contributions are most welcome.
+
+Hope you will enjoy the performance of SOLVEM.
+Please make your contributions to SOLVEM (comment, modification, question, criticize, ...)
+
+                                            Danan Dong  92.10.08
+                                            e-mail: dong@chandler.mit.edu
+                                            (617)253-8872, MIT
+

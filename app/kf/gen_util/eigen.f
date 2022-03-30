@@ -1,0 +1,242 @@
+ctitle
+C
+      subroutine eigen( h, n, ndim, iegen, u, nr, x, rap, iq)
+
+      implicit none 
+c
+c     This routine was originally HDIAG and has been modified
+c     for use in SOLVK.
+*     Further modified to make into general eignal value routine
+*     so see if better than jacobi.
+c
+c
+c     SUBROUTINE   HDIAG (H,N,IEGEN,U,NR,X,RAP)
+c
+C     MASON VJ-WC  3/21/63  SDS SUBROUTINE HDIAG    M.E.ASH  SEPT 1964
+C     M.E.ASH  SEPT 1964   MASON SUBROUTINE HDIAG MODIFIED TO FORTRAN IV
+C     MIHDI3, FORTRAN II DIAGONALIZATION OF A REAL SYMMETRIC MATRIX BY
+C        THE JACOBI METHOD.
+C     CALLING SEQUENCE FOR DIAGONALIZATION
+C           CALL  HDIAG( H, N, IEGEN, U, NR,X,RAP)
+C            WHERE H IS THE ARRAY TO BE DIAGONALIZED.
+C     N IS THE ORDER OF THE MATRIX, H.
+C
+C     IEGEN MUST BE SET UNEQUAL TO ZERO IF ONLY EIGENVALUES ARE
+C            TO BE COMPUTED.
+C     IEGEN MUST BE SET EQUAL TO ZERO IF EIGENVALUES AND EIGENVECTORS
+C            ARE TO BE COMPUTED.
+C
+C     U IS THE UNITARY MATRIX USED FOR FORMATION OF THE EIGENVECTORS.
+C
+C     NR IS THE NUMBER OF ROTATIONS.
+C
+C      X IS DUMMY VECTOR USED IN CALCULATIONS
+C
+C     RAP IS ACCURACY CONSTANT
+C
+C     A DIMENSION STATEMENT MUST BE INSERTED IN THE SUBROUTINE.
+C     DIMENSION H(N,N), U(N,N), X(N),IQ(N)
+C
+C     SUBROUTINE PLACES COMPUTER IN THE FLOATING TRAP MODE
+C
+C     THE SUBROUTINE OPERATES ONLY ON THE ELEMENTS OF H THAT ARE TO THE
+C            RIGHT OF THE MAIN DIAGONAL.  THUS, ONLY A TRIANGULAR
+C            SECTION NEED BE STORED IN THE ARRAY H.
+C
+c
+c Original dimension statements
+c
+C
+C     DIMENSION H(50,51),U(50,51),X(50),IQ(50)
+c     DIMENSION H(3,4),U(3,4),X(3),IQ(3)
+c     DOUBLE PRECISION H,U,X,RAP,HDTEST,XMAX,HDIMIN,HIIJJ,HIJ,TANG,
+c    1COSINE,CCOS,SINE,HII,HJJ,THIJ,HTEMP
+c     DOUBLE PRECISION DABS,DSIGN,DSQRT
+c
+      integer*4 n, nr, iegen, ndim
+      real*8 h(ndim,ndim+1), u(ndim,ndim+1), x(ndim)
+ 
+c
+      real*8 rap, hdtest, xmax, hdimin, hiijj, hij, tang, cosine,
+     .    ccos, sine, hii, hjj, thij, htemp
+ 
+C
+      integer*4 iq(ndim), i,j,k, ipl1, nmi1, ipiv, jpiv
+
+      xmax = 0.d0
+      ipiv = 0
+      jpiv = 0
+c
+c.... Start of subroutine execution
+c
+ 
+      IF (IEGEN) 15,10,15
+ 10   DO 14 I=1,N
+      DO 14 J=1,N
+      IF(I-J)12,11,12
+ 11   U(I,J)=1.0D0
+      GO TO 14
+ 12   U(I,J)=0.0D0
+ 14   CONTINUE
+C
+ 15   NR = 0
+      IF (N-1) 1000,1000,17
+C
+C     SCAN FOR LARGEST OFF DIAGONAL ELEMENT IN EACH ROW
+C     X(I) CONTAINS LARGEST ELEMENT IN ITH ROW
+C     IQ(I) HOLDS SECOND SUBSCRIPT DEFINING POSITION OF ELEMENT
+C
+ 17   NMI1=N-1
+      DO 30 I=1,NMI1
+      X(I) = 0.0D0
+      IPL1=I+1
+      DO 30 J=IPL1,N
+      IF ( X(I) - ABS( H(I,J))) 20,20,30
+ 20   X(I)=ABS(H(I,J))
+      IQ(I)=J
+ 30   CONTINUE
+      HDTEST= 1.0D+38
+C
+C     FIND MAXIMUM OF X(I) S FOR PIVOT ELEMENT AND
+C     TEST FOR END OF PROBLEM
+C
+ 40   DO  70  I=1,NMI1
+      IF (I-1) 60,60,45
+ 45   IF ( XMAX- X(I)) 60,70,70
+ 60   XMAX=X(I)
+      IPIV=I
+      JPIV=IQ(I)
+ 70   CONTINUE
+C
+C     IS MAX. X(I) EQUAL TO ZERO, IF LESS THAN HDTEST, REVISE HDTEST
+      IF ( XMAX) 1000,1000,80
+ 
+ 80   IF (HDTEST) 90,90,85
+ 85   IF (XMAX - HDTEST) 90,90,148
+ 90   HDIMIN = ABS( H(1,1) )
+      DO 110  I= 2,N
+      IF (HDIMIN- ABS( H(I,I))) 110,110,100
+ 100  HDIMIN=ABS(H(I,I))
+ 110  CONTINUE
+C
+      HDTEST=HDIMIN*RAP
+C
+C     RETURN IF MAX.H(I,J)LESS THAN    RAP*DABS(H(K,K)-MIN)
+      IF (HDTEST- XMAX) 148,1000,1000
+ 148  NR = NR+1
+C
+C     COMPUTE TANGENT, SINE AND COSINE,H(I,I),H(J,J)
+  150 HIIJJ= H(IPIV,IPIV)-H(JPIV,JPIV)
+      HIJ= H(IPIV,JPIV)
+      TANG= SIGN(2.0D0,HIIJJ)*HIJ/(ABS(HIIJJ)+SQRT(HIIJJ*HIIJJ+
+     1      4.0D0*HIJ*HIJ))
+      COSINE= 1.0D0/SQRT( 1.0D0+TANG*TANG)
+ 
+      CCOS= COSINE*COSINE
+      SINE=TANG*COSINE
+      HII= H(IPIV,IPIV)
+      HJJ= H(JPIV,JPIV)
+      THIJ= HIJ*2.0D0
+      H(IPIV,IPIV)= CCOS*(HII+TANG*(THIJ+TANG*HJJ))
+      H(JPIV,JPIV)= CCOS*(HJJ-TANG*(THIJ-TANG*HII))
+ 
+      H(IPIV,JPIV)= 0.0D0
+C
+C      PSEUDO RANK THE EIGENVALUES
+C      ADJUST SINE AND COS FOR COMPUTATION OF H(IK) AND U(IK)
+      IF ( H(IPIV,IPIV) -  H(JPIV,JPIV)) 152,153,153
+ 
+ 152  HTEMP = H(IPIV,IPIV)
+      H(IPIV,IPIV) = H(JPIV,JPIV)
+ 
+      H(JPIV,JPIV) = HTEMP
+C       RECOMPUTE SINE AND COS
+      HTEMP = SIGN(1.0D0,-SINE) * COSINE
+ 
+      COSINE = ABS (SINE)
+      SINE = HTEMP
+ 153  CONTINUE
+C
+C     INSPECT THE IQS BETWEEN I+1 AND N-1 TO DETERMINE
+C     WHETHER A NEW MAXIMUM VALUE SHOULD BE COMPUTED SINCE
+C     THE PRESENT MAXIMUM IS IN THE I OR J ROW.
+C
+      DO 350 I=1,NMI1
+      IF(I-IPIV)210,350,200
+ 200  IF(I-JPIV)210,350,210
+ 210  IF(IQ(I)-IPIV)230,240,230
+ 230  IF(IQ(I)-JPIV)350,240,350
+ 240  K=IQ(I)
+ 250  HTEMP=H(I,K)
+      H(I,K)=0.0D0
+      IPL1=I+1
+      X(I) =0.0D0
+C
+C     SEARCH IN DEPLETED ROW FOR NEW MAXIMUM
+C
+      DO 320 J=IPL1,N
+      IF ( X(I)- ABS( H(I,J)) ) 300,300,320
+ 300  X(I) = ABS(H(I,J))
+      IQ(I)=J
+ 320  CONTINUE
+      H(I,K)=HTEMP
+ 350  CONTINUE
+C
+      X(IPIV) =0.0D0
+      X(JPIV) =0.0D0
+C
+C     CHANGE THE OTHER ELEMENTS OF H
+C
+      DO 530 I=1,N
+C
+      IF(I-IPIV)370,530,420
+ 370  HTEMP = H(I,IPIV)
+      H(I,IPIV) = COSINE*HTEMP + SINE*H(I,JPIV)
+      IF ( X(I) -  ABS( H(I,IPIV)) )380,390,390
+ 380  X(I) = ABS(H(I,IPIV))
+      IQ(I) = IPIV
+ 390  H(I,JPIV) = -SINE*HTEMP + COSINE*H(I,JPIV)
+      IF ( X(I) -  ABS( H(I,JPIV)) ) 400,530,530
+ 400  X(I) = ABS(H(I,JPIV))
+      IQ(I) = JPIV
+      GO TO 530
+C
+ 420  IF(I-JPIV)430,530,480
+ 430  HTEMP = H(IPIV,I)
+      H(IPIV,I) = COSINE*HTEMP + SINE*H(I,JPIV)
+      IF ( X(IPIV) -  ABS( H(IPIV,I)) ) 440,450,450
+ 440  X(IPIV) = ABS(H(IPIV,I))
+      IQ(IPIV) = I
+ 450  H(I,JPIV) = -SINE*HTEMP + COSINE*H(I,JPIV)
+      IF ( X(I) -  ABS( H(I,JPIV)) ) 400,530,530
+C
+ 480  HTEMP = H(IPIV,I)
+      H(IPIV,I) = COSINE*HTEMP + SINE*H(JPIV,I)
+      IF ( X(IPIV) -  ABS( H(IPIV,I)) ) 490,500,500
+ 490  X(IPIV) = ABS(H(IPIV,I))
+      IQ(IPIV) = I
+ 500  H(JPIV,I) = -SINE*HTEMP + COSINE*H(JPIV,I)
+      IF ( X(JPIV) -  ABS( H(JPIV,I)) ) 510,530,530
+ 510  X(JPIV) = ABS(H(JPIV,I))
+      IQ(JPIV) = I
+ 530  CONTINUE
+C
+C     TEST FOR COMPUTATION OF EIGENVECTORS
+C
+      IF(IEGEN)40,540,40
+ 540  DO 550 I=1,N
+      HTEMP=U(I,IPIV)
+      U(I,IPIV)=COSINE*HTEMP+SINE*U(I,JPIV)
+ 550  U(I,JPIV)=-SINE*HTEMP+COSINE*U(I,JPIV)
+      GO TO 40
+ 1000 continue
+ 
+*     Copy the eigen values back to the x array
+      do i = 1, N
+         x(i) = h(i,i)
+      end do
+      
+      RETURN
+      end
+ 
+c......................................................................

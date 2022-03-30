@@ -1,0 +1,76 @@
+#!/bin/csh          
+#
+#doc Case fold a set of file names either UP or down
+#doc
+# 
+######################## INSTRUCTIONS #############################
+if ( $#argv == 0 ) then
+  echo "==================================================================================="
+  echo "  Case fold a given set of files either UP or down "
+  echo "  "
+  echo "  USAGE : sh_casefold -dir <U or d> -files <list> -z"
+  echo "  "
+  echo "          <U or d> Case fold UP (U), down (d) "
+  echo "          <list>   The names of file names to be casefolded (wild cards OK)"
+  echo "          <z> If you do NOT want to keep the upper case .Z compressed extention"
+  echo "  "
+  echo "  Example : sh_casefold -dir d -files *.98o"
+  echo "  "
+  echo "  Note: -files must be last argument on the command line."
+  echo "        DEFAULT: Any .Z extension will remain upper case when folding down (-dir d)"
+  echo "  "
+  echo "==================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+set dir      = " "
+set files    = " "
+set z        = no
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -d:
+    case -dir:
+      set dir = $input[2]  
+    breaksw 
+    case -z:
+      set z = yes  
+    breaksw 
+    case -f:
+    case -files:
+      set files = ( $input[2-] )
+      echo $files >! tmp.files
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ######################  
+if ( $dir == "D" || $dir == "d" ) then
+  echo 'Case folding down all files given'
+  foreach i (`echo $files`)
+    if ( ${z} == no ) then
+      set filen = `echo $i | awk '{print length($0)}'`
+      \mv $i `echo $i | awk -F. '{if ($NF == "Z") {print tolower(substr($0,1,(len-2)))".Z"} else {print tolower($0)}}' len=$filen` >& /dev/null 
+    else
+      \mv $i `echo $i | tr '[A-Z]' '[a-z]'` >& /dev/null
+    endif
+  end
+else if ( $dir == "U" || $dir == "u" ) then
+  echo 'Case folding up all files given'
+  foreach i (`echo $files`)
+    \mv $i ` echo $i | tr '[a-z]' '[A-Z]' ` >& /dev/null
+  end
+else
+  echo 'Case fold direction not specified. Please specify -dir U or -dir d'
+  exit
+endif
+
+#Clean Up...
+if (-e tmp.files ) then
+  \rm -r tmp.files  >& /dev/null
+endif
+
+#Thats it we're done 
+exit

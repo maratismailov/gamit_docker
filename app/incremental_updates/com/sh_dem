@@ -1,0 +1,587 @@
+#!/bin/bash
+
+version='2021-05-13'
+
+# Redirect standard error to /dev/null
+#exec 2>/dev/null
+
+# Null input test
+if [ $# -eq 0 ]; then
+  cat << END && exit 1
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+  Program:     $(basename $0)
+  Written by:  Michael Floyd (2012-11-16, MIT)
+  Last edited: Michael Floyd ($version, MIT)
+
+  Usage: $(basename $0) <DEM> <min. lon.> <max. lon.> <min. lat.> <max. lat.>
+
+  where <DEM> is one of the following options:
+
+    e5   : ETOPO5 (superseded by ETOPO1)
+    e2   : ETOPO2 (superseded by ETOPO1)
+    e1b  : ETOPO1 (bedrock surface)
+    e1i  : ETOPO1 (ice surface)
+    s30  : SRTM30 version 2.1 [requires NASA Earthdata login]
+    s30+ : SRTM30_PLUS
+    s3   : SRTM3 version 3 [requires NASA Earthdata login]
+    s1   : SRTM1 version 3 [requires NASA Earthdata login]
+
+  <min. lon.>, <max. lon.>, <min. lat.> and <max. lat.> must be provided in
+  decimal degrees, using negative values for southern hemisphere latitudes and
+  negative values or values > 180 for western hemisphere longitudes.
+
+  Description: $(basename $0) downloads the raw data tiles for the chosen DEM that
+               are appropriate to the region provided by the last four
+               arguments, then converts the DEM data to GMT .grd-file format,
+               stitches the tiles together and finally cuts them to the final
+               region. The output is a GMT .grd-file in the current working
+               directory.
+
+  Notes: We recommend using ETOPO5 for global-scale plots, ETOPO2 for
+         continental-scale plots, ETOPO1 or SRTM30[_PLUS] for country-scale
+         plots and SRTM3 or SRTM1 only for local-scale plots to avoid creating
+         extremely large .grd- and PostScript files.
+
+         Some DEMs are not available via public servers without a login account
+         or GUI data request. Nevertheless, other DEMs may be downloaded and
+         stored in the current working directory (or ~/gg/maps/ directory) to be
+         used by other scripts such as sh_plotvel. For example:
+
+         GEBCO: Go to https://download.gebco.net/ and enter the geographic
+                boundaries and select 2D netCDF grid, then click "Add to
+                basket", "View basket" and "Download your data". Enter your
+                email address and click "Email download link". Download and
+                unzip the file from the provided link. Optionally, move the
+                unzip'd .nc-file into ~/gg/maps/ for central access.
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+END
+fi
+
+# Program defaults
+tmp='/tmp'
+etopo5dat='http://www.ngdc.noaa.gov/mgg/global/relief/ETOPO5/TOPO/ETOPO5/ETOPO5.DAT'
+etopo5dos='http://www.ngdc.noaa.gov/mgg/global/relief/ETOPO5/TOPO/ETOPO5/ETOPO5.DOS'
+etopo2msb='http://www.ngdc.noaa.gov/mgg/global/relief/ETOPO2/ETOPO2v2-2006/ETOPO2v2c/raw_binary/ETOPO2v2c_i2_MSB.zip'
+etopo2lsb='http://www.ngdc.noaa.gov/mgg/global/relief/ETOPO2/ETOPO2v2-2006/ETOPO2v2c/raw_binary/ETOPO2v2c_i2_LSB.zip'
+etopo1b='http://www.ngdc.noaa.gov/mgg/global/relief/ETOPO1/data/bedrock/grid_registered/binary/etopo1_bed_g_i2.zip'
+etopo1i='http://www.ngdc.noaa.gov/mgg/global/relief/ETOPO1/data/ice_surface/grid_registered/binary/etopo1_ice_g_i2.zip'
+#srtm='https://dds.cr.usgs.gov/srtm/version2_1/SRTM'  # SRTM1 or SRTM3 version 2.1
+srtm='http://e4ftl01.cr.usgs.gov/MEASURES'  # SRTM1 or SRTM3 version 3
+srtm30_plus='ftp://topex.ucsd.edu/pub/srtm30_plus/srtm30/data'
+doi=''
+citation=''
+
+# Endianness test
+endianness=$(printf 'I' | od -to2 | awk 'NR == 1 {print substr($2,6,1)}')  # 0 = big-endian ("Motorola"); 1 = little-endian ("Intel")
+
+# Boundaries
+r=( $2 $3 $4 $5 )
+if [ ${2%.*} -gt ${3%.*} -o ${4%.*} -gt ${5%.*} ]; then
+  printf 'Longitude and/or latitude ranges are not in ascending numerical order. Exiting...\n' &&
+   exit 1
+fi
+bounds=( $(awk '{printf "%05.1fW %05.1fE %05.1fW %05.1fE ",sqrt((($1-360)%360)^2),sqrt((($1+360)%360)^2),sqrt((($2-360)%360)^2),sqrt((($2+360)%360)^2); if ($3 < 0) printf "%04.1fS ",sqrt($3^2); else printf "%04.1fN ",$3; if ($4 < 0) printf "%04.1fS",sqrt($4^2); else printf "%04.1fN",$4}' <<< "${r[*]}") )
+
+# Test which program to use for download
+if [ "$(uname -s)" = 'Darwin' ]; then  # Mac
+  if [ -e `which curl` ]; then  # curl exists
+    prog='curl -s -f -c .urs_cookies -n -L -R -O'  # No verbosity
+    #prog='curl -f -# -L -R -O'  # Some verbosity
+  elif [ -e "$(which wget)" ]; then  # wget exists
+    prog='wget -q -N'  # No verbosity
+    #prog='wget -nv -N'  # Some verbosity
+  else  # Neither curl nor wget available
+    printf 'Neither wget nor curl available to download DEM tiles. Exiting...\n' &&
+     exit 1
+  fi
+else
+  if [ -e "$(which wget)" ]; then  # wget exists
+    prog='wget -q -N'  # No verbosity
+    #prog='wget -nv -N'  # Some verbosity
+  elif [ -e "$(which curl)" ]; then  # curl exists
+    prog='curl -s -f -c .urs_cookies -n -L -R -O'  # No verbosity
+    #prog='curl -f -# -L -R -O'  # Some verbosity
+  else  # Neither wget nor curl available
+    printf 'Neither wget nor curl available to download DEM tiles. Exiting...\n' &&
+     exit 1
+  fi
+fi
+
+if [ -f gmt.conf ]; then
+  rm_gmtconf=0  # Do not remove pre-existing gmt.conf file after script execution
+else
+  rm_gmtconf=1  # Remove gmt.conf file generated by script after execution
+fi
+if [ -f gmt.history ]; then
+  rm_gmthistory=0  # Do not remove pre-existing gmt.history file after script execution
+else
+  rm_gmthistory=1  # Remove gmt.history file generated by script after execution
+fi
+
+# Print version
+printf "$(basename $0) version $version\n"
+
+case $1 in
+
+  e5 )  # ETOPO5
+
+    out=( ETOPO5_${bounds[0]}-${bounds[2]}_${bounds[4]}-${bounds[5]}.grd ETOPO5_${bounds[1]}-${bounds[3]}_${bounds[4]}-${bounds[5]}.grd )
+    doi='10.7289/V5D798BF'
+    citation="National Geophysical Data Center (1993), 5-minute Gridded Global Relief Data (ETOPO5), National Geophysical Data Center, NOAA, doi:10.7289/V5D798BF [$(date '+%Y-%m-%d')]."
+
+    if [ -e "${out[0]}" ]; then
+
+      printf "${out[0]} already exists. Exiting...\n" && exit
+
+    elif [ -e "${out[1]}" ]; then
+
+      printf "${out[1]} already exists. Exiting...\n" && exit
+
+    else
+
+      printf "Creating ETOPO5 DEM in GMT .grd-format for\n${r[0]} <= longitude <= ${r[1]}, ${r[2]} <= latitude <= ${r[3]} ... \n"
+
+      # Download raw binary data file
+      #if [ $endianness -eq 0 ]; then  # Big-endian
+        file="$etopo5dat"
+      #elif [ $endianness -eq 1 ]; then  # Little endian
+      #  file="$etopo5dos"
+      #fi
+      pushd $tmp &> /dev/null && {
+       $prog "$file"
+       popd &> /dev/null
+      }
+
+      # Create ETOPO5 DEM
+      if [ $endianness -eq 0 ]; then  # Big-endian
+        gmt xyz2grd $tmp/$(basename $file) -G$tmp/${out[0]}=ns -I5m/5m -R0/360/-90/90 -ZTLh -r -fg
+      elif [ $endianness -eq 1 ]; then  # Little-endian
+        gmt xyz2grd $tmp/$(basename $file) -G$tmp/${out[0]}=ns -I5m/5m -R0/360/-90/90 -ZTLhw -r -fg
+      fi
+      rm -f $tmp/$(basename $file)
+      gmt grdcut $tmp/${out[0]} -G${out[0]}=ns -R${r[0]}/${r[1]}/${r[2]}/${r[3]}
+      rm -f $tmp/${out[0]}
+
+    fi
+
+    ;;
+
+  e2 )  # ETOPO2
+
+    out=( ETOPO2v2_${bounds[0]}-${bounds[2]}_${bounds[4]}-${bounds[5]}.grd ETOPO2v2_${bounds[1]}-${bounds[3]}_${bounds[4]}-${bounds[5]}.grd )
+    doi='10.7289/V5J1012Q'
+    citation="National Geophysical Data Center (2006), 2-minute Gridded Global Relief Data (ETOPO2) v2, National Geophysical Data Center, NOAA, doi:10.7289/V5J1012Q [$(date '+%Y-%m-%d')]."
+
+    if [ -e "${out[0]}" ]; then
+
+      printf "${out[0]} already exists. Exiting...\n" && exit
+
+    elif [ -e "${out[1]}" ]; then
+
+      printf "${out[1]} already exists. Exiting...\n" && exit
+
+    else
+
+      printf "Creating ETOPO2 (v2) DEM in GMT .grd-format for\n${r[0]} <= longitude <= ${r[1]}, ${r[2]} <= latitude <= ${r[3]} ... \n"
+
+      # Download raw binary data file
+      if [ $endianness -eq 0 ]; then  # Big-endian
+        file="$etopo2msb"
+      elif [ $endianness -eq 1 ]; then  # Little endian
+        file="$etopo2lsb"
+      fi
+      pushd $tmp &> /dev/null && {
+       $prog "$file" &&
+        unzip -qq -u -o $tmp/${file##*/} -d $tmp &&
+        rm -f $tmp/${file##*/}
+       popd &> /dev/null
+      }
+
+      # Create ETOPO2 DEM
+      gmt xyz2grd $tmp/$(basename ${file/zip/bin}) -G$tmp/${out[0]}=ns -I2m/2m -R-180/180/-90/90 -ZTLh -r -fg
+      rm -f $tmp/$(basename ${file/zip/*})
+      gmt grdcut $tmp/${out[0]} -G${out[0]}=ns -R${r[0]}/${r[1]}/${r[2]}/${r[3]}
+      rm -f $tmp/${out[0]}
+
+    fi
+
+    ;;
+
+  e1* )  # ETOPO1
+
+    out=( ETOPO1_${bounds[0]}-${bounds[2]}_${bounds[4]}-${bounds[5]}.grd ETOPO1_${bounds[1]}-${bounds[3]}_${bounds[4]}-${bounds[5]}.grd )
+    doi='10.7289/V5C8276M'
+    citation="Amante, C. and B.W. Eakins (2009), ETOPO1 1 Arc-Minute Global Relief Model: Procedures, Data Sources and Analysis, NOAA Technical Memorandum NESDIS NGDC-24, National Geophysical Data Center, NOAA, doi:10.7289/V5C8276M [$(date '+%Y-%m-%d')]."
+
+    if [ -e "${out[0]}" ]; then
+
+      printf "${out[0]} already exists. Exiting...\n" && exit
+
+    elif [ -e "${out[1]}" ]; then
+
+      printf "${out[1]} already exists. Exiting...\n" && exit
+
+    else
+
+      # Determine surface type
+      if [ "${1:2:1}" = 'i' ]; then  # Ice surface
+        file="$etopo1i"
+        printf 'Creating ETOPO1 (ice surface) DEM in GMT .grd-format for\n'
+      else  # Bedrock surface (default)
+        file="$etopo1b"
+        printf 'Creating ETOPO1 (bedrock) DEM in GMT .grd-format for\n'
+      fi
+      printf "${r[0]} <= longitude <= ${r[1]}, ${r[2]} <= latitude <= ${r[3]} ... \n"
+
+      # Download raw binary data file
+      pushd $tmp &> /dev/null && {
+       $prog "$file" &&
+        unzip -qq -u -o $tmp/${file##*/} -d $tmp &&
+        rm -f $tmp/${file##*/}
+       popd &> /dev/null
+      }
+
+      # Create ETOPO1 DEM
+      if [ $endianness -eq 0 ]; then  # Big-endian (swap bytes)
+        gmt xyz2grd $tmp/$(basename ${file/zip/bin}) -G$tmp/${out[0]}=ns -I1m/1m -R-180/180/-90/90 -ZTLhw -d-32768 -fg &&
+         rm -f $tmp/$(basename ${file/zip/*})
+      else  # Little endian
+        gmt xyz2grd $tmp/$(basename ${file/zip/bin}) -G$tmp/${out[0]}=ns -I1m/1m -R-180/180/-90/90 -ZTLh -d-32768 -fg &&
+         rm -f $tmp/$(basename ${file/zip/*})
+      fi
+      gmt grdcut $tmp/${out[0]} -G${out[0]}=ns -R${r[0]}/${r[1]}/${r[2]}/${r[3]} &&
+       rm -f $tmp/${out[0]}
+
+    fi
+
+    ;;
+
+  s[13] )  # SRTM1 or SRTM3 version 3 (from http://e4ftl01.cr.usgs.gov/MEASURES/SRTMGL[13].003/2000.02.11/) [formerly version 2.1 (from https://dds.cr.usgs.gov/srtm/version2_1/)]
+
+    res="${1:1:1}"  # Resolution
+
+    #out=( SRTM${res}v2.1_${bounds[0]}-${bounds[2]}_${bounds[4]}-${bounds[5]}.grd SRTM${res}v2.1_${bounds[1]}-${bounds[3]}_${bounds[4]}-${bounds[5]}.grd )
+    out=( SRTM${res}v3_${bounds[0]}-${bounds[2]}_${bounds[4]}-${bounds[5]}.grd SRTM${res}v3_${bounds[1]}-${bounds[3]}_${bounds[4]}-${bounds[5]}.grd )
+    doi="10.5067/MEaSUREs/SRTM/SRTMGL$res.003"
+    citation='Farr, T. G., P. A. Rosen, E. Caro, R. Crippen, R. Duren, S. Hensley, M. Kobrick, M. Paller, E. Rodriguez, L. Roth, D. Seal, S. Shaffer, J. Shimada, J. Umland, M. Werner, M. Oskin, D. Burbank, and D. Alsdorf (2007), The Shuttle Radar Topography Mission, Rev. Geophys., 45, RG2004, doi:10.1029/2005RG000183.'
+
+    if [ -e "${out[0]}" ]; then
+
+      printf "${out[0]} already exists. Exiting...\n" && exit
+
+    elif [ -e "${out[1]}" ]; then
+
+      printf "${out[1]} already exists. Exiting...\n" && exit
+
+    else
+
+      #printf "Creating SRTM${res} (v2.1) DEM in GMT .grd-format for\n${r[0]} <= longitude <= ${r[1]}, ${r[2]} <= latitude <= ${r[3]} ... \n"
+      printf "Creating SRTM${res} (v3) DEM in GMT .grd-format for\n${r[0]} <= longitude <= ${r[1]}, ${r[2]} <= latitude <= ${r[3]} ... \n"
+
+      # Longitude and latitude range of 1 deg x 1 deg tiles needed
+      minlon=$(awk '{if ($1 < 0) print int($1)-1; else print int($1)}' <<< ${r[0]})       # Round down to whole degree
+      maxlon=$(awk '{if ($1 < 0) print int($1); else print int($1+1-1e-9)}' <<< ${r[1]})  # Round up to whole degree
+      minlat=$(awk '{if ($1 < 0) print int($1)-1; else print int($1)}' <<< ${r[2]})       # Round down to whole degree
+      maxlat=$(awk '{if ($1 < 0) print int($1); else print int($1+1-1e-9)}' <<< ${r[3]})  # Round up to whole degree
+
+      lat1=$minlat
+      while [ $lat1 -lt $maxlat ]; do  # Loop over latitude
+
+        let lat2="$lat1+1"
+
+        rm -f $tmp/$lat1.grd
+
+        lon1=$minlon
+        while [ $lon1 -lt $maxlon ]; do  # Loop over longitude
+
+          let lon2="$lon1+1"
+
+          # Set parts of file name
+          lat=$(awk '{if ($1 < 0) printf "S%02d",sqrt($1^2); else printf "N%02d",$1}' <<< $lat1)
+          lon=$(awk '{if ($1 < 0 || $1 >= 180) printf "W%03d",sqrt((($1-360)%360)^2); else printf "E%03d",$1}' <<< $lon1)
+
+          # Download (quietly) tile from archive
+          #if [ $res -eq 1 ]; then  # SRTM1 version 2.1
+          #  pushd $tmp &> /dev/null && {
+          #   $prog "${srtm}1/Region_01/$lat$lon.hgt.zip" ||
+          #    $prog "${srtm}1/Region_02/$lat$lon.hgt.zip" ||
+          #    $prog "${srtm}1/Region_03/$lat$lon.hgt.zip" ||
+          #    $prog "${srtm}1/Region_04/$lat$lon.hgt.zip" ||
+          #    $prog "${srtm}1/Region_05/$lat$lon.hgt.zip" ||
+          #    $prog "${srtm}1/Region_06/$lat$lon.hgt.zip" ||
+          #    $prog "${srtm}1/Region_07/$lat$lon.hgt.zip"
+          #   popd &> /dev/null
+          #  }
+          #elif [ $res -eq 3 ]; then  # SRTM3 version 2.1
+          #  pushd $tmp &> /dev/null && {
+          #   $prog "${srtm}3/Africa/$lat$lon.hgt.zip" ||
+          #    $prog "${srtm}3/Australia/$lat$lon.hgt.zip" ||
+          #    $prog "${srtm}3/Eurasia/$lat$lon.hgt.zip" ||
+          #    $prog "${srtm}3/Islands/$lat$lon.hgt.zip" ||
+          #    $prog "${srtm}3/North_America/$lat$lon.hgt.zip" ||
+          #    $prog "${srtm}3/South_America/$lat$lon.hgt.zip"
+          #   popd &> /dev/null
+          #  }
+          #fi
+          pushd $tmp &> /dev/null && {
+           $prog "$srtm/SRTMGL$res.003/2000.02.11/$lat$lon.SRTMGL$res.hgt.zip"
+           popd &> /dev/null
+          }
+
+          #if [ ! -e $tmp/$lat$lon.hgt.zip ]; then  # Tile does not exist so make tile of NaNs
+          if [ ! -e $tmp/$lat$lon.SRTMGL$res.hgt.zip ]; then  # Tile does not exist so make tile of NaNs
+            gmt grdmath -R$lon1/$lon2/$lat1/$lat2 -I${res}s/${res}s -fg 0 0 NAN = $tmp/$lat$lon.grd=ns
+          else
+            #unzip -qq -u -o $tmp/$lat$lon.hgt.zip -d $tmp && rm -f $tmp/$lat$lon.hgt.zip
+            unzip -qq -u -o $tmp/$lat$lon.SRTMGL$res.hgt.zip -d $tmp && rm -f $tmp/$lat$lon.SRTMGL$res.hgt.zip
+            if [ $endianness -eq 0 ]; then  # Big-endian
+              gmt xyz2grd $tmp/$lat$lon.hgt -G$tmp/$lat$lon.grd=ns -I${res}s/${res}s -R$lon1/$lon2/$lat1/$lat2 -ZTLh -d-32768 -fg
+              rm -f $tmp/$lat$lon.hgt
+            elif [ $endianness -eq 1 ]; then  # Little-endian (swap bytes)
+              gmt xyz2grd $tmp/$lat$lon.hgt -G$tmp/$lat$lon.grd=ns -I${res}s/${res}s -R$lon1/$lon2/$lat1/$lat2 -ZTLhw -d-32768 -fg
+              rm -f $tmp/$lat$lon.hgt
+            fi
+          fi
+
+          if [ -e $tmp/$lat1.grd ]; then  # Paste next longitudinal tile
+            gmt grdpaste $tmp/$lat1.grd $tmp/$lat$lon.grd -G$tmp/temp.grd=ns -fg &&
+             mv -f $tmp/temp.grd $tmp/$lat1.grd &&
+             rm -f $tmp/$lat$lon.grd
+          else
+            mv -f $tmp/$lat$lon.grd $tmp/$lat1.grd
+          fi
+
+          let lon1++  # Increment longitude
+
+        done  # END: Loop over longitude
+
+        if [ -e $tmp/${out[0]} ]; then  # Paste next latitudinal row
+          gmt grdpaste $tmp/${out[0]} $tmp/$lat1.grd -G$tmp/temp.grd=ns -fg &&
+           mv -f $tmp/temp.grd $tmp/${out[0]} &&
+           rm -f $tmp/$lat1.grd
+        else
+          mv -f $tmp/$lat1.grd $tmp/${out[0]}
+        fi
+
+        let lat1++  # Increment latitude
+
+      done  # END: Loop over latitude
+
+      gmt grdcut $tmp/${out[0]} -G${out[0]}=ns -R${r[0]}/${r[1]}/${r[2]}/${r[3]} &&
+       rm -f $tmp/${out[0]}
+
+    fi
+
+    ;;
+
+  s30 )  # SRTM30
+
+    lat_test=( $(awk '{if ($3 < -60) print 1; else print 0; if ($4 < -60) print 1; else print 0}' <<< "${r[*]}") )
+    if [ ${lat_test[0]} -eq 1 -a ${lat_test[1]} -eq 1 ]; then
+      cat << END && exit 1
+SRTM30 not available south of latitude -60 (input ${r[2]} to ${r[3]})!
+Cannot create DEM. Exiting...
+END
+    elif [ ${lat_test[0]} -eq 1 ]; then
+      cat << END
+SRTM30 not available south of latitude -60 (input ${r[2]} to ${r[3]})!
+Continuing with minimum latitude set to 60S...
+END
+      r[2]=-60
+    fi
+
+    out=( SRTM30_${bounds[0]}-${bounds[2]}_${bounds[4]}-${bounds[5]}.grd SRTM30_${bounds[1]}-${bounds[3]}_${bounds[4]}-${bounds[5]}.grd )
+    doi='10.5067/MEaSUREs/SRTM/SRTMGL30.002'
+    citation='Farr, T. G., P. A. Rosen, E. Caro, R. Crippen, R. Duren, S. Hensley, M. Kobrick, M. Paller, E. Rodriguez, L. Roth, D. Seal, S. Shaffer, J. Shimada, J. Umland, M. Werner, M. Oskin, D. Burbank, and D. Alsdorf (2007), The Shuttle Radar Topography Mission, Rev. Geophys., 45, RG2004, doi:10.1029/2005RG000183.'
+
+    if [ -e "${out[0]}" ]; then
+
+      printf "${out[0]} already exists. Exiting...\n" && exit
+
+    elif [ -e "${out[1]}" ]; then
+
+      printf "${out[1]} already exists. Exiting...\n" && exit
+
+    else
+
+      printf "Creating SRTM30 DEM in GMT .grd-format for\n${r[0]} <= longitude <= ${r[1]}, ${r[2]} <= latitude <= ${r[3]} ... \n"
+
+      # Longitude and latitude range of 40 deg x 50 deg tiles needed
+      tiles=( $(awk '{print $1-($1+360+20)%40,$2-($2-360-20)%40; if ($3 < -60) print -60; else print $3-($3+360)%50; if ($4 < -60) print -10; else print $4-($4-360-30)%50}' <<< "${r[*]}") )
+
+      lat1=${tiles[2]}
+      while [ $lat1 -lt ${tiles[3]} ]; do  # Loop over latitude
+
+        let lat2="$lat1+50"
+
+        rm -f $tmp/$lat1.grd
+
+        lon1=${tiles[0]}
+        while [ $lon1 -lt ${tiles[1]} ]; do  # Loop over longitude
+
+          let lon2="$lon1+40"
+
+          # Set parts of file name
+          lon=$(awk '{if ($1 < 0 || $1 >= 180) printf "w%03d",sqrt((($1-360)%360)^2); else printf "e%03d",$1}' <<< $lon1)
+          lat=$(awk '{if ($1 < 0) printf "s%02d",sqrt($1^2); else printf "n%02d",$1}' <<< $lat2)
+
+          # Download (quietly) tile from archive
+          pushd $tmp &> /dev/null && {
+           #$prog "${srtm}30/$lon$lat/$lon$lat.dem.zip"
+           $prog "${srtm}/SRTMGL30.002/2000.02.11/$lon$lat.SRTMGL30.dem.zip"
+           popd &> /dev/null
+          }
+
+          # Convert tile to GMT .grd-format
+          #unzip -qq -u -o $tmp/$lon$lat.dem.zip -d $tmp && rm -f $tmp/$lon$lat.dem.zip
+          unzip -qq -u -o $tmp/$lon$lat.SRTMGL30.dem.zip -d $tmp && rm -f $tmp/$lon$lat.SRTMGL30.dem.zip
+          if [ $endianness -eq 1 ]; then  # Little-endian (swap bytes)
+            gmt xyz2grd $tmp/$(tr '[:lower:]' '[:upper:]' <<< "$lon$lat").DEM -G$tmp/$lon$lat.grd=ns -I30s/30s -R$lon1/$lon2/$lat1/$lat2 -ZTLhw -d-9999 -r -fg &&
+             rm -f $tmp/$(tr '[:lower:]' '[:upper:]' <<< "$lon$lat").DEM
+          else  # Big-endian
+            gmt xyz2grd $tmp/$(tr '[:lower:]' '[:upper:]' <<< "$lon$lat").DEM -G$tmp/$lon$lat.grd=ns -I30s/30s -R$lon1/$lon2/$lat1/$lat2 -ZTLh -d-9999 -r -fg &&
+             rm -f $tmp/$(tr '[:lower:]' '[:upper:]' <<< "$lon$lat").DEM
+          fi
+
+          if [ -e $tmp/$lat1.grd ]; then  # Paste next longitudinal tile
+            gmt grdpaste $tmp/$lat1.grd $tmp/$lon$lat.grd -G$tmp/temp.grd=ns -fg &&
+             mv -f $tmp/temp.grd $tmp/$lat1.grd &&
+             rm -f $tmp/$lon$lat.grd
+          else  # First longitudinal tile
+            mv -f $tmp/$lon$lat.grd $tmp/$lat1.grd
+          fi
+
+          let lon1="$lon1+40"  # Increment longitude
+
+        done  # END: Loop over longitudes
+
+        if [ -e $tmp/${out[0]} ]; then  # Paste next latitudinal row
+          gmt grdpaste $tmp/${out[0]} $tmp/$lat1.grd -G$tmp/temp.grd=ns -fg &&
+           mv -f $tmp/temp.grd $tmp/${out[0]} &&
+           rm -f $tmp/$lat1.grd
+        else  # First latitudinal row
+          mv -f $tmp/$lat1.grd $tmp/${out[0]}
+        fi
+
+        let lat1="$lat1+50"  # Increment latitude
+
+      done  # END: Loop over latitudes
+
+      gmt grdcut $tmp/${out[0]} -G${out[0]}=ns -R${r[0]}/${r[1]}/${r[2]}/${r[3]} &&
+       rm -f $tmp/${out[0]}
+
+    fi
+
+    ;;
+
+  s30+ )  # SRTM30_PLUS
+
+    out=( SRTM30_PLUS_${bounds[0]}-${bounds[2]}_${bounds[4]}-${bounds[5]}.grd SRTM30_PLUS_${bounds[1]}-${bounds[3]}_${bounds[4]}-${bounds[5]}.grd )
+    citation='Becker, J. J., D. T. Sandwell, W. H. F. Smith, J. Braud, B. Binder, J. Depner, D. Fabre, J. Factor, S. Ingalls, S.-H. Kim, R. Ladner, K. Marks, S. Nelson, A. Pharaoh, R. Trimmer, J. Von Rosenberg, G. Wallace, and P. Weatherall (2009), Global Bathymetry and Elevation Data at 30 Arc Seconds Resolution: SRTM30_PLUS, Marine Geodesy, 32, 355—371, doi:10.1080/01490410903297766.'
+    doi='10.1080/01490410903297766'
+
+    if [ -e "${out[0]}" ]; then
+
+      printf "${out[0]} already exists. Exiting...\n" && exit
+
+    elif [ -e "${out[1]}" ]; then
+
+      printf "${out[1]} already exists. Exiting...\n" && exit
+
+    else
+
+      printf "Creating SRTM30_PLUS DEM in GMT .grd-format for\n${r[0]} <= longitude <= ${r[1]}, ${r[2]} <= latitude <= ${r[3]} ... \n"
+
+      # Longitude and latitude range of 40 deg x 50 deg (60 deg x 30 deg south of 60S) tiles needed
+      tiles=( $(awk '{print $1-($1+360+20)%40,$2-($2-360-20)%40; if ($3 < -60) print -90; else print $3-($3+360)%50; if ($4 < -60) print -60; else print $4-($4-360-30)%50}' <<< "${r[*]}") )
+
+      lat1=${tiles[2]}
+      while [ $lat1 -lt ${tiles[3]} ]; do  # Loop over latitude
+
+        if [ $lat1 -eq -90 ]; then  # Antartica tile
+          let lat2="$lat1+30"
+        else
+          let lat2="$lat1+50"
+        fi
+
+        rm -f $tmp/$lat1.grd
+
+        lon1=${tiles[0]}
+        while [ $lon1 -lt ${tiles[1]} ]; do  # Loop over longitude
+
+          let lon2="$lon1+40"
+
+          # Set parts of file name
+          lon=$(awk '{if ($1 < 0 || $1 >= 180) printf "w%03d",sqrt((($1-360)%360)^2); else printf "e%03d",$1}' <<< $lon1)
+          lat=$(awk '{if ($1 < 0) printf "s%02d",sqrt($1^2); else printf "n%02d",$1}' <<< $lat2)
+
+          # Download (quietly) tile from archive
+          pushd $tmp &> /dev/null && {
+           $prog "$srtm30_plus/$lon$lat.Bathymetry.srtm"
+           popd &> /dev/null
+          }
+
+          # Convert tile to GMT .grd-format
+          if [ $endianness -eq 1 ]; then  # Little-endian (swap bytes)
+            gmt xyz2grd $tmp/$lon$lat.Bathymetry.srtm -G$tmp/$lat$lon.grd=ns -I30s/30s -R$lon1/$lon2/$lat1/$lat2 -ZTLhw -d9999 -r -fg &&
+             rm -f $tmp/$lon$lat.Bathymetry.srtm
+          else  # Big-endian
+            gmt xyz2grd $tmp/$lon$lat.Bathymetry.srtm -G$tmp/$lat$lon.grd=ns -I30s/30s -R$lon1/$lon2/$lat1/$lat2 -ZTLh -d9999 -r -fg &&
+             rm -f $tmp/$lon$lat.Bathymetry.srtm
+          fi
+
+          if [ -e $tmp/$lat1.grd ]; then  # Paste next longitudinal tile
+            gmt grdpaste $tmp/$lat1.grd $tmp/$lat$lon.grd -G$tmp/temp.grd=ns -fg &&
+             mv -f $tmp/temp.grd $tmp/$lat1.grd &&
+             rm -f $tmp/$lat$lon.grd
+          else  # First longitudinal tile
+            mv -f $tmp/$lat$lon.grd $tmp/$lat1.grd
+          fi
+
+          # Increment longitude
+          if [ $lat1 -eq -90 ]; then  # Antartica tile
+            let lon1="$lon1+60"
+          else
+            let lon1="$lon1+40"
+          fi
+
+        done  # END: Loop over longitudes
+
+        if [ -e $tmp/${out[0]} ]; then  # Paste next latitudinal row
+          gmt grdpaste $tmp/${out[0]} $tmp/$lat1.grd -G$tmp/temp.grd=ns -fg &&
+           mv -f $tmp/temp.grd $tmp/${out[0]} &&
+           rm -f $tmp/$lat1.grd
+        else  # First latitudinal row
+          mv -f $tmp/$lat1.grd $tmp/${out[0]}
+        fi
+
+        let lat1="$lat1+50"  # Increment latitude
+
+      done  # END: Loop over latitudes
+
+      gmt grdcut $tmp/${out[0]} -G${out[0]}=ns -R${r[0]}/${r[1]}/${r[2]}/${r[3]} &&
+       rm -f $tmp/${out[0]}
+
+    fi
+
+    ;;
+
+esac
+
+printf "Created ${out[0]}.\n"
+if [ -n "$doi" ]; then
+  printf "The digital object identifier for this data set is:\n$doi\n"
+fi
+if [ -n "$citation" ]; then
+  printf "The citation for this data set is:\n$citation\n"
+fi
+
+if [ $rm_gmtconf -eq 1 ]; then  # Remove gmt.conf file generated by script
+  rm -f gmt.conf
+fi
+if [ $rm_gmthistory -eq 1 ]; then  # Remove gmt.history file generated by script
+  rm -f gmt.history
+fi
+

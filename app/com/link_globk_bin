@@ -1,0 +1,186 @@
+#!/bin/csh -f
+if ($#argv == 0) then
+   echo ' '
+   echo ' Create links in the kf/bin directory for GLOBK executables '
+   echo ' '
+   echo ' Useage:'
+   echo ' '
+   echo '   link_globk_bin target_dir  '
+   echo ' '
+   echo '      where [target_dir] is the absolute path to the directory above /kf'
+   echo ' '
+   echo ' Example:'
+   echo ' '
+   echo '   link_globk_bin  ~/stdrel '
+   echo ' '
+   exit
+else
+
+#
+# Last modified by R. King    960801
+# Last modified by T. Herring 960812  
+# Last modified by R. King    991202
+# Last modified by R. King    000401  
+# Last modified by R. King    000927 
+# Last modified by R. King    021025
+# Last modified by T. Herring 030722 (added utils/phase_ext)
+# Last modified by T. Herring 030731 (added cortran)  
+# Last modified by R. King    050120 (added diffmb)
+# Last modified by T. Herring 050417 (added netsel)
+# Last modified by T. Herring 050715 (added chkstinf)
+# Last modified by T. Herring 050930 (added tssum)  
+# Last modified by R. King    080124 (added nutIAU2000)
+# Last modified by T. Herring 080124 (added tsfit, xyz_to_pbo, stinf_to_rename)
+# Last modified by T. Herring 090205 (added xyzsave)
+# Last modified by T. Herring 090522 (Changed xyz_to_pbo to tscon) 
+# Last modified by R. King    090602 (added grw sortrms org2stab glist2cmd)
+# Last modified by R. King    090925 (added chi_to_rename)  
+# Last modified by T  Herring 100424 (added trackRT and trackRTr)  
+# Last modified by R. King    100507 (added eqfupd)
+# Last modified by T  Herring 100619 (added fixstinf)
+# Last modified by R. King    101102 (remove netsel [now in gamit/utils])
+# Last modified by R. King    101109 (added break_to_rename and eulvect)  
+# Last modified by R. King    120828 (added lrw)
+# Last modified by R. King    130305 (added merge_renames)
+# Last modified by T  Herring 140326 (added global_sel)
+# Last modified by T  Herring 150512 (added netsel back on globk side with globk features and the gamit/util version does not seem to exist)
+# Last modified by t  Herring 170409 (added displace and simplexfd)
+     
+# set the target working directory  
+ set TARGETDIR = $1/kf    
+   
+echo " "
+echo Remaking the links from ../bin to the executables
+echo " "
+
+cd $TARGETDIR/bin
+
+# Now remake the links.
+
+\rm -f bcsum   ; ln -s ../blsum/bcsum .
+\rm -f blavg   ; ln -s ../blsum/blavg .
+\rm -f blsum   ; ln -s ../blsum/blsum .
+\rm -f ensum   ; ln -s ../blsum/ensum .
+ln -sf ../blsum/tssum .
+ln -sf ../blsum/tsfit .
+ln -sf ../blsum/tscon .
+ln -sf ../blsum/tscomp .
+\rm -f enfit   ; ln -s ../blsum/enfit .  
+\rm -f enfit2apr ; ln -s ../blsum/enfit2apr .  
+\rm -f makebase ; ln -s ../blsum/makebase .     
+\rm -f tsjumps ; ln -s ../blsum/tsjumps . 
+\rm -f xysum   ; ln -s ../blsum/xysum .  
+\rm -f eulvect ; ln -s ../blsum/eulvect .  
+ln -sf ../blsum/tscon .
+ln -sf ../blsum/xyzsave .
+\rm -f autcln  ; ln -s ../ctogobs/autcln .
+\rm -f ctogobs ; ln -s ../ctogobs/ctogobs .
+\rm -f diff_igs; ln -s ../ctogobs/diff_igs .
+\rm -f merge_igs_clk; ln -s ../ctogobs/merge_igs_clk .
+\rm -f dd_sd   ; ln -s ../ctogobs/dd_sd . 
+\rm -f exbrk   ; ln -s ../extract/exbrk .
+\rm -f extract ; ln -s ../extract/extract .
+\rm -f glbak   ; ln -s ../glbak/glbak .
+\rm -f glfor   ; ln -s ../glfor/glfor .
+\rm -f glinit  ; ln -s ../glinit/glinit .
+\rm -f glist   ; ln -s ../glist/glist .
+\rm -f glist_gmt   ; ln -s ../glist/glist_gmt .
+\rm -f globk   ; ln -s ../globc/globk .
+\rm -f globs   ; ln -s ../globk/globs .
+\rm -f glorg   ; ln -s ../glorg/glorg .
+\rm -f glout   ; ln -s ../glout/glout .
+\rm -f glred   ; ln -s ../glred/glred .
+\rm -f glsave  ; ln -s ../glsave/glsave .
+\rm -f glbtosnx ; ln -s ../htoglb/glbtosnx .
+\rm -f htoglb  ; ln -s ../htoglb/htoglb .
+\rm -f mstinf  ; ln -s ../htoglb/mstinf .  
+\rm -f chkstinf  ; ln -s ../htoglb/chkstinf .
+\rm -f hfupd  ; ln -s ../htoglb/hfupd .  
+\rm -f eqfupd  ; ln -s ../htoglb/eqfupd .
+\rm -f cplotx  ; ln -s ../plot/cplotx .
+\rm -f multibase ; ln -s ../plot/multibase .
+\rm -f multiplot ; ln -s ../plot/multiplot .
+\rm -f fitsnr  ; ln -s ../svpos/fitsnr .
+\rm -f fixms   ; ln -s ../svpos/fixms .
+\rm -f modear  ; ln -s ../svpos/modear .
+\rm -f simsnr  ; ln -s ../svpos/simsnr .
+\rm -f spcsnr  ; ln -s ../svpos/spcsnr .
+\rm -f svdiff  ; ln -s ../svpos/svdiff .
+\rm -f svpos   ; ln -s ../svpos/svpos .
+\rm -f svsnr   ; ln -s ../svpos/svsnr .
+\rm -f svsp3   ; ln -s ../svpos/svsp3 .
+\rm -f svpdiff ; ln -s ../svpos/svpdiff .
+\rm -f svtrack ; ln -s ../svpos/svtrack .
+\rm -f track   ; ln -s ../track/track . 
+ln -sf ../trackRT/trackRT .
+ln -sf ../trackRT/trackRTr .
+\rm -f cvframe ; ln -s ../utils/cvframe .
+\rm -f swaph   ; ln -s ../utils/swaph .
+\rm -f compare_pmu  ; ln -s ../update_pmu/compare_pmu .
+\rm -f excite_pmu   ; ln -s ../update_pmu/excite_pmu .
+\rm -f fix_apr      ; ln -s ../update_pmu/fix_apr .
+\rm -f fix_ut1_tide ; ln -s ../update_pmu/fix_ut1_tide .
+\rm -f gamit_to_iris ; ln -s ../update_pmu/gamit_to_iris .
+\rm -f gsfc_to_iris ; ln -s ../update_pmu/gsfc_to_iris .
+\rm -f mit_to_iris  ; ln -s ../update_pmu/mit_to_iris .
+\rm -f mjd_to_date  ; ln -s ../update_pmu/mjd_to_date .
+\rm -f update_pmu   ; ln -s ../update_pmu/update_pmu .
+\rm -f update_pmu_tab ; ln -s ../update_pmu/update_pmu_tab .
+\rm -f usno_to_iris ; ln -s ../update_pmu/usno_to_iris .
+\rm -f utc_to_tai   ; ln -s ../update_pmu/utc_to_tai .
+\rm -f igs_to_pmu   ; ln -s ../update_pmu/igs_to_pmu .
+\rm -f apr_to_vel   ; ln -s ../utils/apr_to_vel .
+\rm -f block        ; ln -s ../utils/block .
+\rm -f corcom       ; ln -s ../utils/corcom . 
+\rm -f disp2apr     ; ln -s ../utils/disp2apr .
+\rm -f doy          ; ln -s ../utils/doy .
+\rm -f edit_ext     ; ln -s ../utils/edit_ext .
+\rm -f edit_val     ; ln -s ../utils/edit_val .  
+\rm -f edit_apr     ; ln -s ../utils/edit_apr .
+ln -sf ../utils/fixstinf .
+\rm -f gapr_to_l    ; ln -s ../utils/gapr_to_l .
+\rm -f gen_sng      ; ln -s ../utils/gen_sng .  
+\rm -f gen_uselist  ; ln -s ../utils/gen_uselist .
+\rm -f gen_ssu      ; ln -s ../utils/gen_ssu .
+\rm -f genrelref    ; ln -s ../utils/genrelref .
+\rm -f getrel       ; ln -s ../utils/getrel .
+\rm -f glbtog       ; ln -s ../utils/glbtog .    
+\rm -f mit_to_iers  ; ln -s ../utils/mit_to_iers .
+\rm -f make_rms     ; ln -s ../utils/make_rms .
+\rm -f ndoy         ; ln -s ../utils/ndoy . 
+\rm -f nutIAU2000   ; ln -s ../utils/nutIAU2000 . 
+\rm -f plate        ; ln -s ../utils/plate .
+\rm -f poles        ; ln -s ../utils/poles .
+\rm -f ppb          ; ln -s ../utils/ppb .
+\rm -f seasonal     ; ln -s ../utils/seasonal .
+ln -sf ../utils/stinf_to_rename .
+\rm -f unify_apr    ; ln -s ../utils/unify_apr .
+\rm -f unify_svs    ; ln -s ../utils/unify_svs .
+\rm -f velcom       ; ln -s ../utils/velcom .
+\rm -f velrot       ; ln -s ../utils/velrot . 
+\rm -f merge_apr    ; ln -s ../utils/merge_apr .
+\rm -f merge_apr_vel; ln -s ../utils/merge_apr_vel .
+\rm -f phase_ext    ; ln -s ../utils/phase_ext .
+\rm -f cortran      ; ln -s ../utils/cortran .
+\rm -f tgrep        ; ln -s ../utils/tgrep .
+\rm -f memtest      ; ln -s ../utils/memtest .
+\rm -f grw          ; ln -s ../utils/grw .     
+\rm -f lrw          ; ln -s ../utils/lrw .
+\rm -f sortrms      ; ln -s ../utils/sortrms .
+\rm -f vel2stab     ; ln -s ../utils/vel2stab .
+\rm -f glist2cmd    ; ln -s ../utils/glist2cmd .
+\rm -f chi_to_rename ; ln -s ../utils/chi_to_rename .
+\rm -f break_to_rename ; ln -s ../utils/break_to_rename .
+\rm -f tdefnode2vel ; ln -s ../utils/tdefnode2vel .
+\rm -f merge_renames ; ln -s ../utils/merge_renames .
+\rm -f global_sel ; ln -s ../utils/global_sel .
+ln -sf ../utils/netsel .
+ln -sf ../displace/displace .
+ln -sf ../displace/simplexfd .
+
+
+echo Links made
+echo ' '
+
+endif
+

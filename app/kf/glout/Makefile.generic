@@ -1,0 +1,41 @@
+# Generic Makefile for kf/glout - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King July 23, 1996
+# MOD TAH 960809: Removed solvk_lib from SHARELIB
+ 
+#LABELS: glout:glout_main:glout_lib:glout
+ 
+#SHARELIB: ../glfor:glfor_lib               
+#SHARELIB: ../globk:globk_lib
+#SHARELIB: ../Khandlers:KalObs_hndl_lib  
+#SHARELIB: ../gen_util:gen_util_lib
+#SHARELIB: ../../libraries/matrix:kinv_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+
+#OBJ_glout_lib    glout
+#OBJ_glout_lib    glouo
+#OBJ_glout_lib    glous
+#OBJ_glout_lib    glouw
+#OBJ_glout_lib    decode_glout
+#OBJ_glout_lib    glb_out_map
+#OBJ_glout_lib    write_glb_he
+#OBJ_glout_lib    write_glb_pa
+#OBJ_glout_lib    write_glb_ba
+#OBJ_glout_lib    write_glb_bc
+#OBJ_glout_lib    write_glb_su
+#OBJ_glout_lib    write_glb_sp
+#OBJ_glout_lib    summ_eq
+#OBJ_glout_lib    write_iers
+#OBJ_glout_lib    out_glbp
+#OBJ_glout_lib    out_type_sta
+#OBJ_glout_lib    get_from_ema
+#OBJ_glout_lib    put_to_ema
+#OBJ_glout_lib    write_glb_co
+#OBJ_glout_lib    comp_nut_amp
+#OBJ_glout_lib    get_nut_coef
+#OBJ_glout_lib    get_sd_coeff
+#OBJ_glout_lib    report_eq
+#OBJ_glout_lib    report_noapr
+#OBJ_glout_lib    qoutbas
+#OBJ_glout_lib    elem
+#OBJ_glout_lib    report_nonse
+

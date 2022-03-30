@@ -1,0 +1,20 @@
+MERGE_APR_VEL 
+
+Program to merge an apriori coordinate file with velocity field file
+by replacing the velocities in the apriori file with those from the
+velocity file. 
+
+Runstring
+% merge_apr_vel <options>
+where <options> are:
+-f <in apriori file>  -- Name of input apriori file
+-o <out apriori file> -- Name of output aprori file with updated velocities
+-v <in velocity file> -- Name of input velocity file.  These velocties are 
+                         converted to XYZ and added to out apriori file
+-z                    -- Option to force heights to have zero velocity in
+                         conversion
+-m <distance (m)>     -- Sets tolerance on how close sites should be for
+                         values to be updated (default is to update only
+                         matching names)
+
+

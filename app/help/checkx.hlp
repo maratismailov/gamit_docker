@@ -1,0 +1,37 @@
+CHECKX: Scan X-files to find non-integral cycle slips
+
+ CHECKX: Scan X-files to find non-integral cycle slipps
+ 
+ This program will compare a series of xfiles and check to see
+ that no incorrect ambiquities have been enters (i.e., phases
+ changed by non-integer wavelength factors.
+
+ Runstring:
+ % checkx <series> <dir> <Input list>
+ where <series> is the series of the comparison x files (these are
+         are assumed to be uncompressed.)
+     <dir> is the directory of the comparison xfiles relative to
+         the directory checkx is run from.  If DDD is used then
+         the day number from the x-file is substituted in the
+         directory name. Dot (.) is used to denote current
+         directory.
+     <Input list> is a list of input xfiles.  If these are
+         compressed then they are uncompressed first, compared and
+         then recompressed.
+ 
+ When a non-valid cycle slip difference is found the output looks
+ like:
+ Processing xazoka.197
+ *** Phase error between xazoka.197 and ./xazokz.197
+ Epochs (C&R) Chan PRN    dL1     dL2 (wavelengths)
+    3  404    1    2  -0.500    0.000    -1  -2
+    4  604    1    2  -0.500    0.000    -1  -2
+ where the two epoch numbers reference to the comparison and
+ reference x-files (they will be the same if data has not been
+ decimated).  The channel number referrs to comparison x-file.
+ (For information the wavelength factors for the data set are
+ also given).
+
+ Example:
+ % checkx a /data12/gpsg/kaz92/DDD /data10/gpsg/kaz92/xfile_raw/x*
+ 

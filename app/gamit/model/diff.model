@@ -1,0 +1,1209 @@
+Only in /chandler/home/rwk/gt/model: acc_albedo_propboxw.f
+diff /chandler/home/rwk/active/gamit/model/atmred.f /chandler/home/rwk/gt/model/atmred.f
+1c1
+<       SUBROUTINE ATMRED( IUW,ISCRN,IPRNT,JD,T,FJDW1,FJDW2
+---
+>       SUBROUTINE ATMRED( IUW,ISCRN,iprnt,JD,T,FJDW1,FJDW2
+16c16
+< c       IPRNT:  Unit number of print output
+---
+> c       iprnt:  Unit number of print output
+diff /chandler/home/rwk/active/gamit/model/avclck.f /chandler/home/rwk/gt/model/avclck.f
+1,2c1,2
+<       subroutine avclck
+<      .(iprnt,clksav,ischan,nchan,ier,rclock0,itimel,bad)
+---
+>       Subroutine AVCLCK( iprnt,clksav,ischan,nchan,ier
+>      .                  , rclock0,itimel,bad)
+4c4
+< c     average receiver clock offsets to form RCLOCK0
+---
+> c     Average receiver clock offsets to form RCLOCK0
+15c15
+<       integer ngood,mgood,iprnt,i
+---
+>       integer ngood,mgood,iprt,i
+Only in /chandler/home/rwk/gt/model: call_mag.f.bak
+Only in /chandler/home/rwk/gt/model: callppt.f.bak
+diff /chandler/home/rwk/active/gamit/model/chdred.f /chandler/home/rwk/gt/model/chdred.f
+23c23
+<       real*8  tr,clock(4),sec   
+---
+>       real*8  tr,clock(4),sec
+28c28,35
+<    
+---
+>                                                 
+> c**rwk 190826: Temporary to avoid changing the c-file format for 10.71, we've 
+> c              written only a a single-frequency value for the SV antenna PCO 
+> C TAH: Problem here that needs fixing.  In  model.h, svantdx(3,2,maxsat) is
+> C     declared but only the first a 3,maxsat array is written to the c-file.
+>       real*8 svantdxx(3,maxsat) 
+>  
+> 
+43c50
+<      .,            offarp,offl1,offl2,svantdx
+---
+>      .,            offarp,offl1,offl2,svantdxx
+59c66,73
+<    
+---
+> 
+> c** rwk 190826; see above    
+>       do j=1,nchan
+>         do i=1,3
+>           svantdx(i,1,j) = svantdxx(i,j)   
+>           svantdx(i,2,j) = svantdxx(i,j)
+>         enddo
+>       enddo 
+120c134
+<      .      ,svantmod_snx(i),svantmod(i),(svantdx(j,i),j=1,3)
+---
+>      .      ,svantmod_snx(i),svantmod(i),(svantdxx(j,i),j=1,3)
+Only in /chandler/home/rwk/gt/model: chdred.f.bak
+Only in /chandler/home/rwk/gt/model: diff.model
+diff /chandler/home/rwk/active/gamit/model/epoch_clk.f /chandler/home/rwk/gt/model/epoch_clk.f
+1c1
+<          subroutine epoch_clk( ipass,iter,jdsend,tsend,ichan,none )
+---
+>          Subroutine EPOCH_CLK( ipass,iter,jdsend,tsend,ichan,none )
+Only in /chandler/home/rwk/gt/model: GAMIT.warning
+diff /chandler/home/rwk/active/gamit/model/get_antinfo.f /chandler/home/rwk/gt/model/get_antinfo.f
+53c53
+<                                                            
+---
+>           
+diff /chandler/home/rwk/active/gamit/model/get_antinfo.f.bak /chandler/home/rwk/gt/model/get_antinfo.f.bak
+53c53,54
+<                                                            
+---
+>           
+>       print *,'GET_ANTINFO debug ',debug                                                  
+95,97c96,97
+<       minelv = idint(pcvminelev)  
+< 
+<      if( antmod_in.eq.'ELEV' ) then 
+---
+>       minelv = idint(pcvminelev)      
+>       if( antmod_in.eq.'ELEV' ) then 
+Only in /chandler/home/rwk/gt/model: get_antinfo.f.save
+diff /chandler/home/rwk/active/gamit/model/get_antpcv.f /chandler/home/rwk/gt/model/get_antpcv.f
+76c76
+<       real*8 el,az,zen1,zen2,pcoffl1(3),pcoffl2(3),corrl1,corrl2,zen,offtmp
+---
+>       real*8 el,az,pcoffl1(3),pcoffl2(3),corrl1,corrl2,zen,offtmp
+338c338
+<            call report_stat('WARNING',prog_name,'lib/linear',' '
+---
+>            call report_stat('WARNING',prog_name,'lib/get_antpsv',' '
+349c349
+<            call report_stat('WARNING',prog_name,'lib/linear',' '
+---
+>            call report_stat('WARNING',prog_name,'MODEL','get_antpcv',' '
+358c358
+<         call interp_pcv(zen,az,nel,naz,dzen,dazi,tablel1,corrl1)    
+---
+>         call interp_azel(zen,az,nel,naz,dzen,dazi,zen2,tablel1,corrl1)
+360c360
+<      .     print *,'interpolating AZEL nel naz dzen dazi '
+---
+>      .     print *,'GET_ANTPCV inter  AZEL nel naz dzen dazi '
+365c365
+<         call interp_pcv(zen,az,nel,naz,dzen,dazi,tablel2,corrl2)    
+---
+>         call interp_azel(zen,az,nel,naz,dzen,dazi,zen2,tablel2,corrl2)    
+370c370
+<      .    print *,'interpolating EL-only zen az tables(1&6,1) ' 
+---
+>      .    print *,'GET_ANTPCV interg EL-only zen az tables(1&6,1) ' 
+382c382,383
+<       if(debug) print *,'corrl1 corrl2 ',corrl1,corrl2
+---
+>       if(debug) print *,'GET_ANTPCV zen az corrl1 corrl2 '
+>      .                  ,zen,az,corrl1,corrl2
+387,495d387
+< 
+<       Subroutine interp_pcv(zen,az,nzen,naz,dzen,dazi,table,pcvout)
+< 
+< c     Interpolate from a 2-d table of pcv values for elevation and azimuth
+< 
+<       include '../includes/dimpar.h'
+< 
+<       integer*4 nzen,naz,ix1,ix2,iy1,iy2,rcpar,len
+< 
+<       real*8 zen,az,dzen,dazi,table(maxel,maxaz),zen11,az11
+<      .     , val11,val12,val21,val22,pcvout  
+<                              
+<       character*80 prog_name
+<       character*256 message
+<     
+< c Get calling program name and X-file name for report_stat
+<       len = rcpar(0,prog_name)
+<   
+< 
+< c  Find the corners of the box to be interpolated
+<                   
+<       ix1 = int(zen/dzen) + 1
+<       ix2 = ix1 + 1  
+<       if( dabs(zen-90.d0).lt..001d0 ) then
+<         ix2 = nzen
+<         ix1 = nzen -1 
+<       elseif (dabs(zen).lt.001d0 ) then
+<         ix1 = 1
+<         ix2 = 2
+<       endif
+<       if( ix1.lt.1.or.ix2.gt.nzen ) then  
+<          write(message,'(a,f6.2,f5.1,2i3)') 
+<      .   'Error in bilin interp, zen dzen ix1 ix2 ',zen,dzen,ix1,ix2
+<          call report_stat('FATAL','MODEL','get_antpcv',' '
+<      .       ,message,0)  
+<       endif   
+<       zen11 = dzen*dfloat(ix1-1)   
+<       iy1 = int(az/dazi) + 1
+<       iy2 = iy1 + 1      
+<       if( dabs(az-360.d0).lt..001d0 ) then
+<         iy2 = naz
+<         iy1 = naz -1
+<       elseif (dabs(az).lt.001d0 ) then
+<         iy1 = 1
+<         iy2 = 2
+<       endif
+<       if( iy1.lt.1.or.iy2.gt.naz ) then  
+<          write(message,'(a,f6.2,f5.1,2i3)') 
+<      .   'Error in bilin interp, az dazi iy1 iy2 ',az,dazi,iy1,iy2
+<          call report_stat('FATAL','MODEL','get_antpcv',' '
+<      .       ,message,0)     
+<       endif
+<       az11 = dazi*dfloat(iy1-1)
+<       val11 = table(ix1,iy1)
+<       val12 = table(ix1,iy2)
+<       val21 = table(ix2,iy1)
+<       val22 = table(ix2,iy2) 
+< 
+< c Do the interpolation
+< 
+<       call bilin8( zen,az,zen11,az11,dzen,dazi
+<      .          , val11,val21,val22,val12,pcvout )  
+< c      print *,'zen az zen11 az11 dzen dazi crds val pcvout ',
+< c     . zen,az,zen11,az11,dzen,dazi,ix1,iy1,ix2,iy2,val11,val12
+< c     . ,val21,val22,pcvout
+< c      if( zen.lt.81.d0 .and.az.gt.31.d0 ) stop
+<       return
+<       end
+< 
+<       subroutine bilin8(x,y,x0,y0,xstep,ystep,u1,u2,u3,u4,val)
+< 
+< c   computes a bilinear interpolation of the value of a single
+< c   point within a rectangle. I found this formula via google
+< c   and it seems to work!
+< c
+< c   INPUT:
+< c         x,y  :  the coordinates of the point to be interpolated
+< c        x0,y0 :  the coords of the lower left corner
+< c     xstep,ystep : the grid step sizes
+< c         u1   : value at lower left corner
+< c         u2   : value at lower right corner
+< c         u3   : value at upper right corner
+< c         u4   : value at upper left corner
+< c
+< c    OUTPUT:
+< c        val   : the interpolated value at the requested point
+< c
+< c   P. Tregoning
+< c   7 January 2004
+< 
+<       implicit none
+< 
+< c  argument variables
+<       real*8 x,y,x0,y0,xstep,ystep,u1,u2,u3,u4,val
+< 
+< c  local variables
+<       real*8 dy,dx,dy1,dx1
+< 
+<           dy  = abs(y-y0)/ystep
+<           dy1 = (ystep - dy*ystep)/ystep
+<           dx  = (x - x0)/xstep
+<           dx1 = (xstep - dx*xstep)/xstep
+< c then
+<           val = dx1*dy1*u1+dx*dy1*u2+dx1*dy*u4+dx*dy*u3
+< 
+<       return
+<       end
+< 
+< 
+Only in /chandler/home/rwk/gt/model: get_antpcv.f.bak
+diff /chandler/home/rwk/active/gamit/model/get_dcb2.f /chandler/home/rwk/gt/model/get_dcb2.f
+117c117
+<      .        ,' is beyond the end of the DCB entries'
+---
+>      .        ,' > 31 days after the last entry: need to update dcb.dat'
+Only in /chandler/home/rwk/gt/model: get_dcb.f.newnotused
+Only in /chandler/home/rwk/gt/model: get_svantpcf.f
+diff /chandler/home/rwk/active/gamit/model/get_svantpcv.f /chandler/home/rwk/gt/model/get_svantpcv.f
+4,5c4,5
+<       Subroutine get_svantpcv( jd,ichan,nadangd,first,debug
+<      .                       , found_ant,corrl1,corrl2 )
+---
+>       Subroutine get_svantpcv( jd,ichan,nadangd,yatt,first
+>      .                       , found_ant,svoffl1,svoffl2,corrl1,corrl2 )
+19c19,20
+< c              nadangd     : nadir angle of SV antenna degrees            r*8
+---
+> c              nadangd     : nadir angle of SV antenna (deg)              r*8
+> c              yatt        : yaw angle, a proxy for azimuth  (deg)        r*8
+22d22
+< c              debug       : if true print out debug statements           logical
+27a28,33
+> c              svoffl1(3)  : L1 phase center offset                       r*8
+> c              svoffl2(3)  : L2 phase center offset                       r*8 
+> c              svelvtabl1(maxel,maxsat), svelvtabl2(maxel,maxsat) : 
+> c                               Azimuth-avergaged corrections (mm)        r*8
+> c              svtabl1(maxel,maxaz,maxsat), svtabl2(maxel,maxaz,maxsat)
+> c                               Corrections by azimuth & elevation (mm)   r*8
+39d44
+< c              svantdx(3,maxsat) : Antenna offsets                        r*8
+47c52
+<       logical      first,found_ant,found_f1,found_f2,debug
+---
+>       logical      first,found_ant,found_f1,found_f2
+62,63c67
+<       real*8 nadangd,zen1,zen2,corrl1,corrl2
+<      .     , svoffl1(3),svoffl2(3) 
+---
+>       real*8 nadangd,yatt,az,corrl1,corrl2,svoffl1(3),svoffl2(3) 
+65,67c69
+<       logical warning
+<       data warning/.false./              
+<       save warning
+---
+>       logical nadir_warning/.false./,pco_warning/.false./,debug/.false./
+68a71,73
+> *     Make the azimuth positive for interpolating from the ANTEX file
+>       az = yatt        
+>       if(yatt.lt.0.d0) az = 360.d0 + yatt
+70,71d74
+< 
+<   
+74,75c77,79
+<      .        ,ipcv,gnss,svantbody
+<         print *,'jd nadangd ',jdobs,nadang
+---
+>      .        ,ipcv,gnss,svantbody(ichan)
+>         print *,'jd nadangd ',jdobs,nadangd
+>         print *,' yatt az ',yatt,az 
+133c137
+<      .                , zen1,zen2,svdzen(ichan)
+---
+>      .                , svzen1(ichan),svzen2(ichan),svdzen(ichan)
+149c153
+<           svnel(ichan) = int( (zen2-zen1)/svdzen(ichan) ) + 1       
+---
+>          svnel(ichan)=int((svzen2(ichan)-svzen1(ichan))/svdzen(ichan))+1
+152,153c156,158
+<           write(message,'(a,i3,a,i3,a)') 'Number of zenith values ('
+<      .       ,svnel(ichan),') on ANTEX file exceeds maxel (',maxel,')'
+---
+>           write(message,'(a,i3,a,i3,a)') 
+>      .      'Number of nadir-angle values (',svnel(ichan)
+>      .       ,') on ANTEX file exceeds maxel (',maxel,')'
+157,160d161
+< c       assume L1 and L2 the same for now (change from mm to m)
+<         do j=1,3 
+<            svantdx(j,ichan)=svoffl1(j)/1.d3 
+<         enddo
+173c174,175
+<              svnel(ichan) = int( (zen2-zen1)/svdzen(ichan) ) + 1
+---
+>              svnel(ichan) = 
+>      .         int((svzen2(ichan)-svzen1(ichan))/svdzen(ichan)) + 1
+176c178
+<      .        'Requested elevation-dependent phase center model for '
+---
+>      .        'Requested nadir-angle-dependent phase center model for '
+184,186c186,190
+<             if( dazi.gt.0.d0 ) then
+<               svantmod(ichan) = 'AZEL'
+<               svnel(ichan) = int( (zen2-zen1)/svdzen(ichan) ) + 1
+---
+>             if( svdazi(ichan).gt.0.d0 ) then
+>              svantmod(ichan) = 'AZEL'
+>              svnel(ichan) = 
+>      .         int((svzen2(ichan)-svzen1(ichan))/svdzen(ichan)) + 1
+>              svnaz(ichan) = int(360/svdazi(ichan)) + 1
+188c192
+<               write(message,'(a,a20,a)') 
+---
+>              write(message,'(a,a20,a)') 
+190,191c194,195
+<      .           ,' but only elevation corrections available'    
+<               call report_stat('WARNING','MODEL','get_svantpcv'
+---
+>      .           ,' but only nadir-angle corrections available'    
+>              call report_stat('WARNING','MODEL','get_svantpcv'
+193,194c197,199
+<               svantmod(ichan) = 'ELEV'    
+<               svnel(ichan) = int((zen2-zen1)/svdzen(ichan)) + 1
+---
+>              svantmod(ichan) = 'ELEV'    
+>              svnel(ichan) = 
+>      .          int((svzen2(ichan)-svzen1(ichan))/svdzen(ichan)) + 1
+214,226d218
+< 
+< c       Set the offsets in m: Previously assumed the same for  L1 and L2, but
+< c       Galileo has values slightly different, so change this to a warning.
+<         do i=1,3                    
+<           if( svoffl1(i).ne.svoffl2(i) ) then
+<             write(message,'(2a)') 'Current code does not support '
+<      .      , 'different SV L1/L2 PCOs, set equal for now' 
+<             call report_stat('WARNING','MODEL','get_svantpcv'
+<      .                     ,' ',message,0)
+<           endif
+< c         convert from mm to m
+<           svantdx(i,ichan) = svoffl1(i)/1.d3   
+<         enddo 
+234,236c226,228
+<       if ( nadangd.lt.zen1 ) then
+<          nadangd = zen1
+<          if( .not.warning ) then
+---
+>       if ( nadangd.lt.svzen1(ichan) ) then
+>          nadangd = svzen1(ichan)
+>          if( .not.nadir_warning ) then
+238,239c230,232
+<      .      'Observed zenith angle < table minimum '
+<      .       ,'Use antmod.dat value for ',zen1,' degrees. NOT ',nadangd
+---
+>      .      'Observed nadir angle < table minimum '
+>      .       ,'Use antmod.dat value for ',svzen1(ichan)
+>      .       ,' degrees. NOT ',nadangd
+241c234
+<            call report_stat('WARNING',prog_name,'lib/linear',' '
+---
+>            call report_stat('WARNING','MODEL','get_svantpcv',' '
+243c236
+<            warning = .true.
+---
+>            nadir_warning = .true.
+245,247c238,240
+<        elseif ( nadangd.gt.zen2 ) then
+<          nadangd  = zen2               
+<          if( .not.warning ) then
+---
+>        elseif ( nadangd.gt.svzen2(ichan) ) then
+>          nadangd  = svzen2(ichan)
+>          if( .not.nadir_warning ) then
+250c243,244
+<      .       ,'Use antmod.dat value for ',zen2,' degrees. NOT ',nadangd
+---
+>      .       ,'Use antmod.dat value for ',svzen2(ichan)
+>      .       ,' degrees. NOT ',nadangd
+252c246
+<            call report_stat('WARNING',prog_name,'lib/linear',' '
+---
+>            call report_stat('WARNING','MODEL','get_svantpcv',' '
+254c248
+<            warning = .true.
+---
+>            nadir_warning = .true.
+259,262c253,256
+<          print *,'GET_SVANTPCV ilbk maxel svnel elvtabl1 '
+<      .      ,ichan,maxel,svnel(ichan),(svelvtabl1(i,ichan),i=1,15) 
+<          print *,'GET_SVANTPCV ilbk maxel svnel elvtabl2 '
+<      .      ,ichan,maxel,svnel(ichan),(svelvtabl2(i,ichan),i=1,15)    
+---
+>          print *,'GET_SVANTPCV ichan  maxel svnel svelvtabl1(1-5) '
+>      .      ,ichan,maxel,svnel(ichan),(svelvtabl1(i,ichan),i=1,1) 
+>          print *,'GET_SVANTPCV ichan  maxel svnel svelvtabl2(1-5) '
+>      .      ,ichan,maxel,svnel(ichan),(svelvtabl2(i,ichan),i=1,5)    
+267,272c261,271
+< c     If elevation only, use a 1-d interpolation
+<       if(svantmod_in(1:2).eq.'EL'.and.svantmod(ichan)(1:2).eq.'EL') then
+< c       L1
+<         call linear( nadangd,svnel(ichan),svdzen(ichan),zen1,zen2
+<      .             , svelvtabl1(1,ichan),corrl1)
+< c          print *, 'corr to l1 ',corrl1
+---
+> c     If azimuth as well as elevation, use a 2-d interpolation
+>       if ( svantmod(ichan).eq.'AZEL' ) then
+> c       L1   
+>         call interp_azel( nadangd,az,svnel(ichan),svnaz(ichan)
+>      .                 , svdzen(ichan),svdazi(ichan),svzen2(ichan)
+>      .                 , svtabl1(1,1,ichan),corrl1)
+>         if( debug ) 
+>      .   print *,'GET_SVANTPCV interpolating AZEL L1 nel naz dzen dazi '
+>      .         , ' nadangd az svtabl1(1,1,ichan),svtabl1(2,3,ichan) '
+>      .    ,svnel(ichan),svnaz(ichan),svdzen(ichan),svdazi(ichan)
+>      .    ,nadangd,az,svtabl1(1,1,ichan),svtabl1(2,3,ichan)
+274,276c273,292
+<         call linear( nadangd,svnel(ichan),svdzen(ichan),zen1,zen2 
+<      .             , svelvtabl2(1,ichan),corrl2)
+< cd         print *, 'corr to l2 ',corrl2
+---
+>         call interp_azel( nadangd,az,svnel(ichan),svnaz(ichan)
+>      .                 , svdzen(ichan),svdazi(ichan),svzen2(ichan)
+>      .                 , svtabl2(1,1,ichan),corrl2)
+>         if(debug) 
+>      .   print *,'GET_SVANTPCV interpolating AZEL L2 nel naz dzen dazi '
+>      .         , ' nadangd az svtabl2(1,1,ichan) svtabl2(2,3,ichan) '
+>      .    ,svnel(ichan),svnaz(ichan),svdzen(ichan),svdazi(ichan)
+>      .    ,nadangd,az,svtabl2(1,1,ichan),svtabl2(2,3,ichan)
+> 
+>       elseif(svantmod_in(1:2).eq.'EL'.and.
+>      .       svantmod(ichan)(1:2).eq.'EL') then
+> c       L1
+>         call linear( nadangd,svnel(ichan),svdzen(ichan)
+>      .             , svzen1(ichan),svzen2(ichan),svelvtabl1(1,ichan)
+>      .             , corrl1)
+>         if(debug)
+>      .   print *,'GET_SVANTPCV interpolating ELEV L1 nel dzen  '
+>      .        , ' nadangd svelvtabl1(1,ichan) svelvtabl1(3,ichan) '
+>      .    , svnel(ichan),svnaz(ichan),svdzen(ichan)
+>      .    , nadangd,svelvtabl1(1,ichan),svelvtabl1(3,ichan)
+277a294,303
+> c       L2
+>         call linear( nadangd,svnel(ichan),svdzen(ichan)
+>      .            , svzen1(ichan),svzen2(ichan),svelvtabl2(1,ichan)
+>      .            , corrl2 )
+>         if(debug)
+>      .   print *,'GET_SVANTPCV interpolating ELEV L2 nel naz dzen  '
+>      .        , ' nadangd svelvtabl2(1,ichan) svelvtabl2(3,ichan) '
+>      .    , svnel(ichan),svnaz(ichan),svdzen(ichan)
+>      .    , nadangd,svelvtabl2(1,ichan),svelvtabl2(3,ichan)
+>  
+281a308,310
+>                  
+>       if(debug)  print *, 'GET_SVANTPCV ichan corrl1 corrl2 '
+>      .          ,  corrl1,corrl2
+Only in /chandler/home/rwk/gt/model: get_svantpcv.f.bak
+Only in /chandler/home/rwk/gt/model: iers2010_etide.f
+Only in /chandler/home/rwk/gt/model: interp_pcv.f
+Only in /chandler/home/rwk/gt/model: iondel.f.bak
+Only in /chandler/home/rwk/gt/model: iono_corr.f.bak
+Only in /chandler/home/rwk/gt/model: mag11.f.bak
+Only in /chandler/home/rwk/gt/model: mag12.f.bak
+diff /chandler/home/rwk/active/gamit/model/mag_dipole.f /chandler/home/rwk/gt/model/mag_dipole.f
+2c2
+<      .                     , magsize,debug )
+---
+>      .                     , magsize )
+11c11
+<       integer iyr,idoy,jdobs,debug
+---
+>       integer iyr,idoy,jdobs
+22c22,24
+<       Real*8 magcolat,maglong
+---
+>       Real*8 magcolat,maglong  
+> 
+>       logical debug/.false./
+36,38c38
+<        if(debug.ge.3) then
+<           print *,'using magnetic dipole'
+<         endif
+---
+>        if(debug)  print *,'using magnetic dipole'
+109,111c109
+<       if( debug.ge.2 ) then
+<          print *,'iyr maglong magcolat ',iyr,maglong,magcolat
+<       endif
+---
+>       if( debug)  print *,'iyr maglong magcolat ',iyr,maglong,magcolat
+128c126
+<         if( debug.ge.2 ) then
+---
+>         if( debug ) then
+171c169
+<          if (debug.ge.3) print*,'thetamppt',thetamppt,'phimppt',phimppt
+---
+>          if (debug) print*,'thetamppt',thetamppt,'phimppt',phimppt
+181c179
+<         if(debug.ge.3) then        
+---
+>         if(debug) then        
+192c190
+<         if(debug.ge.3) then
+---
+>         if(debug) then
+210,214c208,209
+<           if(debug.ge.3) then
+<             Print*, 'MODEL\mag_dipole diprot : ',diprot
+<           endif
+<           if(debug.ge.2) then
+<             Print*, 'MODEL\mag_dipole vecdipxyz: ',vecdipxyz
+---
+>           if(debug)  Print*, 'MODEL\mag_dipole diprot : ',diprot
+>           if(debug)  Print*, 'MODEL\mag_dipole vecdipxyz: ',vecdipxyz
+Only in /chandler/home/rwk/gt/model: mag_dipole.f.bak
+Only in /chandler/home/rwk/gt/model: mag.f.bak
+diff /chandler/home/rwk/active/gamit/model/Makefile /chandler/home/rwk/gt/model/Makefile
+1c1
+< # Makefile for model on Linux 3.19.0-80-generic by unimake at Wed Jun  6 10:53:37 EDT 2018
+---
+> # Makefile for model on Linux 3.2.0-126-generic by unimake at Fri Sep 20 14:23:59 EDT 2019
+44c44
+< SLIB = ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a 
+---
+> SLIB = ../lib/gamit_lib.a ../../libraries/comlib/com_lib.a ../lib/libsofa.a 
+80a81
+> 	$(MODEL_LIB)(iers2010_etide.o) \
+diff /chandler/home/rwk/active/gamit/model/Makefile.generic /chandler/home/rwk/gt/model/Makefile.generic
+7a8
+> #SHARELIB: ../lib:libsofa
+9,18c10,19
+< #OBJ_model_lib	get_atmdel  avclck      az_elev 	call_mag    callppt     cfout	    chdred     check_met
+< #OBJ_model_lib	corsim      cortyp	    dchao	    dipole_comp eopart	    epoch_clk   etide 
+< #OBJ_model_lib	gdetic      get_antinfo get_antpcv  get_svantpcv get_dcb get_dcb2  get_met_source  svbody_coords  gmf  iono_corr iondel 
+< #OBJ_model_lib	height	    iers2003_etide          imfh1p0     imfw2              
+< #OBJ_model_lib	lininterp	mag         mag_dipole  mag11  mag12  mversn      nmfh2p1 
+< #OBJ_model_lib nmfw2       obsmod      obsred	    open            	 
+< #OBJ_model_lib partl	    phasecc	    pierce_pt   poly_clk	ptide	   read_batch readi  read_ionex   readu    read_metrnx
+< #OBJ_model_lib setup	    shftor      simred      sitcor	    slant_tec  
+< #OBJ_model_lib svant     	update_coords vec_xyz   vmf1  	wchao       whdred	    wpress
+< #OBJ_model_lib	wrthed              
+---
+> #OBJ_model_lib get_atmdel avclck az_elev call_mag callppt cfout chdred check_met
+> #OBJ_model_lib corsim cortyp dchao dipole_comp eopart epoch_clk etide 
+> #OBJ_model_lib gdetic get_antinfo get_antpcv  get_svantpcv get_dcb get_dcb2 get_met_source svbody_coords gmf iono_corr iondel 
+> #OBJ_model_lib height iers2003_etide iers2010_etide imfh1p0 imfw2              
+> #OBJ_model_lib lininterp mag mag_dipole mag11 mag12 mversn nmfh2p1 
+> #OBJ_model_lib nmfw2 obsmod obsred open            	 
+> #OBJ_model_lib partl phasecc pierce_pt poly_clk	ptide read_batch readi read_ionex readu read_metrnx
+> #OBJ_model_lib setup shftor simred sitcor slant_tec  
+> #OBJ_model_lib svant update_coords vec_xyz vmf1 wchao whdred wpress
+> #OBJ_model_lib wrthed
+Binary files /chandler/home/rwk/active/gamit/model/model and /chandler/home/rwk/gt/model/model differ
+diff /chandler/home/rwk/active/gamit/model/model.f /chandler/home/rwk/gt/model/model.f
+101c101
+<      ., satcrd(6)
+---
+>      ., satcrd(6,2)
+110c110
+<      ., rsathat(3)  
+---
+>      ., rsathat(3,2)  
+157c157
+<       real*8 sat_l, site_l, amag3, r_tmp(3)
+---
+>       real*8 sat_l(2), site_l, amag3, r_tmp(3)
+187a188,189
+>           
+>       logical debug/.false./
+211c213,214
+< cd      print *,'MODEL aft setup jd0 t0 jdend tend  ',jd0,t0,jdend,tend
+---
+>       if(debug) print *,'MODEL aft setup jd0 t0 jdend tend  '
+>      .   ,jd0,t0,jdend,tend
+323,324c326,327
+< cd      print *,'MODEL aft satatt ntsat iepoch yatt(1-4) '
+< cd     .       ,            ntsat,iepoch,yatt(1),yatt(2),yatt(3),yatt(4)
+---
+>       if(debug) print *,'MODEL aft satatt ntsat iepoch yatt(1-4) '
+>      .       ,            ntsat,iepoch,yatt(1),yatt(2),yatt(3),yatt(4)
+414,415c417,419
+< cd         print *,'MODEL 1 iter ipass ichan jdsen  tsent rclock delay '
+< cd     .           , iter,ipass,ichan,jdsend,tsend,rclock,delay(1,ichan)
+---
+>          if(debug) print *
+>      .     ,'MODEL 1 iter ipass ichan jdsen  tsent rclock delay '
+>      .           , iter,ipass,ichan,jdsend,tsend,rclock,delay(1,ichan)
+417c421
+< cd         print *,'MODEL    jdsend  tsend ', jdsend,tsend
+---
+>          if(debug) print *,'MODEL    jdsend  tsend ', jdsend,tsend
+433,434c437,439
+< cd         print *,'MODEL 2 ipass ichan jdsen  tsent rclock delay '
+< cd     .                , ipass,ichan,jdsend,tsend,rclock,delay(1,ichan)
+---
+>          if(debug) print *
+>      .      ,'MODEL 2 ipass ichan jdsen  tsent rclock delay '
+>      .                , ipass,ichan,jdsend,tsend,rclock,delay(1,ichan)
+436c441
+< cd         print *,'MODEL    jdsend  tsend ', jdsend,tsend
+---
+>          if(debug) print *,'MODEL    jdsend  tsend ', jdsend,tsend
+482,487c487,494
+<          do i = 1,6
+<            satcrd(i) = svec(i)
+<          enddo  
+<          sat_l = amag3(satcrd)       
+<          do i=1,3
+<            rsathat(i) = satcrd(i)/sat_l     
+---
+>          do j=1,2
+>            do i = 1,6
+>              satcrd(i,j) = svec(i)
+>            enddo 
+>            sat_l(j) = amag3(satcrd(1,j))       
+>            do i=1,3
+>              rsathat(i,j) = satcrd(i,j)/sat_l(j)
+>            enddo
+489c496
+< cd         print *,'tsend satcrd ',tsend,satcrd 
+---
+>          if(debug) print *,'tsend satcrd ',tsend,satcrd 
+502c509
+<          call shadow1(satcrd,sun,shadow(ichan)) 
+---
+>          call shadow1(satcrd(1,1),sun,shadow(ichan)) 
+521,524c528,531
+< cd         print *,'MODEL calling svbody_coords isat yatt '
+< cd     .      ,isat,yatt(isat)
+< cd         print *,'  satcrd ',satcrd 
+<          call svbody_coords( iuy,satcrd,sun,xhat_t,yhat_t,zhat_t
+---
+>          if(debug) print *,'MODEL calling svbody_coords isat yatt '
+>      .      ,isat,yatt(isat)
+>          if(debug)  print *,'  satcrd ',satcrd 
+>          call svbody_coords( iuy,satcrd(1,1),sun,xhat_t,yhat_t,zhat_t
+528,529c535,536
+< cd         print *,'aft SVBODY_COORDS satcrd xhat yhat zhat ',satcrd
+< cd     .          , xhat_t,yhat_t,zhat_t 
+---
+>          if(debug) print *,'aft SVBODY_COORDS satcrd xhat yhat zhat '
+>      .       ,satcrd,xhat_t,yhat_t,zhat_t 
+533,538c540,548
+<      .             , xhat_t,yhat_t,zhat_t,svantdx(1,ichan),svantpart )
+< cd         print *,'i iprn satcrd ',ichan,ischan(ichan),satcrd
+< cd         print *,'xhat yhat zhat ',xhat_t,yhat_t,zhat_t     
+< cd         print *,'svantdx ',svantdx 
+< cd         print *,'svantpart ',svantpart
+< cd         print *,'SV dx satcrd ',(svantdx(i,ichan),i=1,3),satcrd
+---
+>      .             , xhat_t,yhat_t,zhat_t,svantdx(1,1,ichan),svantpart )
+>          if(debug) then 
+>            print *,'i iprn satcrd ',ichan,ischan(ichan),satcrd
+>            print *,'xhat yhat zhat ',xhat_t,yhat_t,zhat_t     
+>            print *,'svantdx ',svantdx 
+>            print *,'svantpart ',svantpart
+>            print *,'SV dx satcrd ',((svantdx(i,j,ichan),i=1,3),j=1,2)
+>      .              ,satcrd
+>          endif 
+543,544c553,554
+<            r1(i)=satcrd(i)-evec(i,1)
+<            r2(i)=satcrd(i)-evec(i,2)
+---
+>            r1(i)=satcrd(i,1)-evec(i,1)
+>            r2(i)=satcrd(i,2)-evec(i,2)
+552c562,563
+< cd         print*,' sat and site vector magnitudes ', sat_l, site_l
+---
+>          if(debug) print*,' sat and site vector magnitudes '
+>      .      , sat_l, site_l
+558c569
+< cd         print *,'delay ',delay(1,ichan),delay(2,ichan)      
+---
+>          if(debug) print *,'delay ',delay(1,ichan),delay(2,ichan)      
+646,647c657,658
+<         call iondel( ichan,ischan(ischan),satcrd,pnsmat,rhat(1,ichan)
+<      .             , iongrpdel,ionphsdel ) 
+---
+>         call iondel( ichan,ischan(ischan),satcrd(1,1),pnsmat
+>      .             , rhat(1,ichan),iongrpdel,ionphsdel ) 
+682c693
+<             nadang(ichan) = dasin(site_l/sat_l)*dsin(twopi/4.d0 
+---
+>             nadang(ichan) = dasin(site_l/sat_l(1))*dsin(twopi/4.d0 
+686c697
+<             call phasecc( ichan,phctdel )      
+---
+>             call phasecc( ichan,yatt,phctdel )      
+699c710
+<                   r1(i) = satcrd(i) - simvec(i,j)  
+---
+>                   r1(i) = satcrd(i,j) - simvec(i,j)  
+Only in /chandler/home/rwk/gt/model: model.f.bak
+Only in /chandler/home/rwk/gt/model: model.f.save
+Binary files /chandler/home/rwk/active/gamit/model/model_lib.a and /chandler/home/rwk/gt/model/model_lib.a differ
+Only in /chandler/home/rwk/gt/model: MODE.warning
+diff /chandler/home/rwk/active/gamit/model/mversn.f /chandler/home/rwk/gt/model/mversn.f
+10c10
+<     5 format ('10.63 2018/11/21 12:00(',a,')')   
+---
+>     5 format ('10.66 2019/9/13 13:56 UTC (',a,')')   
+1288a1289,1298
+> c version 10.64    ATMRED,  AVCLCK, CHDRED, EPOCH_CLK, GET_ANTINFO, GET_MET_SOURCE, OPEN, READI
+> c                       UPDATE_COORDS, WRTHED, ZHDRED: Change (back) 'luprt' to 'iprnt' for
+> c                       consistency with model.h. King 190425
+> c                  WRTHED, dimpar.h: Increase slots for 4 additional ECOM2 radiation paramters. King 190425
+> c                  SETUP: Set npart and norbpart correctly for ECOMC (19 orbit parameters). King 190523 
+> c                  SETUP: Added antpwr to svnav_read call Herring 190702.     
+> c version 10.65    MODEL, CHDRED, GET_SVANTPCV, PHASECC, SETUP, SVANT, WRTHED, model.h:  Use separate 
+> c                   PCOs and PCVs for SV antenna offsets if available. King 190826 
+> c version 10.66    SITCOR, SETUP: Allow use of new IAU sofa inertial RF models (IAU0A, IAU0C and IAU06). 
+> c                  McClusky 190801. Merged Herrinng 190918.
+diff /chandler/home/rwk/active/gamit/model/mversn.f.bak /chandler/home/rwk/gt/model/mversn.f.bak
+10c10
+<     5 format ('10.62 2018/6/6 11:00 (',a,')')   
+---
+>     5 format ('10.65 2019/8/26 17:05 UTC (',a,')')   
+1282c1282,1296
+< 
+---
+> c version 10.63    GET_SVANTPCV: Allow for L1/L2 PCO differences (are so far only for Galileo
+> c                    and small).  King 180716
+> c                  GET_ANTPCV, GET_SVANTPCV, includes/model.h: New calling arguments for lib/linear.f 
+> c                     (see lib/lversn.f) to use floating rather than integer intervals. King 180720
+> c                  GET_ANTINFO: Restore p-file printout of elevation-dependentt PCVs.  King 180720
+> c                  UPDATE_COORDS:  Add missing 'debug' to call of get_antinfo.  Gegout/King 180907 
+> c                  SETUP: Fix trap on frequency so that it works for L1-only.  Fabris/King 181121
+> c version 10.64    ATMRED,  AVCLCK, CHDRED, EPOCH_CLK, GET_ANTINFO, GET_MET_SOURCE, OPEN, READI
+> c                       UPDATE_COORDS, WRTHED, ZHDRED: Change (back) 'luprt' to 'iprnt' for
+> c                       consistency with model.h. King 190425
+> c                  WRTHED, dimpar.h: Increase slots for 4 additional ECOM2 radiation paramters. King 190425
+> c                  SETUP: Set npart and norbpart correctly for ECOMC (19 orbit parameters). King 190523 
+> c                  SETUP: Added antpwr to svnav_read call Herring 190702.     
+> c version 10.65    MODEL, CHDRED, GET_SVANTPCV, PHASECC, SETUP, SVANT, WRTHED:  Use separate PCOs and 
+> c                   PCVs for SV antenna offsets if available. King 190826 
+Only in /chandler/home/rwk/gt/model: partl.temp
+diff /chandler/home/rwk/active/gamit/model/phasecc.f /chandler/home/rwk/gt/model/phasecc.f
+4c4
+<       Subroutine phasecc( ichan,delaycor)
+---
+>       Subroutine phasecc( ichan,yatt,delaycor)
+19c19
+< c               nadang    : nadir angle of satellite antenna (model.h)          r*8
+---
+> c               nadang    : nadir angle of satellite antenna (model.h) (rad)    r*8
+67c67,68
+<       real*8       corrl1,corrl2
+---
+>      .           , svoffl1(3),svoffl2(3),corrl1,corrl2
+>       real*8       yatt(maxsat)
+117,118c118,119
+<         call get_svantpcv( jdobs,ichan,nadangd,first,debug
+<      .                    ,found,corrl1,corrl2 )
+---
+>         call get_svantpcv( jdobs,ichan,nadangd,yatt(ichan),first
+>      .                    ,found,svoffl1,svoffl2,corrl1,corrl2 )
+123c124,125
+<           print *,' nadangd corrl1 corrl2 ',nadangd,corrl1,corrl2  
+---
+>           print *,' PHASECC nadangd yatt corrl1 corrl2 '
+>      .      ,nadangd,yatt(ichan),corrl1,corrl2  
+Only in /chandler/home/rwk/gt/model: phasecc.f.bak
+Only in /chandler/home/rwk/gt/model: pierce_pt.f.bak
+Only in /chandler/home/rwk/gt/model: setup.d
+diff /chandler/home/rwk/active/gamit/model/setup.f /chandler/home/rwk/gt/model/setup.f
+52c52
+<      .     ,  svcorrl1,svcorrl2,sign(2) 
+---
+>      .     ,  svoffl1(3),svoffl2(3),svcorrl1,svcorrl2,sign(2) 
+59c59,62
+<      .     ,  kepoch2,yawrate
+---
+>      .     ,  kepoch2,yawrate,nadangd,yatt 
+>     
+> 
+>       real*8 antpwr  ! Antenna Transmit power (W)
+245c248,253
+<           nutmod1 = 'IAU00'
+---
+> *         MOD TAH/SCM: option with IAUIAU0A, IAU0C and IAU06 precmod
+>           if ( precmod .eq. 'IAU76' ) then 
+>             nutmod1 = 'IAU00'
+>           else 
+>             nutmod1 = precmod
+>           endif
+520,522c528,531
+<         call svnav_read( -1,iyr,idoy,ihr,imin,gnss,ischan(i),isvn(i)
+<      .                 , frqchn(i),svantbody(i),sbmass,yawbias,yawrate 
+<      .                 , svnstart,svnstop )
+---
+> * MOD TAH 190702: Added antpwr to snav_read call
+>         call svnav_read( -1,iyr,idoy,ihr,imin,gnss,ischan(i),isvn(i), 
+>      .       frqchn(i),svantbody(i),sbmass,yawbias,yawrate, antpwr,
+>      .       svnstart,svnstop )
+599c608,609
+<            
+---
+>                
+>       if(debug) print *,'SETUP calling get_svantpcv jd0 yatt',jd0,yatt
+605,608c615,619
+<           nadang = float(jj)
+<           j=j+1  
+<           call get_svantpcv( jd0,i,nadang,first,debug
+<      .                     , found_svant(i),svcorrl1,svcorrl2 )
+---
+>           nadangd = float(jj)
+>           j=j+1              
+>           call get_svantpcv( jd0,i,nadangd,yatt,first
+>      .                     , found_svant(i),svoffl1,svoffl2
+>      .                     , svcorrl1,svcorrl2 )
+610c621,628
+<       enddo
+---
+> c       convert the offsets from mm to m
+>         do j=1,3
+>           svantdx(j,1,i) = svoffl1(j)/1.d3
+>           svantdx(j,2,i) = svoffl2(j)/1.d3
+>         enddo 
+>       enddo                                      
+> c     convert the offsets from mm to m
+>      
+627c645,646
+<      .       , (svantdx(j,i),j=1,3),(svantdx(j,i),j=1,3),svantmod_snx(i)
+---
+>      .       , (svantdx(j,1,i),j=1,3),(svantdx(j,2,i),j=1,3)
+>      .       , svantmod_snx(i)
+1011c1030,1034
+< 
+---
+>              
+> c     Case 4: 19 orbit partials (6 ICS + 13 prms of ECOMC model)
+>       elseif( nintrs.eq.60.or.nintrs.eq.120 ) then 
+>         norbpart = 19
+>         npart = 33 
+1317c1340
+<       if( debug ) stop          
+---
+> cd      if( debug ) stop          
+diff /chandler/home/rwk/active/gamit/model/setup.f.bak /chandler/home/rwk/gt/model/setup.f.bak
+52c52
+<      .     ,  svcorrl1,svcorrl2,sign(2) 
+---
+>      .     ,  svoffl1(3),svoffl2(3),svcorrl1,svcorrl2,sign(2) 
+59c59,62
+<      .     ,  kepoch2,yawrate
+---
+>      .     ,  kepoch2,yawrate,nadangd,yatt 
+>     
+> 
+>       real*8 antpwr  ! Antenna Transmit power (W)
+68c71
+<       logical debug/.false./
+---
+>       logical debug/.true./
+74d76
+< cd      print *,'SETUP debug ',debug
+521,523c523,526
+<         call svnav_read( -1,iyr,idoy,ihr,imin,gnss,ischan(i),isvn(i)
+<      .                 , frqchn(i),svantbody(i),sbmass,yawbias,yawrate 
+<      .                 , svnstart,svnstop )
+---
+> * MOD TAH 190702: Added antpwr to snav_read call
+>         call svnav_read( -1,iyr,idoy,ihr,imin,gnss,ischan(i),isvn(i), 
+>      .       frqchn(i),svantbody(i),sbmass,yawbias,yawrate, antpwr,
+>      .       svnstart,svnstop )
+545c548,549
+<           if( rxobtyp(1)(1:2).ne.'L1'.or.rxobtyp(2)(1:2).ne.'L2' ) 
+---
+>           if( (rxobtyp(1)(1:2).ne.'L1'.and.rxobtyp(1)(1:2).ne.'  ').or.
+>      .        ( rxobtyp(2)(1:2).ne.'L2'.and.rxobtyp(2)(1:2).ne.'  ')) 
+599c603,604
+<            
+---
+>                
+>       if(debug) print *,'SETUP calling get_svantpcv jd0 yatt',jd0,yatt
+605,608c610,614
+<           nadang = float(jj)
+<           j=j+1  
+<           call get_svantpcv( jd0,i,nadang,first,debug
+<      .                     , found_svant(i),svcorrl1,svcorrl2 )
+---
+>           nadangd = float(jj)
+>           j=j+1              
+>           call get_svantpcv( jd0,i,nadangd,yatt,first
+>      .                     , found_svant(i),svoffl1,svoffl2
+>      .                     , svcorrl1,svcorrl2 )
+610c616,623
+<       enddo
+---
+> c       convert the offsets from mm to m
+>         do j=1,3
+>           svantdx(j,1,i) = svoffl1(j)/1.d3
+>           svantdx(j,2,i) = svoffl2(j)/1.d3
+>         enddo 
+>       enddo                                      
+> c     convert the offsets from mm to m
+>      
+627c640,641
+<      .       , (svantdx(j,i),j=1,3),(svantdx(j,i),j=1,3),svantmod_snx(i)
+---
+>      .       , (svantdx(j,1,i),j=1,3),(svantdx(j,2,i),j=1,3)
+>      .       , svantmod_snx(i)
+1011c1025,1029
+< 
+---
+>              
+> c     Case 4: 19 orbit partials (6 ICS + 13 prms of ECOMC model)
+>       elseif( nintrs.eq.60.or.nintrs.eq.120 ) then 
+>         norbpart = 19
+>         npart = 33 
+1317c1335
+<       if( debug ) stop          
+---
+> cd      if( debug ) stop          
+Only in /chandler/home/rwk/gt/model: setup.f.l1only
+diff /chandler/home/rwk/active/gamit/model/sitcor.f /chandler/home/rwk/gt/model/sitcor.f
+47c47
+<      .        ,ndoy,nt,start_year,nydays,i,j
+---
+>      .        ,ndoy,nt,start_year,nydays,i,j, idir
+60a61,64
+> * MOD TAH/SCM 190918: Add era variables
+>       real*8 era,erarot(3,3) 
+> 
+>       logical debug / .false. / 
+73,98c77,78
+<       call pnrot( inut,jd,t,tdtgpst,eqe,prec,rnut,frame,precmod)
+< c     srotat (unique in GAMIT) expects UTC
+<       jds = jd
+<       ts = t
+<       gpstutc = taiutc(jd) - 19.d0
+<       call timinc(jds,ts,-gpstutc)
+< 
+< c     catch possible leap second
+<       if( jds.ne.jd ) then
+<         gpstutc = taiutc(jds) - 19.d0
+<         jds = jd
+<         ts = t
+<         call timinc(jds,ts,-gpstutc)
+<       endif
+<       tdtutc = taiutc(jd) + 32.184d0
+<       call srotat( jds,ts,tdtutc,eqe,isptide,srot,sdrot,sidtm
+<      .           , xpole,ypole,sidten,prot,iut1,ipole,precmod )
+<       call pns( prec,rnut,srot,pnsmat )
+<       call pns( prec,rnut,sdrot,pnsdmt )
+< c rwk 070725: Change names from xrot, xdtrot to pnsmat,pnsdmt so this unnecessary
+< c      do j=1,3
+< c        do i=1,3
+< c          xrot(i,j) = pnsmat(i,j)
+< c          xdtrot(i,j) = pnsdmt(i,j)
+< c        enddo
+< c      enddo                   
+---
+> * MOD TAH/SCM: Added for SOFIA routines and IAU0A, IAU0C, IAU06 models
+>       if( precmod .eq. 'IAU76' ) then
+99a80,133
+>          call pnrot( inut,jd,t,tdtgpst,eqe,prec,rnut,frame,precmod)
+> c        srotat (unique in GAMIT) expects UTC
+>          jds = jd
+>          ts = t
+>          gpstutc = taiutc(jd) - 19.d0
+>          call timinc(jds,ts,-gpstutc)
+> 
+> c        catch possible leap second
+>          if( jds.ne.jd ) then
+>            gpstutc = taiutc(jds) - 19.d0
+>            jds = jd
+>            ts = t
+>            call timinc(jds,ts,-gpstutc)
+>          endif
+>          tdtutc = taiutc(jd) + 32.184d0
+>          call srotat( jds,ts,tdtutc,eqe,isptide,srot,sdrot,sidtm
+>      .              , xpole,ypole,sidten,prot,iut1,ipole,precmod )
+>          call pns( prec,rnut,srot,pnsmat )
+>          call pns( prec,rnut,sdrot,pnsdmt )
+>       else
+> *        Use the SOFA routines
+> 
+>          idir = 1
+>          call rotsnp_sofa( idir,jd,t,tdtgpst,isptide
+>      .                    , frame,precmod,iut1,ipole,inut
+>      .                    , pnsmat,pnsdmt,sidtm,xpole,ypole
+>      .                    , prec,rnut,prot,sidten,era,erarot )   
+> 
+>          if ( precmod .ne. 'IAU76' .and. precmod .ne. 'IAU0A' ) then
+> c Is this what is required?
+>            sidtm = era
+>            sidten = erarot
+> cd          print*,'CIO based CRS: ',precmod,' : Copying ERA > SIDTM'             
+>          endif
+> 
+>       endif 
+> 
+> c Debug output
+>       if (debug) then
+>         write(*,100) 'SITCOR - prec: ',precmod,
+>      .             ((prec(i,j),j=1,3),i=1,3) 
+>         write(*,100) 'SITCOR - rnut: ',precmod,
+>      .             ((rnut(i,j),j=1,3),i=1,3) 
+>         write(*,100) 'SITCOR - prot: ',precmod,
+>      .             ((prot(i,j),j=1,3),i=1,3) 
+>         write(*,100) 'SITCOR - sidten: ',precmod,
+>      .             ((sidten(i,j),j=1,3),i=1,3)
+>         write(*,*) 'SITCOR - sidtm,xp,yp: ',precmod,sidtm,xpole,ypole
+>         write(*,100) 'SITCOR - pnsmat: ',precmod,
+>      .             ((pnsmat(i,j),j=1,3),i=1,3) 
+>         write(*,100) 'SITCOR - pnsdmt: ',precmod,
+>      .             ((pnsdmt(i,j),j=1,3),i=1,3) 
+> 100     format(a,1x,a,1x,/,3(1x,3D22.14,/))
+>       endif
+122a157,160
+>       if (debug) then
+>         write(*,110) 'SITCOR - evec: ',precmod,jd,t,evec*1000.d0 
+> 110     format(a,1x,a5,1x,i10,1x,f16.8,1x,2(1x,3f16.5,1x,3f11.5/))
+>       endif
+124c162
+< c          Rotate the partial matrix (Jacobian) to mean of 1950.0
+---
+> c     Rotate the partial matrix (Jacobian) to mean of 1950.0
+Only in /chandler/home/rwk/gt/model: slant_tec.f.bak
+Only in /chandler/home/rwk/gt/model: ssetup.f
+diff /chandler/home/rwk/active/gamit/model/svant.f /chandler/home/rwk/gt/model/svant.f
+9c9
+< c         satcrd(6)      : SV wrt earth (inertial system)
+---
+> c         satcrd(6,2)    : SV wrt earth (inertial system) L1, L2  (km)
+13c13
+< c         dx(3)          : SV antenna wrt SV center of mass (m)
+---
+> c         dx(3,2)        : SV antenna wrt SV center of mass L1 L2 (m)
+21c21
+<       real*8 satcrd(6),xhat_t(3),yhat_t(3),zhat_t(3),dx(3)
+---
+>       real*8 satcrd(6,2),xhat_t(3),yhat_t(3),zhat_t(3),dx(3,2)
+24c24
+<       integer iprn,i
+---
+>       integer iprn,i,j
+26,28c26
+<       logical debug
+< 
+<       data debug/.true./
+---
+>       logical debug/.false./
+31,44c29,44
+< cd        print *,'SVANT satcrd ',satcrd
+< cd        print *,'SVANT dx xhat yhat zhat '
+< cd     .   ,dx,xhat_t,yhat_t,zhat_t
+< cd        print *,'iprn dx  ',iprn,dx
+<       endif
+<         satcrd(1)= satcrd(1) +
+<      .       dx(1)*1.d-3*xhat_t(1) + dx(2)*1.d-3*yhat_t(1) 
+<      .     + dx(3)*1.d-3*zhat_t(1)
+<         satcrd(2)= satcrd(2) +
+<      .       dx(1)*1.d-3*xhat_t(2) + dx(2)*1.d-3*yhat_t(2) 
+<      .     + dx(3)*1.d-3*zhat_t(2)
+<         satcrd(3)= satcrd(3) +
+<      .       dx(1)*1.d-3*xhat_t(3) + dx(2)*1.d-3*yhat_t(3) 
+<      .     + dx(3)*1.d-3*zhat_t(3)
+---
+>         print *,'SVANT satcrd ',satcrd
+>         print *,'SVANT dx xhat yhat zhat '
+>      .   ,dx,xhat_t,yhat_t,zhat_t
+>         print *,'iprn dx  ',iprn,dx
+>       endif 
+>       do j=1,2
+>         satcrd(1,j)= satcrd(1,j) +
+>      .       dx(1,j)*1.d-3*xhat_t(1) + dx(2,j)*1.d-3*yhat_t(1) 
+>      .     + dx(3,j)*1.d-3*zhat_t(1)
+>         satcrd(2,j)= satcrd(2,j) +
+>      .       dx(1,j)*1.d-3*xhat_t(2) + dx(2,j)*1.d-3*yhat_t(2) 
+>      .     + dx(3,j)*1.d-3*zhat_t(2)
+>         satcrd(3,j)= satcrd(3,j) +
+>      .       dx(1,j)*1.d-3*xhat_t(3) + dx(2,j)*1.d-3*yhat_t(3) 
+>      .     + dx(3,j)*1.d-3*zhat_t(3)
+>       enddo 
+Only in /chandler/home/rwk/gt/model: svant.f.bak
+Only in /chandler/home/rwk/gt/model: temp
+Only in /chandler/home/rwk/gt/model: temp.out
+Only in /chandler/home/rwk/active/gamit/model: updated.active
+diff /chandler/home/rwk/active/gamit/model/wrthed.f /chandler/home/rwk/gt/model/wrthed.f
+27c27,37
+<       data preval/maxprm*0.0d0/
+---
+>       data preval/maxprm*0.0d0/   
+> 
+> c**rwk 190826: Temporary to avoid changing the c-file format for 10.71, write 
+> c              only a single-frequency value  for the SV antenna PCO 
+>       real*8 svantdxx(3,maxsat) 
+>       do j=1,maxsat
+>         do i=1,3
+>           svantdxx(i,j) = svantdx(i,1,j)
+>         enddo
+>       enddo 
+> 
+130,133c140,153
+< 
+< c          Bernese ECOM1 and ECOM2 and UCLR models (9 parameters)
+<         if( srpmod.eq.'BERNE'.or.srpmod.eq.'BERN2'.or.
+<      .      srpmod.eq.'UCLR1'  ) then
+---
+> c          ECOM1, ECOM2, ECOMC, and UCLR models all use at least 9 parameters
+>         if( srpmod.eq.'ECOM1'.or.srpmod.eq.'BERNE'.or.
+>      .      srpmod.eq.'ECOM2'.or.srpmod.eq.'ECOMC'.or.
+>      .      srpmod.eq.'UCLR1'.or.srpmod.eq.'UCLR2' ) then     
+>           nlabel = 18 
+>           islot(12) =1101
+>           islot(13) =1201
+>           islot(14) =1301  
+>           islot(15) = 1401
+>           islot(16) = 1501
+>           islot(17) = 1601
+>           islot(18) = 1701
+>           islot(19) = 1801
+>           islot(20) = 1901   
+137,139c157,162
+<           islot(12) =1101
+<           islot(13) =1201
+<           islot(14) =1301
+---
+>           write(rlabel(15),'("COS U DIRECT        ")')
+>           write(rlabel(16),'("SIN U DIRECT        ")')
+>           write(rlabel(17),'("COS U Y AXIS        ")')
+>           write(rlabel(18),'("SIN U Y AXIS        ")')
+>           write(rlabel(19),'("COS U B AXIS        ")')
+>           write(rlabel(20),'("SIN U B AXIS        ")') 
+145,160c168,177
+<           islot(20) = 1901
+<           if( srpmod.eq.'BERNE'.or.srpmod.eq.'ECOM1'. or.
+<      .        srpmod.eq.'UCLR1' ) then 
+<             write(rlabel(15),'("COS DIRECT          ")')
+<             write(rlabel(16),'("SIN DIRECT          ")')
+<             write(rlabel(17),'("COS Y BIAS          ")')
+<             write(rlabel(18),'("SIN Y BIAS          ")')
+<             write(rlabel(19),'("COS B BIAS          ")')
+<             write(rlabel(20),'("SIN B BIAS          ")') 
+<           elseif( srpmod.eq.'BERN2'.or.srpmod.eq.'ECOM2' ) then
+<             write(rlabel(15),'("COS 2U DIRECT       ")')
+<             write(rlabel(16),'("SIN 2U DIRECT       ")')
+<             write(rlabel(17),'("COS 4U DIRECT       ")')
+<             write(rlabel(18),'("SIN 4U DIRECT       ")')
+<             write(rlabel(19),'("COS B BIAS          ")')
+<             write(rlabel(20),'("SIN B BIAS          ")') 
+---
+>           islot(20) = 1901   
+>           if( srpmod.eq.'ECOM2'.or.srpmod.eq.'ECOMC') then 
+>             write(rlabel(21),'("COS 2U DIRECT       ")')
+>             write(rlabel(22),'("SIN 2U DIRECT       ")')
+>             write(rlabel(23),'("COS 4U DIRECT       ")')
+>             write(rlabel(24),'("SIN 4U DIRECT       ")')
+>             islot(21) = 2001
+>             islot(22) = 2101
+>             islot(23) = 2201 
+>             islot(24) = 2301 
+175,177c192,194
+<         islot(5+norbpart+1) = 2001
+<         islot(5+norbpart+2) = 2101
+<         islot(5+norbpart+3) = 2201  
+---
+>         islot(5+norbpart+1) = 2501
+>         islot(5+norbpart+2) = 2601
+>         islot(5+norbpart+3) = 2701  
+181c198
+<             preval(nparam) = svantdx(i,j)
+---
+>             preval(nparam) = svantdxx(i,j)
+248c265
+<      .,            offarp,offl1,offl2,svantdx
+---
+>      .,            offarp,offl1,offl2,svantdxx
+323c340
+<      .   ,svantbody(i),svantmod_snx(i),svantmod(i),(svantdx(j,i),j=1,3)
+---
+>      .   ,svantbody(i),svantmod_snx(i),svantmod(i),(svantdxx(j,i),j=1,3)
+350c367
+< 150    FORMAT(1X,'rlabel, islot, idms =',A20,I5,I3,29(/,26X,A20,I5,I3))
+---
+> 150    FORMAT(1X,'rlabel, islot, idms =',A20,I5,I3,33(/,26X,A20,I5,I3))
+Only in /chandler/home/rwk/gt/model: wrthed.f.bak
+diff /chandler/home/rwk/active/gamit/model/zhdred.f /chandler/home/rwk/gt/model/zhdred.f
+2c2
+<       SUBROUTINE ZHDRED( IUZ,IPRNT,FJDZ1,FJDZ2 )
+---
+>       SUBROUTINE ZHDRED( IUZ,iprnt,FJDZ1,FJDZ2 )
+47c47
+<       WRITE(IPRNT,2001) IYR1,IDOY1,IHR1,IMN1,IYR2,IDOY2,IHR2,IMN2,SITECD
+---
+>       WRITE(iprnt,2001) IYR1,IDOY1,IHR1,IMN1,IYR2,IDOY2,IHR2,IMN2,SITECD

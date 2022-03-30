@@ -1,0 +1,214 @@
+#!/bin/csh -ef
+if ($#argv == 0) then
+   echo ' '
+   echo ' Create executables from the source code in GAMIT directories '
+   echo ' '
+   echo '    - call script unimake to update machine-dependent Makefiles '
+   echo "    - execute 'make' to compile and link the subroutines"
+   echo '    - recreate the links in the GAMIT bin directory '
+   echo ' '
+   echo ' Useage:'
+   echo ' '
+   echo '   make_gamit [target_dir] [compiler] '
+   echo ' '
+   echo '      where [target_dir] is the absolute path to the directory above /gamit'
+   echo '            [compiler] is an optional entry specifying a compiler other '
+   echo '                       than the default f77 compiler you want to use'
+   echo ' '
+   echo ' Example:'
+   echo ' '
+   echo '   make_gamit /home/me/stdrel '
+   echo '   OR'
+   echo '   make_gamit /home/me/stdrel g77 '
+   echo ' '
+   exit
+else
+
+#  
+# Script to make GAMIT
+# R. King.  Last modified by R. King     980303
+ 
+# Augment the path to point to target-directory com for new installations
+ set path = ($path $1/com)
+    
+# remember target working directory
+set TARGETDIR = $1/gamit
+set COMPILER = 'default'
+if ( $#argv > 1 ) then
+  set COMPILER = $2
+  echo "Using the specified compiler: " $COMPILER 
+endif
+
+# first update the GAMIT program dimensions in the include files
+echo " "
+echo "Reading gamit/Makefile.config to get program dimensions" 
+echo " "
+set conf = $TARGETDIR/Makefile.config 
+cd $TARGETDIR/includes
+set maxsit = `grep "MAXSIT" $conf`; shift maxsit
+set maxsat = `grep "MAXSAT" $conf`; shift maxsat
+set maxatm = `grep "MAXATM" $conf`; shift maxatm
+set maxepc = `grep "MAXEPC" $conf`; shift maxepc  
+redim maxsit:$maxsit ncvsit:$maxsit maxsat:$maxsat maxatm:$maxatm maxepc:$maxepc
+
+# then make (or check) the common libraries
+echo " "
+echo ++++++++++++++++++++++++++++++++++++++++++
+echo Make sure the common libraries are current
+echo ++++++++++++++++++++++++++++++++++++++++++
+echo " "
+cd $TARGETDIR
+cd ../libraries
+unimake -m comlib -c $COMPILER
+if( $status != 0 ) then
+  echo "Failure in unimake for libraries/comlib -- make_gamit terminated"   
+  exit 1
+endif
+cd comlib; make 
+if( $status != 0 ) then
+   echo "Failure in make for gamit/lib -- make_gamit terminated"   
+   exit 1
+endif
+touch tmp.o; \rm -f *.o
+cd ../
+unimake -m matrix -c $COMPILER      
+if( $status != 0 ) then
+  echo "Failure in unimake for libraries/matrix -- make_gamit terminated"   
+  exit 1
+endif
+cd matrix; make 
+if( $status != 0 ) then
+   echo "Failure in make for gamit/lib -- make_gamit terminated"   
+   exit 1
+endif
+touch tmp.o; \rm -f *.o
+
+
+# then do the GAMIT library
+
+echo ' '
+echo +++++++++++++++++++++++++++++++++++++++++
+echo Making the GAMIT library...
+echo +++++++++++++++++++++++++++++++++++++++++
+
+if (-e $TARGETDIR/lib) then    
+#     first remake the Makefile if necessary
+      cd $TARGETDIR
+      unimake -m lib -c $COMPILER   
+      if( $status != 0 ) then
+        echo "Failure in unimake for gamit/lib -- make_gamit terminated"   
+        exit 1
+     endif   
+#    now make the library
+     cd lib 
+     make 
+     if( $status != 0 ) then
+        echo "Failure in make for gamit/lib -- make_gamit terminated"   
+        exit 1
+     endif
+     touch tmp.o; \rm -f *.o  
+     echo Made lib
+     # Define Fortran compiler for the SOFA routines, next
+     set sofa_fc = `grep '^FTN *=' Makefile | awk '{print $3}'`
+else
+   echo Could not find directory $TARGETDIR/lib
+endif
+
+echo ' '
+echo +++++++++++++++++++++++++++++++++++++++++
+echo Making the SOFA library...
+echo +++++++++++++++++++++++++++++++++++++++++
+
+if (-e $TARGETDIR/lib/sofa/20190722/f77/src) then    
+
+     cd $TARGETDIR/lib/sofa/20190722/f77/src
+
+     make FC=$sofa_fc
+      
+     if( $status != 0 ) then
+        echo "Failure of make for SOFA library in ${TARGETDIR} -- make_gamit terminated"   
+        exit 1
+     endif
+     
+     make FC=$sofa_fc install 
+     
+     touch tmp.o; \rm -f *.o  
+     
+     echo Made lib/libsofa
+else
+   echo Could not find directory $TARGETDIR/lib/sofa/20190722/f77/src
+endif
+
+echo " "
+echo ++++++++++++++++++++++++++++++++++
+echo Making the main modules
+echo ++++++++++++++++++++++++++++++++++
+echo " "
+
+
+# list of modules to make
+# comment out you don't want to make
+set MODULES = " "
+# makex has to precede fica
+set MODULES = ($MODULES makex)
+set MODULES = ($MODULES arc)
+set MODULES = ($MODULES cfmrg)
+set MODULES = ($MODULES clean) 
+set MODULES = ($MODULES ctox)
+set MODULES = ($MODULES fica)
+set MODULES = ($MODULES fixdrv)
+set MODULES = ($MODULES grdtab)
+set MODULES = ($MODULES hi)
+set MODULES = ($MODULES makexp)
+set MODULES = ($MODULES model)
+set MODULES = ($MODULES orbits)
+set MODULES = ($MODULES solve)
+set MODULES = ($MODULES tform)
+set MODULES = ($MODULES utils)
+
+
+# loop over all modules
+foreach DIRECTORY ( $MODULES ) 
+   if (-e $TARGETDIR/$DIRECTORY) then 
+#     first remake the Makefile if necessary
+      cd $TARGETDIR
+      unimake -m $DIRECTORY -c $COMPILER   
+      if( $status != 0 ) then
+        echo "Failure in unimake for gamit/" $DIRECTORY " -- make_gamit terminated"   
+        exit 1
+      endif
+#     now make the module
+      cd $DIRECTORY 
+      make               
+      if( $status != 0 ) then
+        echo "Failure in make for gamit/" $DIRECTORY " -- make_gamit terminated"   
+        exit 1
+      endif
+      echo Made $DIRECTORY    
+#     need to erase object files on some systems (e.g., DEC OSF4) when it
+#     can't be done within the Makefile.  
+      touch tmp.o; \rm -f *.o
+   else
+      echo Could not find directory $TARGETDIR/$DIRECTORY
+      exit 1 
+   endif
+end # for
+
+
+# Now remake the links
+# MOD TAH 960812: Changed directory to $1 (which is the high
+#                 level directory. 
+link_gamit_bin $1 
+if( $status != 0 ) then
+   echo "Failure in linking executables in /bin -- make_gamit terminated"   
+   exit 1
+endif
+  
+
+echo ''
+echo ++++++++++++++++++
+echo GAMIT installed
+echo ++++++++++++++++++
+echo ''
+  
+endif

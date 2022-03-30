@@ -1,0 +1,324 @@
+#!/bin/csh -f
+#
+#doc Get IONEX files by day number, source, and archive
+#doc
+#
+# R King based on sh_get_orbits by S McClusky
+# MOD TAH 130620: Fixed multiday logical.  As coded only one-day downloaded.
+# MOD MAF 171119: Added trap to use ncftp when "ftp" client is actually "gftp", which interacts with the
+#                 server differently to legacy "ftp" and is tricky to use for non-interactive sessions.
+# MOD MAF 200923: Added functionality for "-multiday" option
+# MOD MAF 210209: Corrected stripping of "/pub" from CDDIS FTP address.
+# MOD MAF 210619: Corrected functionality of "-multiday" option to ensure only one (first) TEC map
+#                 is retained across day boundaries, where duplicate epochs may be recorded
+
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  cat << END && exit 1
+=====================================================================================
+ Get IONEX files from CDDIS or IGN archive
+
+ Usage: sh_get_ion -archive <archive> -yr <yr> -doy <doy> -ndays <num> -multiday
+                      -ion <source> -ftp_prog <curl|wget>
+
+ Where: <archive> Either cddis or igni [Default cddis]
+        <yr> 4 char year of IONEX data requested  [Required]
+        <doy> 3 char day of year of IONEX data requested  [Required]
+        <num> Number of consecutive days of data to retreive  [Default 1]
+        <multiday> Form a multiday IONEX file from downloaded files
+        <f/r/p> The precision of ion map requested.  [Default f]
+                  where f=final, r=rapid, p=predicted
+        <source> IONEX file to be download  [Default igsg]
+                 available at cddis: igsg igrg codg corg jplg jprg upcg uprg
+                 available at igni: all above + esag esrg
+        <curl|wget|ncftp> choose the download program to be used [default is curl;
+                          ftp and ncftp will not work for CDDIS]
+
+ Examples: sh_get_ion -yr 1998 -doy 235
+           sh_get_ion -yr 1998 -doy 235 -ion codg
+           sh_get_ion -yr 1998 -doy 235 -ndays 7 -ftp_prog wget
+
+=====================================================================================
+END
+endif
+
+##################### SET UP DEFAULTS #############################
+#
+# Setup necessary paths and filenames
+set year = ''
+set yr = ''
+set doy = ''
+set site = ''
+set numd = 1
+set archive = cddis
+set ions = igsg
+set ftp_prog = 'ftp -inv'
+set prog = ''
+set multiday = no
+set multidaylist = ''
+set sdays = ()
+
+##################### DECIPHER COMMAND LINE #######################
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -a*:
+      set archive  = $input[2]
+    breaksw
+    case -nd*:
+      set numd = $input[2]
+    breaksw
+    case -y*:
+      set year = $input[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+      set yr = `sh_year -year $year`
+    breaksw
+    case -d*:
+      set doy = $input[2]
+    breaksw
+    case -ion*:
+      set ions = $input[2]
+    breaksw
+    case -ftp_prog:
+      set ftp_prog = $input[2]
+    breaksw
+    case -mu*:
+      set multiday = yes
+    breaksw
+ endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+
+# Added by MAF (2017-11-19, MIT) to check if ftp is aliased or linked to gftp on local machine
+# Appended by MAF (2018-06-07, MIT) to check if ftp is missing, e.g. on macOS High Sierra
+if ( `echo $ftp_prog | awk '{print $1}'` == 'ftp' && `ftp -v << quit` != '' ) then
+  if ( `which ncftp` =~ '*ncftp' ) then
+    set ftp_prog = 'ncftp'
+    echo 'ftp command aliased or linked to gftp; trying ncftp instead'
+  else if ( `which wget` =~ '*wget' ) then
+    set ftp_prog = 'wget'
+    echo 'ftp command aliased or linked to gftp; trying wget instead'
+  endif
+else if ( `echo $ftp_prog | awk '{print $1}'` == 'ftp' && `which ftp` !~ '*ftp' ) then
+  if ( `which ncftp` =~ '*ncftp' ) then
+    set ftp_prog = 'ncftp'
+    echo 'ftp command not found; trying ncftp instead'
+  else if ( `which wget` =~ '*wget' ) then
+    set ftp_prog = 'wget'
+    echo 'ftp command not found; trying wget instead'
+  endif
+endif
+
+# Added by MAF (2020-08-20, MIT)
+# Test which program to use for download
+if ( -e `which curl` ) then  # curl exists (preferred due to better directory listing and wget is not native on macOS)
+  set prog = 'curl -s -f -L'
+else if ( -e `which wget` ) then  # wget exists
+  set prog = 'wget -nv'
+else  # Neither curl nor wget available
+  echo 'Neither curl nor wget available to download IONEX files from CDDIS.'
+endif
+# END: Added by MAF (2020-08-20, MIT)
+
+##################### READ THE FTP_INFO TEMPLATE ############################
+#
+echo "ftp_info = sh_get_ftp_info -archive $archive -type ion"
+set ftp_info = `sh_get_ftp_info -archive $archive -type ion`
+
+while ($#ftp_info > 0 )
+  set input = ( $ftp_info )
+  switch($input[1])
+    case -ftpsite:
+      set ftpsite  = $input[2]
+    breaksw
+    case -ftplogin:
+      set ftplogin  = (`echo $ftp_info | cut -d- -f2`); shift ftplogin
+    breaksw
+    case -ftpdir:
+      set ftpdir  = $input[2]
+    breaksw
+    case -ftpcmd:
+      set ftpcmd  = (`echo $ftp_info | cut -d% -f2`); shift ftpcmd
+    breaksw
+  endsw
+  if ( $#ftp_info > 0 ) shift ftp_info
+end
+
+echo "Information extracted from ftp_info"
+echo "########################################"
+echo "ftpsite $ftpsite"
+echo "ftplogin $ftplogin"
+echo "ftpdir $ftpdir"
+echo "ftpcmd $ftpcmd"
+echo "########################################"
+
+##################### GET THE JOB DONE ############################
+
+echo "Getting requested IONEX files "
+
+# Set timestamp hostname variable
+set ts = "`hostname`:`date +"%H%M%S"`"
+
+#Check required fields
+if ( ${year} == '' || ${doy} == '' ) then
+  echo "Required fields not complete:- yr: $year doy: $doy --Stop "
+  exit
+endif
+
+# Check if ncftp is requested
+if ( `echo $ftp_prog | awk '{print $1}'` == 'ncftp' ) then
+  if (`echo $ftpcmd | awk '{print $1}'` == 'ftp') then
+    set ftpcmd = `echo $ftp_prog $ftpsite`
+    echo "-ftp_prog = ncftp requested, ftpcmd now: $ftpcmd"
+  endif
+endif
+
+if ( "$prog" == '' ) then  # Set up the ftp script
+  echo "user $ftplogin" >! tmp.get.$ts
+  echo "binary" >> tmp.get.$ts
+  #if (`echo $ftpcmd | awk '{print $1}'` == 'ftp') then
+    set getcmd = 'get'
+  #else
+  #  set getcmd = 'get -f -z'
+  #endif
+endif
+
+# Set up loop on days
+#@ sday = ${doy} - 1
+@ sday = `echo "ibase=10; ${doy} - 1" | bc`
+#@ count = ${numd}
+@ count = `echo "ibase=10; ${numd}" | bc`
+
+\rm -f tmp.curl.cfg tmp.wget_urls
+
+while ( ${count} )
+
+  set sday = `echo ${sday} |  awk '{printf "%03d \n", $1+1 }'`
+  set sdays = ( $sdays $sday )
+  @ count = ${count} - 1
+  set directory = `echo $ftpdir | sed s/"YYYY"/$yr[1]/ | sed s/"YY"/$yr[2]/ | sed s/"DDD"/${sday}/ | sed s/"SSSS"/${site}/ `
+
+  if ( `echo $prog | awk '{print $1}'` == 'curl' ) then
+
+    if ( `echo $archive | cut -c 1-5` == 'cddis' ) then
+      if ( -e ~/.netrc ) then  # Use authenticated secure HTTP
+        cat << END >> tmp.curl.cfg
+url = "https://cddis.nasa.gov`echo $directory | sed 's/pub/archive/'`/${ions}${sday}0.${yr[2]}i.Z"
+-O
+END
+      else if ( `curl --version | awk '{if (NR == 1) print substr($2,1,4)}' | sed 's/\.//g'` >= 711 ) then  # Use anonymous secure FTP (requires curl version >= 7.11.0)
+        cat << END >> tmp.curl.cfg
+url = "ftp://gdc.cddis.eosdis.nasa.gov`echo $directory | sed 's/\/pub//'`/${ions}${sday}0.${yr[2]}i.Z"
+-O
+END
+      endif
+    else
+      cat << END >> tmp.curl.cfg
+url = "ftp://$ftpsite/$directory/${ions}${sday}0.${yr[2]}i.Z"
+-O
+END
+    endif
+
+  else if ( `echo $prog | awk '{print $1}'` == 'wget' ) then
+
+    if ( `echo $archive | cut -c 1-5` == 'cddis' ) then
+      if ( -e ~/.netrc ) then  # Use authenticated secure HTTP
+        echo "https://cddis.nasa.gov`echo $directory | sed 's/pub/archive/'`/${ions}${sday}0.${yr[2]}i.Z" >> tmp.wget_urls
+      else if ( `wget --version | awk '{if (NR == 1) print substr($3,1,4)}' | sed 's/\.//g'` >= 118 ) then  # Use anonymous secure FTP (requires wget version >= 1.18)
+        echo "ftps://gdc.cddis.eosdis.nasa.gov`echo $directory | sed 's/\/pub//'`/${ions}${sday}0.${yr[2]}i.Z" >> tmp.wget_urls
+      endif
+    else
+      echo "ftp://$ftpsite/$directory/${ions}${sday}0.${yr[2]}i.Z" >> tmp.wget_urls
+    endif
+
+  else
+
+    # Set up the ftp script
+    #  echo "user $ftplogin" >! tmp.get.$ts
+    #  echo "binary" >> tmp.get.$ts
+    echo "cd $directory" >> tmp.get.$ts
+    echo  "$getcmd ${ions}${sday}0.${yr[2]}i.Z"  >> tmp.get.$ts
+    # This will end the ftp session
+    #  echo 'quit' >> tmp.get.$ts
+
+  endif
+
+end
+
+# Execute the download script
+set log = `date "+get_ion_${archive}_%Y%m%d%H%M%z.log"`
+if ( `echo $prog | awk '{print $1}'` == 'curl' ) then
+
+  if ( `echo $archive | cut -c 1-5` == 'cddis' ) then
+    if ( -e ~/.netrc ) then  # Use authenticated secure HTTP
+      $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -b .urs_cookies -c .urs_cookies -n -R -O -K tmp.curl.cfg >! $log ||\
+       $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -b .urs_cookies -c .urs_cookies -n --ciphers 'DEFAULT@SECLEVEL=1' -R -O -K tmp.curl.cfg >! $log
+    else if ( `curl --version | awk '{if (NR == 1) print substr($2,1,4)}' | sed 's/\.//g'` >= 711 ) then  # Use anonymous secure FTP (requires curl version >= 7.11.0)
+      if ( `curl --version | awk '{if (NR == 1) print substr($2,1,4)}' | sed 's/\.//g'` >= 720 ) then  # Use newer "--ssl" option
+        set ssl_opt = '--ssl'
+      else  # Use older "--ftp-ssl" option
+        set ssl_opt = '--ftp-ssl'
+      endif
+      $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -u anonymous:$ftplogin[2] $ssl_opt -R -O -K tmp.curl.cfg >! $log ||\
+       $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -u anonymous:$ftplogin[2] $ssl_opt --ciphers 'DEFAULT@SECLEVEL=1' -R -O -K tmp.curl.cfg >! $log
+    endif
+  else
+    $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -u anonymous:$ftplogin[2] -R -O -K tmp.curl.cfg >! $log ||\
+     $prog -w "curl downloaded %{url_effective} (%{size_download} B) in %{time_total} s at %{speed_download} B/s\n" -u anonymous:$ftplogin[2] --ciphers 'DEFAULT@SECLEVEL=1' -R -O -K tmp.curl.cfg >! $log
+  endif
+  gzip -d -f ${ions}*0.${yr[2]}i.Z
+  \rm tmp.curl.cfg
+
+else if ( `echo $prog | awk '{print $1}'` == 'wget' ) then
+
+  if ( `echo $archive | cut -c 1-5` == 'cddis' ) then
+    if ( -e ~/.netrc ) then  # Use authenticated secure HTTP
+      $prog -o $log --load-cookies .urs_cookies --save-cookies .urs_cookies --keep-session-cookies --auth-no-challenge -N -i tmp.wget_urls
+    else if ( `wget --version | awk '{if (NR == 1) print substr($3,1,4)}' | sed 's/\.//g'` >= 118 ) then  # Use anonymous secure FTP (requires wget version >= 1.18)
+      $prog -o $log --ftp-user anonymous --ftp-password $ftplogin[2] -N -i tmp.wget_urls
+    endif
+  else
+    $prog -o $log --user anonymous --password $ftplogin[2] -N -i tmp.wget_urls
+  endif
+  gzip -d -f ${ions}*0.${yr[2]}i.Z
+  \rm tmp.wget_urls
+
+else
+
+  echo 'quit' >> tmp.get.$ts
+  cat tmp.get.$ts >! $log
+  echo ' ' >> $log
+  echo '--------------------' >> $log
+  $ftpcmd < tmp.get.$ts | grep -v '^230' >> $log
+
+  # Now uncompress the IONEX fles
+  grep '^get ' tmp.get.$ts | awk '{print "uncompress -f ",$NF}' >! tmp.unc.$ts
+  csh tmp.unc.$ts >>& $log
+
+  #Clean up
+  \rm tmp.get.$ts tmp.unc.$ts
+
+endif
+
+# Added by M. Floyd (MIT, 2020-09-23)
+# Concatenate IONEX files if "-multiday" option given
+if ( "$multiday" == 'yes' ) then
+  # Read TEC maps and increment map numbers, skipping all but first of non-unique epochs
+  awk 'BEGIN {i=1; last_ymdhms=19000101000000; write=1}; /START OF TEC MAP/,/END OF TEC MAP/ {if ($0 ~ /EPOCH OF CURRENT MAP/) {if (sprintf("%4d%02d%02d%02d%02d%02d",$1,$2,$3,$4,$5,$6) == last_ymdhms) write=0; else write=1; last_ymdhms=sprintf("%4d%02d%02d%02d%02d%02d",$1,$2,$3,$4,$5,$6)}; if (write == 1) {if ($0 ~ /START OF TEC MAP/ || $0 ~ /END OF TEC MAP/) {sub(/[ 0-9]*[0-9]/,sprintf("%6d",i)); print; if ($0 ~ /END OF TEC MAP/) i++} else print}}' $ions{`echo ${sdays} | tr ' ' ','`}0.${yr[2]}i >! $ions$sdays[1]-$sdays[$#sdays].${yr[2]}i.tmp
+  # Define new last epoch and number of maps
+  set end_ymdhms = "`grep 'EPOCH OF CURRENT MAP' $ions$sdays[1]-$sdays[$#sdays].${yr[2]}i.tmp | tail -n 1 | cut -c 1-60`"
+  set num_maps = "`grep 'END OF TEC MAP' $ions$sdays[1]-$sdays[$#sdays].${yr[2]}i.tmp | tail -n 1 | cut -c 1-60`"
+  # Read RMS maps and increment map numbers, skipping all but first of non-unique epochs
+  awk 'BEGIN {i=1; last_ymdhms=19000101000000; write=1}; /START OF RMS MAP/,/END OF RMS MAP/ {if ($0 ~ /EPOCH OF CURRENT MAP/) {if (sprintf("%4d%02d%02d%02d%02d%02d",$1,$2,$3,$4,$5,$6) == last_ymdhms) write=0; else write=1; last_ymdhms=sprintf("%4d%02d%02d%02d%02d%02d",$1,$2,$3,$4,$5,$6)}; if (write == 1) {if ($0 ~ /START OF RMS MAP/ || $0 ~ /END OF RMS MAP/) {sub(/[ 0-9]*[0-9]/,sprintf("%6d",i)); print; if ($0 ~ /END OF RMS MAP/) i++} else print}}' $ions{`echo ${sdays} | tr ' ' ','`}0.${yr[2]}i >> $ions$sdays[1]-$sdays[$#sdays].${yr[2]}i.tmp
+  # Write header lines
+  awk '{if ($0 ~ /END OF HEADER/) {print; exit} else print}' $ions$sdays[1]0.${yr[2]}i |\
+   sed "s/^.*EPOCH OF LAST MAP/${end_ymdhms}EPOCH OF LAST MAP/; s/^.*# OF MAPS IN FILE/${num_maps}# OF MAPS IN FILE/" >! $ions$sdays[1]-$sdays[$#sdays].${yr[2]}i
+  # Write TEC and RMS maps
+  cat $ions$sdays[1]-$sdays[$#sdays].${yr[2]}i.tmp >> $ions$sdays[1]-$sdays[$#sdays].${yr[2]}i
+  # Write footer line
+  echo '                                                            END OF FILE         ' >> $ions$sdays[1]-$sdays[$#sdays].${yr[2]}i
+  rm -f $ions$sdays[1]-$sdays[$#sdays].${yr[2]}i.tmp
+endif
+

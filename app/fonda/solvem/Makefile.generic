@@ -1,0 +1,23 @@
+# Generic Makefile for SOLVEM
+# Created by M King 000328 from a makefile created
+# by D Dong; modified by R King and G Ferhat
+ 
+#LABELS: solvem:solvem:solvem_all:solvem
+
+#SHARELIB: ../com:foncom
+
+#OBJ_solvem_all addaux add_quake_c azimuc basazm baslc calc_omc_block
+#OBJ_solvem_all calc_omc_full calc_res calstr centroid chk_epi_list
+#OBJ_solvem_all chk_quake_list cholsk chknrm cpsoln dotd delaunay 
+#OBJ_solvem_all exert_link fill_apr_mtx filln filln_block 
+#OBJ_solvem_all filln_full frmnor frmnor_seqe geocnt geovcv 
+#OBJ_solvem_all get_iom_list getjac getomc getsit getpri get_qk_adj
+#OBJ_solvem_all get_quake_list get_refractn get_res_full get_res_sgl
+#OBJ_solvem_all gmt_sketch gmt_file helinv hwrite inner_sln initn 
+#OBJ_solvem_all lsq_soln lswght model_sln museum norms nrmscl obsred 
+#OBJ_solvem_all outer_sln output poscor prechk prechk_full propcv put_apr_wght 
+#OBJ_solvem_all put_fix put_link put_assign read_obs_block 
+#OBJ_solvem_all read_obs_full readrv recod reduce_para remedy reordr_indx
+#OBJ_solvem_all residl res_list rotsln seqsln setlbl sln_update strain 
+#OBJ_solvem_all submtx subtra trim_matrix update_pointer wthead
+

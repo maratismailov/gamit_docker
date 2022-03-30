@@ -1,0 +1,151 @@
+#! /bin/csh -f
+#
+#doc Generate a list of start/stop times from rxscan output
+#
+# Contributed by Rob McCaffery 02/10/08; modified to use either
+# .summary files from sh_link_rinex1 or .doc files from sh_rxscan
+#  by R. King  02/10/09 
+# Further modified to incorporate within the script by R. King03/08/12
+# Modified for gnss selection. R. King 160303
+#
+# Runs in the directory containing the .summary or .doc files
+#
+if ($#argv == 0) then
+   echo ' '                                       
+   echo ' Summarize start/stop times of RINEX files'
+   echo ' '
+   echo ' USAGE :  sh_get_times -f <files> -o <out-file> -sort -gnss <gnss>'     
+   echo ' '                                                                    
+   echo ' where the input files one of the following:'
+   echo '   - RINEX (yy.o)'
+   echo '   - the output of sh_rxscan (.doc) '
+   echo '   - the output of  sh_link_rinex1 (.summary)'     
+   echo ' ' 
+   echo '   out-file is the file name for the output list (if omitted, write to screen)'
+   echo ' '
+   echo '   -sort will sort by time (optional; otherwise by station)'  
+   echo ' '
+   echo '   <gnss>  system, default G (optional)' 
+   echo ' ' 
+   echo '   Examples:'                         
+   echo ' '                    
+   echo '   sh_get_times -f *.98o' 
+   echo '   sh_get times -f *.98o -sort'                  
+   echo '   sh_get_times -f *.doc'  
+   echo '   sh_get_times -f *.summary'
+   echo '   sh_get_times -f ankr*.doc' 
+   echo ' ' 
+   echo ' where the input files one of the following:'
+   echo '   - RINEX (yy.o)'
+   echo '   - the output of sh_rxscan (.doc) '
+   echo '   - the output of  sh_link_rinex1 (.summary)'
+   echo ' '
+   exit
+else 
+endif  
+
+#----------------------------------------------------------------------------
+
+# Decode the command-line arguments
+              
+set outfile = " "
+set timesort = " " 
+set delete = "y" 
+while ( $#argv > 0 )
+   set input = ($argv)
+   switch($input[1])
+     case -o:
+       set outfile = $input[2]  
+     breaksw
+     case -sort: 
+       set timesort = "yes"
+     breaksw                         
+     case -gnss:
+       set gnss = $input[2]
+     breaksw 
+     case -f:          
+       set sfiles =  (`echo $argv | cut -d- -f2`); shift sfiles
+     breaksw
+   endsw         
+   if ( $#argv > 0 ) shift argv
+ end 
+
+
+# Run rsxan if the input is RINEX
+
+set extension = `echo $sfiles[1]:e | cut -c3`   
+if ( $extension == 'o' ) then  
+   sh_rxscan -doc -f $sfiles 
+   set sfiles = `ls *.doc`
+endif                  
+
+# Get the times from the .doc (or .summary) files
+    
+touch tmpfile    
+
+foreach s ( $sfiles )
+
+ set rfil = ` grep Start $s | grep GPS | cut -c1-13 `
+ set span = ` grep 'Data span found' $s | cut -c53-58 `
+ set nepc = ` grep 'Data span found' $s | cut -c36-40 `
+
+ set strt_yr = ` grep Start $s | grep GPS | cut -c87-90 `
+ set stop_yr = ` grep Stop $s | grep GPS | cut -c87-90 `
+ set strt_jd = ` grep Start $s | grep GPS | cut -c92-94 `
+ set stop_jd = ` grep Stop $s | grep GPS | cut -c92-94 `
+ set strt_h = ` grep Start $s | grep GPS | cut -c96-97 `
+ set stop_h = ` grep Stop $s | grep GPS | cut -c96-97 `
+ set strt_m = ` grep Start $s | grep GPS | cut -c99-100 `
+ set stop_m = ` grep Stop $s | grep GPS | cut -c99-100 `
+
+#  set op = ` grep OBSERVER $rfil `
+#  set op1 = ` echo $op | cut -c1-10 `
+#  set op2 = ` echo $op | cut -c21-27 `
+ set op2 = ''
+ set op1 = ''
+ set k = $#span
+ set n = 1
+ while ( $n <= $k )
+# set ss = $span[$n]
+# if ( $#ss == 5 ) then
+#  set ss = 0$ss
+# endif
+
+# hours of data
+#    @ h = ( $stop_jd[$n] - $strt_jd[$n] ) * 24 + $stop_h[$n] - $strt_h[$n]
+   @ h  = `echo "ibase=10; ( ${stop_jd[${n}]} - ${strt_jd[${n}]} ) * 24 + ${stop_h[${n}]} - ${strt_h[${n}]}" | bc`
+#    @ m = $stop_m[$n] - $strt_m[$n]
+  @ m = `echo "ibase=10; ${stop_m[${n}]} - ${strt_m[${n}]}" | bc`
+
+
+  if ( $m < 0 ) then
+    @ m = $m + 60
+    @ h = $h - 1
+  endif
+
+#   @ nd =  $stop_jd[$n] - $strt_jd[$n]   
+  @ nd = `echo "ibase=10; ${stop_jd[${n}]} - ${strt_jd[${n}]}" | bc`
+  @ nd++
+   
+  echo $rfil[$n] ' ' $strt_yr[$n] ' ' $strt_jd[$n] ' ' $strt_h[$n]':'$strt_m[$n] ' ' $stop_jd[$n] ' ' $stop_h[$n]':'$stop_m[$n] ' '$h':'$m' ' $nepc[$n]' '$nd '  '  $op1 '  ' $op2  >> tmpfile
+
+  @ n++
+ end    
+  
+end
+
+# Sort the file by time instead of station if requested
+if( $timesort == "yes" ) then   
+ sort -k 1.14 tmpfile > tmpfile2   
+else
+ \mv tmpfile tmpfile2
+endif
+     
+if( $outfile != "" ) then
+ \mv tmpfile2 $outfile   
+ echo "Times written to " $outfile
+else
+ cat tmpfile2
+endif
+
+\rm tmpfile tmpfile2 >& /dev/null

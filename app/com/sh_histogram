@@ -1,0 +1,8 @@
+#!/bin/csh -f                                                       
+#             
+echo " "  
+echo " sh_histogram has been renamed to sh_tshist to distinguish it from sh_velhist "
+echo " " 
+echo "    --R. King Feb 2004 "
+echo " "
+exit

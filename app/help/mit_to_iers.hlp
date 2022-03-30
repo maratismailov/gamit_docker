@@ -1,0 +1,35 @@
+MIT_TO_IERS: Convert GLOBK PMU files to IERS format
+
+ PROGRAM mit_to_iers
+
+This program will convert a pmu file obtained from a
+globk solution using the iers.ext extract command file
+into the standard IERS format.
+
+Runstring:
+% mit_to_iers <input_file> <output_file>
+where <input_file> is name of inout file generated with the 
+         extract script below:
+and   <output_file> is an optional output file (default stdout)
+
+The pmu_iers.gxt extract file looks like:
+* Global solution version of PMU extract. (For GLOBK output)
+ field 1 "Solution refers to     :"  5 I4 format   0 "(1x,i4,4(1x,i2))"
+ field 2 "X-pole position        (mas)"        2 R8 readline 0 1 3
+ field 3 "Y-pole position        (mas)"        2 R8 readline 0 1 3
+ field 4 "UT1-AT                 (mts)"        2 R8 readline 0 1 3
+ field 5 "prefit chi**2 for"                   1 R8 readline 0 5
+ field 6 "Pole/UT1 correlations: XY, XU, YU"   3 R8 readline 0 1 2 3
+ field 7 "radio sources, and"                  2 I4 readline 1 3 9
+
+ outform 2 "(2(f8.2,1x))"
+ outform 3 "(2(f8.2,1x))"
+ outform 4 "(2(f12.3,1x))"
+ outform 5 "(2x,f6.2)"
+ outform 6 "(1x,3(f6.3,1x))"
+ outform 7 "(1x,2i4)"
+
+ run
+
+*WARNING* This program converts UT1R-AT to UT1-UTC and the algorithm
+          used is only valid for 1991-1993.

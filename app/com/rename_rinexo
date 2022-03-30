@@ -1,0 +1,20 @@
+#!/bin/csh
+if ($#argv == 0) then
+   echo ' '                                       
+   echo ' Rename RINEX o-files  '  
+   echo ' '
+   echo ' Usuage: rename_rinexo [old id] [new id] '
+   echo ' '
+   echo ' Example: rename_rinexo t986 taiw '
+   echo '               '
+   echo ' '
+else
+ foreach file ( $1????.??o )
+   set oldid = $1
+   set newid = $2
+   set day = `ls $file | awk '{print substr($1,5,4)}'`
+   set ext = `ls $file | awk '{print substr($1,10,3)}'` 
+   \mv -i $oldid$day.$ext $newid$day.$ext
+ end #for
+endif
+

@@ -1,0 +1,148 @@
+#!/bin/csh -f 
+#
+#doc Script to append key information from the current run to the HISTORY file for a day
+#doc
+#
+# Written by R. King 2001/01/30 ; last modified by rwk 021226
+
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "====================================================================================="
+  echo " Append summary info from the current run to a HISTORY file in the day directory " 
+  echo " Script should be run from the directory immediately above the day directory"
+  echo " Assumes that the p and q files are not compressed"
+  echo "  "
+  echo " Usage: sh_history -dir <daydir> [-erase] "
+  echo "  "         
+  echo "    Required:  <daydir> name of day directory to be accessed"
+  echo "    "
+  echo "    -erase is usually omitted; if included then erase and begin a new HISTORY file"
+  echo " "
+  echo " Example:  sh_history -dir 205r "
+  echo "  "
+  echo "====================================================================================="
+  exit
+endif 
+         
+
+# Set the defaults
+
+set daydir = ''
+set erase = 'no'
+set pfiles = ''
+
+# Decode the command line
+
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -d*:
+      set daydir = $input[2]  
+    breaksw 
+    case -e*:
+      set erase = yes 
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+                  
+# Change to the day directory
+pushd ${daydir} >& /dev/null
+  
+# Write the title or a run-divider
+if( $erase == 'yes' ) then  
+   echo "*************************************************************" >! HISTORY  
+   echo "History of GAMIT processing in this directory" >> HISTORY
+else
+   echo "*************************************************************" >> HISTORY
+endif
+echo "*************************************************************" >> HISTORY
+echo " " >> HISTORY
+
+# Get the station list to allow selection of entries
+set pfiles = `ls p?????.???` 
+
+# Write the status line for ARC to see the time-date and version
+
+grep "Started ARC" GAMIT.status >> HISTORY
+#grep "Program YAWTAB" GAMIT.status >> HISTORY
+#grep "Started MODEL" GAMIT.status >! tmp
+# need to cut all but the first line, then
+#cat tmp >> HISTORY         
+#grep "Started CFMRG" GAMIT.status >! tmp
+## need to cut all but the first line, then
+#cat tmp >> HISTORY 
+#grep "Started CFMRG" GAMIT.status >! tmp
+## need to cut all but the first line, then
+#cat tmp >> HISTORY 
+                           
+# Write the SV model from the ARC output file
+echo " " >> HISTORY
+grep "ARC Version" arcout* >> HISTORY
+grep INERTIAL arcout* >> HISTORY     
+
+# Write the MODEL run-time and model information
+echo " " >> HISTORY       
+grep "MODEL Version" $pfiles[1] >> HISTORY   
+grep "MODEL Run on" $pfiles[1] >> HISTORY 
+grep "Start time:" $pfiles[1] | grep GPST >> HISTORY
+grep "Epochs" $pfiles[1] >> HISTORY  
+grep "SV type and antenna" $pfiles[1] >> HISTORY
+#  omits Block Is, and won't work for an HP (no leading zeros)
+grep "2       0." $pfiles[1] >> HISTORY
+grep "3       0." $pfiles[1] >> HISTORY
+grep "4       0." $pfiles[1] >> HISTORY  
+grep "Tidal corrections applied" $pfiles[1] >> HISTORY
+grep "Short period earth" $pfiles[1] >> HISTORY
+foreach file ( $pfiles )
+  grep "Input Observation File" $file >> HISTORY   
+  grep "Standard code:" $file >> HISTORY
+  grep "Offset from monument" $file >> HISTORY 
+  grep "equivalent to ARP" $file >> HISTORY
+  grep "Phase center variation PCV model" $file >> HISTORY
+  grep "offsets from ARP " $file >> HISTORY 
+  grep "Mean L1 PCVs " $file >> HISTORY
+  grep "Mean L2 PCVs " $file >> HISTORY
+  grep "monument [UNE]" $file >> HISTORY  
+end
+ 
+# Write the version and rms tables from the AUTCLN summary file 
+#    --need to avoid writing these when the run was made with clean x files and
+#      there is an autcln.sum file left over from a previous run.  An effective
+#      kluge is the check for the existence of autcln.out since it is usually 
+#      erased after each run.
+echo " " >> HISTORY     
+if( -e autcln.post.sum && -e autcln.out ) then
+  grep "Run parameter status" autcln.post.sum >> HISTORY
+  grep "RMS  " autcln.post.sum >> HISTORY   
+endif
+            
+# Write the statistics from SOLVE
+echo " " >> HISTORY
+grep "SOLVE Version" q????a.??? >> HISTORY
+grep "Number of double differences for each" q????a.??? >> HISTORY
+grep " OBS  " q????a.??? >> HISTORY
+grep "Number of good oneway"  q????a.???>> HISTORY
+grep "Number of double differences"  q????a.???>> HISTORY
+grep "ppm ionosphere constraint"  q????a.???>> HISTORY
+grep "Chi2="  q????a.???>> HISTORY 
+grep "live parameters"  q????a.???>> HISTORY
+grep "Postfit nrms:"  q????a.???>> HISTORY  
+# grep "Numbers of WL"  q????a.???>> HISTORY
+grep "Numbers of WL" *.summary >> HISTORY  
+  
+
+# Write the coordinate updates from the summary file  
+echo " " >> HISTORY
+echo "List of coordinates updated in the lfile:" >> HISTORY
+grep "GEOC LAT" sh_gamit*.summary >> HISTORY
+grep "GEOC LONG" sh_gamit*.summary >> HISTORY
+grep "RADIUS" sh_gamit*.summary >> HISTORY
+
+# Return to the experiment directory
+popd
+
+#Thats it.
+
+exit

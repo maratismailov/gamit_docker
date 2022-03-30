@@ -1,0 +1,157 @@
+# Makefile for htoglb on Linux 2.6.28-16-generic by unimake at Tue Oct 27 10:29:40 EDT 2009
+
+all: htoglb_lib htoglb glbtosnx hfupd mstinf chkstinf eqfupd
+
+
+
+# ASSIGMENTS
+   
+# ASSIGMENTS
+### LF95 flags ###  
+#FTN = lf95  
+#FFLAGS = -O 
+#CC = gcc
+#CFLAGS = -g
+### IFC 7.0 flags ###
+#FTN = ifc
+#FFLAGS = -O -Vaxlib -save -zero -u -72 -w95 -w90 -cm   
+#CC = icc   
+#CFLAGS = -O 
+### IFORT 8.0 flags ###
+#FTN = ifort
+#FFLAGS = -O3 -Vaxlib -save -zero -u -72 -w95 -w90 -cm -assume byterecl -static -xN
+#CC = icc   
+#CFLAGS = -O    
+### IFORT 9.0 flags ###
+#FTN = ifort
+#FFLAGS = -O3 -Vaxlib -save -zero -u -72 -w95 -w90 -cm -assume byterecl -static -Xt
+#CC = icc   
+#CFLAGS = -O 
+### G77 flags ###
+#FTN = g77 
+#FFLAGS = -O3 -Wuninitialized -Wunused -Wimplicit -fno-f2c -ffast-math -fno-automatic -fno-backslash -Wno-globals -fno-globals
+#CC = gcc
+#CFLAGS = -g  
+### GCC V4 gfortran flags ###
+FTN = gfortran
+FFLAGS = -O3 -Wuninitialized -fno-f2c -ffast-math -fno-automatic -fno-backslash
+CC = gcc
+CFLAGS = -g  
+#### For 64-bit machines:
+#CFLAGS = -g -DADD64BIT
+
+HTOGLB_LIB = htoglb_lib.a
+SLIB = ./htoglb_lib.a ../Khandlers/KalObs_hndl_lib.a ../gen_util/gen_util_lib.a ../../gamit/lib//gamit_lib.a ../../libraries/matrix/kinv_lib.a ../../libraries/comlib/com_lib.a 
+X11LIB = /usr/lib/X11
+II = /usr/include/X11
+
+htoglb_lib : $(HTOGLB_LIB)
+
+htoglb : htoglb.f  $(SLIB) htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+	$(FTN) $(FFLAGS) htoglb.f  $(SLIB) -o htoglb
+	rm -f htoglb.o
+
+glbtosnx : glbtosnx.f  $(SLIB) htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sinf_def.h ../includes/sln_def.h
+	$(FTN) $(FFLAGS) glbtosnx.f  $(SLIB) -o glbtosnx
+	rm -f glbtosnx.o
+
+hfupd : hfupd.f  $(SLIB) hfupd.h htoglb_comm.h ../includes/const_param.h ../includes/glb_hdr_def.h ../includes/kalman_param.h
+	$(FTN) $(FFLAGS) hfupd.f  $(SLIB) -o hfupd
+	rm -f hfupd.o
+
+mstinf : mstinf.f  $(SLIB) ../../gamit/includes/makex.h mstinf.h
+	$(FTN) $(FFLAGS) mstinf.f  $(SLIB) -o mstinf
+	rm -f mstinf.o
+
+chkstinf : chkstinf.f  $(SLIB) 
+	$(FTN) $(FFLAGS) chkstinf.f  $(SLIB) -o chkstinf
+	rm -f chkstinf.o
+
+eqfupd : eqfupd.f  $(SLIB) 
+	$(FTN) $(FFLAGS) eqfupd.f  $(SLIB) -o eqfupd
+	rm -f eqfupd.o
+
+$(HTOGLB_LIB) : \
+	$(HTOGLB_LIB)(htog_ut.o) \
+	$(HTOGLB_LIB)(glbsx_ut.o) \
+	$(HTOGLB_LIB)(hfupd_ut.o) \
+	$(HTOGLB_LIB)(hw_util.o) \
+	$(HTOGLB_LIB)(hread_util.o) \
+	$(HTOGLB_LIB)(init_qparn.o) \
+	$(HTOGLB_LIB)(init_qapr_co.o) \
+	$(HTOGLB_LIB)(write_ephem.o) \
+	$(HTOGLB_LIB)(get_indx_q.o) \
+	$(HTOGLB_LIB)(compress_svs.o) \
+	$(HTOGLB_LIB)(compress_sit.o) \
+	$(HTOGLB_LIB)(read_orient.o) \
+	$(HTOGLB_LIB)(read_apr_cov.o) \
+	$(HTOGLB_LIB)(skip_htoh.o) \
+	$(HTOGLB_LIB)(get_gps_hext.o) \
+	$(HTOGLB_LIB)(get_svs_inf.o) \
+	$(HTOGLB_LIB)(gsfc_vlbi.o) \
+	$(HTOGLB_LIB)(ut_slr.o) \
+	$(HTOGLB_LIB)(make_ctog.o) \
+	$(HTOGLB_LIB)(decsnx_file.o) \
+	$(HTOGLB_LIB)(decsnx_input.o) \
+	$(HTOGLB_LIB)(decsnx_site.o) \
+	$(HTOGLB_LIB)(decsnx_sat.o) \
+	$(HTOGLB_LIB)(decsnx_soln.o) \
+	$(HTOGLB_LIB)(decode_snxb.o) \
+	$(HTOGLB_LIB)(make_snx.o) \
+	$(HTOGLB_LIB)(preread_snx.o) \
+	$(HTOGLB_LIB)(snx_finbl.o) \
+	$(HTOGLB_LIB)(create_snx.o) \
+	$(HTOGLB_LIB)(cresnx_file.o) \
+	$(HTOGLB_LIB)(cresnx_input.o) \
+	$(HTOGLB_LIB)(cresnx_site.o) \
+	$(HTOGLB_LIB)(cresnx_sat.o) \
+	$(HTOGLB_LIB)(cresnx_soln.o) \
+	$(HTOGLB_LIB)(gen_snxname.o) \
+	$(HTOGLB_LIB)(jacobi.o) \
+	$(HTOGLB_LIB)(SMod_to_full.o)
+	ranlib htoglb_lib.a
+
+$(HTOGLB_LIB)(htog_ut.o): htoglb_comm.h ../includes/const_param.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sinf_def.h ../includes/sln_def.h
+$(HTOGLB_LIB)(glbsx_ut.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sinf_def.h ../includes/sln_def.h ../includes/svinf_def.h
+$(HTOGLB_LIB)(hfupd_ut.o): hfupd.h htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h
+$(HTOGLB_LIB)(hw_util.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sinf_def.h ../includes/sln_def.h ../includes/svinf_def.h
+$(HTOGLB_LIB)(hread_util.o): htoglb_comm.h ../includes/const_param.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(init_qparn.o): htoglb_comm.h ../includes/kalman_param.h
+$(HTOGLB_LIB)(init_qapr_co.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(write_ephem.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(compress_svs.o): htoglb_comm.h ../includes/const_param.h ../includes/kalman_param.h
+$(HTOGLB_LIB)(compress_sit.o): htoglb_comm.h ../includes/const_param.h ../includes/kalman_param.h
+$(HTOGLB_LIB)(read_orient.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(read_apr_cov.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(get_svs_inf.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(gsfc_vlbi.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(ut_slr.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(make_ctog.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(decsnx_file.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(decsnx_input.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(decsnx_site.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(decsnx_sat.o): htoglb_comm.h ../includes/const_param.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h ../includes/svinf_def.h
+$(HTOGLB_LIB)(decsnx_soln.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(decode_snxb.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(make_snx.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(preread_snx.o): htoglb_comm.h ../includes/kalman_param.h
+$(HTOGLB_LIB)(create_snx.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(cresnx_file.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(cresnx_input.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(cresnx_site.o): htoglb_comm.h ../includes/const_param.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(cresnx_sat.o): htoglb_comm.h ../includes/const_param.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/svinf_def.h
+$(HTOGLB_LIB)(cresnx_soln.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h ../includes/sln_def.h
+$(HTOGLB_LIB)(gen_snxname.o): htoglb_comm.h ../includes/glb_hdr_def.h ../includes/kalman_param.h
+$(HTOGLB_LIB)(SMod_to_full.o): htoglb_comm.h ../includes/const_param.h ../includes/kalman_param.h
+
+.c.a:
+	$(CC) -c $(CFLAGS) -I$(II) $<
+	ar rv $@ *.o
+	rm -f $*.o
+
+.f.a:
+	$(FTN) -c $(FFLAGS) $<
+	ar rv $@ *.o
+	rm -f $*.o
+
+# End of Makefile

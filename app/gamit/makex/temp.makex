@@ -1,0 +1,275 @@
+  400 continue
+c     ---come back here when from several points whenever a new record needed
+c        The data file is open: read it.
+c          iflag defines what flavor data it is
+c           -1 is a big problem
+c            0 is documentation
+c            1 is phase data
+c            2 is an ephemeris
+c
+      if (debug) then
+        call wtime (uscren,iwknopen, sowopen,'GPST', 'Opening now     ')
+        call wtime (uscren,iwknclose,sowclose,'GPST','Closing now     ')
+      endif
+
+c       Skip the read if the last epoch was late compared with the window
+
+      if ( late_epoch ) goto 580
+
+c     Read a RINEX
+c     **********************
+
+c        this used to check for bogus times on RINEX files
+         epoch1 = epoch -1   
+         call rrinex ( debug,iflag,rxver,gnss,nobtyp,rxobtyp,iobtypx 
+         endif
+
+c     See if an error is encountered reading the file 
+c     ************************************************
+                                                                                 
+      if (ferr) then 
+         write (message,'(a,i5)') 'Error in RINEX file at epoch '
+     .                          ,  epoch
+         write(uinfor,'(a)') message
+         call report_stat('WARNING','MAKEX','makex',' ',message,0)
+      endif
+
+c     See if end-of-file and more data needed
+c     **************************************     
+
+c     if the file ends before the epochs are filled, open the next file
+c     --if no more in list, goto 4000 to finish writing the X-file with zeroes
+c     don't bother if within 10 epochs of the end of the requested span  
+      if (fend) then
+         if(epoch.gt.(nepoch-10)) goto 4000
+         infilcount = infilcount + 1
+         frinex = infiles(infilcount)
+         if( frinex(1:1).eq.' ' ) goto 4000                                                                  
+         call openf (urinex,frinex,
+     .               'old','formatted','sequential',qrinex )
+         fend = .false.  
+c        skip over the header and then go read the data record
+         call rhead( debug,gnss,rcvrsw,swver,rxver,rxpgm,rxtime
+     .             , nobtyp,rxobtyp,nwave1,nwave2,ircint
+     .             , nxhdlin,xhdlin )
+         newfile = .true. 
+c        read another data record
+         goto 400
+      endif        
+      
+c     Report the observation record read
+c     **********************************
+
+      iread = iread+1
+c     Only consider this time tag if it is in the scenario
+c     and less than a day after the last good time tag.
+
+      call tagchk ( timeset,weekset,ibadtag,epoch
+     .             , iwkntag,sowtag,igpswk(1),gpssec(1)
+     .             , iwknstart )
+      if( .not.timeset .or. .not.weekset ) epochok = .false.
+      if ( iread .lt. 5) then
+        call wtime (uinfor,iwkntag,sowtag,'GPST','Read epoch ')
+        if (debug ) call wtime (uscren,iwkntag,sowtag,'GPST'
+     .                             ,'Read epoch ')
+      endif        
+      itflag = 4
+      call timcon( itflag,iwkntag,sowtag,iyrtag,idoytag,ihr,min,dsecs
+     .              , utcoff )    
+ 580  continue
+
+c     Test time tag on epoch
+c     **********************
+
+c         Correct the nominal time tag by the pseudorange to avoid
+c         problem with nominal tags running several tenth of a second
+c         off true time.                             
+      deltatag = (prgl1(1)-26000.d3)/ltvel  
+c     if GLONASS, remove the leap seconds for checking the window: no, not now needed
+c*      if( gnss.eq.'R') then 
+c*        call monday(idoytag,month,iday,iyrtag)
+c*        jdobs = julday(month,iday,iyrtag)
+c*        utcoff = taiutc(jdobs) - 19.d0       
+c*        deltatag = (prgl1(1)-utcoff*ltvel-26000.d3)/ltvel
+c*      endif
+      call secsum(iwkntag,sowtag,-deltatag,iwknchck,sowchck)  
+      if( debug ) write(uscren,*) 'Window correction: ',
+     . 'sowtag prgl1 deltatag sowchck:',sowtag,prgl1(1),deltatag,sowchck
+      
+      if (secdif(iwknopen,sowopen,iwknchck,sowchck).ge.0.d0) then
+c          too soon, go read another record
+        if (debug) call wtime (6,iwknchck,sowchck,'GPST','Too early   ')
+        late_epoch = .false.
+        goto 400
+      elseif
+     . (secdif(iwknclose,sowclose,iwknchck,sowchck).le.0.d0 .and.
+     .  secdif(iwknclose,sowclose,iwknchck,sowchck).gt.-7.0d5) then
+c          too late --set a flag to skip reads until the window catches up
+       if (debug) call wtime (6,iwknchck,sowchck,'GPST','Too late    ')
+       epochok =.false.
+       late_epoch = .true.
+c         if the record read is past the end of the scenario, set flag to avoid reading station.info
+      if(secdif(iwknchck,sowchck,iwknstop,sowstop).gt.0.d0)  
+     .        pastend_epoch = .true.
+      else if (secdif(iwknchck, sowchck,
+     .                iwknopen,sowopen) .gt. 0.d0 .and.
+     .         secdif(iwknclose,sowclose,
+     .                iwknchck, sowchck ) .gt. 0.d0) then
+c         within the window: good epoch and the clock is presumably OK 
+c         but if input data sampling is less dense than x-file output, skip the epoch
+c         (this added to avoid confusing autcln, solve, and cview if data are unexpectedly
+c         in the expected gaps--should not occur except for short periods within a RINEX file)
+        if( mod((epoch-1),ideci).ne.0 ) then
+           epochok = .false. 
+           if( .not.ircint_msg ) then 
+             write(message,'(2a,i4,a)') ' RINEX has data '
+     .       ,'more frequently than header sampling (ircint=',ircint,')'
+              call report_stat('WARNING','MAKEX','makex',' ',message,0)   
+              write(uinfor,'(a)')  message  
+              write(message,'(a,i5,a)') 
+     .         ' First occurs at epoch ',epoch,';  message not repeated'     
+              call report_stat('WARNING','MAKEX','makex',' ',message,0)   
+              write(uinfor,'(a)')  message    
+              ircint_msg = .true. 
+            endif
+        else
+          timeset = .true.
+          epochok = .true.
+          late_epoch = .false.
+          call timcon( itflag,iwkntag,sowtag,iyrtag,idoytag,ihr,min
+     .                , dsecs,utcoff ) 
+        endif
+      else
+         write (message,*) ' Warning, bad time tag: ',iwkntag,sowtag
+         write (uinfor,*) ' Warning, bad time tag: ',iwkntag,sowtag 
+         call report_stat('WARNING','MAKEX','makex',' ',message,0)
+         if (debug) call wtime(uscren,iwkntag,sowtag,'GPST'
+     .                        ,'Epoch mismatch')
+         epochok = .false.
+      endif
+                                                   
+c     Write a record on the X-file and K-file
+c     ***************************************
+
+      number = 0
+      if(epochok) then
+c       count how many good ones we've got:
+c       ISGOOD checks for adequate SNR and reasonableness
+c       If not good enough, then iyuk is returned true.
+        ngood_chan = 0                  
+        do j=1,nprn
+c         is the satellite in the scenario ?                            
+          if (inscen(isvid(j),nsats,sats).gt.0) then  
+            ngood_chan = ngood_chan+1   
+            if (isgood(ndat,dattyp,dofl1(j),issi(j,1),dofl2(j)
+     .           , issi(j,2),prgl1(j),prgl2(j),iyuk) ) then
+              number = number + 1
+            else
+              if(iyuk) then
+                ireject = ireject + 1
+                if( ireject.lt.1000 ) then
+  585             format(1x,'Data rejected  (epoch,PRN) : ',
+     .                     i4,i3,' L1 ',1pe8.1,
+     .                     i2,   ' L2 ',1pe8.1,
+     .                     i2,   ' P1 ',1pe8.1,
+     .                           ' P2 ',1pe8.1)
+                endif
+              endif
+            endif
+          else
+            if (debug .and. isvid(j) .ne. 0) then
+             write (uinfor,*) 'PRN ',isvid(j),' not in scenario.'
+            endif
+          endif        
+c       enddo on loop over channels checking whether in scenario
+        enddo  
+c     endif on epochok 
+      endif
+
+c     Write the time line
+c     -------------------            
+c     write a data line for each channel
+c     ----------------------------------   
+        do j=1,nprn
+          if( inscen(isvid(j),nsats,sats).gt.0 ) then
+            if ( isgood( ndat,dattyp,dofl1(j),issi(j,1),dofl2(j)
+     .       , issi(j,2),prgl1(j),prgl2(j),iyuk) ) then
+c            What is the number of the X-file channel?
+             i = inscen(isvid(j),nsats,sats)
+cd              print *,'ngood loop j isvid i ',j,isvid(j) 
+c             Set the X-file error flag according to the RINEX ISSI
+c             0    unknown, assumed good for now
+c             1-2  low amplitude
+c             3-9  good
+c             NOTE that that the order here is significant.
+              ier(j) = iggood
+c              Do not flag issi 1 or 2 as marginal for Trimble/Ashtech codeless data
+              if( (rcvrsw.eq.'TRM'.and.swver.le.550).or.
+     .           (rcvrsw.eq.'ASH' .and. swver.le.800).or.
+     .           ( rcvrsw. eq. 'TOP') ) then
+                 continue
+              else
+               if ( issi(j,1) .eq. 1 .or. issi(j,2) .eq. 1 .or.
+     .              issi(j,1) .eq. 2 .or. issi(j,2) .eq. 2) then
+                 ier(j) = iglamp                                
+              endif
+            endif
+c           For all receivers and zero amplitude
+            if(issi(j,1) .eq. 0 .or. issi(j,2) .eq. 0) then
+              ier(j) = iglamp
+              if( debug)  write(*,*) 
+     .         'zero amplitude j issi ',issi(j,1),issi(j,2)
+            endif
+c            Patch for JPL RINEX screw up
+            if(issi(j,1) .eq. 0 .or. issi(j,2) .eq. 0 .and.
+     .         rcvrsw.eq.'ROG') then
+               ier(j) = 0
+            endif
+c             If the RINEX file indicates loss-of-lock, put a bias flag in the X-file
+            if (illi(j,1) .eq. 1 ) then
+              ier(j) = igbias
+            else
+              ier(j) = 0
+            endif 
+c            Record the flag for gap testing
+            obsmat(i,epoch) = ier(j)
+c           Write a record to the X-file
+            write(uxfile,594) idcb(j),ier(j),i,dofl1(j),issi(j,1)
+c           endif on valid data
+            endif
+c         endif on in-scenario
+          endif
+c       loop on writing channels
+        enddo 
+c     endif on non-empty epoch
+      endif  
+
+c     Tell us what you have done with this epoch
+c     ------------------------------------------
+      if (debug) then
+        write (buff40,'(a,i2)') 'Wrote. number = ',number
+        call wtime (uscren,iwkntag,sowtag,'GPST',buff40)
+      endif
+      ifull(number+1) = ifull(number+1)+1
+
+      if( debug ) then
+        if (epoch .eq. 1 .or. epoch. eq. nepoch .or.
+     .   mod(epoch,200).eq.0) then
+         write(message,'(a,i5)') ' Wrote epoch ',epoch
+      endif
+      
+c     Update the Window Opening and Closing
+c     *************************************
+
+      call secsum
+     .  (iwknopen,sowopen,dble(interval),iwknopen,sowopen)
+      call secsum
+     .  (iwknclose,sowclose,dble(interval),iwknclose,sowclose)
+
+      epoch = epoch +1
+      if(epoch.gt.nepoch) go to 4100
+c     loop back for another record
+      go to 400               
+c-----end of of loop over data records
+
+

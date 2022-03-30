@@ -1,0 +1,111 @@
+  ==========================================
+       SOLVEM version:  1.08 beta test  
+  ==========================================
+  running time:  1993/ 6/15   23:23:39
+  operator:  dong            
+  driving file:      solvem.drv.salto
+  apriori value file:                    south_net.update9
+  input data file:                       maked.out.salto
+  earthquake correction file:            quake.list.salto
+  sequential data file:
+  output file:                           solvem_slt.out
+  mapping file:                          solvem_slt.map
+  residual file:                         solvem_slt.res
+  strain_file:                           solvem_slt.str
+  strain_list:                           strain_salto.list
+  event record file:                     solvem_slt.evt
+  modified network file:                 statab_updat.1
+  reference frame:                       WGS84
+  parameter mode, site name format:      geocentric  char_4_8
+  reference coordinate, rtime:           geodetic 1983.0
+  solution combination mode:             Gauss_Markov model
+  minimum observation condition:         0      1
+  criteria for angle,length,coor and velo(s,m,m,m/y):   0.1  20.00  0.1  0.03
+  loose constraints on e,n,u,Ve,Vn,Vu(m,m/y): 100.0 100.0 100.0  1.0 1.0 0.01
+  control key:       2
+  apr_frame:  enu
+  apr_value for coor. and velo.:  all  20.0 20.0 2.0    0.200 0.200 0.001
+  apr_value for coor. and velo.:  mecca_  20.0 20.0 20.0 0.001  0.001  0.001
+  apr_value for coor. and velo.:  dixie  0.05 0.05 0.01    0.200 0.200 0.001
+  apr_value for coor. and velo.:  alamo  0.05 0.05 0.01    0.200 0.200 0.001
+  apr_value for coor. and velo.:  frink___  0.05 0.05 0.01    0.200 0.200 0.001
+  constraint commands:
+  assign_sdirection:  uvw  salva__  135.0 0.0001
+  assign_outer:  uvw  outer_salto.list  50.0
+  link_site: xyzuvw total  carri_me carrizo
+  link_site: xyzuvw total  jacum_me jacumba
+  link_site:  uvw  total off_225_ centine
+  link_site: uvw total  off_225m off_225_
+  link_site: uvw total  off_2_me off_229_
+  link_site:  uvw total bluff bluffres bluffrm
+  link_site:  xyzuvw total dixie_me dixie__
+  link_episodic:  xyz 1987.899  dixie_me dixie__
+
+--------------------------------------------------------------------------------
+      type         site1     site2     site3             chi2        dchi2
+--------------------------------------------------------------------------------
+ link site x,v :  carri_me  carrizo_                   1200.9336      0.2947
+ link site x,v :  jacum_me  jacumba_                   1202.0089      1.0753
+ link site  ,v :  off_225_  centinel                   1214.1604     12.1515
+ link site  ,v :  off_2_me  off_229_                   1214.4169      0.2565
+ link site  ,v :  bluff___  bluffres                   1214.4190      0.0021
+ link site  ,v :  bluff___  bluffrm1                   1218.0280      3.6090
+ link site x,v :  dixie_me  dixie___                   1225.5489      7.5209
+ link epi_site :  dixie_me  dixie___                   1225.7598      0.2110
+ assign sit dir:  salva___    135.0                    1226.0997      0.3399
+ outer coor sln:  outer sln                            1226.0997      0.3399
+--------------------------------------------------------------------------------
+
+  experiment number:    1
+  total sites from data file:    70
+  ill sites:    7
+  bridge sites:    0
+  healthy sites:    63
+  ======================================
+* solution model:   Gauss-Markov   
+* combined by: <basel. length >   data
+* fix site constrained sln
+* 
+   site     parameter            aprior           adjust       sigma         final
+
+ ( ----- 779 lines have been removed to save user's time ----- )
+
+ frink___ geoc x ( m)       -2308055.30937      -0.000413      0.037   -2308055.30978
+ frink___ geoc y ( m)       -4807161.19747       0.000014      0.034   -4807161.19746
+ frink___ geoc z ( m)        3487356.73975      -0.000252      0.038    3487356.73950
+ frink___ geod lat (dms)    33 21 37.10011      -0.000302      0.046   33 21 37.10010
+ frink___ geod lon (dms)   244 21 10.83084      -0.000379      0.043  244 21 10.83083
+ frink___ height ( m)            -85.59890       0.000000      0.010        -85.59890
+ frink___ Vx (mm/year)            -0.00687       3.510512     73.551          3.50364
+ frink___ Vy (mm/year)            -0.01431      -6.444184    128.789         -6.45849
+ frink___ Vz (mm/year)             0.01045      -7.082147    128.002         -7.07170
+ frink___ Ve (mm/year)             0.00000       5.953855    122.044          5.95385
+ frink___ Vn (mm/year)             0.00000      -8.274214    153.249         -8.27421
+ frink___ Vu (mm/year)             0.01900      -0.311480      1.006         -0.29248
+
+ laquinta geoc x ( m)       -2354580.40665       0.303894      9.607   -2354580.10275
+ laquinta geoc y ( m)       -4761476.39254      -0.217252      7.072   -4761476.60979
+ laquinta geoc z ( m)        3519384.34749      -0.089990     15.695    3519384.25750
+ laquinta geod lat (dms)    33 42 14.54143      -0.108178     18.818   33 42 14.53792
+ laquinta geod lon (dms)   243 41 14.32032       0.368708      5.522  243 41 14.33464
+ laquinta height ( m)            361.53850       0.000008      2.000        361.53851
+ laquinta Vx (mm/year)             2.16727       2.382800     95.639          4.55007
+ laquinta Vy (mm/year)            -1.70841      -4.833139     69.021         -6.54154
+ laquinta Vz (mm/year)            -0.82137      -5.626672    156.300         -6.44804
+ laquinta Ve (mm/year)             2.70000       4.278298     55.160          6.97830
+ laquinta Vn (mm/year)            -1.00000      -6.498856    187.875         -7.49886
+ laquinta Vu (mm/year)             0.01900      -0.396783      1.006         -0.37778
+
+ yak_____ geoc x ( m)       -2368187.66422      -0.004732      0.412   -2368187.66895
+ yak_____ geoc y ( m)       -4796404.63940      -0.014566      0.955   -4796404.65396
+ yak_____ geoc z ( m)        3464066.50921       0.023839      0.730    3464066.53304
+ yak_____ geod lat (dms)    33  6  8.57596       0.011693      0.089   33  6  8.57634
+ yak_____ geod lon (dms)   243 43 20.99956       0.002206      0.069  243 43 20.99965
+ yak_____ height ( m)           1081.25830       0.025715      1.266       1081.28402
+ yak_____ Vx (mm/year)            -4.88902       1.692031      0.499         -3.19699
+ yak_____ Vy (mm/year)             7.26467      -3.128018      0.952          4.13665
+ yak_____ Vz (mm/year)             7.07248      -3.643650      1.079          3.42883
+ yak_____ Ve (mm/year)            -7.60000       2.902011      0.416         -4.69799
+ yak_____ Vn (mm/year)             8.30000      -4.174951      1.086          4.12505
+ yak_____ Vu (mm/year)             0.21900      -0.267900      0.983         -0.04890
+

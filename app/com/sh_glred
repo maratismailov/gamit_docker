@@ -1,0 +1,1083 @@
+#!/bin/csh -f
+ 
+set version = '2017/06/22'
+#doc Run glred to generate repeatabilities or combine data into a single h-file 
+#doc
+#
+# Written by Simon McClusky 2000-08-21
+# Modified R. King and S. McClusky 2012-01-13
+# Modified by M. Floyd 2014-03-20 to change hyphen (-) in combined output org-files to
+#   underscore (_) to avoid problems with reading into other GLOBK programs, e.g. ensum, bcsum, etc.
+# Modified by R. King 2014-6-6 to use  PBO-type glb files
+# Modified by M. Floyd to ensure stripping of binary h-file extension (e.g. glx, glr, GLX, etc.)
+#   from end of base file name only and not elsewhere in the full file name, and set initial value
+#   of hfnd variable to '' (zero-length string) to fit proceeding logic.
+# Modified by M. Floyd 2017-05-19 to ensure binary h-file directory that is not the
+#   default "glbf/" is maintained when converting to relative paths to write to .gdl-file.
+# Modified by M. Floyd 2017-06-22 to add -tsfit_cmd option for use with sh_plot_pos
+# Modified by R. King 2018-05-17 to pick up ascii h-files from multiple directories on the 
+#   same day (-netext) to get all GNSS solutions.
+# Modified by R. King 2018-05-18 to make globk.cmd and glorg.cmd the default command files. 
+#
+
+if( $#argv == 0 ) then 
+  echo " sh_glred version $version"
+  echo " "
+  echo " Run glred and glorg for a list of h-files from GAMIT day directories " 
+  echo " "
+  echo "  This script can be used to "
+  echo "             1) aggregate days or networks into a smaller number of h-files"
+  echo "    and/or   2) generate repeatability plots "
+  echo " "                                                 
+  echo "  It is usually run in conjunction with GAMIT phase processing and takes"
+  echo "  advantage of the directory structure and files of sh_gamit, but it can"
+  echo "  also be used without this structure to combine externally generated h-files."
+  echo "  Used with sh_gamit, it reads station and directory information from the "
+  echo "  process.defaults and site.defaults files, searches automatically the day "
+  echo "  directories for h-files, and gathers (by ftp or local link) additional global "
+  echo "  or regional h-files for those days. The script then runs glred to combine"
+  echo "  all of the h-files and generates time series of station coordinates."
+  echo "  It is not designed to run globk and glorg to estimate velocities."
+  echo " "
+  echo " "
+  echo " USAGE:  sh_glred -d <yr day> -s <yr1 d1 yr2 d2> -r <day> -ncomb <num> -net <networks> -expt <expt> -sinfo <sinfo>"
+  echo "                  -local -noftp -prt -ftp_prog <ftp/ncftp> -mb -opt <A F H L U G E K C R> "
+  echo "  "                      
+  echo " REQUIRED: "
+  echo "   "   
+  echo "   Use one of the following to specify the range of days to process:"  
+  echo "    -s <yr1 d1 yr2 d2>   start and stop dates, e.g. -s 1997 153 1998 178 "
+  echo "    -d <yr day>          do a single day (e.g., to replace one .org file); e.g. -d 1997 153 "    
+  echo "    -r <day>             number of days before current date to start, e.g.. -r 21 "   
+  echo " "       
+  echo " "
+  echo " OPTIONAL: "
+  echo "   -ncomb  <num>      Number of consecutive days of data to include in each solution (+ in gdl file) [Default 1] "
+  echo "   -expt   <expt>     4-char name to be used for solution files [Default expt] "         
+  echo "   -netext <char>     Suffix for directories to search for h-files; i.e. G E R C to search dddG, dddE, dddR, dddC [Default seach only DDD]"
+  echo "   -yrext  <char>     Year prefix for directories to search for h-files; i.e. 1997_053 [Default seach only doy]"
+  echo "   -local             Only combine days where a local directory (h-file) exists [default do combinations of all requested]" 
+  echo "   -archive <archive> Name of ftp archive from which to retrieve hfiles, sopac or mit [default sopac]"
+  echo "   -net    <networks> List of h-file networks (4-char id) to be retrieved from the MIT or SOPAC ftp archive [Default all SOPAC files] " 
+  echo "   -noftp             Do not try to ftp EOP values (use what's already available or abort)"
+  echo "   -ftp_prog          Name of the ftp program e.g. ftp or ncftp [default is ftp]"
+  echo "   -htype             Type of hfiles downloaded. SOPAC - hfiles = relative, hfiles2 = absolute [default]"
+  echo "                                     MIT - hfiles = ascii hfiles or hfilesc = combined binary hfiles"  
+  echo "   -hseries <ser>     Series or sequence of PBO-type hfiles, usually 'e'"
+  echo '   -eqf <eq-file>     eq-file(s) for use with tsfit and plotting breaks with sh_plot_pos (only valid with "-opt T" option)'
+  echo '   -nsigma <n>        n-sigma criterion for detection of outliers (only valid with "-opt T" option)'
+  echo "   -prt               For plotting use the prt output from globk rather than org output from glorg "
+  echo "   -xtype <short/long> Units for x-axis ('short' for day-of-year, 'long' for decimal year [Default: day if data span < 365 days)]"
+  echo "   -detrend (Y/N)     Remove a slope form the plots [Default: no slope if (data span <= 32 days)]"     
+  echo "   -sinfo <sinfo>     Path to the station.info to be used by hfupd if U option requested (see below) [default tpth/station.info "
+  echo "                         where tpth from process.defaults usually points to the /tables directory of sh_gamit]" 
+  echo "   -cmd               Run the script just to copy template globk.cmd and glorg.cmd files from ~/gg/tables (see note below) "
+  echo "   -globk_cmd <file>  Name of the globk.cmd file to be used [Default globk.cmd - will be created if nonexistent]"
+  echo "   -glorg_cmd <file>  Name of the glorg.cmd file to be used [Default glorg.cmd - will be created if nonexistent]"
+  echo "   -globk_cmd_prefix  Globk command prefix to be used for parsing the globk.cmd file entries"
+  echo "   -tsfit_cmd         Name of the tsfit.cmd file to be used [Default none]"
+  echo "   -a                 Pass -a option to htoglb when not loosening of rotation and translation"
+  echo " "
+  echo "  Processing options (at least one required):"   
+  echo "   <R>  remove old h*.gl? files from the glfpth directory prior to starting"        
+  echo "   <F>  Ftp global h-files from the MIT or SOPAC archive, search names given by <networks> "
+  echo "   <H>  Run htoglb on all ascii files present or linked within glfpth (usually procdir/glbf)"
+  echo "        (include -a option when combining h-files or GNSS or if small network with no rotation"
+  echo "        to be included in later globk runs"
+  echo "   <LA> Link locally archived ascii h-files (all h[net|expt]?.yyddd) for inclusion in the combination."
+  echo "         Searches are from hfnd down, where hfnd is by default procdir/glbf but may be specified as multiple paths in process.defaults."
+  echo "   <LB> Link locally archived binary h-files (all hyymmdd????_[net|expt].gl?) for inclusion in the combination."
+  echo "         Searches are from hfnd down, where hfnd is by default procdir/glbf but may be specified as multiple paths in process.defaults."
+  echo "   <LC> Link locally archived binary combined h-files (all Hyymmdd_[net|expt].GLX) for inclusion in the combination."
+  echo "         Searches are from hfnd down, where hfnd is by default procdir/glbf but may be specified as multiple paths in process.defaults."
+  echo "   <U>  Run hfupd on binary h-files <-- not yet tested "
+  echo "   <G>  Run glred for combination or repeatabilities" 
+  echo "   <S>  Save glred command lines in file (sh_glred.cmd)"
+  echo "   <T>  Run tssum and sh_plot_pos for plots"
+  echo "   <E>  Run ensum and sh_baseline for plots" 
+  echo "   <C>  At the end compress the ascii h-files, remove any links, and copy the ascii and binary"
+  echo "        h-files to glbpth/ascih_yyyy and glbpth/binh_yyyy, respetively,  where glbpth is specified"
+  echo "        by process.defaults [default glbf]"
+  echo '   <A>  Do all options ("T" will be used in preference to "E")'
+  echo "  "       
+  echo " Not required but always to be checked are entries in /tables/sites.defaults for station"
+  echo " selection by globk, glorg, and multibase (glrepu, glreps, and glts) [default is to use all"
+  echo " stations in globk and plots, and to use an internally defined list of IGS stations for glorgl]" 
+  echo " Entries may also be made in /tables/process.defaults for solution directory [default procdir/gsoln]"
+  echo " binary h-file directory (default procdir/glbf), and ascii h-file search path [default procdir/glbf]."
+  echo " "
+  echo " " 
+  echo " EXAMPLES"
+  echo " "                                                            
+  echo "  Combine regional GPS-only files from sh_gamit with the MIT global solution, stored locally, one day at a time"
+  echo " "
+  echo "      sh_glred -s 1999 235 1999 250 -local -net MIT -opt  H G "
+  echo "          where hfnd in process.defaults points to the directory for the MIT GLX files"
+  echo " "    
+  echo "  Combine regional files from multiple GNSS day directories, one day at a time"
+  echo " "
+  echo "      sh_glred -s 1999 235 1999 250 -local -netext G R C E -opt  H G "
+  echo " " 
+  echo "  Combine regional files from sh_gamit with global files to be downloaded from SOPAC, one day at a time"
+  echo "   and generate repeatability plots:  "
+  echo " " 
+  echo "      sh_glred -s 1999 235 1999 250 -net igs1 igs2 igs3 -netext r -expt emed -opt F H G E C "
+  echo " "
+  echo "  Repeat globk/glorg and generate repeatability plots from existing binary h-files (e.g with different stabilzation):"
+  echo " "
+  echo "      sh_glred -s 1999 235 1999 250 -expt emed -opt G E"
+  echo " "
+  echo "  Combine existing regional and global binary h-files into monthly averages:"
+  echo " " 
+  echo "      sh_glred -s 1999 235 2000 120 -ncomb 30 -net igs1 igs2 igs3 -expt emed -opt G LB "
+  echo " "
+  echo "         or [see Note 3 below]"
+  echo " "
+  echo "     sh_glred -s 1999 235 2000 120 -ncomb 30 -expt emed -opt G  "
+  echo " " 
+  echo " "
+  echo " NOTES "
+  echo " "                    
+  echo "  1. For daily h-files, the .glx (bias-fixed) extension will be chosen if it is" 
+  echo "     available; if not, the .glr (biases-free) extension will be used.  To force"
+  echo "     use of .glr, you must remove any .glx files available in /glbf."     
+  echo " "
+  echo "  2. To avoid overwriting useful h-files or using obsolete ones, it is important to keep "
+  echo "     in mind the logical precedence established by sh_glred."
+  echo " " 
+  echo "     For local data (sh_gamit day directories), specifying the H option will force htoglb"
+  echo "     to be rerun for all directories within the time span indicated, whether or not a"
+  echo "     binary file exists in the searched directories (nominally glbf and glbf/bin_yyyy)."
+  echo "     Omitting H will cause no new binary files to be created, so it is not possible"
+  echo "     to have only selected ascii files retranslated (but htoglb runs quickly)."
+  echo " "
+  echo "     For remote data (locally linked or ftp'd from SOPAC), setting H will also force htoglb"
+  echo "     to be rerun on any ascii h-files present or linked (by LA) in the h-file (glbf)"
+  echo "     directory, but you can safely set F since the script will not re-ftp any remote "
+  echo "     (ascii) h-files that are present.  "
+  echo " "              
+  echo "  3. When run in combination mode (-ncomb), the script will use all available h-files"
+  echo "     between the start and stop day, not just those corresponding to GAMIT day directories;"
+  echo "     that is, the -local option no longer has an effect.  If you want to make the combination"
+  echo "     with only the days for which you have GAMIT processing and you have previously (e.g.,"
+  echo "     for repeatabilities) created binary h-files in /glbf using external h-files (-net)",
+  echo "     you should omit the LB, LC, and net options. "
+  echo " "
+  echo "  4. Output h-files from the combination are named HYYMMDD_[expt][netext].GLX and "
+  echo "     written in to the solution directory.  The script creates a separate .gdl file"
+  echo "     for each day with a similar name, each pointing to the combined GLX h-file in"
+  echo "     the solution directory."
+  echo " "
+  echo "===================================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS #############################   
+# Echo input options
+echo "Input options ${argv[*]}"
+set input_opts = `echo "Input options ${argv[*]}"`
+
+# Set unique tmp file stamp.
+set ts = "`hostname`:`date +"%H%M%S"`"
+
+setenv procdir `pwd`
+set years = ''
+set yeare = ''
+set yr = ''
+set doy = ''
+set days = ''
+set daye = ''
+set numd = 1
+set archive = sopac
+set netlist = ''
+set expt = 'expt'
+set exptlist = 'expt'
+set mailto = `whoami`
+set machine = `hostname` 
+set opt = ''
+set doftp = ''
+set dohtoglb = ''
+set doglred = ''
+set doclean = ''
+# DEBUG 
+# set doclean = 'YES'
+set dotsfit = ''
+set doensum = ''
+set doremove = ''
+set dohfupd = ''
+set dolinka = ''
+set dolinkb = ''
+set dolinkc = ''
+set dosave = ''
+set glrepuse  = ''
+set glrepstab = ''
+set glveluse  = ''
+set glvelstab = ''
+set gltimeser = ''
+set noloop = 'YES'
+set glbpth = "$procdir/gsoln"
+set glfpth = "$procdir/glbf" 
+# hfnd reset to glfpth later (or read from process.defaults)
+set hfnd = ''
+set tpth = "$procdir/tables"
+set aprf = '$procdir/itrf2000.apr'
+set eq_file = 'none'
+set nsigma = ''
+set globk_cmd = 'globk.cmd'
+set glorg_cmd = 'glorg.cmd'
+set globk_cmd_prefix = ''
+set tsfit_cmd = ''
+set dprefix = ''
+set dsuffix = ''
+set yrext = 'N'
+set netext = ''
+set sinfo = "$tpth/station.info"
+set local = 'N'  
+set glbprt = 'org'
+set cmd = 'N'
+set xtype = 'notset'
+set detrend = 'notset'
+set base = ''  
+set noftp = 'N'
+set ftp_prog = 'ftp -inv'
+set archive = 'sopac'
+set htype = 'hfiles2'                                           
+set hseries = ''
+set eq_files = ()
+# MOD TAH 200830: Added -a option to be passed to htoglb (default
+#  is empty string.  Option not passed.
+set aopt = ''
+
+######## GET PROCESSING DIRECTORY FROM COMMAD LINE IF GIVEN #########   
+set argv_save = `echo $argv`
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -dir: 
+        setenv procdir $argv[2] 
+    breaksw  
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+
+# See if processing directory contains valid defaults files
+#--------------------------------------------
+if ( ! -e ${procdir}/tables/process.defaults ) then
+  echo "No process.defaults file found at: ${procdir}/tables/process.defaults"
+  echo "Running sh_glred under default configuration"
+else
+  source ${procdir}/tables/process.defaults
+endif
+set argv = `echo $argv_save`
+
+############## DECIPHER THE REST OF THE COMMAND LINE ################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -nc*:
+      set numd = $input[2] 
+    breaksw 
+    case -d:
+        set jds   = `doy $argv[2] $argv[3] | tail -n -3 | head -n 1 | awk '{print $8}'`
+        set mjds  = `doy $jds | tail -n -3 | head -n 1 | awk '{printf "%6d \n", $10}'`
+        set jde   = `doy $jds | tail -n -3 | head -n 1 | awk '{print  $8+'$numd'}'`
+        set mjde  = `doy $jds | tail -n -3 | head -n 1 | awk '{printf "%6d \n", $10+'${numd}'}'`
+        set years  = `doy $mjds | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+        set days   = `doy $mjds | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+        set yeare  = `doy $mjde | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+        set daye  = `doy $mjde | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+        breaksw
+    case -r:
+        set mjds  = `doy | tail -n -3 | head -n 1 | awk -v dd=$input[2] '{printf "%6d \n", $10-dd}'`
+        set jds   = `doy $mjds | tail -n -3 | head -n 1 | awk '{print $8}'`
+        set jde   = `doy $jds | tail -n -3 | head -n 1 | awk '{print $8+'$numd'}'`
+        set mjde  = `doy $jds | tail -n -3 | head -n 1 | awk '{printf "%6d \n", $10+'numd'}'`
+        set years  = `doy $mjds | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+        set days   = `doy $mjds | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+        set yeare  = `doy $mjde | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+        set daye  = `doy $mjde | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+        breaksw
+    case -s:
+        set jds   = `doy $argv[2] $argv[3] | tail -n -3 | head -n 1 | awk '{print $8}'`
+        set mjds  = `doy $jds | tail -n -3 | head -n 1 | awk '{printf "%6d \n", $10}'`
+        set jde   = `doy $argv[4] $argv[5] | tail -n -3 | head -n 1 | awk '{print $8}'`
+        set mjde  = `doy $jde | tail -n -3 | head -n 1 | awk '{printf "%6d \n", $10}'`
+        set years  = `doy $mjds | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+        set days   = `doy $mjds | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+        set yeare  = `doy $mjde | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+        set daye  = `doy $mjde | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+        breaksw
+    case -expt:
+        set expt = $argv[2]
+        set exptlist = (`echo $argv | cut -d- -f2`); shift exptlist
+        breaksw
+    case -net:
+       set netlist = (`echo $argv | cut -d- -f2`); shift netlist
+    breaksw
+    case -yrext:
+       set yrext = "Y"
+       breaksw
+#    case -netext:
+#       set netext = $argv[2]
+#       breaksw
+    case -netext:
+       set netext = (`echo $argv | cut -d- -f2`); shift netext
+    breaksw 
+    case -local:
+       set local = "Y"
+       breaksw
+    case -cmd:
+       set cmd = "Y"
+       breaksw    
+    case -prt:
+       set glbprt = "prt"
+       breaksw
+    case -xt*:
+       set xtype = $argv[2]
+       if ( $xtype == 'year' ) then
+         set xtype = 'long'
+       else
+         set xtype = 'short'
+       endif
+       breaksw
+    case -de*:
+       set detrend = $argv[2]
+       if ( $detrend == 'N' ) then
+         set detrend = ''
+       else
+         set detrend = '-o 1'
+       endif
+       breaksw    
+    case -noftp:
+       set noftp = "Y"  
+       breaksw
+    case -ftp_prog
+        set ftp_prog = $argv[2]  
+    breaksw
+    case -archive
+        set archive = $argv[2]  
+    breaksw
+    case -ht*
+        set htype = $argv[2]  
+    breaksw
+    case -globk_cmd
+        set globk_cmd = $argv[2]  
+    breaksw 
+    case -glorg_cmd
+        set glorg_cmd = $argv[2]  
+    breaksw
+    case -globk_cmd_prefix
+        set globk_cmd_prefix = $argv[2]  
+    breaksw      
+    case -tsfit_cmd
+        set tsfit_cmd = $argv[2]  
+    breaksw
+    case -eqf
+        shift
+        set eq_files = ( `echo $argv | awk -F' -' '{print $1}'` )
+    breaksw
+    case -nsigma
+        set nsigma = $argv[2]
+    breaksw
+    case -hseries:
+        set hseries = $argv[2]
+    breaksw 
+# MOD TAH 200830: Set -a option to pass to htoglb
+    case -a:
+      set aopt = '-a'
+    breaksw
+    case -o*:
+       set opt = (`echo $argv | cut -d- -f2`); shift opt 
+       foreach i (`echo $opt`)
+         if ( $i == "A" ) then
+           set doftp = 'YES'
+           set dohtoglb = 'YES'
+           set doglred = 'YES'
+           set doclean = 'YES'
+           set doremove = 'YES'
+           #set doensum = 'YES'  # Commented out by MAF in preference of "set dotsfit = 'YES'" (2013-10-23, MIT)
+           set dotsfit = 'YES'
+           set dohfupd = 'YES'  
+           set dolinka = 'YES'  
+           set dolinkb = 'YES'  
+           set dolinkc = 'YES' 
+	   set dosave = 'YES' 
+           set noloop  = 'NO'
+         endif
+         if ( $i == "F" ) then
+           set doftp = 'YES'
+           set noloop  = 'NO'
+         endif
+         if ( $i == "H" ) then
+           set dohtoglb = 'YES'
+           set noloop  = 'NO'
+         endif
+         if ( $i == "G" ) then
+           set doglred = 'YES'
+           set noloop  = 'NO'
+         endif
+	 if ( $i == "S" ) then
+           set dosave = 'YES'
+           set noloop = 'NO'
+	   \rm -f sh_glred.cmd
+         endif
+#         if ( $i == "K" ) then
+#           set doglred = 'YES'
+#           set noloop  = 'NO'
+#         endif
+         if ( $i == "C" ) then
+           set doclean = 'YES'
+           set noloop  = 'NO'
+         endif
+         if ( $i == "T" ) then
+           set dotsfit = 'YES'
+           set noloop  = 'NO'
+         endif
+         if ( $i == "E" ) then
+           set doensum = 'YES'
+         endif
+         if ( $i == "R" ) then
+           set doremove = 'YES'
+           set noloop  = 'NO'
+         endif   
+         if ( $i == "U" ) then
+           set dohfupd = 'YES'
+           set noloop  = 'NO'
+         endif   
+         if ( $i == "LA" ) then
+           set dolinka = 'YES'
+           set noloop  = 'NO'
+         endif
+         if ( $i == "LB" ) then
+           set dolinkb = 'YES'
+           set noloop  = 'NO'
+         endif
+         if ( $i == "LC" ) then
+           set dolinkc = 'YES'
+           set noloop  = 'NO'
+         endif
+       end
+    breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ############################ 
+echo "sh_glred version $version"
+#--------------------------------------------
+#Get information from sites.defaults file if it exists
+if ( ! -e ${procdir}/tables/sites.defaults ) then
+  echo "No sites.defaults file found at: ${procdir}/tables/sites.defaults "
+  echo "Running sh_glred using default site configuration"
+else
+# Extract site specific information arrays from sites.defaults file. 
+  foreach i ( $exptlist )
+    set glrepuse  = ($glrepuse `sh_get_defaults -token glrepu -expt $i`)
+    set num = ` echo $glrepuse | wc | awk '{print $2}'`; if ( $num <= 0 ) set glrepuse = ''
+    set glrepstab = ($glrepstab `sh_get_defaults -token glreps -expt $i`)
+    set num = ` echo $glrepstab | wc | awk '{print $2}'`; if ( $num <= 0 ) set glrepstab = ''
+    set glveluse  = ($glveluse `sh_get_defaults -token glvelu -expt $i`)
+    set num = ` echo $glveluse | wc | awk '{print $2}'`; if ( $num <= 0 ) set glveluse = ''
+    set glvelstab = ($glvelstab `sh_get_defaults -token glvels -expt $i`)    
+    set num = ` echo $glvelstab | wc | awk '{print $2}'`; if ( $num <= 0 ) set glvelstab = ''
+    set gltimeser = ($gltimeser `sh_get_defaults -token glts -expt $i`)    
+    set num = ` echo $gltimeser | wc | awk '{print $2}'`; if ( $num <= 0 ) set gltimeser = ''
+  end
+  echo glrepuse:  $glrepuse
+  echo glrepstab: $glrepstab
+  echo glveluse:  $glveluse
+  echo glvelstab: $glvelstab
+  echo gltimeser: $gltimeser
+endif
+
+#--------------------------------------------
+#Create required directories if they don't exit 
+echo "Checking and making required directories"
+if ( ! -e ${glbpth}) mkdir ${glbpth}
+if ( ! -e ${glfpth}) mkdir ${glfpth}
+if ( ! -e ${tpth}) mkdir ${tpth} 
+set in_pmu = ${tpth}/pmu.usno  
+
+#--------------------------------------------
+# Check netlist. If blank get all available h-files.
+if ( $netlist[1] == '' ) then 
+  set netlist = "ALL"
+endif
+
+#--------------------------------------------
+# Get globk and glorg .cmd files if requested
+if ( $cmd == "Y" ) then           
+  echo "Copying globk.cmd and glorg.cmd from gg/tables to ${glbpth}"
+  cp ~/gg/tables/globk.cmd ${glbpth}/globk.cmd
+  cp ~/gg/tables/glorg.cmd ${glbpth}/glorg.cmd 
+# This replaced by the above (rwk 130718)
+#  sh_make_cmd -eqf ${eq_file} -aprf ${tpth}/${aprf} -pmuf ${in_pmu} -glorgf ${glbpth}/${glorg_cmd} -globkf ${glbpth}/${globk_cmd} -hfname ${expt}${dsuffix} -netlist ${netlist} -repuse ${glrepuse} -repstab ${glrepstab}
+  exit
+endif
+
+#--------------------------------------------
+# Check all required info given.
+if ( ${years} == '' ||  ${days} == '' || ${opt[1]} == '' ) then
+  echo "Not all required fields given -- yr: $years doy: $days opt: $opt[1] --Stop"
+  exit
+endif 
+
+#--------------------------------------------
+# Set default h-file search directory.  
+if ( ${hfnd[1]} == '' ) set hfnd = ${glfpth}
+
+#--------------------------------------------
+# Set time and date variables for day to be processed
+# Year variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+  set yrs = `sh_year -year $years`
+  set yre = `sh_year -year $yeare`
+
+#--------------------------------------------
+# Start loop over combinations  
+if ( $noloop == "YES" ) goto noloop
+
+set dcount = `echo $mjde $mjds | awk '{print ($1-$2)+1}'`
+set dspan = $dcount
+#  @ mjdc = ${mjds} - ${numd}    
+@ mjdc = `echo "ibase=10; ${mjds} - ${numd}" | bc`
+
+while ( ${dcount} > 0 )
+# @ dcount = ${dcount} - ${numd}
+  @ dcount = `echo "ibase=10; ${dcount} - ${numd}" | bc`
+# @ mjdc = ${mjdc} + ${numd}
+  @ mjdc = `echo "ibase=10; ${mjdc} + ${numd}" | bc`
+
+  set doy   = `doy $mjdc | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+  set year  = `doy $mjdc | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+  set yr = `sh_year -year $year`   
+
+#-------------------------------------------- 
+# Check if local h-file is available for combination.
+  if ( $local == "Y" ) then  
+
+#   @ sday = ${mjdc} - 1  
+    @ sday = `echo "ibase=10; ${mjdc} - 1" | bc`
+#   @ count = $numd 
+    @ count = `echo "ibase=10; ${numd}" | bc`
+
+    set found_h = 0
+    if ( -e tmp.match ) \rm tmp.match; touch tmp.match
+    while ( $count )
+      set sday = `echo $sday  |  awk '{printf "%d \n", $1+1}'` 
+      set sdoy = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+      set syear  = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+      set syr = `sh_year -year $syear`
+      if ( $count == $numd ) set sdate = ( ${syr[1]} ${sdoy} ) 
+      if ( $yrext == 'Y' ) set dprefix = ${syr[1]}_
+      if ( $netext[1] != '' ) then
+        foreach  i ( $netext )
+          set dsuffix = $i
+          \ls ${procdir}/${dprefix}${sdoy}${dsuffix}/h????a.${syr[2]}${sdoy} >> tmp.match
+        end
+      else
+        \ls ${procdir}/${dprefix}${sdoy}${dsuffix}/h????a.${syr[2]}${sdoy} >> tmp.match
+      endif     
+      @ count = $count - 1
+    end   
+    set found_h = ` cat tmp.match | wc -l `
+    if ( $found_h == 0 ) then
+      echo "No local h-file ( ${procdir}/${dprefix}${sdoy}${dsuffix}/h????a.${syr[2]}${sdoy} ) within this combination span: ${sdate} --> ${syr[1]} ${sdoy}"
+      echo "Skipping this combination..."
+      goto skip
+    else
+      echo "Found: $found_h local hfiles for combination span: ${sdate} --> ${syr[1]} ${sdoy} "
+      cat tmp.match
+    endif
+#    \rm tmp.match
+  endif                                     
+
+#--------------------------------------------
+# Remove old binary h-files from glbf working directory if requested
+  if( $doremove == 'YES' ) then
+    echo "Removing old binary h-files"
+    pushd ${glfpth}
+# Set up loop on days
+#        @ sday = ${mjdc} - 1  
+      @ sday = `echo "ibase=10; ${mjdc} - 1" | bc`
+#        @ count = $numd  
+      @ count = `echo "ibase=10; ${numd}" | bc`
+      while ( $count )
+        set sday = `echo $sday |  awk '{printf "%d \n", $1+1}'`
+        set caldate = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%s%s%s \n", substr($0,8,2), substr($0,11,2),substr($0,14,2)}'`
+        @ count = $count - 1
+        \rm h${caldate}*.gl[rx]       >& /dev/null
+        \rm h${caldate}*.gc[rx]       >& /dev/null
+      end
+    popd     
+  endif
+
+#--------------------------------------------
+# See if we should link in existing ascii h-files 
+  if( $dolinka == 'YES' ) then 
+     pushd ${glfpth}
+
+# Look for h-files already downloaded in previous runs
+       echo "Looking ascii h-files previously downloaded from sopac"
+#         @ sday = ${mjdc} - 1 
+       @ sday = `echo "ibase=10; ${mjdc} - 1" | bc`
+#         @ count = $numd
+       @ count = `echo "ibase=10; ${numd}" | bc`
+       while ( $count )
+         set sday = `echo $sday |  awk '{printf "%d \n", $1+1}'`
+         set sdoy   = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+         set syear  = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+         set syr = `sh_year -year $syear`
+         @ count = $count - 1 
+         sh_find_hfiles -d ${syr[1]} ${sdoy} -type ascii -net ${netlist} ${exptlist} -hpth ${hfnd}  
+       end
+     popd
+  endif
+
+#--------------------------------------------
+# See if we should get ascii h-files from sopac
+  if( $doftp == 'YES' ) then 
+     pushd ${glfpth}  
+
+# FTP h-hiles from SOPAC archive
+       echo "Ftping ascii h-files from sopac"
+       sh_get_hfiles -yr ${yr[1]} -doys ${doy} -ndays ${numd} -net ${netlist} -ftp_prog $ftp_prog -archive $archive -htype $htype
+#       sh_get_hfiles -yr ${yr[1]} -doys ${doy} -ndays ${numd} -net ${netlist} -ftp_prog $ftp_prog 
+# Loop over and uncompress downloaded h-files 
+#         @ sday = ${mjdc} - 1 
+       @ sday = `echo "ibase=10; ${mjdc} - 1" | bc`
+#        @ count = $numd
+       @ count = `echo "ibase=10; ${numd}" | bc`
+
+       while ( $count )
+         set sday = `echo $sday |  awk '{printf "%d \n", $1+1}'`
+         set sdoy   = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+         set syear  = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+         set syr = `sh_year -year $syear`
+         @ count = $count - 1
+         gunzip -f h????a.${syr[2]}${sdoy}.Z
+       end
+     popd
+  endif
+
+#--------------------------------------------
+# See if we should link in existing binary h-files 
+  if( $dolinkb == 'YES' ) then 
+     pushd ${glfpth}  
+
+# Look for h-files already created in previous runs
+       echo "Looking for binary h-files previously created by htoglb"
+#         @ sday = ${mjdc} - 1 
+       @ sday = `echo "ibase=10; ${mjdc} - 1" | bc`
+#         @ count = $numd
+       @ count = `echo "ibase=10; ${numd}" | bc`
+
+
+       while ( $count )
+         set sday = `echo $sday |  awk '{printf "%d \n", $1+1}'`
+         set sdoy   = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+         set syear  = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+         set syr = `sh_year -year $syear`
+         @ count = $count - 1
+         sh_find_hfiles -d ${syr[1]} ${sdoy} -type binary -hseries ${hseries} -net ${netlist}  ${exptlist} -hpth ${hfnd} 
+       end
+     popd
+  endif                    
+
+#--------------------------------------------
+# see if htoglb is needed
+  if( $dohtoglb == 'YES' ) then
+    pushd ${glfpth}
+      echo "Htoglb converting GAMIT ascii h-files to GLOBK binary h-files" 
+      touch ${glfpth}/htoglb.log.$ts
+# Set up loop on days
+#       @ sday = ${mjdc} - 1 
+      @ sday = `echo "ibase=10; ${mjdc} - 1" | bc`
+#       @ count = $numd
+      @ count = `echo "ibase=10; ${numd}" | bc`
+
+      while ( $count )
+        set sday = `echo $sday  |  awk '{printf "%d \n", $1+1}'` 
+        set sdoy = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+        set syear  = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+        set syr = `sh_year -year $syear`
+        @ count = $count - 1 
+# sopac h-files 
+# uncompress any h-files if necessary.
+        sh_uncompress ${glfpth}/h????a.${syr[2]}${sdoy}.Z >& /dev/null
+# run htoglb
+        \rm ${tpth}/svt HTOGLB.[swf]* >& /dev/null
+        echo "htoglb ${glfpth} ${tpth}/svt $aopt ${glfpth}/h????a.${syr[2]}${sdoy}"  
+        htoglb ${glfpth} ${tpth}/svt $aopt ${glfpth}/h????a.${syr[2]}${sdoy} >>& ${glfpth}/htoglb.log.$ts
+# local h-files 
+        if ( $yrext == 'Y' ) set dprefix = ${syr[1]}_
+        if ( $netext[1] != '' ) then
+          foreach i ( $netext) 
+            set dsuffix = $i  
+            echo "htoglb ${glfpth} ${tpth}/svt $aopt -f=${expt}${dsuffix} ${procdir}/${dprefix}${sdoy}${dsuffix}/h????a.${syr[2]}${sdoy} "
+            htoglb ${glfpth} ${tpth}/svt  $aopt  -f=${expt}${dsuffix} ${procdir}/${dprefix}${sdoy}${dsuffix}/h????a.${syr[2]}${sdoy} >>& ${glfpth}/htoglb.log.$ts
+          end
+        else
+          echo "htoglb ${glfpth} ${tpth}/svt $aopt  ${procdir}/${dprefix}${sdoy}${dsuffix}/h????a.${syr[2]}${sdoy}"
+          htoglb ${glfpth} ${tpth}/svt $aopt ${procdir}/${dprefix}${sdoy}${dsuffix}/h????a.${syr[2]}${sdoy} >>& ${glfpth}/htoglb.log.$ts
+        endif
+      end
+    popd
+  endif
+
+#--------------------------------------------
+# See if we should link in existing combined binary h-files 
+  if( $dolinkc == 'YES' ) then 
+     pushd ${glfpth}  
+
+# Look for combined h-files already created in previous runs
+       echo "Looking for combined h-files previously created by globk or glred"
+#         @ sday = ${mjdc} - 1 
+       @ sday = `echo "ibase=10; ${mjdc} - 1" | bc`
+#         @ count = $numd
+       @ count = `echo "ibase=10; ${numd}" | bc`
+
+       while ( $count )
+         set sday = `echo $sday |  awk '{printf "%d \n", $1+1}'`
+         set sdoy   = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+         set syear  = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+         set syr = `sh_year -year $syear`
+         @ count = $count - 1       
+         echo "sh_find_hfiles -d ${syr[1]} ${sdoy} -type combined -net ${netlist} ${exptlist} -hpth ${hfnd}"
+         sh_find_hfiles -d ${syr[1]} ${sdoy} -type combined -net ${netlist} ${exptlist} -hpth ${hfnd} 
+       end
+     popd
+  endif
+
+#--------------------------------------------
+# See if hfupd needs to be run 
+  if( $dohfupd == 'YES' ) then
+    if ( ! -e antmod.dat ) ln -s  ~/gg/tables/antmod.dat antmod.dat
+    if ( ! -e rcvant.dat ) ln -s  ~/gg/tables/rcvant.dat rcvant.dat 
+    pushd ${glfpth}
+      echo " Running hfupd. Checking station information in GLOBK binary h-files." 
+      touch ${glfpth}/hfupd.log.$ts
+# Set up loop on days
+#       @ sday = ${mjdc} - 1 
+      @ sday = `echo "ibase=10; ${mjdc} - 1" | bc`
+#       @ count = $numd
+     @ count = `echo "ibase=10; ${numd}" | bc`
+
+      while ( $count )
+        set sday = `echo $sday  |  awk '{printf "%d \n", $1+1}'` 
+        set sdoy = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+        set syear  = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+        set syr = `sh_year -year $syear`
+        set caldate = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%s%s%s \n", substr($0,8,2), substr($0,11,2),substr($0,14,2)}'`
+        @ count = $count - 1 
+# Need station.info, antmod.dat and rcvant.dat available
+        hfupd -s $sinfo -u h${caldate}????_????.g??
+      end
+    popd
+  endif
+
+#--------------------------------------------
+# See if glred needs to be run 
+  if( $doglred == 'YES' || $dosave == 'YES' ) then
+# Get updated pole/ut1 file if allowed and required   
+    if( noftp == "N" ) then  
+      pushd ${tpth}
+        echo "sh_update_eop -series usno -yr ${yr[1]} -doy ${doy} -ftp_prog $ftp_prog"
+        sh_update_eop -series usno -yr ${yr[1]} -doy ${doy} -ftp_prog $ftp_prog  
+      popd
+    endif
+    echo "Running the GLRED combination" 
+    pushd ${glbpth}
+      set binhlist = ''
+# Set up loop on days
+#       @ sday = ${mjdc} - 1 
+     @ sday = `echo "ibase=10; ${mjdc} - 1" | bc`
+#       @ count = $numd
+     @ count = `echo "ibase=10; ${numd}" | bc`
+
+      \rm binhlist.glr binhlist.glx binhlist.GLX binhlist.glb >! /dev/null
+      touch binhlist.glr binhlist.glx binhlist.GLX binhlist.glb
+      while ( $count )
+        set sday = `echo $sday |  awk '{printf "%d \n", $1+1}'`  
+        set sdoy = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+        set syear  = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+        set syr = `sh_year -year $syear`
+        set caldate = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%s%s%s \n", substr($0,8,2), substr($0,11,2),substr($0,14,2)}'`
+        set doydate = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%s%03d \n", substr($0,8,2), $6}'`
+        set gpsw = `doy $sday | tail -n -2 | head -n 1 | awk '{printf "%04d \n", $3}'`        
+        set gpsd = `doy $sday | tail -n -2 | head -n 1 | awk '{printf "%1d  \n", substr($7,1,1)}'`
+
+        @ count = $count - 1 
+        ls ${glfpth}/h${caldate}*.glr | sed 's/\.glr$//' >> binhlist.glr
+        ls ${glfpth}/h${caldate}*.glx | sed 's/\.glx$//' >> binhlist.glx
+        ls -t ${glfpth}/nmt${gpsw}${gpsd}.?.glb  | tail -n 1 | sed 's/\.glb$//'  >> binhlist.glb
+        ls ${glfpth}/H${caldate}_*.GLX | sed 's/\.GLX$//' >> binhlist.GLX
+        ls ${glfpth}/H${doydate}_*.GLX | sed 's/\.GLX$//' >> binhlist.GLX 
+      end                  
+
+#  Both glr and glx h-files
+      set glx_glr  = `comm -12 binhlist.glr binhlist.glx`
+#  Only glr files h-files
+      set glr_only = `comm -23 binhlist.glr binhlist.glx`
+#  Only glx files h-files
+      set glx_only = `comm -13 binhlist.glr binhlist.glx`    
+#  Combined binaries
+      set GLX_only = `cat binhlist.GLX`
+#  PBO binaries
+      set glb_only = `cat binhlist.glb` 
+
+# Add back the .glr and .glx .glb extensions
+      set rlist = `echo $glr_only  | awk '{for (i=1;i<=NF;i++) {print $i".glr"}}'`
+      set xlist = `echo $glx_only  | awk '{for (i=1;i<=NF;i++) {print $i".glx"}}'`
+      set xrlist = `echo $glx_glr  | awk '{for (i=1;i<=NF;i++) {print $i".glx"}}'`
+      set Xlist = `echo $GLX_only  | awk '{for (i=1;i<=NF;i++) {print $i".GLX"}}'`
+      set blist = `echo $glb_only  | awk '{for (i=1;i<=NF;i++) {print $i".glb"}}'`
+
+      set binhlist = ( $rlist $xlist $xrlist $Xlist $blist)
+
+      set ds = `echo ${yr[2]} ${doy} ${sdoy} | awk '{ if ($2 == $3) {print $1$2} else {print $1$2"_"$1$3 }}'`
+      set num = `echo $binhlist | wc`  
+      if ( $netext[1] != '' ) set dsuffix = ${netext[1]}  
+
+      if( $num[2] > 0 ) then
+        #echo $binhlist | awk -v glfpth=$glfpth '{split($0,files); n = NF} {for (i=1;i<=n-1;i++) {sub(glfpth,"../"baseglfpth,files[i]); printf " %s %3.1f %s \n", files[i], 1.0, "+"}} \
+        #                 {sub(glfpth,"../"baseglfpth,files[i]); printf " %s %3.1f \n", files[i], 1.0}' >! globk_${expt}_${ds}${dsuffix}.gdl
+        echo $binhlist | awk '{nfiles = split($0,files); for (i = 1; i <= nfiles-1; i++) {ndirs = split(files[i],dirs,"/"); printf " ../%s/%s %3.1f %s \n", dirs[ndirs-1], dirs[ndirs], 1.0, "+"} \
+                         ndirs = split(files[nfiles],dirs,"/"); printf " ../%s/%s %3.1f \n", dirs[ndirs-1], dirs[ndirs], 1.0}' >! globk_${expt}_${ds}.gdl
+#        cat tmp.gdl | awk '{ if (substr($1,13,3) != "igs") {printf " %s%s %s %s \n", substr($1,1,17), "glx", $2, $3} \
+#                       else {printf " %s %s %s \n", $1, $2, $3}}' >! globk_$expt_$ds${dsuffix}.gdl  
+        echo "H-files included in this combination: $binhlist"
+      else
+        echo "sh_glred: No h-files to combine ( doy " $doy " )" 
+#        exit 
+         goto skip
+      endif 
+
+# Make globk and glorg command files (globk.cmd, glorg.cmd) if none exists
+      sh_make_cmd -eqf ${eq_file} -aprf ${tpth}/${aprf} -pmuf ${in_pmu} -globkf ${glbpth}/${globk_cmd} -glorgf ${glbpth}/${glorg_cmd} -hfname ${expt}${dsuffix} -netlist ${netlist} -repuse ${glrepuse} -repstab ${glrepstab}
+
+# Do the glred run  
+      \rm globk_${expt}_${ds}.prt globk_${expt}_${ds}.log globk_${expt}_${ds}.org GLOBK.[swf]* >& /dev/null
+      echo "glred 6 globk_${expt}_${ds}.prt globk_${expt}_${ds}.log globk_${expt}_${ds}.gdl ${globk_cmd} ${globk_cmd_prefix}"
+      if ( $dosave == "YES" ) then
+        if ( ! -e sh_glred.cmd ) touch sh_glred.cmd
+        echo " glred 6 globk_${expt}_${ds}.prt globk_${expt}_${ds}.log globk_${expt}_${ds}.gdl ${globk_cmd} ${globk_cmd_prefix}" >> sh_glred.cmd
+      endif
+      if ( $doglred == "YES" ) then
+        glred 6 globk_${expt}_${ds}.prt globk_${expt}_${ds}.log globk_${expt}_${ds}.gdl ${globk_cmd} ${globk_cmd_prefix} >&! /dev/null
+      endif
+  
+    popd
+  endif
+
+  df . >&! tmp.df
+  tail -n -1 tmp.df | awk '{ if( substr($0,1,1) == " " ) {print $2,$3,$4} else {print $3,$4,$5}}' >&! tmp.rdf  
+  awk '{print "Disk Usage: ",$1/1024.," Free ",$2/1024.0" Mbyte. Used "$3}' tmp.rdf >&! disk.used
+
+#--------------------------------------------
+# See if compress and clean up required
+  if ( $doclean == 'YES' ) then
+    echo "Removing constrained binary h-files, compressing ascii h-files, and moving input h-files to archive: rawh_${yr[1]}"
+    pushd ${glfpth}
+# Remove evil constrained h-files 
+      \rm h*.gcr h*.gcx                                                                                               
+#       @ sday = ${mjdc} - 1
+      @ sday = `echo "ibase=10; ${mjdc} - 1" | bc`
+#       @ count = $numd
+      @ count = `echo "ibase=10; ${numd}" | bc`
+
+      while ( $count )
+        set sday = `echo $sday |  awk '{printf "%d \n", $1+1}'`  
+        set sdoy = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+        set syear  = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+        set syr = `sh_year -year $syear`
+        set caldate = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%s%s%s \n", substr($0,8,2), substr($0,11,2),substr($0,14,2)}'`
+        @ count = $count - 1  
+
+# Remove asci and binary h-files linked to the current directory 
+        if ( -e tmp.1.$ts ) \rm tmp.1.$ts; touch tmp.1.$ts 
+        find . -type l -name "h*" -print  >> tmp.1.$ts
+        awk '{print "\\rm -f "$1}' tmp.1.$ts >! tmp.rm.$ts
+        csh tmp.rm.$ts  >&! /dev/null
+
+# Compress and archive remaining h-files 
+        gunzip  h????a.${syr[2]}${sdoy}  
+        if ( ! -e binh_${syr[1]} ) then
+          mkdir binh_${syr[1]}
+        endif
+        if ( ! -e ascih_${syr[1]} ) then
+          mkdir ascih_${syr[1]}
+        endif
+        echo "\mv h${caldate}????_????.gl? binh_${syr[1]}"
+        \mv h${caldate}????_????.gl? binh_${syr[1]}
+        echo "\mv h????a.${syr[2]}${sdoy}.Z ascih_${syr[1]}"
+        \mv h????a.${syr[2]}${sdoy}.Z ascih_${syr[1]}
+      end
+    popd
+  endif
+
+#nothing to do for this date (missing local hfile)
+  skip: 
+
+#end loop over combinations 
+end
+
+# Skip loop on days 
+noloop:
+#--------------------------------------------
+# Added by MAF to accommodate using pos-files and sh_plot_pos (2013-10-23, MIT)
+if ( "$dotsfit" == 'YES' ) then  # Run tssum and sh_plot_pos                             
+
+  echo "Creating time series between: $years $days --> $yeare $daye"
+
+  pushd $glbpth
+
+  if ( -e tmp.tsfit_input.org ) \rm tmp.tsfit_input.org
+  touch tmp.tsfit_input.org    
+                               
+# RWK 180517: We don't want to use the day suffix in file-naming when combining multiple GNSS
+#  if ( $netext[1] != '' ) set dsuffix = ${netext[1]}
+  set dcount = `echo $mjde $mjds | awk '{print ($1-$2)+1}'`
+  set dspan = $dcount
+# @ mjdc = ${mjds} - ${numd}
+  @ mjdc = `echo "ibase=10; ${mjds} - ${numd}" | bc`
+
+  while ( ${dcount} > 0 )
+#   @ dcount = ${dcount} - ${numd}
+    @ dcount = `echo "ibase=10; ${dcount} - ${numd}" | bc`
+#   @ mjdc = ${mjdc} + ${numd}
+    @ mjdc = `echo "ibase=10; ${mjdc} + ${numd}" | bc`
+    set doy   = `doy $mjdc | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+    set year  = `doy $mjdc | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+    set yr = `sh_year -year $year`
+#   @ sday = ${mjdc} - 1 
+    @ sday = `echo "ibase=10; ${mjdc} - 1" | bc`
+#   @ count = $numd
+    @ count = `echo "ibase=10; ${numd}" | bc`
+    while ( $count )
+      set sday = `echo $sday |  awk '{printf "%d \n", $1+1}'`
+      set sdoy = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+      set syear  = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+      set syr = `sh_year -year $syear`
+      @ count = $count - 1
+      set ds = `echo ${yr[2]} ${doy} ${sdoy} | awk '{ if ($2 == $3) {print $1$2} else {print $1$2"_"$1$3 }}'`
+      cat globk_${expt}_${ds}.${glbprt} >> tmp.tsfit_input.org
+    end
+  end
+
+  # Set tsfit command file to use or basic detrend option if not set by the user
+  if ( "$tsfit_cmd" != '' ) then  # tsfit command file given
+    if ( $nsigma != '' && `grep -i '^ *nsigma' $tsfit_cmd` == '' ) then  # nsigma option given but does not appear in tsfit command file
+      echo " nsigma $nsigma" >> $tsfit_cmd
+      cat << END
+sh_glred "-nsigma" option given but no nsigma option in tsfit command file $tsfit_cmd
+Added "nsigma $nsigma" to $tsfit_cmd
+END
+    endif
+    if ( `grep -i '^ *mean_' $tsfit_cmd` == '' ) then
+      set detrend = "-t $tsfit_cmd -r -h p"
+    else
+      set detrend = "-t $tsfit_cmd -r -h v"
+    endif
+  else if ( "$nsigma" != '' ) then  # No tsfit command file given but nsigma option given
+    echo " nsigma $nsigma" >! tmp.sh_glred_tsfit_cmd
+    echo 'sh_glred "-nsigma" option given but no tsfit command file given with "-tsfit_cmd" option'
+    if ( ($detrend[1] == 'notset' || $detrend[1] == '') && $dspan < 32 ) then  # No "-detrend Y" option given so set tsfit to estimate mean only for short time series
+      echo " mean_only" >> tmp.sh_glred_tsfit_cmd
+      cat << END
+No "-detrend Y" option given
+Added "mean_only" to tmp.sh_glred_tsfit_cmd
+END
+      set detrend = '-t tmp.sh_glred_tsfit_cmd -r -h p'
+    else
+      set detrend = '-t tmp.sh_glred_tsfit_cmd -r -h v'
+    endif
+  else if ( ($detrend[1] == 'notset' || $detrend[1] == '') && $dspan < 32 ) then
+    set detrend = '-t MEAN -r -h p'
+  else if ( ($detrend[1] == 'notset' || $detrend[1] == '') && $dspan > 31 ) then
+    set detrend = '-t RATE -r -h v'
+  endif
+
+  # Run sh_plot_pos on GLOBK output file(s), keeping any pos-file(s) created
+  if ( $#eq_files > 0 ) then
+    echo "Running sh_plot_pos -f tmp.tsfit_input.org $detrend -b $eq_files[*] -e $eq_files[*] -d _$years-${days}_$yeare-$daye"
+    sh_plot_pos -f tmp.tsfit_input.org $detrend -b $eq_files[*] -e $eq_files[*] -h -d _$years-${days}_$yeare-$daye
+  else
+    echo "Running sh_plot_pos -f tmp.tsfit_input.org $detrend -d _$years-${days}_$yeare-$daye"
+    sh_plot_pos -f tmp.tsfit_input.org $detrend -d _$years-${days}_$yeare-$daye
+  endif
+
+  \rm tmp.*
+
+else if ( $doensum == 'YES' ) then  # Run ensum, multibase, and sh_baseline
+  echo "Creating time series between: $years $days --> $yeare $daye"
+  pushd ${glbpth}                                                    
+    set ensum_input = '' 
+    if ( -e tmp.ensum_input ) \rm tmp.ensum_input
+    touch tmp.ensum_input
+# RWK 180517: We don't want to use the day suffix in file-naming when combining multiple GNSS 
+#    if ( $netext[1] != '' ) set dsuffix = ${netext[1]}  
+    set dcount = `echo $mjde $mjds | awk '{print ($1-$2)+1}'`
+    set dspan = $dcount
+#     @ mjdc = ${mjds} - ${numd}
+    @ mjdc = `echo "ibase=10; ${mjds} - ${numd}" | bc`
+
+    while ( ${dcount} > 0 )         
+#       @ dcount = ${dcount} - ${numd}
+      @ dcount = `echo "ibase=10; ${dcount} - ${numd}" | bc`
+#       @ mjdc = ${mjdc} + ${numd}
+      @ mjdc = `echo "ibase=10; ${mjdc} + ${numd}" | bc`
+      set doy   = `doy $mjdc | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+      set year  = `doy $mjdc | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+      set yr = `sh_year -year $year`
+#       @ sday = ${mjdc} - 1 
+      @ sday = `echo "ibase=10; ${mjdc} - 1" | bc`
+#        @ count = $numd
+      @ count = `echo "ibase=10; ${numd}" | bc`
+      while ( $count )
+        set sday = `echo $sday |  awk '{printf "%d \n", $1+1}'`  
+        set sdoy = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+        set syear  = `doy $sday | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+        set syr = `sh_year -year $syear`
+        @ count = $count - 1 
+        set ds = `echo ${yr[2]} ${doy} ${sdoy} | awk '{ if ($2 == $3) {print $1$2} else {print $1$2"_"$1$3 }}'` 
+        cat globk_${expt}_${ds}.${glbprt} >> tmp.ensum_input
+      end
+    end
+    \rm mb_* psbase_${expt}.* >& /dev/null   
+# Set the x-axis type if not set by the user.
+    if ( $xtype == 'notset' && $dspan <= 365 ) then
+      set xtype = 'short'
+    else if ( $xtype == 'notset' && $dspan > 365 ) then
+      set xtype = 'long' 
+    endif
+# Set the detrend option if not set by the user
+    if ( $detrend[1] == 'notset' && $dspan < 32 ) then
+      set detrend  = ''
+    else if ( $detrend[1] == 'notset' && $dspan > 31 ) then
+      set detrend = '-o 1' 
+    endif
+
+# Check if all sites to be plotted or not
+    if ( ${gltimeser[1]} != "all_sites" || ${gltimeser[1]} != "" ) then
+      if ( -e base ) \rm base; touch base
+      foreach site ( ${gltimeser} )
+        echo "  $site" >> base
+      end
+      if ( ! -z base ) then
+        set base = '-b base'
+      else
+        set base = ''
+      endif
+    endif
+
+#   Run sh_plotcrd
+    echo "sh_plotcrd -f tmp.ensum_input -s ${xtype} ${detrend} -cols 1 -e ${expt} $base" 
+    sh_plotcrd -f tmp.ensum_input -s ${xtype} ${detrend} -cols 1 -e ${expt} $base 
+
+    \rm tmp.*
+  popd
+endif
+
+# Thats it
+\rm tmp.rdf tmp.df tmp.gdl binhlist.glr binhlist.glx >& /dev/null
+exit

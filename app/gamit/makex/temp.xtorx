@@ -1,0 +1,47 @@
+ c     IDFLAG = 2    Determine RINEX flags from X-file flags *****
+c
+      else if (idflag .eq. 2) then
+
+         l1fact = 0
+         l2fact = 0
+         l1_only = .true.
+         do i=1,ndat
+           rxobtyp(i) = '  '
+           if( dattyp(i) .eq.1 ) rxobtyp(i) = 'L1'
+           if( dattyp(i) .eq.2 ) then
+               rxobtyp(i) = 'L2'
+               l1_only = .false.
+           endif
+           if( dattyp(i) .eq.3 ) rxobtyp(i) = 'P1'
+           if( dattyp(i) .eq.4 ) rxobtyp(i) = 'P2'
+           if( dattyp(i) .eq.5 ) rxobtyp(i) = 'C1'
+         enddo  
+c        count the obs: X-file must have 4, but RINEX only the # non-zero
+         nobtyp = 0
+         do i=1,ndat
+           if(rxobtyp(i).ne.'  ') nobtyp = nobtyp + 1
+         enddo
+
+c        RINEX 1 requires all channels to have the same wavelength factor
+
+         do i=2,nsat
+            do j=1,ndat
+               if ( lambda(i,j).ne.lambda(1,j) )
+     .           call report_stat('FATAL',prog_name,'lib/settyp',' '
+     .                      ,'SVs have different LAMBDA',0)
+            enddo
+        enddo
+
+         do i=1,nobtyp
+           if( rxobtyp(i).eq.'L1' ) l1fact = iabs(lambda(1,i))
+           if( rxobtyp(i).eq.'L2' ) l2fact = iabs(lambda(1,i))  
+         enddo  
+
+
+c       IDFLAG = 3    Determine X-file flags from RINEX flags *****
+c       ( Note:  The order of observables on the X-file must be:
+c                1) L1 phase
+c                2) L2 phase
+c                3) L1 pseudo-range
+c                4) L2 pseudo-range
+

@@ -1,0 +1,180 @@
+-rw-rw-rw- 1 rwk gps  15831 May 19 20:48 normd.f
+-rw-rw-rw- 1 rwk gps   7567 May 19 20:48 fxbias.f
+-rw-rw-rw- 1 rwk gps   2051 May 19 20:44 pseuwl.f
+-rw-rw-rw- 1 rwk gps   9052 May 19 20:43 lsqerr.f
+-rw-rw-rw- 1 rwk gps  30300 May 19 20:43 read_bfl.f
+-rw-rw-rw- 1 rwk gps   9631 May 19 20:42 set_para.f
+-rw-rw-rw- 1 rwk gps  13750 May 19 20:42 lsquar.f                1
+-rw-rw-rw- 1 rwk gps   2164 May 19 20:41 filld.f
+-rw-rw-rw- 1 rwk gps  11958 May 19 20:40 double.f
+-rw-rw-rw- 1 rwk gps   4059 May 19 20:40 covst1.f
+
+-rw-rw-rw- 1 rwk gps   9373 May 19 20:29 lwsat.f
+-rw-rw-rw- 1 rwk gps   2559 May 19 10:26 covst2.f
+-rw-rw-rw- 1 rwk gps   6848 May 19 10:26 lsqdo1.f
+-rw-rw-rw- 1 rwk gps  12756 May 19 10:02 solve.f                 2
+-rw-rw-rw- 1 rwk gps   1082 May 19 09:54 filobs.f
+-rw-rw-r-- 1 rwk gps   3602 May 19 09:53 getcda.f
+-rw-rw-rw- 1 rwk gps   3751 May 18 14:48 bcheck.f
+-rw-rw-rw- 1 rwk gps   4701 May 16 21:33 keywrd.f
+-rw-rw-rw- 1 rwk gps   1110 May 16 21:23 eptime.f
+-rw-rw-rw- 1 rwk gps   8072 May 16 21:20 filpar.f
+
+-rw-rw-rw- 1 rwk gps   3481 May 16 21:19 filomc.f
+-rw-rw-rw- 1 rwk gps   4474 May 16 21:18 pgrad.f
+-rw-rw-rw- 1 rwk gps   4351 May 16 21:17 pzenth.f
+-rw-rw-rw- 1 rwk gps   1098 May 16 17:03 formn1.f                3
+-rw-rw-rw- 1 rwk gps   5939 May 16 16:28 lrgint.f
+-rw-rw-rw- 1 rwk gps   1808 May 16 16:27 formn2.f
+-rw-rw-rw- 1 rwk gps    432 May 16 16:24 add2i.f
+-rw-rw-rw- 1 rwk gps   1530 May 16 15:34 uselss.f
+-rw-rw-rw- 1 rwk gps    959 May 16 15:06 dcheck.f
+-rw-rw-rw- 1 rwk gps   5288 May 16 15:01 bstat.f
+
+-rw-rw-rw- 1 rwk gps   2403 May 16 13:55 dbadst.f
+-rw-rw-rw- 1 rwk gps  21385 May 16 13:54 dopt.f
+-rw-rw-rw- 1 rwk gps  12885 May 16 13:15 avgload.f
+-rw-rw-rw- 1 rwk gps   1409 May 16 13:15 apply.f                  4
+-rw-rw-rw- 1 rwk gps    927 May 16 11:36 updat3.f
+-rw-rw-rw- 1 rwk gps  11643 May 14 16:52 get_grad_apr.f
+-rw-rw-rw- 1 rwk gps   5094 May 14 16:52 get_sit_apr.f
+-rw-rw-rw- 1 rwk gps   8944 May 14 16:51 get_zen_apr.f
+-rw-rw-rw- 1 rwk gps   4510 May 14 16:51 get_eop_apr.f
+-rw-rw-rw- 1 rwk gps  12314 May 14 16:50 get_sat_apr.f
+
+-rw-rw-rw- 1 rwk gps 126003 May 14 16:16 sversn.f
+-rw-rw-rw- 1 rwk gps   8432 May 14 15:42 get_bias_scale.f
+-rw-rw-rw- 1 rwk gps   3617 May 14 15:35 update.f
+-rw-rw-rw- 1 rwk gps   1974 May 14 15:33 write_soln.f
+-rw-rw-rw- 1 rwk gps   4042 May 14 13:02 get_narrowlane.f
+-rw-rw-rw- 1 rwk gps   3741 May 14 13:02 bfwork.f                  5
+-rw-rw-rw- 1 rwk gps  10837 May 14 13:02 round_bias.f
+-rw-rw-rw- 1 rwk gps   5565 May 14 11:35 zenout.f
+-rw-rw-rw- 1 rwk gps   4687 May 14 11:03 lcloos.f
+-rw-rw-rw- 1 rwk gps   6924 May 14 11:03 solvlc.f
+
+-rw-rw-rw- 1 rwk gps   5385 May 14 09:19 rmjunk.f
+-rw-rw-rw- 1 rwk gps   2782 May 14 09:17 opera.f
+-rw-rw-rw- 1 rwk gps   7187 May 14 09:17 cpmat2.f
+-rw-rw-rw- 1 rwk gps   1046 May 14 09:15 sortbl.f
+-rw-rw-rw- 1 rwk gps   2565 May 14 09:14 lsqint.f
+-rw-rw-rw- 1 rwk gps   4638 May 14 09:12 remenu.f                6
+-rw-rw-rw- 1 rwk gps  16488 May 14 09:11 read_biases.f
+-rw-rw-rw- 1 rwk gps   9650 May 14 09:10 gethed.f
+-rw-rw-rw- 1 rwk gps   1888 May 14 08:47 lsqio.f
+
+-rw-rw-rw- 1 rwk gps   1894 May 14 08:46 qhead2.f
+-rw-rw-rw- 1 rwk gps   7388 May 14 08:46 covbln.f
+-rw-rw-rw- 1 rwk gps  15025 May 13 20:53 glohed.f
+-rw-rw-rw- 1 rwk gps   5581 May 13 10:12 solve3.f
+-rw-rw-rw- 1 rwk gps   3672 May 13 10:01 lsqprt.f                7
+-rw-rw-rw- 1 rwk gps   5089 May 13 09:53 gradout.f
+-rw-rw-rw- 1 rwk gps   8015 May 13 09:52 read_bfl_sess.f
+-rw-rw-rw- 1 rwk gps   8043 May 13 09:51 get_err_apr.f
+-rw-rw-rw- 1 rwk gps   2435 May 13 09:07 oline.f
+-rw-rw-rw- 1 rwk gps   1850 May 12 19:10 transx.f
+
+-rw-rw-rw- 1 rwk gps   8854 May 12 18:53 qhead3.f
+-rw-rw-rw- 1 rwk gps   2643 May 11 10:19 opera2.f
+-rw-rw-rw- 1 rwk gps   4650 May 10 17:26 lcnorm.f
+-rw-rw-rw- 1 rwk gps    883 May 10 17:14 live.f
+-rw-rw-rw- 1 rwk gps   5674 May 10 17:14 check_adjust.f
+-rw-rw-rw- 1 rwk gps   2082 May 10 17:12 get_solve_cut.f          8
+-rw-rw-rw- 1 rwk gps  10938 May 10 17:08 lwgrad.f
+-rw-rw-rw- 1 rwk gps   3708 May 10 17:07 lwstat.f
+-rw-rw-rw- 1 rwk gps   2529 May 10 17:07 lwzen.f
+-rw-rw-rw- 1 rwk gps   2061 May 10 17:06 upi.f
+-rw-rw-rw- 1 rwk gps   9886 May 10 17:06 upl.f
+
+-rw-rw-rw- 1 rwk gps   2512 May 10 17:06 wstat.f
+-rw-rw-rw- 1 rwk gps   9269 May 10 17:05 wgrad.f
+-rw-rw-rw- 1 rwk gps   8319 May 10 17:05 wzen.f
+-rw-rw-rw- 1 rwk gps   9239 May 10 17:03 dbias.f
+-rw-rw-rw- 1 rwk gps   8114 May  9 16:50 uporb.f
+-rw-rw-rw- 1 rwk gps   6335 May  9 12:57 loos12.f               9
+-rw-rw-rw- 1 rwk gps   4949 May  9 12:56 lc_solution.f
+-rw-rw-rw- 1 rwk gps   1913 May  9 12:55 lc_soln12.f
+-rw-rw-rw- 1 rwk gps   1685 May  9 12:54 getslt.f
+-rw-rw-rw- 1 rwk gps   5855 May  9 12:53 solve2.f
+
+-rw-rw-rw- 1 rwk gps   6442 May  9 12:49 solve1.f
+-rw-rw-rw- 1 rwk gps   8376 May  9 12:38 resolve_wl.f
+-rw-rw-rw- 1 rwk gps   9088 May  9 12:22 nbiasr.f
+-rw-rw-rw- 1 rwk gps   9101 May  9 12:18 nbias.f
+-rw-rw-rw- 1 rwk gps   3398 May  9 12:15 nbiasp.f
+-rw-rw-rw- 1 rwk gps   4346 May  9 11:43 nbias1.f              10
+-rw-rw-rw- 1 rwk gps   5993 May  9 11:32 bisopt.f
+-rw-rw-rw- 1 rwk gps   1441 May  8 19:48 dbar.f
+-rw-rw-rw- 1 rwk gps   4595 May  8 19:22 bnew1.f
+-rw-rw-rw- 1 rwk gps  10965 May  8 19:16 get_widelane.f
+
+-rw-rw-rw- 1 rwk gps   7033 May  8 19:12 bnew.f
+-rw-rw-rw- 1 rwk gps   2724 May  8 18:58 abnew.f
+-rw-rw-rw- 1 rwk gps   2464 May  8 10:23 qhead4.f
+-rw-rw-rw- 1 rwk gps     10 May  8 09:36 resolve._wl.f         
+-rw-rw-rw- 1 rwk gps   6325 May  6 14:38 delcon.f
+-rw-rw-rw- 1 rwk gps   3194 May  6 14:37 atmcon.f
+-rw-rw-rw- 1 rwk gps   1014 May  4 10:23 wlmode.f
+-rw-rw-rw- 1 rwk gps   7066 Apr 29 15:06 wsat.f
+-rw-rw-rw- 1 rwk gps   3897 Apr 29 12:31 lweop.f
+
+-rw-rw-rw- 1 rwk gps   1317 Nov  8  2016 gtpgx.f
+-rw-rw-rw- 1 rwk gps   1740 Oct  4  2014 weop.f
+-rw-rw-rw- 1 rwk gps   2430 Oct  4  2014 addwgtb.f
+-rw-r--r-- 1 rwk gps   1737 Oct  4  2014 addwgt.f
+-rw-rw-rw- 1 rwk gps   1033 Oct  4  2014 dbcnt.f
+-rw-rw-rw- 1 rwk gps   7848 Oct  4  2014 fnddbi.f
+-rw-rw-rw- 1 rwk gps   1967 Oct  4  2014 nm2131.f
+-rw-rw-rw- 1 rwk gps   1477 Oct  4  2014 nm2233.f
+-rw-rw-rw- 1 rwk gps    994 Oct  4  2014 nm32.f
+-rw-rw-rw- 1 rwk gps   2047 Oct  4  2014 nmu11.f
+-rw-rw-rw- 1 rwk gps   1343 Oct  4  2014 nrmscl.f
+-rw-rw-rw- 1 rwk gps   1212 Oct  4  2014 nu23.f
+-rw-rw-rw- 1 rwk gps   1349 Oct  4  2014 pclock.f
+-rw-rw-rw- 1 rwk gps    835 Oct  4  2014 qhead1.f
+-rw-rw-rw- 1 rwk gps    826 Oct  4  2014 reodrd.f
+-rw-r--r-- 1 rwk gps   1590 Oct  4  2014 wbias.f
+-rw-rw-rw- 1 rwk gps    296 Oct  4  2014 add1.f
+-rw-rw-rw- 1 rwk gps    331 Oct  4  2014 add2.f
+-rw-rw-rw- 1 rwk gps   2038 Oct  4  2014 atmdif.f
+-rw-rw-r-- 1 rwk gps   1218 Oct  4  2014 atm_grad_part.f
+-rw-rw-rw- 1 rwk gps   1503 Oct  4  2014 atmstr.f
+-rw-rw-rw- 1 rwk gps   1272 Oct  4  2014 atpa.f
+-rw-rw-rw- 1 rwk gps    822 Oct  4  2014 atpdal.f
+-rw-rw-rw- 1 rwk gps    756 Oct  4  2014 avgvar.f
+-rw-rw-rw- 1 rwk gps    865 Oct  4  2014 baslin.f
+-rw-rw-rw- 1 rwk gps   8711 Oct  4  2014 bdeci.f
+-rw-rw-rw- 1 rwk gps   1188 Oct  4  2014 bexpec.f
+-rw-rw-rw- 1 rwk gps   1362 Oct  4  2014 biset.f
+-rw-rw-rw- 1 rwk gps   2000 Oct  4  2014 bsort.f
+-rw-rw-rw- 1 rwk gps    313 Oct  4  2014 copy1d.f
+-rw-rw-rw- 1 rwk gps    363 Oct  4  2014 copy1i.f
+-rw-rw-rw- 1 rwk gps    837 Oct  4  2014 csort.f
+-rw-rw-rw- 1 rwk gps   1460 Oct  4  2014 degfrm.f
+-rw-rw-rw- 1 rwk gps   2673 Oct  4  2014 degred.f
+-rw-rw-rw- 1 rwk gps    598 Oct  4  2014 distnc.f
+-rw-rw-rw- 1 rwk gps    262 Oct  4  2014 dot.f
+-rw-rw-rw- 1 rwk gps   2509 Oct  4  2014 dxyz_to_neu.f
+-rw-rw-rw- 1 rwk gps  11714 Oct  4  2014 elem.f
+-rw-rw-rw- 1 rwk gps   1500 Oct  4  2014 fillj.f
+-rw-rw-rw- 1 rwk gps   1500 Oct  4  2014 gpgt.f
+-rw-rw-rw- 1 rwk gps   6754 Oct  4  2014 kepxyz.f
+-rw-rw-rw- 1 rwk gps    741 Oct  4  2014 matprt.f
+-rw-rw-rw- 1 rwk gps    711 Oct  4  2014 mmply.f
+-rw-rw-rw- 1 rwk gps    410 Oct  4  2014 newfil.f
+-rw-rw-rw- 1 rwk gps   1321 Oct  4  2014 nrmsc2.f
+-rw-rw-rw- 1 rwk gps    552 Oct  4  2014 raddeg.f
+-rw-rw-rw- 1 rwk gps    645 Oct  4  2014 sort1i.f
+-rw-rw-rw- 1 rwk gps   1217 Oct  4  2014 sort4i.f
+-rw-rw-rw- 1 rwk gps    943 Oct  4  2014 sphxyz.f
+-rw-rw-rw- 1 rwk gps    473 Oct  4  2014 stack.f
+-rw-rw-rw- 1 rwk gps    518 Oct  4  2014 stdble.f
+-rw-rw-rw- 1 rwk gps   1723 Oct  4  2014 svant.temp.f
+-rw-rw-rw- 1 rwk gps   1448 Oct  4  2014 tapdrv.f
+-rw-rw-rw- 1 rwk gps   1164 Oct  4  2014 trans.f
+-rw-rw-rw- 1 rwk gps    749 Oct  4  2014 wl_fixed.f
+-rw-rw-rw- 1 rwk gps   2908 Oct  4  2014 xyzkep.f
+-rw-rw-rw- 1 rwk gps    234 Oct  4  2014 zero1d.f
+-rw-rw-rw- 1 rwk gps    246 Oct  4  2014 zero1i.f
+-rw-rw-rw- 1 rwk gps    312 Oct  4  2014 zero2d.f
+-rw-rw-rw- 1 rwk gps    326 Oct  4  2014 zero2i.f

@@ -1,0 +1,14 @@
+MJD_TO_DATE: Program to replace MJD with calender date and vis-versa
+
+ program mjd_to_date
+
+ Program to convert either mjd to date at the beginning of
+ of a line or date to mjd.  The direction is set by the
+ input type (mjd or date) 
+
+ % mjd_to_date [input file] [output file] [input type]
+
+ Where input type is MJD to convert mjd to date or
+                     DATE to convert date to MJD
+ Non-blank first characters are treated as comments
+

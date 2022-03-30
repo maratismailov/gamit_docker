@@ -1,0 +1,303 @@
+#!/bin/csh  
+#
+#doc Get h-files by day number from the SOPAC archive
+#doc
+#
+# Last modified 2017/11/19 by M Floyd
+# MOD MAF 171119: Added trap to use ncftp when "ftp" client is actually "gftp", which interacts with the
+#                 server differently to legacy "ftp" and is tricky to use for non-interactive sessions.
+#
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "===================================================================================="
+  echo " Script to get hfiles by day number from the MIT or SOPAC ftp sites " 
+  echo "  "
+  echo " Usage: sh_get_hfiles -yr <yr> -doy <doy> -ndays <num> -net <networks> -archive <archive> -ftp_prog <ftp/ncftp> -htype <htype> "
+  echo "  "
+  echo "        <yr> 4 char year of hfile requested  [Required] "
+  echo "        <doy> 3 char day of year of hfile requested [Required] " 
+  echo "        <num> Number of consecutive days of hfiles to retreive [Default 1] "
+  echo "        <networks> List of networks to be retreived from the ftp archive [Default igsall] "
+  echo "        Network choices: "
+  echo "          MIT  - combined binary from MIT processing (MIT archive) [default] "
+  echo "          SIO  - combined MIT binary from SOPAC operational (mixed relative/absolute PCV) processing (MIT archive, not recommended) "
+  echo "          igsall - all 'igs' ascii h-files from SOPAC reprocessing  (SOPAC hfiles2 archive)"
+  echo "          all - all ascii h-files from SOPAC reprocessing (old 'ALL' still works) "
+  echo "          one or more ascii h-files from SOPAC reprocessing, listed by 4-character network name"
+  echo "        <archive> - ftp site for retrieval of h-files; there is currently no duplication, so"
+  echo "            the archive is assigned by the script based on the network selection(s)"
+  echo "        <ftp/ncftp> choose the ftp program to be used [default is ftp]"
+  echo "        <htype> - using'hfiles' or 'hfiles_old' with lowercase 'net' allows downloading of older SOPAC solutions using"
+  echo "                  relative PCVs; not recommended due to the W1400 discontinuity and poorer orbits"
+  echo " "
+  echo " Examples: sh_get_hfiles -yr 1999 -doy 246 "
+  echo "           sh_get_hfiles -yr 1999 -doy 246 -ndays 5 -net igsall eura emed "
+  echo "  "
+  echo "===================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+#
+set year = ''
+set yr = ''
+set doy = ''
+set gpsw = ''
+set site = ''
+set numd = 1
+set archive = ''
+set htype = hfilesm
+set netlist = 'MIT'
+set mailto = `whoami`
+set machine = `hostname`
+set ftp_prog = 'ftp -inv'
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -nd*:
+      set numd = $input[2] 
+    breaksw 
+    case -y*:
+      set year = $input[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+      set yr = `sh_year -year $year`
+    breaksw 
+    case -d*:
+      set doy = $input[2]  
+    breaksw 
+    case -ne*:
+       set netlist = (`echo $argv | cut -d- -f2`); shift netlist 
+    breaksw
+    case -f*:
+      set ftp_prog = $input[2]  
+    breaksw 
+    breaksw 
+    case -a*:
+      set archive = $input[2]  
+    breaksw 
+    case -ht*:
+      set htype = $input[2]  
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+
+# Added by MAF (2017-11-19, MIT) to check if ftp is aliased or linked to gftp on local machine
+# Appended by MAF (2018-06-07, MIT) to check if ftp is missing, e.g. on macOS High Sierra
+if ( `echo $ftp_prog | awk '{print $1}'` == 'ftp' && `ftp -v << quit` != '' ) then
+  if ( `which ncftp` =~ '*ncftp' ) then
+    set ftp_prog = 'ncftp'
+    echo 'ftp command aliased or linked to gftp; trying ncftp instead'
+  else if ( `which wget` =~ '*wget' ) then
+    set ftp_prog = 'wget'
+    echo 'ftp command aliased or linked to gftp; trying wget instead'
+  endif
+else if ( `echo $ftp_prog | awk '{print $1}'` == 'ftp' && `which ftp` !~ '*ftp' ) then
+  if ( `which ncftp` =~ '*ncftp' ) then
+    set ftp_prog = 'ncftp'
+    echo 'ftp command not found; trying ncftp instead'
+  else if ( `which wget` =~ '*wget' ) then
+    set ftp_prog = 'wget'
+    echo 'ftp command not found; trying wget instead'
+  endif
+endif
+
+#################### SET THE ARCHIVE ####################################### 
+
+if ( "$netlist[1]" == 'MIT' ) then
+   set archive = 'mit'   
+   set htype = 'hfilesm'  
+else if ( "$netlist[1]" == 'SIO' ) then 
+   set archive = 'mit'
+   set htype = 'hfiless'
+else                   
+   set archive = 'sopac'   
+   set htype = 'hfiles2'
+endif
+
+##################### READ THE FTP_INFO TEMPLATE ############################    
+
+
+# 
+echo "ftp_info = sh_get_ftp_info -archive $archive -type hfiles"
+set ftp_info = `sh_get_ftp_info -archive $archive -type $htype`
+if( $status != 0 ) then
+  echo "Failure in sh_get_ftp_info. -- sh_get_hfiles terminated"   
+  exit 1
+endif
+
+while ($#ftp_info > 0 )
+  set input = ( $ftp_info )
+  switch($input[1])
+    case -ftpsite:
+      set ftpsite  = $input[2]  
+    breaksw 
+    case -ftplogin:
+      set ftplogin  = (`echo $ftp_info | cut -d- -f2`); shift ftplogin 
+    breaksw 
+    case -ftpdir:
+      set ftpdir  = $input[2]  
+    breaksw 
+    case -ftpcmd:
+      set ftpcmd  = (`echo $ftp_info | cut -d% -f2`); shift ftpcmd  
+    breaksw 
+  endsw
+  if ( $#ftp_info > 0 ) shift ftp_info
+end
+
+echo "Information extracted from ftp_info"
+echo "########################################"
+echo "ftpsite $ftpsite"
+echo "ftplogin $ftplogin"
+echo "ftpdir $ftpdir"
+echo "ftpcmd $ftpcmd"
+echo "########################################"
+
+##################### GET THE JOB DONE ############################
+# Set timestamp hostname variable
+set ts = "`hostname`:`date +"%H%M%S"`"
+
+# Check all required info given.
+if ( "$year" == '' ||  "$doy" == '' ) then
+  echo "sh_get_hfiles: Not all required fields given -- yr: $year doy: $doy --Stop"
+  exit
+endif
+
+# Check if ncftp is requested
+if ( "`echo $ftp_prog | awk '{print $1}'`" == 'ncftp' ) then
+  if ("`echo $ftpcmd | awk '{print $1}'`" == 'ftp') then
+    set ftpcmd = `echo $ftp_prog $ftpsite` 
+    echo "-ftp_prog = ncftp requested, ftpcmd now: $ftpcmd" 
+  endif
+endif
+
+# Check netlist. If blank get all SOPAC ascii h-files 
+if ( "$netlist[1]" == '' ) then 
+  set netlist = 'all'
+endif                 
+# allow the old token for all SOPAC ascii h-files
+if( "$netlist[1]" == "ALL" ) then
+  set netlist = 'all'
+endif
+
+# Setup session start and stop times
+set jds   = `doy $yr[1] $doy | tail -n -3 | head -n 1 | awk '{print $8}'`
+set mjds  = `doy $jds | tail -n -3 | head -n 1 | awk '{printf "%6d \n", $10}'`
+set jde   = `echo $jds $numd | awk '{print $1+$2}'`
+set mjde  = `doy $jde | tail -n -3 | head -n 1 | awk '{printf "%6d \n", $10}'`
+set years  = `doy $mjds | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+set days   = `doy $mjds | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+set yeare  = `doy $mjde | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'`
+set daye  = `doy $mjde | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+
+# Set up the iteration
+#@ count = $numd
+@ count = `echo "ibase=10; ${numd}" | bc`
+#@ mjdc = ${mjds} - 1
+@ mjdc = `echo "ibase=10; ${mjds} - 1" | bc`
+
+
+while ( $count )
+   @ mjdc = ${mjdc} + 1
+   set sday   = `doy $mjdc | tail -n -3 | head -n 1 | awk '{printf "%03d \n", $6}'`
+   set year   = `doy $mjdc | tail -n -3 | head -n 1 | awk '{printf "%04d \n", $2}'` 
+   set ymd    = `doy $mjdc | tail -n -3 | head -n 1 | awk '{print $2}' | awk -F"/" '{print $1, $2, $3}'`
+   set yr = `sh_year -year $year`
+   @ count = $count - 1   
+
+# Set up the ftp login info
+   if ( "$ftpcmd[1]" == 'ftp' ) then 
+     echo "user $ftplogin" >! tmp.get.$ts  
+     echo 'binary' >> tmp.get.$ts
+     set getcmd = 'get'
+   else
+     echo 'binary' >! tmp.get.$ts
+     set getcmd = 'get -f'
+   endif
+
+# See if the files already exist
+   echo List >! tmp.1.$ts
+
+# Get sites included in the list (netlist) to be retrieved
+   foreach net ( `echo $netlist` )
+     if ( "$net" == 'MIT' ) then
+       if( ! -e H${yr[2]}${sday}_${net}.GLX ) then
+         echo "mget H${yr[2]}${sday}_*.GLX" >> tmp.1.$ts 
+       endif 
+     else if ( "$net" == 'SIO' ) then        
+       if( ! -e H${yr[2]}${ymd[2]}${ymd[3]}_${net}.GLX ) then
+         echo "mget H${yr[2]}${ymd[2]}${ymd[3]}_*.GLX" >> tmp.1.$ts 
+       endif                            
+     else if ( "$net" == 'igsall' ) then
+       echo "mget higs*a.${yr[2]}${sday}.Z" >> tmp.1.$ts
+     else if ( $net == "all" ) then   
+       echo "mget h*a.${yr[2]}${sday}.Z" >> tmp.1.$ts
+     else                   
+       if( ! -e h${net}a.${yr[2]}${sday} && ! -e h${net}a.${yr[2]}${sday}.Z ) then
+         echo "$getcmd h${net}a.${yr[2]}${sday}.Z" >> tmp.1.$ts
+       endif
+     endif     
+   end
+             
+   set num = `wc tmp.1.$ts`
+   if ( $num[1] > 1 ) then
+  
+# Setup logfile name
+set log = `date "+get_hfiles_${archive}_%y%m%d:%H%M.log"` 
+touch $log
+
+# Get the files: set up the ftp   
+
+set log = `date "+get_hfiles_${archive}_%y%m%d:%H%M.log"` 
+touch $log
+
+
+     set directory = `echo $ftpdir | sed s/"YYYY"/$yr[1]/ | sed s/"YY"/$yr[2]/ | sed s/"DDD"/${sday}/ | sed s/"SSSS"/${site}/ | sed s/"GPSW"/${gpsw}/ `
+     echo "cd $directory"  >> tmp.get.$ts
+     tail -n +2 tmp.1.$ts >> tmp.get.$ts
+     echo 'quit' >> tmp.get.$ts
+     cat tmp.get.$ts >> $log
+     echo ' ' >> $log    
+     echo '--------------------' >> $log
+
+# MOD TAH 980520: Repeat the get.
+     set cnt = 5
+     set try = 0
+     while ( $cnt ) 
+       @ cnt = $cnt - 1
+       @ try = $try + 1
+       echo "Try ${try}: Getting hfiles for day ${sday} from ${ftpsite}"
+       echo "Networks being downloaded: ${netlist}" 
+       $ftpcmd < tmp.get.$ts | grep -v '^220' >! tmp.log.$ts
+       cat tmp.log.$ts >> $log
+      
+#      See if seems OK
+       grep 'Not connected' tmp.log.$ts >! tmp.test.$ts
+       set chk = `wc tmp.test.$ts`
+       if( $chk[1] == 0 ) then
+         set cnt = 0
+       else
+         sleep 600
+       endif
+     end
+      
+# Remove any zero length files.
+     (ls -s  h*a.${yr[2]}${sday} | awk '{if ( $1 == 0 ) {print "\\rm "$2}}' >! rm.cmd) >& /dev/null
+     csh rm.cmd
+
+   else
+   echo "All requested hfiles exist."
+   endif
+
+# End loop over days  
+end 
+
+# Tidy up a bit
+#\rm tmp.1.$ts tmp.get.$ts tmp.log.$ts tmp.test.$ts rm.cmd >& /dev/null
+
+# Thats all.
+exit
+

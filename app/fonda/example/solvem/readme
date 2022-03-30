@@ -1,0 +1,6 @@
+1. ngs triangulation data with constraints is solvem.ngs.dat.
+   fonda/solvem solution is solvem.ngs.out .res .str .map
+   dynap solution is dynap.ngs.out.
+   The comparision shows that the strain rate solutions are very
+   close.  Meanwhile the site coordinate corrections are 
+   different.  Why?

@@ -1,0 +1,107 @@
+#!/bin/csh -f 
+#
+#doc Creates an autcln.cmd.prefit and autcln.cmd.postfit from an autcln.cmd file
+#doc
+#
+######################## INSTRUCTIONS #############################
+if ( $#argv == 0 ) then
+  echo "======================================================================================="
+  echo "  Create autcln.cmd.prefit and autcln.cmd.postfit from a specified autcln.cmd basefile"
+  echo "  "
+  echo "  USAGE :    sh_autedit -base <file> -postfit -autecl <options> "
+  echo "  "
+  echo "          <file> autcln.cmd base file containing pre and post fit editing commands"
+  echo "  "
+  echo "          <options> input options to program autecl "
+  echo "  "
+  echo "  Example :   sh_autedit -base autcln.cmd -postfit -autecl yigsft.123 123 Y 30 "
+  echo "  "
+  echo "======================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+set base    = "autcln.cmd"
+# Option to remove clocks no longer supported (not needed with autcln)
+# set avedit  = "N"
+set autecl  = "N"
+set postfit = "N"
+set use_postfit = ""
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+		breaksw 
+       case -b:
+       case -base:
+                set base      =   $input[2]  
+		breaksw 
+#       case -av:
+#	    case -avedit:
+#                set avedit    =   "Y"  
+# 		breaksw 
+       case -p:
+	    case -post
+	    case -postfit:
+                set postfit    =   "Y"  
+ 		breaksw 
+       case -au:
+	    case -autecl:
+                set autecl    =   "Y"  
+                set yfile     =   $input[2]  
+                set adoy      =   $input[3]  
+                set eclipse   =   $input[4]  
+                set post_ecl  =   $input[5]  
+ 		breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ######################
+
+# Keep a copy of the original autcln.cmd base file and make a 
+# generic autcln.cmd file that will be modified by autecl 
+
+if ( -e tmp.autcln.cmd ) \rm tmp.autcln.cmd
+
+if ( -e $base ) then
+  \cp $base tmp.autcln.cmd
+else 
+  touch tmp.autcln.cmd 
+endif
+
+# Run avedit and autecl if requested....
+
+if ( $autecl == "Y" ) then
+  echo " "                                           >> tmp.autcln.cmd
+  autecl $yfile  $adoy $eclipse $post_ecl            >> tmp.autcln.cmd
+endif
+# if ( $avedit == "Y" ) then
+#  echo " " >> tmp.autcln.cmd
+#  avedit   >> tmp.autcln.cmd
+# endif
+
+# Now generate the autcln.cmd.prefit and antcln.cmd.postfit command files
+
+cat tmp.autcln.cmd | awk ' substr($0,1,1) != "p" && substr($0,1,1) != "P" {print $0}' >! autcln.cmd.prefit
+if ( $postfit == "Y" ) then 
+  \cp autcln.cmd.prefit autcln.cmd.postfit
+  echo " "                                         >> autcln.cmd.postfit
+  echo "####### POSTFIT editing commands ####### " >> autcln.cmd.postfit
+#  cat tmp.autcln.cmd | awk ' substr($0,1,1) == "p" || substr($0,1,1) == "P" {print " ",$2,$3,$4,$5,$6,$7,$8,$9,$10}' >> autcln.cmd.postfit
+# Use substr to make we get all of line (assumes POST used)
+  cat tmp.autcln.cmd | awk ' substr($0,1,1) == "p" || substr($0,1,1) == "P" {print substr($0,5)}' >> autcln.cmd.postfit
+# Check to see if postfit editing command is issued. If not add it....
+#  set use_postfit = ` cat autcln.cmd.postfit | grep -i use_postfit | tr  'A-Z' 'a-z' | awk '{print $1}'`
+  set use_postfit = ` cat autcln.cmd.postfit | grep -i use_postfit | awk '{if ($1 != "#") print $1}'  `
+  if ( $use_postfit[1] == "" ) then
+    echo " use_postfit" >> autcln.cmd.postfit  
+  endif
+endif 
+
+# Remove the modified autcln.cmd 
+
+\rm tmp.autcln.cmd   
+
+# Thats it....
+
+exit

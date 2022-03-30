@@ -1,0 +1,32 @@
+#!/bin/csh -f      
+
+# Translate Trimble t00, t01, T00, or T01  files to dat files for an 
+# entire directory.  
+
+ foreach i (`ls -1 *.t00`)
+  /chandler/home/tah/bin/runpkr00 -d -g $i
+ end
+
+ foreach i (`ls -1 *.t01`)
+  /chandler/home/tah/bin/runpkr00 -d -g  $i
+ end
+       
+ foreach i (`ls -1 *.t02`)
+  /chandler/home/tah/bin/runpkr00 -d -g  $i
+ end
+
+ foreach i (`ls -1 *.T00`)
+  /chandler/home/tah/bin/runpkr00 -d -g $i
+ end
+
+ foreach i (`ls -1 *.T01`)
+  /chandler/home/tah/bin/runpkr00 -d -g $i
+ end   
+
+ foreach i (`ls -1 *.T02`)
+  /chandler/home/tah/bin/runpkr00 -d -g $i
+ end             
+
+exit
+
+

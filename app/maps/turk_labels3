@@ -1,0 +1,54 @@
+29.0 	39.3   	12   0  7   9   ANATOLIAN PLATE
+#31.0 	39.3   	12   0  7   9   ANATOLIAN
+#35.3 	39.3   	12   0  7   9   ANATOLIAN
+35.3 	39.3   	12   0  7   9   PLATE
+20 	43    	14   0  7   9   EURASIAN   PLATE
+#20 	44    	14   0  7   9   EURASIAN   PLATE
+#22 	43    	14   0  7   9   EURASIAN   PLATE
+#41 	44.5    14   0  7   9   EURASIAN   PLATE
+38 	35    	14   0  7   9   ARABIAN   PLATE
+#39 	31.5   	14   0  7   9   ARABIAN   PLATE
+#20.5 	29.75  	14   0  7   9   AFRICAN  PLATE
+#22 	34    	14   0  7   9   AFRICAN  PLATE
+20.5 	31.25  	14   0  7   9   AFRICAN  PLATE
+26.05  41.35   12   0  7   9   Marmara Sea
+30.0 	42.5   	12   0  7   9   Black Sea 
+#37.5 	42.5   	12   0  7   9   Black Sea 
+#48.0 	43.0    12   0  7   9   Caspian Sea 
+#47.0 	44.75   12   0  7   9   Caspian Sea 
+47.0 	44.75   12   0  7   9   Caspian
+47.5 	44.25   12   0  7   9   Sea 
+26 	33.5   	12   0  7   9   Mediterranean  Sea 
+24 	36.5   	12   0  7   9   Aegean  Sea 
+#32 	41.1   	08  15  1   9   North 
+#34 	41.5   	08 -05  1   9   Anatolian 
+#37 	41.0   	08 -30  1   9   Fault
+#38 	40.7   	08 -24  1   9   North Anatolian F.
+31 	40.8   	08  15  1   9   North Anatolian F.
+36.7 	37.93  	08  27  1   9   East Anatolian F.
+40.5   40.5    08  33  1   9   NE. Anatolian F.
+36.6	33.68	08  90  1   9   Dead Sea F.
+38.09	37.69 	08  20  1   9   Bitlis
+40.09	38.19 	08   0  1   9   Zagros  
+42.    37.9 	08 -30  1   9   Thrust and Fold Belt 
+22.3	35.8	08 -40  1   9   Hellenic Arc 
+42	    43	    08 -10  1   9   Greater       Caucasus
+31.24  36.15	08 -35  1   9   Cyprean Arc
+44	    41.7	08 -35  1   9   Lesser Caucasus
+30 	35.15	08 -20  1   9   Florence Rise
+#42.80  38.5	06   0  1   9   Lake Van
+#33.8	39.25 	06   0  1   9   Salt Lake  
+# 28.5  38.7    10  0  1   9   G
+# 28.5  37.9    10  0  1   9   B
+ 26.7  36.9    10  0  1   9   GG
+ 41.5  39.3    08  0  1   9   KTJ
+# 35.1  36.4    10  0  1   9   GI
+ 22.8  38.2    10  0  1   9   GC
+# 20.6  38.3    10  45 1   9   KFZ
+# 44.0  42.0    08  30 1   9   B-K
+ 34 	27.5   	12  0  7   9   Red  Sea 
+ 32.45  29.7    10  0  1   9   GS
+ 34.75  29.2    10  0  1   9   GA
+ 28.0   38.3    10  0  1   9   B-M
+ 23.5   37.8    10  0  1   9   GS
+ 25.0   40.3    10  20 1   9   NAT

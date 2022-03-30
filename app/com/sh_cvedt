@@ -1,0 +1,49 @@
+#!/bin/csh -e    
+#
+#doc Extract autcln edit lines from the CVIEW summary file vcview.out
+#doc
+#
+# By Simon McClusky MIT APRIL 1995.
+if ( $#argv == 0 ) then
+  echo "==================================================================="
+  echo "  SH_CVEDT is a script for extracting autcln edit lines from the " 
+  echo "               CVIEW summary file vcview.out file. " 
+  echo "  "
+  echo "  USAGE :    sh_cvedt -file <file> "
+  echo "  "
+  echo "          <file> is the file to append the autcln edit commands to"
+  echo "  "
+  echo "  Example :   sh_cvedt -file autcln.cmd "
+  echo "  "
+  echo "======================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+set file    = "NONE"
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+		breaksw 
+       case -f:
+       case -file:
+                set file      =   $input[2]  
+		breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ######################
+
+sort vcview.out >! vcview.sort 
+ 
+if ( -e $file ) then
+  cvedt vcview.sort >> $file
+else
+  cvedt vcview.sort >! $file
+endif 
+
+echo "  "
+echo " New edit lines written to the file: "$file
+echo "  " 
+exit

@@ -1,0 +1,37 @@
+# Generic Makefile for kf/globk (globs) - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King July 30, 1996
+
+#LABELS: globs:globk:globk_lib:globs
+
+#SHARELIB: ../Khandlers:KalObs_hndl_lib  
+#SHARELIB: ../gen_util:gen_util_lib
+#SHARELIB: ../../libraries/matrix:kinv_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+
+#OBJ_globk_lib    decode_globk
+#OBJ_globk_lib    decode_prt
+#OBJ_globk_lib    proper_glb_r
+#OBJ_globk_lib    read_glb_mar
+#OBJ_globk_lib    process_glb_
+#OBJ_globk_lib    assign_ema_v
+#OBJ_globk_lib    run_glinit
+#OBJ_globk_lib    run_glfor
+#OBJ_globk_lib    run_glsave
+#OBJ_globk_lib    run_glbak
+#OBJ_globk_lib    run_glout
+#OBJ_globk_lib    run_glorg
+#OBJ_globk_lib    gen_org_name
+#OBJ_globk_lib    get_apr_posi
+#OBJ_globk_lib    try_upd_apr
+#OBJ_globk_lib    glb_param_li
+#OBJ_globk_lib    clear_glb_pa
+#OBJ_globk_lib    glb_par_coun
+#OBJ_globk_lib    check_trans
+#OBJ_globk_lib    check_glb_ma
+#OBJ_globk_lib    globk_header
+#OBJ_globk_lib    glfor_mem
+#OBJ_globk_lib    glb_for_map
+#OBJ_globk_lib    glb_bak_map
+#OBJ_globk_lib    globk_extras
+#OBJ_globk_lib    decode_nonse
+#OBJ_globk_lib    add_GGV

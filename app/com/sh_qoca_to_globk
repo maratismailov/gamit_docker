@@ -1,0 +1,32 @@
+#!/bin/csh -f
+#
+#doc Convert QOCA velocity output file into GLOBK velocity summary format
+#doc
+#
+if ( $#argv == 0 ) then  
+  echo " " 
+  echo "Script file to convert QOCA velocity output file into GLOBK velocity summary format" 
+  echo "Example: sh_qoca_to_globk pre_la.dat"
+  echo " " 
+  exit
+endif 
+echo " " 
+echo "Arguments for sh_plotvel: " $argv 
+echo " " 
+# globk vel format 
+#
+# Long.     Lat.        E & N Rate      E & N Adj.      E & N +-   RHO        H Rate   H adj.    +-  SITE
+# (deg)    (deg)          (mm/yr)       (mm/yr)       (mm/yr)                 (mm/yr)
+# 241.827   34.205   -37.13   11.52   -4.74    2.31    0.53    0.42 -0.061     -8.16   -4.55    2.56 JPLM_GLA 
+# qoca vel format
+#  Long.     Lat.        E & N Rate        E & N Sig.     RHO      H Rate   H Sig.   RHO     RHO    SITE
+#  (deg)    (deg)          (mm/yr)          (mm/yr)                   (mm/yr)
+# 241.8268  34.2048  -29.889   23.651    1.280    1.109 -0.0206   -4.315  185.923  0.0027  0.0009  JPLM_GPS
+echo "-------------------------------------------------------------------------------" >! $1.vel
+echo " "  >> $1.vel
+echo "SUMMARY VELOCITY ESTIMATES created by sh_qoca_to_globk, from input file was: $1 "  >> $1.vel 
+echo "  Long.     Lat.        E & N Rate        E & N Adj.       E & N +-     RHO      H Rate   H adj.    +-   SITE " >> $1.vel
+echo " (deg)     (deg)         (mm/yr)           (mm/yr)          (mm/yr)                   (mm/yr) " >> $1.vel
+cat $1 | awk '{printf"%8.3f %8.3f %8.2f %8.2f %8.2f %8.2f %7.2f %7.2f %7.3f %9.2f %7.2f %7.2f %9s \n",$1,$2,$3,$4,0.0,0.0,$5,$6,$7,$8,0.0,$9,$12}' >> $1.vel    
+echo "Output GLOBK velocity summary format file created called: " $1.vel
+exit

@@ -1,0 +1,18 @@
+ Generic Makefile for cfmrg - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King  28 February 2008
+
+#LABELS: tform:tform:tform_lib:tform
+#LABELS: conv_xyz2geo:conv_xyz2geo:conv_xyz2geo_lib:conv_xyz2geo
+#LABELS: convertc:convertc:convertc_lib:convertc
+
+#SHARELIB: ../lib:gamit_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+
+#OBJ_tform_lib carsph  estimt 	estref	forsys	getcar  getcor  getcyl
+#OBJ_tform_lib	getgeo	getloc	getsname  getsph	gettfr 	putcar 
+#OBJ_tform_lib	putcyl	putgeo	putloc 	putsph	syminv	tf2ref 	tversn  
+
+#OBJ_conv_xyz2geo_lib putgeo getsname tversn    
+
+#OBJ_convertc_lib convertc_help carsph get_filetype read_glistf read_lfile read_velf 
+#OBJ_convertc_lib write_lfile write_velf write_kmlf 

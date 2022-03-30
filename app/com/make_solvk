@@ -1,0 +1,212 @@
+#!/bin/csh -e
+if ($#argv == 0) then
+   echo ' '
+   echo ' Create executables from the source code for the VLBI Kalman filter programs '
+   echo ' '
+   echo '    - call script unimake to update machine-dependent Makefiles '
+   echo "    - execute 'make' to compile and link the subroutines"
+   echo '    - recreate the links in the kf bin directory ' 
+   echo ' '
+   echo '    - **Warning: assumes the common and matrix libraries are current'
+   echo ' '
+   echo ' Useage:'
+   echo ' '
+   echo '   make_solvk target_dir'   
+   echo ' '  
+   echo '     where [target_dir] is the absolute path to the directory above /kf'
+   echo ' '
+   echo ' Example:'
+   echo ' '
+   echo '   make_solvk/home/me/kf '
+   echo ' '
+   exit
+else
+
+#
+# Script to make the VLBI analysis programs under kf 
+# analysis software system
+
+      
+echo ' '
+echo ++++++++++++++++++++++++++++++
+echo Making the SOLVK software 
+echo ++++++++++++++++++++++++++++++
+     
+# remember the target working directory  
+set TARGETDIR = $1/kf
+ 
+# first make (or check) the common libraries
+echo ++++++++++++++++++++++++++++++++++++++++++
+echo Make sure the common libraries are current
+echo ++++++++++++++++++++++++++++++++++++++++++
+echo " "
+cd $TARGETDIR
+cd ../libraries
+unimake -m comlib
+cd comlib; make
+cd ../
+unimake -m matrix
+cd matrix; make
+
+# then make the kf libraries    
+
+echo ++++++++++++++++++++++++++++++++++
+echo Making the Kalman filter libraries
+echo ++++++++++++++++++++++++++++++++++
+echo " "
+
+cd $TARGETDIR  
+unimake -m gen_util
+cd gen_util; make
+ 
+cd $TARGETDIR  
+unimake -m solvk_lib
+cd solvk_lib; make
+
+cd $TARGETDIR  
+unimake -m Khandlers
+cd Khandlers; make
+
+cd $TARGETDIR  
+unimake -m Ghandlers
+cd Ghandlers; make
+
+echo " "
+echo ++++++++++++++++++++++++++++++++++
+echo Making the Kalman filter programs 
+echo ++++++++++++++++++++++++++++++++++
+echo " "
+     
+cd $TARGETDIR  
+unimake -m readob
+cd readob; make
+
+cd $TARGETDIR  
+unimake -m hpk_to_unix
+cd hpk_to_unix; make
+
+cd $TARGETDIR  
+unimake -m solvk
+cd solvk; make
+
+cd $TARGETDIR  
+unimake -m kalgn
+cd kalgn; make
+
+cd $TARGETDIR  
+unimake -m kalupd
+cd kalupd; make
+
+cd $TARGETDIR  
+unimake -m forsl
+cd forsl; make
+
+cd $TARGETDIR  
+unimake -m baksl
+cd baksl; make
+
+cd $TARGETDIR  
+unimake -m outsl
+cd outsl; make
+
+cd $TARGETDIR  
+unimake -m savsl
+cd savsl; make
+
+cd $TARGETDIR  
+unimake -m kalan
+cd kalan; make
+
+cd $TARGETDIR  
+unimake -m kalsum
+cd kalsum; make
+
+cd $TARGETDIR  
+unimake -m sort_kalobs
+cd sort_kalobs; make
+
+cd $TARGETDIR  
+unimake -m convert_kalobs
+cd convert_kalobs; make    
+
+cd $TARGETDIR  
+unimake -m readin
+cd readin; make
+
+# Utility programs
+
+cd $TARGETDIR  
+unimake -m clock_break
+cd clock_break; make
+
+cd $TARGETDIR  
+unimake -m dblist
+cd dblist; make
+
+cd $TARGETDIR  
+unimake -m kalred
+cd kalred; make
+
+cd $TARGETDIR  
+unimake -m update_db
+cd update_db; make
+
+cd $TARGETDIR  
+unimake -m kdl
+cd kdl; make
+
+cd $TARGETDIR  
+unimake -m ambi
+cd ambi; make
+
+cd $TARGETDIR  
+unimake -m ptoc
+cd ptoc; make
+
+# The following includes  edit_ext  getrel  plate      genrelref    apr_to_vel
+#                         corcom    velcom  gapr_to_l  mit_to_iers  gen_ssu   gen_sng
+#                         glbtog    doy     unify_svs  unify_apr    edit_val 
+#                         calc_ion  kedit   
+cd $TARGETDIR  
+unimake -m utils
+cd utils; make
+
+cd $TARGETDIR  
+unimake -m svpos
+cd svpos; make
+
+cd $TARGETDIR  
+unimake -m update_pmu
+cd update_pmu; make
+
+# For plot, first make g1000 (NCAR) or x1000 (X-windows) library and then plot  
+cd $TARGETDIR/plot  
+unimake -m g1000
+cd g1000; make
+cd $TARGETDIR/plot
+unimake -m x1000
+cd x1000; make
+cd $TARGETDIR
+unimake -m plot
+cd update_pmu; make
+
+
+# Now remake the links
+
+echo " "
+echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+echo Remaking the links from ../bin to the executables
+echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+echo " "
+
+cd $TARGETDIR/bin
+csh remake_links
+
+# Done
+echo ''
+echo ++++++++++++++++++
+echo SOLVK installed 
+echo ++++++++++++++++++
+echo ''
+
+endif

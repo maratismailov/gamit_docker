@@ -1,0 +1,72 @@
+#!/bin/csh -f
+#
+# Script to concatenate met files for PBO product
+#
+# Written by Mark Murray
+# Last modified 2009/09/22
+#
+if ( $#argv == 0  || `echo $1 | cut -c2-` == "help"   ) then
+echo " "
+echo " Script to concatenate met files for PBO product"
+echo " "
+echo " Basic usage : "
+echo " "
+echo "    sh_met2pbo -o output_file -f input_met_file(s)"
+echo " "
+echo " Options:"
+echo " "
+echo "    -o output_file: estimate lines from input files (required)"
+echo "                    lines are concatenated with station and network name appended"
+echo "                    PBO naming convention: nmt15476.20090905.b.met"
+echo " "
+echo "    -f input_met_file(s): met file(s) created by metutil (required)"
+echo " "
+exit
+endif
+
+##################### Set up the input option defaults  #######################################
+
+set output_file = ""
+set files = ()
+
+##################### Decipher the command line ###################################### 
+
+while ($#argv > 0 ) 
+  set input = ( $argv ) 
+  switch($input[1])
+        case -o:
+                set output_file        =  $input[2]
+                breaksw
+        case -f:
+                set files  = (`echo $input | cut -d- -f2`); shift files
+                breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+
+##################### Test the command line ###################################### 
+
+if ( $output_file == "" ) then
+  echo "Must provide output file name"
+  exit
+endif
+
+if ( $#files == 0 ) then
+  echo "Must provide input file name(s)"
+  exit
+endif
+
+##################### Do It ###################################### 
+
+# Header line
+awk 'NR == 4 {print $0, " Site  Net"}' $files[1] >! $output_file
+
+# Estimate lines
+foreach f ( $files )
+  set site = `awk 'NR == 3 {print toupper(substr($5,2,4))}' $f`
+  set net  = `awk 'NR == 3 {print toupper(substr($4,2,4))}' $f`
+  awk -v site=$site -v net=$net 'NR > 4 {print $0, "     ", site, net}' $f >> $output_file
+end
+
+##################### That's all folks ###################################### 
+exit

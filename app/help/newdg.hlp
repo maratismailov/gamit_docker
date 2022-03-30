@@ -1,0 +1,33 @@
+NEWGD: VLBI program to remove channels from group delay calculation
+
+NEWGD recalculates the group delay observable using a subset of 
+the mulitband phase data.  The new group delay (and its standard
+deviation) are stored in the KalObs files and solutions may be
+run using these data. 
+  
+The runstring is: 
+  
+CI> newgd <KalObs> <Site1> <Site2> <Channel1> <Channel2> ...
+  
+where <KalObs>    is the name of the KalObs data file;
+      <Site1>     is the first site in the baseline(s) to be
+                  processed (may be 'ALL')
+      <Site2>     is the second site (may be 'ALL') 
+      <ChannelN>  is the channel number (e.g., 1-8 for X-Band) for the
+                  Nth channel whose phase data are to be omitted from 
+                  the calculation for the group delay.  No channels 
+                  given indicates use all the data. 
+  
+  
+Examples: 
+  
+CI> newgd k4924l::53 haystack mojave 2
+  
+(Calculate the group delays for the Haystack-Mojave data omitting 
+channel 2 data for KalObs file K4924l::53)
+  
+CI> newgd k6716l::53 haystack all 
+  
+(Calculate the group delays for all baselines involving Haystack
+and use all channels for KalObs file K6716L::53)
+ 

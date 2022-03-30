@@ -1,0 +1,19 @@
+GPS_ADD_TAB: Not used
+
+PROGRAM  gps_add_tab
+ 
+Simple little program to read the apriori pole position
+extracted from an s-file, and add to it the correction
+to the pole position from GPS GLOBK run.  The program first
+reads in all of the tabluar values, then as it reads the
+adjustments it interpolates/extrapolates to the epoch of
+the GPS value and writes out the values in IRIS format.
+
+Runstring:
+% gps_add_tab <input tables> <input adjusts>
+
+where <input tables> is tabular values extracted from s-files
+and <input adjusts> is the pole postion adjustmenst from globk.
+
+Output is to std out.
+

@@ -1,0 +1,14 @@
+APR_TO_VEL: Converts globk apriori file to globk velocity file
+
+apr_to_vel: Program to produce a standard velocity model output
+            from a globk input apriori file.
+
+Runstring:
+% apr_to_vel <input .apr file> <output velocity file>
+
+where <input .apr file> is globk input apriori file with Cartesian
+       XYZ and Xdot Ydot Zdot and epoch year.
+      <output velocity file> is an output velocity field with long
+      lat and E and N velocities.  (Same format as velocity summary
+      option in globk output).
+

@@ -1,0 +1,28 @@
+# Generic Makefile for kf/glinit - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King July 23, 1996
+   
+#LABELS: glinit:glinit_main:glinit_lib:glinit
+
+#SHARELIB: ../globk:globk_lib
+#SHARELIB: ../Khandlers:KalObs_hndl_lib  
+#SHARELIB: ../gen_util:gen_util_lib
+#SHARELIB: ../../libraries/matrix:kinv_lib
+#SHARELIB: ../../libraries/comlib:com_lib
+
+#OBJ_glinit_lib     glinit
+#OBJ_glinit_lib     decode_glini
+#OBJ_glinit_lib     save_epoch
+#OBJ_glinit_lib     save_apr_val
+#OBJ_glinit_lib     get_aprioris
+#OBJ_glinit_lib     save_apr_inf
+#OBJ_glinit_lib     check_apr
+#OBJ_glinit_lib     sort_epochs
+#OBJ_glinit_lib     sort_apriori
+#OBJ_glinit_lib     sort_eq
+#OBJ_glinit_lib     write_sort
+#OBJ_glinit_lib     global_init
+#OBJ_glinit_lib     solution_inf
+#OBJ_glinit_lib     emasize
+#OBJ_glinit_lib     read_eq_file
+#OBJ_glinit_lib     upd_svs_file
+#OBJ_glinit_lib     glb_glnt_mem

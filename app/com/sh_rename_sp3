@@ -1,0 +1,220 @@
+#!/bin/bash
+
+# Redirect standard error to /dev/null
+#exec 2>/dev/null
+
+
+version='2017/11/19'
+
+
+flags='cdflr'  # Command line option flags
+
+
+# Default variables
+tmp='.'      # Temporary directory in which to compare SP3 files
+dir='.'      # Directory in which to place symbolic links (-l option) [default], copies (-c option) or renames (-r option)
+copy='0'     # Copy long-name SP3 file(s) to short name(s) instead of creating symbolic link [default]
+rename='0'   # Rename (move) long-name SP3 file(s) to short name(s) instead of creating symbolic link [default]
+
+
+# Null input test
+if [ $# -eq 0 ]; then
+  cat << END && exit 1
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+  Program:     $(basename $0)
+  Written by:  Michael A Floyd (2017/11/19, MIT)
+  Last edited: Michael A Floyd ($version, MIT)
+
+  Usage: $(basename $0) -f <SP3 files with long names> <options>
+
+  Options:
+
+    -d : Directory in which to place symbolic links (see -l option), copies (see
+         -c option) or renamed files (see -r option) with short SP3 file naming
+         convention [default: current working directory].
+    -c : Create copies of long SP3 with short SP3 file name(s).
+    -l : Create symbolic links from long SP3 to short SP3 file name(s)
+         [default].
+    -r : Rename (move) long SP3 to short SP3 file name(s).
+
+  Description:
+
+  $(basename $0) creates symbolic links [default], copies or renames (moves)
+  SP3 files using the long file naming convention to a file using the short file
+  name convention. The -c and -r options are mutually exclusive: the -c option
+  has higher predendence and therefore files will be copied, not renamed, if
+  both the -c and -r options are given.
+
+  Long SP3 file names are of the form AAANSSSOOO_YYYYDDDHHMM_*.SP3[.X], where
+  AAA is the analysis center (e.g. "COD" for CODE), N is a single digit (e.g.
+  0), SSS is the GNSS system (e.g. MGX for multi-GNSS experiment), OOO is the
+  orbit type (e.g. "FIN" for final), YYYY is the four-digit year, DDD is the
+  three-digit ordinal date; HH is the two-digit hour, MM is the two-digit
+  minute, and [.X] is the file extension if compressed.
+
+  Short SP3 file names are of the form aaaGPSWD.sp3[.X], where aaa is the
+  analysis center and GNSS system (e.g. "com" for CODE multi-GNSS experiment),
+  GPSW is the four-digit GPS week, D is the single-digit day-of-week, and [.X]
+  is the file extension if compressed.
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+END
+fi
+
+
+# Parse command line options
+while [ $# -gt 0 ]; do
+
+  case $1 in
+
+    -c )  # Copy files
+
+      copy=1
+      ;;
+
+    -d )  # Directory in which to place symbolic links, copies or renamed files
+
+      d_args=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-d *//') )
+      if [ ${#d_args[@]} -eq 0 ]; then
+        echo '! Warning ! No arguments given to -d option. Using current working directory...'
+      elif [ ${#d_args[@]} -eq 1 ]; then
+        dir="${d_args[0]}"
+      elif [ ${#d_args[@]} -gt 1 ]; then
+        dir="${d_args[0]}"
+        echo "! Warning ! Too many arguments (${#d_args[@]}) given to -d option."
+        echo "            Using first argument ($dir)..."
+      fi
+      ;;
+
+    -f )  # Input SP3 files with long names
+
+      files=( $(echo "$*" | awk -v FS=" -[$flags]" '{print $1}' | sed 's/^-f *//') )
+      ;;
+
+    -l )  # Create symbolic links
+
+      copy=0
+      rename=0
+      ;;
+
+    -r )  # Rename files
+
+      rename=1
+      ;;
+
+  esac
+
+  shift
+
+done
+
+
+# Loop over SP3 files with long names for analysis center on ordinal date
+for sp3long in $(ls ${files[@]} 2>/dev/null); do
+
+  # Define analysis center ID for short SP3 file name
+  case ${sp3long:0:10} in
+    COD0MGXFIN )
+      ac='com'
+      ;;
+    JAX0MGXFIN )
+      ac='qzf'
+      ;;
+  esac
+
+  # Define GPS week and day-of-week
+  gpsw="$(doy ${sp3long:11:4} ${sp3long:15:3} | awk '{if (NR == 2) print substr($0,11,4)substr($0,29,1)}')"
+
+  # Define short SP3 file name
+  if [ "${sp3long##*.}" = 'SP3' -o "${sp3long##*.}" = 'sp3' ]; then
+    sp3short="$dir/$ac$gpsw.sp3"
+  else
+    sp3short="$dir/$ac$gpsw.sp3.${sp3long##*.}"
+  fi
+
+  if [ $copy -eq 1 ]; then  # Copy SP3 file with long name to short name
+
+    # Test if a regular file with short SP3 file name already exists
+    if [ ! -f $sp3short ]; then  # Copy SP3 file with long name to short name
+      \cp -f -p $sp3long $sp3short &&
+       echo "Copied $sp3long to $sp3short."
+    elif [ -f $sp3short ]; then  # Test if files are identical
+      case ${sp3long##*.} in
+        Z )
+          cmd='gzip -d -c -f'
+          ;;
+        gz )
+          cmd='gzip -d -c -f'
+          ;;
+        bz2 )
+          cmd='bzip2 -d -c -f'
+          ;;
+        xz )
+          cmd='xz -d -c -f'
+          ;;
+      esac
+      $cmd $sp3long | tr -d '\r' | sed 's/ *$//g' >| $tmp/sp3long.tmp
+      $cmd $sp3short | tr -d '\r' | sed 's/ *$//g' >| $tmp/sp3short.tmp
+      cmp $tmp/sp3long.tmp $tmp/sp3short.tmp
+      if [ $? -eq 0 ]; then
+        echo "$sp3short already exists and is identical to $sp3long."
+        rm -f $tmp/sp3long.tmp $tmp/sp3short.tmp
+      else
+        rm -f $tmp/sp3long.tmp $tmp/sp3short.tmp
+      fi
+    fi
+
+  elif [ $rename -eq 1 ]; then  # Rename (move) SP3 file with long name to short name
+
+    # Test if a regular file with short SP3 file name already exists
+    if [ ! -f $sp3short ]; then  # Rename (move) SP3 file with long name to short name
+      \mv -f $sp3long $sp3short &&
+       echo "Renamed $sp3long to $sp3short."
+    elif [ -f $sp3short ]; then  # Test if files are identical
+      case ${sp3long##*.} in
+        Z )
+          cmd='gzip -d -c -f'
+          ;;
+        gz )
+          cmd='gzip -d -c -f'
+          ;;
+        bz2 )
+          cmd='bzip2 -d -c -f'
+          ;;
+        xz )
+          cmd='xz -d -c -f'
+          ;;
+      esac
+      $cmd $sp3long | tr -d '\r' | sed 's/ *$//g' >| $tmp/sp3long.tmp
+      $cmd $sp3short | tr -d '\r' | sed 's/ *$//g' >| $tmp/sp3short.tmp
+      cmp $tmp/sp3long.tmp $tmp/sp3short.tmp
+      if [ $? -eq 0 ]; then
+        echo "$sp3short already exists and is identical to $sp3long."
+        rm -f $tmp/sp3long.tmp $tmp/sp3short.tmp
+      else
+        rm -f $tmp/sp3long.tmp $tmp/sp3short.tmp
+      fi
+    fi
+
+  else  # Create symbolic link from long SP3 file name to short file name [default]
+
+    cwd="$(pwd)"
+
+    # Test if a symbolic link with short SP3 file name already exists
+    if [ ! -e $sp3short ]; then
+      pushd $dir/ &>/dev/null && {
+       \ln -s -f $cwd/$sp3long $(basename $sp3short) &&
+        echo "Linked $sp3long to $sp3short."
+       popd &> /dev/null
+      }
+    elif [ -h $sp3short -a "$(ls -l $sp3short | awk -v FS='/' '{print $NF}')" = "$(basename $sp3long)" ]; then
+      echo "! Warning ! Symbolic link $sp3short already exists for $sp3long."
+    else
+      echo "! Warning ! Symbolic link $sp3short already exists (check $sp3long)."
+    fi
+
+  fi
+
+done  # END: Loop over SP3 files with long names for analysis center on ordinal date
+

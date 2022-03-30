@@ -1,0 +1,13 @@
+* Site list for defining plates
+   
+# Eurasia from Steblov et al. 2004 
+ plate eurasia vill_gps yakt_gps irkt_gps kstu_gps nril_gps artu_gps zwen_gps mets_gps kiru_gps 
+ plate eurasia bor1_gps graz_gps pots_gps wtzr_gps onsa_gps nyal_gps kosg brus_gps
+x plate eurasia vlad_gps 
+
+# S China 
+ plate schina shao_gps wuhn_gps chdu_gps swb1_gps lsc1_gps kfz1_gps 
+
+# Yunnan 
+ plate yunnan  bsc2_gps dlh3_gps sxd3_gps tac3_gps qlq1_gps olz3_gps 
+ plate yunnan  thz4_gps swb1_gps xsx1_gps kumn_gps lsc1_gps kfz1_gps xsj1_gps 

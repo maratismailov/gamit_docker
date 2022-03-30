@@ -1,0 +1,7 @@
+# Generic Makefile for kf/glred - see documentation at libraries/comlib/Makefile.generic
+# Last changed by R. King July 23, 1996
+  
+#LABELS: glred:glred:NONE:glred
+ 
+#SHARELIB: ../gen_util:gen_util_lib
+#SHARELIB: ../../libraries/comlib:com_lib

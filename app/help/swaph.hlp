@@ -1,0 +1,16 @@
+SWAPH: Swaps byte order in GLOBK h-file
+
+
+ PROGRAM SWAPH
+
+ Program to read a globk binary hfile and swap the byte order if necessary.
+ This is to allow hfiles generated on the linux and Dec systems to used on
+ the HP and Sun sytems and visa versa.  The version number of the hfile
+ is used to indicate that the bytes have been swapped.
+
+ This pogram replaces the hfile in place (i.e., the input files are overwritten
+ by the program).
+
+ Runstring
+% swaph <...list of hfiles to swap bytes in ...> 
+

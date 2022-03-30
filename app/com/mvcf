@@ -1,0 +1,16 @@
+#!/bin/csh -f
+# renaming cfiles 
+#
+# by peng fang, pfang@bull.ucsd.edu   04/11/91
+# 
+if ( $#argv < 1 ) then
+        echo "renaming cfile names"
+        echo "usage: mvcf x y   e.g. mvcf b c"
+        echo "       where x and y are the old and new 6th characters"
+        exit
+endif
+set DAY = `ls c?????.??? | awk '{print substr($1,8,3); exit}'`
+foreach  f (c????$1.$DAY)
+    set j = `basename $f $1.$DAY`$2.$DAY
+    mv $f $j
+end

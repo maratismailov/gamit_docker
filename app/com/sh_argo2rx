@@ -1,0 +1,66 @@
+#!/bin/csh
+#
+#doc Translates an NGS ARGO observation (.dat) file to one or more RINEX files
+#doc
+ 
+# R King  97/12/11
+if ($#argv == 0 ) then
+echo "   "
+echo "   "
+echo "Translate an NGS ARGO observation (.dat) file to one or more RINEX o files" 
+echo " "
+echo "   "
+echo " USAGE:  sh_argo2rx  -f <argo-file> -o  -apr <arp-file>  "
+echo "   "
+echo "         <argo-file>   name of input ARGO .dat file " 
+echo " "
+echo "         -o            overwrite any existing RINEX files with sesson # 0"
+echo "                       if omitted, increment the session number to avoid "
+echo "                       overwritting partial-day files; necessary because ARGO"
+echo "                       files sometimes span day boundaries.  In this case, " 
+echo "                       you should translate the ARGO files in chronological "
+echo "                       order."
+echo "  "
+echo "         <apr-file>    optional GLOBK .apr file for RINEX headers coordinates " 
+echo "   "
+echo "  NOTES:  If available, station.info and rcvant.dat will be read to get header "
+echo "          information. The station code used to name the output file and to read "
+echo "          station.info and the apr file is taken from the ARGO file name, so the "
+echo "          input files should be renamed correctly before running the script"
+echo "   "
+echo "  EXAMPLE:   sh_argo2rx -f wetm037x.dat  -apr emed_itrf94.apr "
+echo "   "
+echo "   "
+exit
+endif
+   
+# Set defaults
+set overwrite = "N"
+set aprfile   = " "
+set stnfofile = " "
+  
+# Decode the command line
+while ($#argv > 0 ) 
+set input = ( $argv ) 
+switch($input[1])
+	case -f:
+		set argofile    =  $input[2]
+		breaksw  
+	case -o: 
+ 		set  overwrite = "Y"
+		breaksw 
+	case -apr: 
+ 		set  aprfile = $input[2]
+		breaksw
+endsw 
+shift argv 
+end
+
+# Run gamit/utils/argo2rx
+argo2rx << eof_argo2rx
+$argofile
+$overwrite
+$aprfile
+eof_argo2rx
+
+exit

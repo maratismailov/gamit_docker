@@ -1,0 +1,261 @@
+#!/bin/csh
+
+# Script to setup automatic GAMIT and GLOBK processing environment.
+# Created by: S. McClusky Dec 2002
+
+if( $#argv == 0 ) then 
+  echo 'To run sh_setup_gg interactively type sh_setup_gg -i'
+  exit
+endif
+##################### SET UP DEFAULTS #############################   
+set interactive = 'no'
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -i:
+      set interactive = 'yes'
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ############################
+if ( $interactive == 'yes' ) then
+
+set invalid_dir = 1
+set procdir = `pwd`
+while ( $invalid_dir )
+  echo Enter the processing directory name [default = $procdir]
+  set ans = $<
+  if ( $ans != "" ) then
+    set procdir = $ans
+  endif
+  if ( ! -d $procdir ) then
+    echo "$procdir is an invalid directory (use full path)"
+    echo 'Do you want to create this directory? (Y/N)'
+    set ans = $<
+    if ( $ans == "Y" ) then
+      mkdir $procdir
+      set invalid_dir = 0
+    endif
+  else
+    set invalid_dir = 0
+  endif
+end
+exit
+  echo " "
+  echo GAMIT and GLOBK environment to be setup in $procdir  
+  echo " "
+echo "directories, but except for that, the script may be stopped and"
+echo "rerun safely from any point.  Tarfiles to be uncompressed:" 
+echo " "  
+set files = `ls *.Z *.gz *.tar | grep -v "incremental_updates"`
+echo "    $files"
+echo " "    
+echo "Continue ? (y/n)"
+set ans = $<
+if ( $ans == '' ) set ans = 'y'
+if ( $ans == 'n' ) exit
+
+echo " "
+echo ".. uncompressing and extracting the directories:"
+echo " "  
+foreach f ($files)
+   if ( -e $f ) then 
+     if ( $f:e == 'Z' ) then
+       zcat $f | tar -xvf -  
+     else if ( $f:e == 'gz' ) then
+       gunzip -c $f | tar -xvf -
+     else if ( $f:e == 'tar' ) then
+       tar -xvf $f
+     else
+       echo "Unknown file type $f NOT extracted"
+     endif 
+     \rm -f $f 
+   endif
+end 
+
+# Apply incremental updates if required
+set inc_updates_file = ''
+set inc_updates_file = `ls incremental_updates*.Z incremental_updates*.gz incremental_updates*.tar |& grep -v "No match"`
+if ( $#inc_updates_file > 0 ) then
+  echo " "
+  echo "Do you want to apply incremental updates: $inc_updates_file"
+  echo "Continue ? (y/n)"
+  set ans = $<
+  if ( $ans == '' ) set ans = 'y'
+  if ( $ans == 'y' ) then
+    echo ".. applying incremental updates:"
+    foreach f ($inc_updates_file)
+      if ( -e $f ) then 
+        if ( $f:e == 'Z' ) then
+          zcat $f | tar -xvf -  
+        else if ( $f:e == 'gz' ) then
+          gunzip -c $f | tar -xvf -
+        else if ( $f:e == 'tar' ) then
+          tar -xvf $f
+        else
+          echo "Unknown file type $f NOT extracted"
+        endif 
+        \rm -f $f 
+      endif
+    end
+  endif
+endif
+
+# Allow the user to check that the correct g77 compiler flag options are setup.
+if ( $compiler != '' ) then
+  echo " "
+  echo "================================"  
+  echo "Using compiler option: $compiler" 
+  echo "================================"
+  echo " "
+  echo "Have you checked that the compiler flag options in the assignment block "
+  echo "of the ./libraries/Makefile.config for your particular hardware/OS type "
+  echo "are correctly set for g77? "
+  echo " "
+  echo "If NOT stop now, and make the compiler flag options assignment block for your"
+  echo "particular hardware/OS type in ./libraries/Makefile.config. the same as the"
+  echo "compiler flag options assignment block for Linux. (Only the 4 lines defining"
+  echo "compilers and compiler flags need to be modified)."
+  echo " "    
+  echo "Continue ? (y/n)"
+  set ans = $<
+  if ( $ans == '' ) set ans = 'y'
+  if ( $ans == 'n' ) exit
+endif
+
+echo " "  
+echo ".. adding $mypath/com to your search path to continue installation"
+set path = ($mypath/com $path)
+echo " "
+echo "To execute GAMIT and GLOBK you will need to set your login path to"
+echo "include $mypath/com $mypath/gamit/bin $mypath/kf/bin "     
+echo " "
+echo "You will also need the alias or link gg --> $mypath"
+echo " " 
+
+set system = `uname -a | awk '{print $1, $3}'`  
+set awktype = `which awk | awk '{print $NF}'`  
+echo ' '
+echo 'Your Operating System type is:' $system[1]
+echo 'Your default awk version is:' $awktype
+if ( $system[1] == "SunOS" ) then
+  set posixawk = `echo POSIX | awk -v temp=$awktype '{print $1}'`  
+  if ( $posixawk != 'POSIX' ) then 
+    echo 'When using Solaris GAMIT/GLOBK scripts require POSIX standard /usr/xpg4/bin/awk '
+    echo 'On Solaris, the standard awk in /usr/bin is not POSIX-compliant so you must, ' 
+    echo 'force use of  /usr/xpg4/bin/awk.  This can be done by putting a link into '
+    echo '/gamit/bin and making sure that /gamit/bin precedes /usr/bin in your path.'
+    echo 'You must use a link rather than an alias in .cshrc because when you execute ' 
+    echo 'a script with the -f option your .cshrc is not sourced, so the script is run ' 
+    echo 'using a default shell. '
+    exit
+  endif
+endif 
+         
+set conf = libraries/Makefile.config
+set conf_xlibpath = (`grep -v "#" $conf | grep "X11LIBPATH" | cut -d" " -f2`)  
+set conf_xincpath = (`grep -v "#" $conf | grep "X11INCPATH" | cut -d" " -f2`) 
+echo " "
+echo "These are the default paths to X11 found in Makefile.config"
+echo "X11LIBPATH: $conf_xlibpath"
+echo "X11INCPATH: $conf_xincpath"
+echo " "
+echo "Searching your system for X11 installation"
+set xincpath = `find /usr -name Xlib.h   -print |& grep -v Permission | awk -F/ '{for (i=2;i<=NF-1;i++) printf "%s","/"$i; printf "\n"}'` >& /dev/null 
+set xlibpath = `find /usr -name libX11.a -print |& grep -v Permission | awk -F/ '{for (i=2;i<=NF-1;i++) printf "%s","/"$i; printf "\n"}'` >& /dev/null
+echo "Found these paths to X11 libs and includes on your system"
+echo "X11LIBPATH:  $xlibpath"
+echo "X11INCPATH:  $xincpath"
+echo " "
+if ( $#xlibpath > 1 || $#xincpath > 1 ) then
+  echo 'Found multiple paths to X11. I dont know which to choose.'
+  echo "You should set X11LIBPATH X11INCPATH in the Makefile.config manually."
+  echo " "
+  set ans = n
+  goto skip
+endif 
+echo 'Are these correct for your system?'
+echo "Continue? (y/n)"
+set ans = $< 
+skip:
+if ( $ans == '' ) set ans = 'y'
+if ( $ans == 'y') then
+# Set X11LIBPATH
+  set n = `grep -n "X11LIBPATH" $conf | grep -v "#" | awk -F: '{print $1}'`
+  @ n = $n - 1
+  head -n $n $conf >! ${conf}.new
+  echo "X11LIBPATH $xlibpath" >> ${conf}.new 
+  @ n = $n + 2
+  tail -n +$n $conf >> ${conf}.new
+  \mv ${conf}.new ${conf}      
+
+# Set X11INCPATH
+  set n = `grep -n "X11INCPATH" $conf | grep -v "#" | awk -F: '{print $1}'`
+  @ n = $n - 1
+  head -n $n $conf >! ${conf}.new
+  echo "X11INCPATH $xincpath" >> ${conf}.new 
+  @ n = $n + 2
+  tail -n +$n $conf >> ${conf}.new
+  \mv ${conf}.new ${conf}
+ 
+else if ( $ans == 'n' ) then
+  echo 'Are the defaults found in Makefile.config correct?'
+  echo 'If NOT edit the Makefile.config now before choosing to contine' 
+  echo "Continue? (y/n)"
+  set ans = $<
+  if ( $ans == '' ) set ans = 'y'
+  if ( $ans == 'n' ) then
+    echo "You need to go and edit the Makefile.config by hand"
+    exit
+  endif
+endif
+
+echo " "        
+set maxsit = `grep "MAXSIT" $conf`; shift maxsit
+set maxsat = `grep "MAXSAT" $conf`; shift maxsat
+set maxatm = `grep "MAXATM" $conf`; shift maxatm
+set maxepc = `grep "MAXEPC" $conf`; shift maxepc  
+echo "GAMIT dimensions in /libraries/Makefile.config are set to "  
+echo "  maxsit = " $maxsit
+echo "  maxepc = " $maxepc
+echo "  maxatm = " $maxatm
+echo "  maxsat = " $maxsat
+echo " "
+echo 'Are these defaults found in Makefile.config correct?'
+echo 'If NOT edit the Makefile.config now before choosing to contine' 
+echo "Continue ? (y/n)"
+set ans = $<
+if ( $ans == '' ) set ans = 'y'
+if ( $ans == 'n' ) exit
+ 
+echo " "
+echo "  .. removing any existing Makefiles or archive files from libraries directories"
+rmfresh -p $mypath -d libraries -M -ao   
+  
+echo " "
+echo "  .. removing any existing Makefiles or archive files from gamit directories"
+rmfresh -p $mypath -d gamit -M  -ao
+echo " "
+echo "  .. making libraries and gamit"
+make_gamit $mypath $compiler 
+if( $status != 0 ) then
+  echo "Failure in make_gamit -- install_software terminated" 
+  exit  
+endif
+        
+echo " "
+echo "  .. removing any existing Makefiles or archive files from kf directories"
+rmfresh -p $mypath -d  kf -M -ao
+echo " "
+echo "  .. making globk modules in kf directories"
+make_globk $mypath  $compiler
+if( $status != 0 ) then
+  echo "Failure in make_globk -- install_software terminated"   
+  exit
+endif
+ 
+
+endif

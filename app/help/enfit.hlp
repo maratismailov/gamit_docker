@@ -1,0 +1,85 @@
+ENFIT: Fits models to time series data files
+
+ENFIT: Generate multiparameter fits to time series data generated
+       with globk/glred or from values files produced by ensum
+       
+Runstring:
+
+% enfit <option> <-f cmd_file>  <summary_file> <values_file> <Input solution files ....>      
+
+where <option> has the same meaning as in ensum.  A positive numeric value
+               sets the minimum number of measurements needed for a time
+               series to be included.
+MOD TAH 030316: Added new option to be passed as third optional argument
+                (3) -RS option will invoke computing a realistic velocity
+                sigma based on a correlated noise model formed by averaging
+                the times series over different intervals and projecting the
+                averging-time behavior of chi^2 to "infinite" duration.  If 
+                the resultant chi^2 is less than 1 then a white noise model
+                with the orginal time series error bars is used. Feature is
+                intented for use with continuous data. 
+      <-f cmd_file> specifies name of command file used to set the parameters
+               to be estimated
+      <summary_file> is summary output file
+      <values_file> is list of input values, residuals and model values from
+               parameter estimates
+      <Input solution files> are globk/glred output files or values files
+               from ensum (name must start with va).
+               
+The cmd_file contains the commands for the parameter estimates
+Exponential function
+--------------------
+ EXP  <date>  <tau>  <apriori sigma> [tau sigma]
+where <date> is yy mm dd hh min for start of exponential,
+      <tau>  is the decay time in days
+      <apriori sigma> is apriori contraint to apply to estimate in mm.
+Command may be issued multiple times to generate results for multiple 
+decay times. 
+      [tau sigma] is an optional apriori standard deviation for
+the time constant.  If this argument is included, the time constant
+will be estimated in a iterative solution.  This iteration is un-reliable
+when the estimate of the exponential term itself is small.
+
+Logarithmic function
+--------------------
+ LOG <date> <dtl> <apriori sigma> [dtl sigma]
+where <date> is yy mm dd hh min for start of data used in logarithm
+      <dtl>  is the time offset to start of log function (days)
+      <apriori sigma> is apriori contraint to apply to estimate in mm. 
+      [dtl sigma] is an optional apriori standard deviation for
+the time offset.  If this argument is included, the time offset
+will be estimated in a iterative solution.
+
+Periodic function
+-----------------
+ PER  <Period> <apriori sigma>
+where <Period> is the period in days.  The terms have zero time at 2000/01/01
+      <apriori sigma> is apriori contraint to apply to estimate in mm.
+Command may be issued multiple times to generate results for multiple 
+periodic terms.
+
+Output at specific times
+------------------------
+ OUT  <name>  <times....>
+where <name> is name of output file.  If the form xx@ is used then the
+             @ is replaced by the coresponding characters from the summary
+             file name.
+      <times....> is a list of days after the epoch of first exponential
+             function to output values.  Values can be specfied in form
+             <nn>x<dd> where <nn> is a number of values to output and
+             <dd> is a spacing in days, e.g., 10x100.0 would output values
+             are 100,200,300...1000 days after the epoch of the first
+             exponential.
+
+Site Selection (new feature 030119);
+------------------------------------
+ SEL <key> <key> ....
+where <key> is specific site names or wild-card patterns.  The wild cards 
+      are formed with * @ or -.  * and @ allow any numbers of characters 
+      to match, while - represents a single character.  Examples: *GHT will
+      match all sites that end in GHT (useful for getting only those sites
+      affected by a specific earthquake); ----_GHT would acheive the same
+      aim. 
+This command may be repeated as many times as desired (with in the limit of
+the total number of entries allowed).
+

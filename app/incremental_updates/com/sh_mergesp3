@@ -1,0 +1,143 @@
+#!/bin/csh
+#
+# Script to merge sp3 files
+#
+if ( $#argv == 0 ) then
+   echo ""
+   echo "sh_mergesp3 : Script to merge SP3 files from different GNSS systems"
+   echo "              into a multi-gnss sp3c file."
+   echo ""
+   echo "Usage:"
+   echo "sh_mergesp3 -input <list of different GNSS SP3 files> -out <Output sp3 file>"
+   echo "All input files must be of the same time span and sampling."
+   echo "Limited to 85 satellites currently"
+   echo ""
+
+   exit
+endif
+
+# Decode runstring options.
+while ( $#argv > 0 )
+  switch($argv[1])
+    case -dir: 
+        setenv procdir $argv[2] 
+    breaksw
+    case -i*:
+        set infiles  = (`echo $argv[2-] | cut -d- -f1`); 
+        foreach n ( `seq 1 $#infiles` )
+           shift
+        end
+    breaksw
+    case -o*:
+        set outsp3 = $argv[2] ; shift
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift
+end
+
+# Check inout files
+set OK = 1
+foreach n ( `seq 1 $#infiles` )
+   if( ! -e $infiles[$n] ) then
+      echo "Input SP3 $infiles[$n] not found"
+      set OK = 0
+   endif
+end
+
+if( $OK == 0 ) then
+   echo "Missing input sp3 files, $outsp3 not created"
+   exit
+endif
+
+# Get the list of satellltes
+set nsats = ''
+foreach f ( $infiles )
+   set nsats = ( $nsats `grep -h '^+ ' $f | head -1 | awk '{print $2}'`)
+end 
+set prns = `grep -h '^+ '  $infiles | awk '{print substr($0,10)}' | awk '{for( k=0; k<=17; k++ ) {print substr($0,3*k+1,3)}}' | awk '{if( $1 != 0 ) {print $1}}'`
+set accd = `grep -h '^++ ' $infiles | awk '{print substr($0,10)}' | awk '{for( k=0; k<=17; k++ ) {print substr($0,3*k+1,3)}}' | awk '{if( $1 != 0 ) {print $1}}'`
+echo "There are total $#prns with each $nsats in files"
+if ( $#prns > 85 ) then
+   echo "Too many files for sp3c: Script needs update"
+   exit
+endif
+
+if( $#prns != $#accd ) then
+   echo "Number of accuracy codes ($#accd) and PRNS ($#prns) does not match.  $outsp3 not created"
+   exit
+endif 
+
+# 
+# Start making file: Assumes 15 min spacing 
+head -2 $infiles[1] >! $outsp3
+
+set nl = `echo $#prns | awk '{printf("%d",$1/17)}'`
+
+# BLOCK to OUTPUT satellite names
+echo $#prns | awk '{printf("+ %4d   ",$1)}' >> $outsp3
+echo $prns[1-17] | awk '{for( k=1; k<= 17 ; k++ ) {printf("%3s",$k)}} END {printf("\n")}' >> $outsp3
+# Output the full length lines
+foreach n ( `seq 2 $nl` )
+   echo $#prns | awk '{printf("+        ")}' >> $outsp3
+   echo $prns | awk -v n=$n '{for( k=(n-1)*17+1; k<= n*17 ; k++ ) {printf("%3s",$k)}} END {printf("\n")}' >> $outsp3
+end
+# Output the last partial line
+echo $#prns | awk '{printf("+        ")}' >> $outsp3
+echo $prns | awk -v n=$n -v np=$#prns '{for( k=n*17+1; k<=np ; k++ ) {printf("%3s",$k)}}' >> $outsp3
+echo $prns | awk -v n=$n -v np=$#prns '{for( k=np+1; k<=(n+1)*17 ; k++ ) {printf("  0")}} END {printf("\n")}' >> $outsp3
+foreach n ( `seq $nl 3` )
+   echo "+          0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0" >> $outsp3
+end
+
+echo "PRNS $prns"
+echo "ACCD $accd"
+
+# BLOCK to ACCURACY codes (same as names) but with accd instead of prns
+echo $#accd | awk '{printf("++       ")}' >> $outsp3
+echo $accd[1-17] | awk '{for( k=1; k<= 17 ; k++ ) {printf("%3s",$k)}} END {printf("\n")}' >> $outsp3
+# Output the full length lines
+foreach n ( `seq 2 $nl` )
+   echo $#accd | awk '{printf("++       ")}' >> $outsp3
+   echo $accd | awk -v n=$n '{for( k=(n-1)*17+1; k<= n*17 ; k++ ) {printf("%3s",$k)}} END {printf("\n")}' >> $outsp3
+end
+# Output the last partial line
+echo $#accd | awk '{printf("++       ")}' >> $outsp3
+echo $accd | awk -v n=$n -v np=$#prns '{for( k=n*17+1; k<=np ; k++ ) {printf("%3s",$k)}}' >> $outsp3
+echo $accd | awk -v n=$n -v np=$#prns '{for( k=np+1; k<=(n+1)*17 ; k++ ) {printf("  0")}} END {printf("\n")}' >> $outsp3
+foreach n ( `seq $nl 3` )
+   echo "++         0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0" >> $outsp3
+end
+
+# Copy rest of header
+echo '%c  M cc GPS ccc cccc cccc cccc cccc ccccc ccccc ccccc ccccc' >> $outsp3
+echo '%c cc cc ccc ccc cccc cccc cccc cccc ccccc ccccc ccccc ccccc' >> $outsp3
+echo '%f  1.2500000  1.025000000  0.00000000000  0.000000000000000' >> $outsp3
+echo '%f  1.2500000  1.025000000  0.00000000000  0.000000000000000' >> $outsp3
+echo '%i    0    0    0    0      0      0      0      0         0' >> $outsp3
+echo '%i    0    0    0    0      0      0      0      0         0' >> $outsp3
+echo "/* Created with sh_mergesp3 `date -u`    " >> $outsp3         
+echo "/* Input: $infiles " >> $outsp3         
+echo '/*                                                          ' >> $outsp3  
+grep '/* PCV:' $infiles[1] >>  $outsp3
+
+# OK copy over the data blocks
+set nent = `head -1 $infiles[1] | awk '{print $7}'`
+foreach n ( `seq 1 $nent` )
+   set st = `echo $nsats | awk -v n=$n '{for( k=1; k<=NF ; k++ ) {print ($k+1)*(n-1)+24}}'`
+   @ sd = $st[1] - 1
+   # echo "Lines n $n sd $sd st $st"
+   ( tail -n +$sd $infiles[1] | head -1 >> $outsp3 ) >& /dev/null
+   foreach k (`seq 1 $#infiles` )
+      ( tail -n +$st[$k] $infiles[$k] | head -$nsats[$k] >> $outsp3 ) >& /dev/null
+   end
+end
+echo "EOF" >> $outsp3
+   
+
+       
+
+
+
+
+
+

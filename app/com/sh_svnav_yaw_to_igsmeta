@@ -1,0 +1,27 @@
+#!/bin/csh
+#
+# Script to create +SATELLITE/YAW_BIAS_RATE block for IGS_METADATA.snx from svnav entries.
+# No arguments are need. The block can re-directed to igs_metadata.snx file.
+# Script assumes svnav.dat is kept up to date.
+#
+set if = `ls -tr ~/gg/tables/igs_metadata_????.snx | tail -1`
+set of = $if:r"_plus.snx"
+echo "sh_svnav_yaw_to_igsmeta run `date`"
+echo "Creating $of from $if"
+grep -v "^%ENDSNX" $if >! $of
+
+set svn = "~/gg/tables/svnav.dat" 
+echo "*" >> $of 
+echo "* Added YAW_BIAS_RATE BLOCK `date`" >> $of 
+echo "+SATELLITE/YAW_BIAS_RATE"   >> $of                                                           
+echo "*"   >> $of                                                                              
+echo "*SVN_ Valid_From____ Valid_To______   YB Yaw Rate  Comment________________________________" >> $of 
+                                                                               
+grep '^ ' $svn | awk '{gsub("BLOCK ","BLOCK_")} {printf(" %s%3.3d %4d:%3.3d:%5.5d %4d:%3.3d:%5.5d    %c %8.4f  %s\n",$1,$2,$9,$10,$11*3600+$12*60, $13,$14,$15*3600+$16*60,$7,$8,substr($0,103))}'   >> $of 
+echo "*"    >> $of                                                                           
+echo "-SATELLITE/YAW_BIAS_RATE"     >> $of                                                          
+echo "*"  >> $of                                                                             
+echo "*-------------------------------------------------------------------------------" >> $of 
+echo "%ENDSNX" >> $of
+
+echo "Done"

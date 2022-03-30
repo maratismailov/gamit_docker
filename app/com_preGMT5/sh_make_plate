@@ -1,0 +1,232 @@
+#!/bin/csh -f          
+#
+#doc Reads an .apr file and generates a plate input file "
+#doc
+#
+######################## INSTRUCTIONS #############################
+if ( $#argv == 0 ) then
+  echo "======================================================================================="
+  echo "  sh_make_plate reads an .apr file and generates a plate input file "
+  echo "  "
+  echo "  USAGE :    sh_make_plate -apr <file> -plate <frame> -override <plate file> "
+  echo "  "
+  echo "          <file> is the name of the apr file to make a plate file from" 
+  echo "          <frame> after creating the plate input file run plate in the given ref frame"
+  echo "                  NOTE: see plate help for list of available frames." 
+  echo "          <plate file> a plate file who's plate enteries override the calculated ones"
+  echo "  "
+  echo "  Example :   sh_make_plate -file itrf08_comb.apr " 
+  echo "              sh_make_plate -file itrf08_comb.apr -plate EURA"   
+  echo "              sh_make_plate -file itrf08_comb.apr -override known.plate -plate EURA"   
+  echo " "                                                                      
+  echo "======================================================================================="
+  exit
+endif 
+# MOD TAH 070514; Updated plate names to ITRF2000 names
+##################### SET UP DEFAULTS #############################   
+set file = ""
+set plate = ""  
+set over = ""  
+set map_root = "~/gg/maps"
+gmt gmtset GMT_COMPATIBILITY 5
+gmt gmtset PROJ_LENGTH_UNIT i
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+	    case -f*: 
+                 set file = (`echo $argv | cut -d- -f2`); shift file
+       breaksw
+	    case -p*: 
+                 set plate = $argv[2]
+       breaksw
+	    case -o*: 
+                 set over = $argv[2]
+       breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+##################### GET THE JOB DONE ######################  
+# get root file name
+set fname = ` echo $file | awk -F"/" '{print $NF}'` 
+set froot = ` echo $fname | awk -F"." '{print $(NF-1)}'` 
+  
+# first convert .apr file in vel format to get lat and lon of all sites
+apr_to_vel $file $froot.vel
+
+# Setup lat, lon and site name arrays
+set lon =  `tail -n +4 $froot.vel | awk '$1 != " " {print $1}'` 
+set lat =  `tail -n +4 $froot.vel | awk '$1 != " " {print $2}'` 
+set site = `tail -n +4 $froot.vel | awk '$1 != " " {print $13}'`   
+set num = `echo $lon | wc | awk '{print$2}'`
+
+# Now find out which plate each site in the vel file is on?
+if ( -e $froot.plate ) \mv $froot.plate $froot.plate.old; touch $froot.plate
+set i = 1 
+echo $num sites in $file
+while ( $i <= $num )    
+  echo $lon[$i] $lat[$i] >! tmp.crd
+# MOD TAH 010528: Add negative longitude as well.
+  echo $lon[$i] $lat[$i] | awk '{if ($1 > 180 ) {print $1-360,$2}}' >> tmp.crd
+ 
+  gmt gmtselect tmp.crd -F${map_root}/noam_plate -R-180/180/15/90 >! tmp.out
+  set isin = `cat tmp.out | wc -c`
+  if ( $isin != 0 ) then
+    echo " $site[$i] NOAM_I00 " >> $froot.plate
+    echo "Site ${i}: $site[$i] is located on: NAFD"
+    goto endloop
+  endif
+
+#  echo $lon[$i] $lat[$i] >! tmp.crd
+  gmt gmtselect tmp.crd -F${map_root}/pacific_plate >! tmp.out
+  set isin = `cat tmp.out | wc -c`
+  if ( $isin != 0 ) then
+    echo " $site[$i] PCFC_I00 " >> $froot.plate
+    echo "Site ${i}: $site[$i] is located on: PCFC"
+    goto endloop
+  endif
+
+#  echo $lon[$i] $lat[$i] >! tmp.crd
+  gmt gmtselect tmp.crd -F${map_root}/eurasian_plate -R-40/150/-15/90 >! tmp.out
+  set isin = `cat tmp.out | wc -c`
+  if ( $isin != 0 ) then
+    echo " $site[$i] EURA_I00 " >> $froot.plate 
+    echo "Site ${i}: $site[$i] is located on: EURA"
+    goto endloop
+  endif 
+ 
+#  echo $lon[$i] $lat[$i] >! tmp.crd
+  gmt gmtselect tmp.crd -F${map_root}/soam_plate  >! tmp.out
+  set isin = `cat tmp.out | wc -c`
+  if ( $isin != 0 ) then
+    echo " $site[$i] SOAM_I00 " >> $froot.plate
+    echo "Site ${i}: $site[$i] is located on: SAOM"
+    goto endloop
+  endif
+
+#  echo $lon[$i] $lat[$i] >! tmp.crd
+  gmt gmtselect tmp.crd -F${map_root}/australian_plate  >! tmp.out
+  set isin = `cat tmp.out | wc -c`
+  if ( $isin != 0 ) then
+    echo " $site[$i] AUST_I00 " >> $froot.plate
+    echo "Site ${i}: $site[$i] is located on: AUST"
+    goto endloop
+  endif
+
+#  echo $lon[$i] $lat[$i] >! tmp.crd
+  gmt gmtselect tmp.crd -F${map_root}/african_plate  -R-50/75/-60/45 >! tmp.out
+  set isin = `cat tmp.out | wc -c`
+  if ( $isin != 0 ) then
+    echo " $site[$i] AFRC " >> $froot.plate
+    echo "Site ${i}: $site[$i] is located on: AFRC"
+    goto endloop
+  endif
+
+#  echo $lon[$i] $lat[$i] >! tmp.crd
+  gmt gmtselect tmp.crd -F${map_root}/antarctic_plate  -R-180/180/-90/-30 >! tmp.out
+  set isin = `cat tmp.out | wc -c`
+  if ( $isin != 0 ) then
+    echo " $site[$i] ANTA_I00 " >> $froot.plate
+    echo "Site ${i}: $site[$i] is located on: ANTA"
+    goto endloop
+  endif
+
+#  echo $lon[$i] $lat[$i] >! tmp.crd
+  gmt gmtselect tmp.crd -F${map_root}/arabian_plate  >! tmp.out
+  set isin = `cat tmp.out | wc -c`
+  if ( $isin != 0 ) then
+    echo " $site[$i] ARAB_MCC " >> $froot.plate
+    echo "Site ${i}: $site[$i] is located on: ARAB"
+    goto endloop
+  endif
+
+#  echo $lon[$i] $lat[$i] >! tmp.crd
+  gmt gmtselect tmp.crd -F${map_root}/carib_plate >! tmp.out
+  set isin = `cat tmp.out | wc -c`
+  if ( $isin != 0 ) then
+    echo " $site[$i] CARB " >> $froot.plate
+    echo "Site ${i}: $site[$i] is located on: CARB"
+    goto endloop
+  endif
+
+#  echo $lon[$i] $lat[$i] >! tmp.crd
+  gmt gmtselect tmp.crd -F${map_root}/cocos_plate >! tmp.out
+  set isin = `cat tmp.out | wc -c`
+  if ( $isin != 0 ) then
+    echo " $site[$i] COCO " >> $froot.plate
+    echo "Site ${i}: $site[$i] is located on: COCO"
+    goto endloop
+  endif
+
+#  echo $lon[$i] $lat[$i] >! tmp.crd
+  gmt gmtselect tmp.crd -F${map_root}/indian_plate >! tmp.out
+  set isin = `cat tmp.out | wc -c`
+  if ( $isin != 0 ) then
+    echo " $site[$i] INDI " >> $froot.plate
+    echo "Site ${i}: $site[$i] is located on: INDI"
+    goto endloop
+  endif
+
+#  echo $lon[$i] $lat[$i] >! tmp.crd
+  gmt gmtselect tmp.crd -F${map_root}/juanfuca_plate >! tmp.out
+  set isin = `cat tmp.out | wc -c`
+  if ( $isin != 0 ) then
+    echo " $site[$i] JUAN " >> $froot.plate
+    echo "Site ${i}: $site[$i] is located on: JUAN"
+    goto endloop
+  endif
+
+#  echo $lon[$i] $lat[$i] >! tmp.crd
+  gmt gmtselect tmp.crd -F${map_root}/nazca_plate >! tmp.out
+  set isin = `cat tmp.out | wc -c`
+  if ( $isin != 0 ) then
+    echo " $site[$i] NAZC " >> $froot.plate
+    echo "Site ${i}: $site[$i] is located on: NAZC"
+    goto endloop
+  endif
+
+#  echo $lon[$i] $lat[$i] >! tmp.crd
+  gmt gmtselect tmp.crd -F${map_root}/philippin_plate >! tmp.out
+  set isin = `cat tmp.out | wc -c`
+  if ( $isin != 0 ) then
+    echo " $site[$i] PHIL " >> $froot.plate
+    echo "Site ${i}: $site[$i] is located on: PHIL"
+    goto endloop
+  endif
+
+#  echo $lon[$i] $lat[$i] >! tmp.crd
+  gmt gmtselect tmp.crd -F${map_root}/scotia_plate >! tmp.out
+  set isin = `cat tmp.out | wc -c`
+  if ( $isin != 0 ) then
+    echo " $site[$i] SCOT " >> $froot.plate
+    echo "Site ${i}: $site[$i] is located on: SCOT"
+    goto endloop
+  endif
+
+  echo " $site[$i] UNKN " >> $froot.plate
+  echo "WARNING Site ${i}: $site[$i] is located on an UNKNOWN plate."
+         
+  endloop:
+  @ i++
+end 
+echo " Created plate input file: $froot.plate "
+
+#if plate override file given add it to the calculated one. 
+if ( $over != "" ) then
+ \mv $froot.plate tmp.plate
+ cat tmp.plate $over >! $froot.plate
+endif
+
+# now run plate if requested.
+if ( $plate != "" ) then
+  plate ${froot}.plate $file ${froot}_${plate}.apr ${froot}_${plate}.vel $plate
+  echo " Reference Frame: $plate "
+  echo " Created apr file file: ${froot}_${plate}.apr "
+  echo " Created vel file file: ${froot}_${plate}.vel "
+endif
+ 
+# cleanup
+\rm tmp.crd tmp.out tmp.plate >& /dev/null
+
+#All done
+exit

@@ -1,0 +1,32 @@
+#!/bin/csh -e 
+if ($#argv == 0) then
+   echo ' '
+   echo '    LINKXK creates links for all x- and k-files in a day directory'
+   echo '    to an experiment xfiles'
+   echo ' '
+   echo '      e.g.  x*.[day]     ==> ../xfiles/x*.[day]'
+   echo '            k*.[day]     ==> ../xfiles/k*.[day]'
+   echo ' '
+   echo ' FORMAT' 
+   echo ' '
+   echo '    linkxk day'
+   echo ' '
+   echo ' EXAMPLE'                               
+   echo ' '
+   echo '    linkxk 181'
+   echo '  '
+   echo '  '
+   echo ' CURRENT LINKS:'
+   echo '  '
+
+else      
+# create standard links in a working directory
+#
+   ln -s  ../xfiles/x*.$1 . 
+   ln -s  ../xfiles/k*.$1 . 
+    
+endif
+
+ls -l `find . -type l -print`
+
+

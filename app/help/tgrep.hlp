@@ -1,0 +1,16 @@
+TGREP: Globk output version of grep
+
+TGREP: Globk output version of grep
+
+Program acts like standard grep except that the globk time
+tag (solution date) is added to start of lines.
+
+Usage:
+% tgrep <string> <file>
+where <string> is string to be searched for.  Blanks at end 
+    of string can be forced using ^ 
+      <file> name of input file.  If blank stdin is used.
+
+<string> must occurr after the 'Solution refers to' line in the
+glonk output.
+

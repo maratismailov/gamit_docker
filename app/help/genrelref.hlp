@@ -1,0 +1,16 @@
+GENRELREF: Generates velocities relative to first site in velocity file
+
+PROGRAM GENRELREF
+
+Program to generate a relative veloctity field by subracting
+the velocity of the first site in the list from all others in
+the list.  The input file is a standard GLOBK velocity field
+for plotting.  The output will similar format.
+
+The runstring of the program is:
+% genrelref <input> <output>
+where <input>  is the input file and
+      <output> is output file name.  (If first character is
+			'.' then extent will be changed
+
+

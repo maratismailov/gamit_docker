@@ -1,0 +1,31 @@
+#!/bin/csh -e -x
+# GMT to make histogram of residuals
+if ($#argv != 2) then
+   echo ' '
+   echo ' Make a histogram of residuals'
+   echo ' '
+   echo ' examples'
+   echo ' '
+   echo '   resid.gmt ign4.solvem.res myplot.ps '
+   echo ' '
+   echo ' '
+
+else
+
+set IN =  ($1)
+set OUT = ($2)
+
+#get residuals from 7th column.
+# do not count asterisks or zeros
+
+
+grep -v "*" $IN | awk '{if ($7 != 0.) print $7}' >! tmp.res
+
+pshistogram tmp.res -JX6/8 -W0.1 -P -Bf0.5a1:"arc seconds":We/f5a20:"N":Sn:."Distribution of Residuals": -U$1 >! $OUT
+
+gs $OUT
+
+
+endif
+
+

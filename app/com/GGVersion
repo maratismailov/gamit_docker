@@ -1,0 +1,51 @@
+# GAMIT/GLOBK Version file.  To be incremented with updates.  No blank line at end (check tail -n -1 ~/gg/com/GGVersion)
+Version   Date                         Comment (no line wrap on comments unless Version repeated)
+10.40.001 Thu Aug 18 14:49:12 EDT 2011 Initial setting.
+10.40.002 Thu Aug 18 16:28:00 EDT 2011 Fix bug in gamit/lib/read_antex.
+10.40.003 Tue Jul 31 12:54:56 EDT 2012 Updates to various routines.
+10.40.004 Thu Aug  2 12:36:00 EDT 2012 Fix bugs in antenna updates in model.
+10.40.005 Fri Sep  7 08:32:00 EDT 2012 Add block-dependent antenna thrust to arc.
+10.40.006 Mon Sep 11 08:20:00 EDT 2012 Add TUM1 and TUM2 Earth radiation models to arc.
+10.40.007 Thu Dec 20 10:54:00 EST 2012 Add GPT2 to gamit/lib and model; atm models to solve and h-file.
+10.40.008 Tue Feb  5 09:36:00 EST 2013 New c-file format; add time-dependent ATL grid; increase maxel/maxaz dimenions 
+10.40.009 Thu Feb 14 12:16:00 EST 2013 Fix bugs for simulations.
+10.40.010 Thu Feb 14 12:43:00 EST 2013 Fix bug in format in reading name of ATL model. 
+10.40.011 Fri Feb 22 09:42:00 EST 2013 Fix bug in convertc with command-line coordinate input.
+10.40.012 Wed Mar 27 11:25:00 EDT 2013 Fix bug in TUM ERad model.
+10.40.013 Sat Apr 20 11:40:00 EDT 2013 Add Earth and antenna radition to g-file; fix bug in tmp directory for c-files; add 'AUTCLN clocks' option to batch file.
+10.40.014 Fri Apr 26 09:45:00 EDT 2013 Add Fix bug in 10.40.013 mods to ttongs.
+10.40.015 Mon Jul 15 08:38:00 EDT 2013 Increase metutil dimensions and add trap. 
+10.50.001 Thu Nov 21 14:55:00 EST 2013 Changes for IBM AIX, and fix bug in reading NGS ANTEX entries.  
+10.50.002 Tue Dec 17 13:30:00 EST 2013 Fix bugs in bctot.
+10.50.003 Sun Dec 22 15:00:00 EST 2013 Allow removing Block IIA SVs in post-eclipse. 
+10.50.004 Sun Feb  9 19:00:00 EST 2014 Read the new OSO otl list format and choose the nearest site rather than the 1st one w/in 10 km 
+10.50.005 Thu Mar 27 11:00:00 EDT 2014 Limit bias-warnings to once per SV   
+10.50.006 Wed Apr  2 08:50:00 EDT 2014 New C-file format (version 10.41) 
+10.50.007 Wed Apr  2 10:50:00 EDT 2014 General relativity added to arc 
+10.50.008 Sun Apr  6 11:41:28 EDT 2014 Updated pole tide and added ocean pole tide to globk
+10.50.009 Wed Jul 23 14:59:34 EDT 2014 Updated reading apriori coordinates and extended model with renames in globk
+10.50.010 Wed Mar 25 15:28:00 EST 2015 Changed /orbits to use IERS2010 rather than Ray for SP EOP
+10.60.001 Wed Jun  3 15:30:00 EDT 2015 Major update for GNSS code  
+10.60.002 Wed Jun 11 09:30:00 EDT 2015 Mods to many scripts for GMT5; GMT4 versions put in com_preGMT5
+10.60.003 Wed Jun 17 09:00:00 EDT 2015 Changes to sh_plot_pos and sh_glred for new plotting sch
+10.70.001 Wed Jun 13 12:57:09 EDT 2018 New release with GNSS capabilities.
+10.70.002 Thu Aug  9 11:08:26 EDT 2018 Bug fixes for antex files, globk and arc.
+10.71.001 Fri Jun 21 17:43:52 UTC 2019 Updated for ECOMC. Back solution frame and GLX output. wild_date option.
+10.71.002 Fri Jun 28 13:01:30 EDT 2019 Sinex generation from back solution, Glonass metadata updates
+10.71.003 Sun Dec 22 14:36:05 EST 2019 Updates for GNSS and  ECOMC processing.
+10.71.004 Tue Feb 11 22:24:03 EST 2020 Added 2-frequency satellite PCV and ground antenna azimuth.
+10.71.005 Mon Feb 24 16:36:00 EST 2020 New Mean Pole and AntDAZ in station.info.
+10.71.006 Fri Mar 20 08:56:51 EDT 2020 Release version, plus extend stinfo comment length.
+10.71.007 Tue May  5 21:53:09 EDT 2020 Updates D&S2016 model added, FES2014 fixes. Incremental updates May 5, 2020
+10.71.008 Wed May 12 16:09:26 EDT 2020 Update to Gipson2017; -lfreq option sh_gamit.
+10.71.009 Wed May 27 14:41:39 EDT 2020 Updates for station.info gaps; Glonass data selection; lfile. failures
+10.71.010 Tue Jun  2 08:48:10 EDT 2020 New LAB<str> option added to GLOBK runstring
+10.71.011 Sat Jun 20 12:06:23 EDT 2020 Updates to GLONASS, cleaning and # satellites.
+10.71.012 Fri Jul 31 17:36:24 EDT 2020 Additions for Beidou, tscon formats, APP_PTIDE options, COD SINEX. Satellite PCO constraints.
+10.71.013 Wed Jan 13 21:55:49 EST 2021 Various updates to handle repro3 issues. Control over large sigma sites in SINEX files.
+10.71.014 Fri Jan 22 15:34:36 EST 2021 Added exit message to sh_gamit when "-ion" used with "-noftp".
+10.71.015 Tue Feb  2 16:13:21 EST 2021 Updated to handle 5-minute tabular orbits.
+10.71.016 Mon May 17 08:43:27 EDT 2021 GLORG Version 5.21 with BALN org_opt option.
+10.71.017 Thu Jul  1 16:55:05 EDT 2021 Updated M-file version for new slot numbers associated with 45 satellites
+10.71.018 Fri Jul 30 18:08:00 EDT 2021 Added functionality to process BeiDou B2a (L5), BEIDOU-3G body type
+10.71.019 Mon Aug 30 16:01:10 EDT 2021 igs_to_pmu Lagrange option updated.

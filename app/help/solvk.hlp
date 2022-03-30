@@ -1,0 +1,1011 @@
+SOLVK: VLBI Kalman filter analysis program
+ 
+SOLVK : VLBI Kalman Filter Analysis program 
+The correct runstring is: 
+ 
+CI> SOLVK,lu,<prt>,<log>,data file,Markov file,<ecc file>,<com file>
+ 
+where:
+lu          is the user's LU (defaults to 1)
+prt         is the printer LU (must be an LU and defaults to 1) 
+log         is the log device LU (must be an LU and defaults to 1)
+data file   is the name of the KalObs data file to be processed.
+Markov file is the Markov control file for this solution (see below)
+ecc file    is the name of the file containing the eccentricity data
+            (optional and can also be specified in the Markov file) 
+com file    if the name of the scratch common file to be used in the
+            solution.  (Optional and can be specified in the Markov file. 
+            If different users use unique names for this file, then 
+            multiple copies of SOLVK can be run at the same file. 
+ 
+SOLVK Commands in the Markov file 
+--------------------------------- 
+  
+General comments on Command lines.
+----------------------------------
+ 
+    The control of SOLVK is through a series of commands which will be  
+described below.  These commands are stored in the Markov file which is a 
+standard ASCII file with variable record lengths.  The Markov file allows 
+multiple solutions to be run which is a useful feature if you want to 
+test the sensitivity of the solution to the parameters used to model the  
+clocks and atmospheric delay variations.  
+    The Kalman filter software suite of programs use general command  
+interpreters.  The routines which interpret the commands have evolved as  
+various programs have been written.  SOLVK uses the oldest form of the
+command interpreters.  The following restrictions apply to the commands 
+used in SOLVK.
+  
+1) any non-blank character in column 1 except a minus sign (see below)  
+denotes a comment line.  These lines are ignored by SOLVK.  
+  
+2) -1 starting in the first column tells SOLVK to analyse the data with 
+the parameters already from the Markov file.  When this solution is 
+finished, more commands will be read from the Markov file and another 
+solution run using these new commands and all of the previously read  
+commands.  The solutions will continue to be run until a -2 starting in 
+column one is detected or the end of file is reached (see below).   
+  
+3) -2 starting in the first column tells SOLVK to analyse the data with 
+the commands read in from the Markov file and to terminate when this  
+solution is finished.  Any other negative numbers starting in column one  
+will be treated a comments.  Note: a -1 immediately followed by a -2 in 
+the next non-comment line will cause two solutions to be run.  In this  
+case the -1 need not be included in the file.  The use of the -2 is a 
+convenient method of converting a markov file which contains multiple 
+solutions into one which has a smaller number of solutions.  The -1 at  
+the end of the desired solutions is converted to a -2 and the rest of the 
+markov file will be ignored.  
+  
+4) Commands may start in any column (provided the whole command line is 
+less than 80 characters long) after the first column.   
+  
+5) Commands may be entered in either upper or lower case.   
+  
+6) At least 8 characters should be left between the start of the command  
+and the start of arguments for the command.  (The commands are assumed to 
+be 8 characters long, even those which are shorter than 8 characters  
+long.) The full command name must be entered.   
+ 
+7) The full command name, or site or source name must be given. Later versions  
+of the command interpreters allow truncated, unique versions of the names 
+to be used. 
+            
+SOLVK COMMANDS
+--------------
+  
+    We now discuss the SOLVK commands which are entered through the 
+Markov file.  These commands fall into 3 classes.  The first class depend 
+on site.  These commands are entered on multiple lines.  The first line 
+gives the command name and the following lines give the station names and 
+the values to be associated with the station for this command.  The entry 
+of the station names is ended when a new command is found.  There are no  
+restrictions on the use of comment lines between the command and the  
+station names or between the station names.  The second class of commands 
+are similar to the first class except that they are used for sources.   
+The station and source names may be replaced by ALL to set values for all 
+sites or sources.  The third class of commands have the command and its 
+parameters on the one line.  All commands and parameters within commands  
+can be entered in either upper or lower case.   
+  
+    NOTE: In later versions of the command interpreters (such as  
+those used in GLOBK, KALAN, SIMOBS), these three classes of 
+commands have been eliminated.  For example, station dependent  
+commands are entered all on the one line with the command first,  
+then the station name and then the arguments of the commands. 
+ 
+ 
+Class 1 commands -- station dependent 
+------------------------------------- 
+  
+CLK_APR -- Allows the input of the uncertainties of the apriori clock 
+offset and rate.  The units are ps for the offset and sec/sec for the 
+rate.  We give an example below 
+  
+EXAMPLE:
+. 
+. Give the apriori clock uncertainties
+. 
+ clk_apr       ! the command line (this comment can be in the Markov file)  
+. 
+. we can give values for a single site
+   hras 085    100000.0 100.d-14  
+. 
+. or we can set all sites (including any values given previously in the 
+. the command). 
+   all         200000.0 200.d-14  
+. 
+. Now we could reset an individual site to zero to define the clock 
+. origin
+  haystack           0.0    0.0 
+. 
+  
+CLK_MAR -- Allows the entry of the Markov statistics of the clock 
+behavior.  If the markov statistic are not given for any site, only a 
+constant offset and rate will be estimated for that site.  The CLK_MAR  
+commands allows the Markov clock statistics to be entered as an Allan 
+standard deviation (i.e., the square root of Allan variance) and the  
+interval of time when the clock performance reaches this level (in  
+minutes).  This command will only set the random walk and integrated  
+random walk components of the Markov statistics for the clock.  
+Rather than giving numerical values, the can say RESTORE and the markov 
+statistics saved in the KalObs file will be used.  Markov statistics can be 
+saved using the program KALAN.  The RESTORE feature only works for clock  
+and atmosphere statistics.  
+ 
+EXAMPLE:
+. 
+. Markov clock behavior 
+ clk_mar
+    all         1.d-14  20.0   ! 1.d-14 at 20 minutes 
+    haystack    RESTORE        ! Use values saved in KalObs file
+. 
+  
+CLK_EXT -- Allows an extended entry of the clock performance.  All of the 
+components of the Markov statistics (i.e., white noise, random walk, and  
+integrated random walk) can be entered directly with this command.  This  
+command is not normally used.  The values are entered as step variances 
+for each of the process noise types: for the white noise the variance is  
+entered in ps^2, for the random walk the step variance is in ps^2/sec,  
+for the integrated random walk is in (fs/sec)^2/sec.  (Subroutine CLOCK_UNIT  
+in SOLVK shows the method from converting CLK_MAR input into the CLK_EXT  
+units. RESTORE option may also be used. 
+  
+EXAMPLE 
+. 
+. Extended Markov clock behavior
+. 
+ clk_ext
+.              ps^2   ps^2/sec (fs/s)^2/sec 
+    Haystack    0.0    0.12      .25      ! This same values as entered above 
+    Westford  100.0    0.12      .25      ! same except adds 10 ps of 
+.                                         ! white noise 
+  
+ATM_APR  --  Allows the entry of the uncertainties of the apriori models  
+of the zenith atmospheric delay and its rate of change model.  The  units 
+are ps and sec/sec, zenith delay variations.  
+  
+EXAMPLE 
+------- 
+. 
+. Atmospheric zenith delay uncertainties  
+. 
+ atm_apr
+    all      300.0    10.d-14     ! 300 ps and 10d-14 in rate 
+. 
+  
+ATM_MAR  --  Allows  the  entry  of  the  random  walk  component  of the 
+atmospheric zenith delay variations.  The entry is made by  the  standard 
+deviation  of  the  atmospheric  delay  variation  (in ps) over some time 
+interval (in minutes). RESTORE option may also be used. The ATM_STATS 
+command in Kalan will compute and save markov statistics for the  
+atmosphere. 
+  
+EXAMPLE 
+------- 
+. 
+. Atmospheric zenith delay variations 
+. 
+ atm_mar
+    all      30.0   20.0   ! 30 ps sigma after 20 minutes 
+    Haystack Restore       ! Restore values computed by Kalan (or use 
+                           ! defaults, if Kalan has not been run on this  
+                           ! data.) 
+. 
+  
+ATM_EXT -- Extended entry of the  atmospheric  delay  variations.  Allows 
+setting  of  the  white  noise,  random  walk  and integrated random walk 
+components.  Same units as the CLK_EXT command. RESTORE feature may be  
+used.   
+  
+EXAMPLE 
+------- 
+. 
+. Extended Markov atmospheric delay entry 
+. 
+ atm_ext
+    all         0.0  0.75  0.0     ! same as atm_mar above
+    haystack  100.0  0.75  0.0     ! same as above but with 10 ps of  
+.                                  ! white noise
+    onsala60  100.0  0.75  .01     ! added integrated random walk. This 
+.                                  ! value will allow change of ~1470 ps
+.                                  ! in one day 
+. 
+  
+ATAZ_APR -- Allows entry of the apriori uncertainty  of  the  North-South 
+and  East-West  components  of the azimuthal dependent atmospheric delay.   
+The model of azimuthal asymmetry we adopt is that  of  Gardner  (Gardner, 
+C.S.,  Correction  of  laser  tracking data for the effects of horizontal 
+refractivity gradients, Appl.  Opt., 16, 2427-2432,  1977).  These values 
+are  entered  in  ps.  The  mapping  function  used  for  this  model  is 
+cos(azimuth)/(sin(elev)*tan(elev)) for the NS component.  The EW model is 
+the same but with sin(azimuth) used instead of cos(azimuth) 
+  
+EXAMPLE 
+------- 
+. 
+ ataz_apr 
+    all        30.0   30.0    ! 30 ps for both NS and EW components 
+. 
+  
+ATAZ_MAR  --  Allows the entry of the markov statistics for the azimuthal 
+atmospheric delay variations.  Same type of  entry  as  for  the  ATM_MAR 
+(both NS and EW components must be given, i.e, 4 arguments).  RESTORE 
+feature may be used (defaults are zero markov behavior) 
+  
+EXAMPLE 
+------- 
+. 
+ ataz_mar 
+    Onsala60   30.0 120.0  30.0 120.0  ! ps sigma for 2 hour interval for 
+.                                        both NS and EW components
+. 
+  
+SITE_APR  --  uncertainties  of the apriori site positions in meters for  
+the geocentric, global XYZ coordinate system.   
+  
+EXAMPLE 
+------- 
+. 
+ site_apr 
+    all       5.0  5.0  5.0  ! 5 meters in all components 
+. 
+  
+SITE_MAR --  the  markov  statistics  for  the  site  coordinates  (units 
+m^2/sec).  This sets the random walk statistics for this process.   
+  
+EXAMPLE 
+------- 
+. 
+ site_mar 
+    all       1.d-9 1.d-9 1.d-9  ! allow site coordinates to change by
+.                                  ~1 cm in one day.
+  
+TIDE_APR  --  allows  the setting of the apriori uncertainty of the tidal 
+parameters Love l,  Love h,  and lag angle for  each  of  the  sites.  If 
+global  tide  parameters are to be used then the "all" site specification 
+is used and the GLB_TIDE command is given (See  Miscellaneous  commands).   
+The units for this command dimensionless, dimensionless, and radians.   
+  
+EXAMPLE 
+------- 
+. 
+ tide_apr 
+    all       0.1 0.5 0.1   ! 0.1 for Love l  (apriori value 0.085) 
+.                           ! 0.5 for Love h  (apriori value 0.609) 
+.                           ! 5.7 deg for lag (apriori value 0.0) 
+  
+TIDE_MAR  -- allows the entry of the markov statistics of the random walk 
+for the tidal Love numbers and lag.  Units /sec for l,  /sec  for  h  and 
+rad^2/sec for lag.  
+  
+EXAMPLE 
+------- 
+. 
+ tide_mar 
+  all         1.d-7 30.d-7 1.d-7  ! Allow variation of 0.1, 0.5 and   
+.                                   0.1 radians (5.7 deg) in one day
+. 
+  
+ELEV_CUT -- allows the specification of an elevation cutoff for each site 
+in the experiment.  Units degs.   
+  
+EXAMPLE 
+------- 
+. 
+  elev_cut
+    all         10.0    ! 10 deg cut off at all sites 
+    haystack     0.0    ! replace previous value at Haystack with 0 deg 
+. 
+  
+PLATE_MD  --  Allow  the entry of a plate motion model to be specified by 
+the user.  The entries are:  site name,  latitude  of  pole  of  rotation 
+(deg),  longitude  of pole of rotation (deg),  rate of rotation (deg/my), 
+decimal year for the reference epoch for the site position.   
+  
+EXAMPLE 
+------- 
+. 
+. Plate motion model to be used if site positions were estimated just 
+. from the short merit data in October 1980.
+. 
+ Plate_md 
+    Haystack  -58.31  -40.67  0.247   1980.9
+    Onsala60    0.70  -23.19  0.038   1980.9
+. 
+. Other sites on the North American and Eurasian plates should also be  
+. added to the list.
+. When data is analysed from some future experiment (say in 1985), the  
+. apriori site positions will be changed by the amount implied by the 
+. above rotation data.
+  
+SITE_CON -- Allows the specification of the site dependent contributions  
+to be applied to the theoretical model during the SOLVK solution.  There  
+is a choice of 4 site dependent contributions which can be applied.   
+These are 
+1) CABLECAL -- Cable calibration  
+2) FEED_ROT -- Feed rotation correction (Only applied if phase delays are 
+               used.  If Group or single band delays are to be used, this 
+               option will be ignored.) 
+               **WARNING** Use of feed rotation correction has  
+               not yet been checked.
+3) PHASECAL -- Decalibrate the phase calibration contribution to the group  
+               delays.
+               **WARNING** Only works for data bases with site dependent  
+               phase cal. group delays, and contribution not yet checked. 
+4) USERCONT -- User supplied contribution.  NOT YET IMPLEMENTED 
+ 
+A minus sign immediately before the calibration name will turn off the  
+calibration if it has been previously set (in an earlier run of SOLVK) to 
+be applied. 
+Two other commands which can used as arguments to this command
+are 
+  CLEAR     -- Clear any previously assigned calibrations for this site.
+  RESET     -- Use the default calibrations. These default calibrations 
+               are set up when SOLVK is compiled and linked.
+ 
+EXAMPLE 
+------- 
+. 
+. Use cable calibration at all sites expect OVRO_130
+. The Clear here ensured that any previously set values are  removed. 
+ 
+ SITE_CON 
+    all      clear     cablecal 
+    OVRO_130 -cablecal
+. 
+ 
+ATMOSPHE -- Set the atmospheric delay calibrations to be used in this 
+solution.  The atmospheric calibrations are set by specifying four  
+quantities: The dry zenith delay, the dry mapping function, the wet 
+zenith delay, and the wet mapping function.  NOTE: The wet mapping  
+function is used as the atmospheric delay partial derivative and should 
+always be given even no wet delay calibration is to be used in the  
+solution. With in the four classes there are a number of options. 
+ 
+For the dry zenith delay. 
+DRY_SAAS  -- Saastamoinen dry zenith delay formula.  Depends on surface 
+pressure only.  If surface pressure is not available, then the option is  
+converted to DRY_HCON (see below) 
+DRY_UCON  -- Use a constant dry zenith delay supplied by the user (see  
+USER_ZEN command below) 
+DRY_DUSR  -- Use a zenith delay computed in a user supplied subroutine  
+which can use any information available in the KalObs file (See 
+OBS_DATA.FTNI).  It is the user's responsibility to check that the  
+information needed in his routine is available from the data base being 
+processed.  For example is surface pressure is needed, then the 
+availability of surface pressure should be checked.  For each 
+observation, the quality of the surface pressure should be checked (see 
+MET_FLAG in OBS_DATA.FTNI).  **WARNING** There is no DRY_DUSR function  
+currently in SOLVK. 
+DRY_HCON  -- Compute delay from pressure at site computed from the height 
+of the site and the assumption of constant lapse rate and hydrostatic 
+equilibrium in the atmosphere.  
+ 
+For the wet zenith delay. 
+WET_SAAS -- Saastamoinen wet zenith delay formula.  Depends on relative 
+humidity and temperature.  If these quantities are not available option 
+is converted to WET_UCON (See below). 
+WET_WVRT -- WVR delay computed from WVR antenna temperatures, mapped back 
+to zenith using the specified wet mapping function. **WARNING** Option  
+not yet implemented since antenna temperatures are not in the database  
+(yet).  
+WET_DBWV -- WVR delay from the zenith delay values in the data base. (If  
+no wvr delays are in the data base then this option is converted to 
+WET_UCON).  
+WET_DUSR -- User supplied function (see comments on DRY_DUSR) 
+WET_UCON -- User supplied constant value (See USER_ZEN).  Initially 
+defaults to 0.0 delay.  
+ 
+For the dry mapping function
+DRY_MARI -- Marini dry mapping function.  The particular form of the  
+marini mapping function allows it to be written solely as a function of 
+zenith delay and elevation angle (plus other miscellaneous parameters 
+which are always known), thus this mapping function can always be 
+computed, independent of the availability of surface met. data.  Thus 
+this mapping function will always be used.  
+DM_CFA   -- CfA-2.2 Dry mapping function (same formula as published in  
+Radio Science with fixed values for the height of tropopause and lapse  
+rate.  If pressure, temperature and relative humidity are not available 
+this option is converted to DM_CHAO). 
+DM_CFAM  -- CfA dry mapping function which uses the maximum temperature 
+at the site for the experiment rather than the instantaneous temperature.   
+This model is being tested to see if it removes the effects of  
+temperature inversions. Again converted to DM_CHAO if enough information  
+is not available. 
+DM_USR   -- User supplied dry mapping function (None currently  
+installed.) 
+DM_CHAO  -- The Chao dry mapping function.  Option selected when not  
+enough information is available for other mapping functions.  
+ 
+For the wet mapping function
+WM_MARI  -- Wet mapping function consistent with Marini formula. (Same as 
+DM_MARI).  If DRY_SAAS WET_SAAS DM_MARI and WM_MARI are selected then the 
+standard Marini formula will be generated.  
+WM_CFA   -- Currently the same formula as the Dry Cfa-2.2 mapping 
+function. Option converted to WM_CHAO if surface met. not available.  
+WM_CSC   -- Cosecant formula = 1/sin (elev).  Useful for mapping WVR data 
+back to elevation at which observations were made.  
+WM_IFAD  -- Ifadis wet mapping function.  Global model published as a 
+Onsala Space Observatory Report.  
+WM_USR   -- User supplied function (see comments above) 
+WM_CHAO  -- The Chao wet mapping function.  Differs slightly from the dry 
+chao mapping in that delay increases more rapidly at low elevation  
+angles.  Depends only on elevation angle. 
+ 
+Again the CLEAR and RESET options are available also
+ 
+EXAMPLE 
+------- 
+. The example below would use WVR data (delays from the database) for 
+. all sites at which such data is available.  Other sites would use 
+. WET_UCON for the wet zenith delay 
+ 
+ ATMOSPHE 
+    all         CLEAR   DRY_SAAS WET_DBWV DM_CFA WM_CHAO
+!               clear is used to remove any previous options
+ 
+. When the medium calibrations which were actually used are listed on 
+. the SOLVK output (see PRT_OPTS and CRT_OPTS), all sites which did not 
+. have WVR data would show WET_UCON as the wet zenith  delay.  Sites which  
+. did not have surface met data, would show 
+. DRY_HCON WET_UCON DM_CHAO WM_CHAO 
+. as there medium calibration.  
+ 
+USER_ZEN  -- Allows the user to give the constant zenith dry and wet  
+delays to be used.  Both values in ps.  These values will be used 
+whenever the DRY_UCON or WET_UCON options are given in the ATMOSHPE 
+command.  
+ 
+EXAMPLE 
+------- 
+ USER_ZEN 
+   Haystack   7900.d0   100.d0   ! 7.9 ns for dry and 0.1 ns  
+                                 ! (~3cm) for wet delay 
+ 
+ 
+Class 2 commands -- Source dependent
+------------------------------------
+  
+    There are three commands in this class. 
+  
+SOUC_APR -- allows the entry of the uncertainties in the apriori source 
+positions.  The units are mas for both RA and declination.  (The RA 
+uncertainty is the RA uncertainty in milli-time-seconds multiplied by 
+15).  
+  
+EXAMPLE 
+------- 
+. 
+. Source position uncertainties 
+. 
+ SOUC_APR 
+   1642+690     100.0  100.0 ! 100 mas in both RA and dec 
+. 
+  
+SOUC_MAR -- Allows the specification of the random walk statistics for  
+the sources in RA and dec.  Units mas^2/sec.
+  
+EXAMPLE 
+------- 
+. 
+    souc_mar
+    1642+690    1.d-5   1.d-5   ! 1 mas sigma after 1 day for both RA and 
+.                                 dec.
+. 
+  
+STRUCTUR -- Will allow the user to specify information about  
+source structure corrections. NOT YET IMPLEMENTED.
+ 
+ 
+Class 3 -- Miscellaneous
+------------------------
+  
+    For this class of parameters the command and its arguments appear on  
+the same line.
+  
+NUT_APR -- the uncertainty of the nutation angles.  The units are mas for 
+both the nutation in longitude and the nutation obliquity.
+  
+EXAMPLE 
+------- 
+. 
+    nut_apr     25.0  10.0   ! 25 mas uncertainty in nutation in longitude
+.                            ! 10 mas uncertainty in nutation in obliquity
+. 
+  
+NUT_MAR -- Allows the specification of the Markov statistics for the  
+random walk in the nutation angles.  Units mas^2/sec for nutation in  
+longitude and in obliquity.   
+. 
+. Nutation markov process 
+    nut_mar   1.d-5   1.d-5  ! 1 mas sigma in a day for long. and obli. 
+. 
+  
+GAM_APR -- the uncertainity of apriori value of gamma. Units  
+dimensionless.  
+  
+GAM_MAR -- Allows the specification of the statistics of the random walk  
+for gamma. Units /sec.
+  
+PMU_APR -- The uncertainty of the apriori x and y pole positions and UT1- 
+AT.  All values are in milliarc seconds.
+  
+PMU_MAR -- Allows the specification of the statistics of the random walk
+for x and y pole positions and UT1-AT.  All values are in mas^2/sec.
+  
+APR_FILE -- Gives the name of the file containing the apriori site and  
+source positions to used in the analysis.  The format of the file is the  
+same as that used for modifying the site and source positions in SOLVE. 
+The sites and sources can be in any order.  Site and source names must be 
+preceded by at least one blank.  If the APR_FILE command is not given 
+the values in the KalObs file will be used. 
+  
+GLB_FILE -- the name of the file in which the covariance matrix and the 
+solution vector and ancillary information will be saved so that it can  
+later be used in a global solution using GLOBK.  Wild card characters can 
+be used in the name (see BCK_FILE command).  The name NONE will stop the  
+global file being written in multiple solvk runs.   
+ 
+BCK_FILE -- the name of the file for the back solution to be saved in.  
+If this command is not given no back solution will be run.  If you are  
+interested only in the values of the deterministic parameters, then not 
+doing a back solution will considerable speed up the SOLVK run.   
+The BCK_FILE name can contain a wild character @ which will be replaced 
+by corresponding group of characters from the KalObs file name. 
+ 
+EXAMPLES
+--------
+. Name given in       KalObs File  Generated  Used name if different
+. BCK_FILE Command    Name         Name       from generated name (FMGR)
+  B@::60              K7511I::50   B7511I::60 same
+  B@::60              K7511I.dat   B7511I::60 same
+  B@.bak              K7511I::50   B7511I.bak (CI file on current directory)
+  B@                  K7511I::50   B7511I::50 same
+  B@::60       K87MAY11_IRIS.DAT   B87MAY11_IRIS::60 B87MAY::60 (name 
+                                              truncated to 6 characters 
+                                              for FMGR. 
+  @.BAK        K87MAY11_IRIS.DAT   K87MAY11_IRIS.BAK
+ 
+**WARNING** Do not use just a single @ character for the name or else 
+the generated name will be the same as your KalObs File name and you
+will risk having your KalObs file purged. 
+ 
+The earlier form of the wild characters (----) is still supported but of  
+limited use. The last four characters of the BCK_FILE name can be 
+replaced with '----' in which case the last four characters of the KalObs 
+File name will be used.   
+The use of wild characters allows one Markov file to be used to produce 
+many back solution files with different names.  
+                              
+KAL_FILE -- the name of the scratch file for the O-C and partial  
+derivatives.  Default name is given in the KALMAN_PARAM.FTNI file.
+This file is only used internally by SOLVK and is purged before each
+run.  
+  
+SOL_FILE  --  the  name  of  the scratch file for the solution covariance 
+matrix (or matrices (one per epoch of data) if a back solution is run)  
+and  adjustments.  Default name is given in KALMAN_PARAM.FTNI. This file  
+is only used internally by SOLVK and is purged before each run.  For  
+large experiments, when a back solution is run, this file can become very 
+large.  
+  
+ECC_FILE  --  the name of the file containing the eccentricity data.  The 
+file is assumed to be in exactly the same format as the ECCDAT file from  
+NASA/GSFC,  i.e.,  this file is read with fixed formats rather than  free 
+format.  If  this  command  is not given,  then no eccentricities will be 
+applied.  The name of this file can also be passed through the SOLVK  
+runstring.  The names NONE and REMOVE can also be given in this command.  
+The NONE name will stop the eccentricity file from being read in a multiple 
+solution SOLVK run.  The REMOVE name will remove any eccentricities which 
+have been read in previous SOLVK solutions using this KalObs File.  The 
+information about the eccentricities is stored in the KalObs file, and thus 
+the eccentricity file only need be specified for one run.  If an  
+eccentricity file is specified and eccentricities have already been used in 
+analyzing this KalObs file then the following operations will be carried  
+out:  i) Any eccentricities in the KalObs file which do not appear in the 
+new eccentricity file will STILL be used, ii) Any eccentricity which  
+appears in the eccentricity file but not in the KalObs file will be added 
+to the Kalobs file, iii) Any eccentricity which appears in both, the values 
+from the eccentricity file will replace the values in the KalObs file and a 
+message saying that the replacement is occurring will be printed. 
+(The REMOVE option can be used to clear a KalObs file of all eccentricities 
+which have been be previously added.  A full SOLVK run must be carried out  
+with the REMOVE name for the ECC_FILE). 
+ 
+DATATYPE -- gives the types of data to be used in the solution.  This  is 
+a bit masked word with the bits having the following meanings:  
+    BIT    Meaning
+    0      use group delay data       -|
+    1      use phase delay data        | Only one can be selected at a time 
+    2      use single band delay data _|
+    3      use phase delay rate data
+    4-15   Not used.
+If group delay and rate data are to be used then datatype would be set  
+to 9.  When only one data type is used, the postfit residuals for the 
+other data types are NOT computed.  
+  
+OBS_DUR -- allows the duration of the observations read from the database to  
+be overridden. Value is given in seconds. If obs_dur is set to 0 then the 
+duration of the observation computed from the START SEC and STOP SEC  
+entries in the data base will be used.  If these LCODES were not in the 
+data base then a default of 200 seconds is used. This value is used in  
+computing the effects of the random walk markov parameters on the delay 
+rate observations.  These processes appear as random noise to the rate  
+observations and hence their effect depends on the duration of observation.   
+When the SOLVK files are developed this command will be deleted and the 
+actual integration time for each observation will be used.  
+  
+CLK_BRK -- This command allows clock breaks to be detected using the  
+prefit residuals.  The format is the magnitude of the difference of 
+between the running average of NUM_AV prefit residuals in ps which will 
+be consider a clock break.  If the apriori atmospheric delay calibration  
+is poor than the criterion tends to have many false detections.  There  
+is a finite number of clock breaks allowed (set by MAX_CLK_BRK in 
+Kalman_param.ftni) If the maximum number is exceeded only the largest 
+breaks will be processed.   
+  
+EXAMPLE 
+------- 
+. 
+. Clock break detection   
+. 
+ clk_brk    3000.d0  2   ! average data by 2's and if difference between
+.                          successive pairs is greater than 3000 ps, then 
+.                          take this to be a clock break. 
+  
+GLB_TIDE  --  allows  the  specification of the tidal parameters as being 
+global rather than site dependent. Format:  
+  glb_tide   yes    ! turn on global tides
+  glb_tide   no     ! turn off global tides (estimate site dependent  
+.                     values) 
+  
+PRT_OPTS -- allows the specifications of the  optional  printout  to  the 
+print lu.  The value is bit masked. The options currently are:
+    Bit  Meaning
+    1    Print the covariance matrix of the parameter adjustments (if on) 
+    2    Print the markov statistics for the markov parameters (if on)
+    3    Print availability of propagation medium calibrations. 
+    4    Print availability of site and baseline contributions
+    5    Print source structure information for this solution 
+    6    Print the delete counts for this solution (i.e., counts of the 
+         number of data deleted in each class of datamask.  Only the
+         main reason for deletion is accumulated).
+    7    Print sensitivity of NEU estimates to errors in apriori XYZ
+         positions when polar motion and all site positions are 
+         estimated. 
+    9    If possible, fix the orientation of the system if all sites
+         and pole position are free.
+    10-15 Not currently used 
+  
+EXAMPLE 
+------- 
+  prt_opts  3   ! print covariance matrix and markov statistics 
+  prt_opts -2   ! Print everything except the covariance matrix.
+. 
+  
+CRT_OPTS  --  Same  as  prt_opts except that it controls print out to the 
+user's lu.
+  
+SEVERITY -- This command controls the  severity  of  the  error  messages 
+output  by  SOLVK  while it is searching lists for site and source names.   
+Severity is a bit masked word with the following meanings:  
+    BIT  Meaning
+    0    Print error if station name not found while decoding a station 
+         command  (Class 1 commands)
+    1    Print error if source name not found while decoding a source 
+         command (Class 2 commands) 
+    2    Print error if station name can not be matched in the APR_FILE.
+         This option will generally produce lots of error since there are 
+         usually sites in the apriori positions list which are not used 
+         in  many VLBI experiments
+    3    Print error if source name can not be found in the APR_FILE. See 
+         comment on Bit 2.
+    4    Not used.
+    5    Print error if a station name from the eccentricity file (at the 
+         correct epoch for this experiment can not be found)
+  
+FRNGEQUA -- Allows the user to specify the minimum FRNGE quality code of  
+the data to be used in the solution.  No letter quality code data is ever 
+used (unless the data mask is set (see below) to ignored the FRNGE  
+quality.) 
+ 
+EXAMPLE 
+------- 
+.   Use only data with FRNGE qualities of 7,8, or 9 
+ 
+ FRNGEQUAL  7 
+. 
+ 
+DATAMASK -- Allows the user specify a bit mask which will be applied to the 
+data_flag before the data_flag is checked to see if it zero (and thus the 
+data used in the solution).  This is a bit mapped word which is ANDed with  
+the data flag (which records the "defects" in the observation) before the 
+data flag is checked for being zero.  Thus any zero in the bit mask will  
+cause SOLVK to ignore that "defect" in the observation.  The bits in data 
+mask (and data_flag; see OBS_DATA.FTNI) have the following meanings:
+  Bit   Meaning 
+    1   Fails FRNGE quality code check
+    2   Ion calibration bad (fails ion_mask)
+    3   WVR antenna temperatures bad
+    4   WVR data base delay bad (fails WVR CODE check)
+    5   Propagation medium problems (pressure too low,  
+        temperature out of bounds, relative humidity out of bounds) 
+    6   Cable cal bad 
+    7   SOLVK interactive edit
+    8   SOLVK automatic edit (See KALAN, EDIT_DATA command) 
+    9   Data base grp/rate interactive edit (unw=1) 
+   10   Phase delay connection problem
+   11   User defined editing flag (none implemented currently)
+   12   User source delete (see DN_SOURCE)
+   13   User site/time interval delete (see DN_SITE)
+   14   Below elevation cutoff
+   15   Data do not close within tolerance (see CLOSURE)
+   16   Not used
+ 
+These same categories are used when the delete counts are reported in the 
+SOLVK output. 
+ 
+ 
+EXAMPLES
+--------
+.   Delete all observations which have any defect at all
+  DATAMASK   -1  ! This turns all bits on 
+ 
+.   Delete all observations which have any defect except failing FRNGE  
+. quality code.  Useful for old data bases which do not have FRNGE quality
+. codes.
+  DATAMASK  -2   ! All bits on except bit 1 (the first bit) 
+ 
+ION_MASK  -- All allows the user to specify a bit mask which will be  
+applied to the ION_FLAG from the data base.  Only the least significant 6 
+bits are used.  If phase delay data is to be used then the mask is applied  
+to bits 7 to 12 of the ION_FLAG.  The meaning of the bits is: 
+  Bit   Meaning 
+    1   Matching observation has quality code of 8 or 9 but downweighted  
+        in SOLVE/SOLVK
+    2   No matching group delay data
+    3   Matching observation has quality code of 1-7
+    4   Group ion available (This bit is ignored in the mask) 
+    5   Down weight flag for group ion.  Always set if any other bit set. 
+    6   Matching observation has quality code of 0 (no fringes) 
+ 
+EXAMPLES: 
+--------- 
+.   Set bad ion bit in data_flag if the ionospheric correction has any  
+. defect. 
+  ION_MASK  -1  
+ 
+CLOSURE  -- Allows the user to specify how large the closure error can be 
+(in sigmas) before the data is deleted from the solution.  Due to the 
+structure of the SOLVK suite of programs, the data which fails the closure  
+check are still used in the solution but are given a sigma a 10 nsec or 10  
+ps/s for rates). (The data on all baselines in the triplet which fails to 
+close is given this sigma).   If the closure error is much greater than 10  
+nsec or 10 ps/s, then Kalan should be used to flag the data as a SOLVK  
+edit (using EDIT_DATA command) since errors much larger than 10 ns or ps/s  
+could affect the SOLVK solution.
+ 
+EXAMPLE:
+--------
+.   Do not use any data from triplets with closure errors greater than 4  
+. sigma 
+ CLOSURE   4   ! sigma
+. 
+ 
+XTRNOISE -- Allows the data sigma used in the solvk run to be modified by 
+the quadratic summing of the "extra noise" to the SNR sigmas of the data. 
+Checks on the Mark III system (system dispersions, group-phase delay  
+comparisons, correlator reproducibility) indicate the minimum standard  
+deviation of a group delay measurement is between 10 and 15 ps  
+(independent of SNR).  Thus for mobile VLBI experiments, where large  
+SNR's are obtained between the fixed stations, the XTRNOISE feature 
+should be used. Extra noise values for both delay and rate should be  
+given, even if only one data type is to be used.  For phase or SB delay 
+solutions the extra noise will be applied to their corresponding  
+variances.
+ 
+EXAMPLE 
+------- 
+ XTRNOISE   15.0   15.0   ! 15 ps and 15 fs/s (typical values)
+ 
+RESETCLK -- Allows the user to force the redetermination of the apriori 
+values for the clock offset, rate and acceleration at each of the sites.
+SOLVK stores these values in the data files, and they are normally only 
+determined once.  Giving this command will force these values to be 
+reestimated.  (This is necessary sometimes if "bad" data has biased the 
+original values)
+ 
+EXAMPLE 
+------- 
+  RESETCLK                ! No arguments
+ 
+COM_FILE -- Allows the user to give a new name to the SOLVK common file.
+Name may also be passed through the runstring.  By using unique names for 
+COM_FILE, SOL_FILE, and KAL_FILE any number of SOLVK solutions may be run 
+simultaneously (using different KalObs files) 
+ 
+EXAMPLE 
+-------   
+ COM_FILE  my_common_file.dat           ! CI file name
+ 
+DN_SITE --  Allows the user to specify time intervals of data on specific 
+baselines which should not be used in the solution.  The form of command  
+is  
+ DN_SITE  <site 1>  <site 2>  <start time> <stop time>
+or
+ DN_SITE  CLEAR 
+where site 1 is the name of the first site  
+      site 2 is the name of the second site (baselines in the direction 
+             site 2-site 1 will be also be edited)
+      start time is the start epoch in the form yy mm dd hr min, and
+      stop time is the stop epoch in the form yy mm dd hr, min. 
+ 
+The CLEAR option will clear any previously specified down times.
+The name ALL may be used as a site name and will cause all site names to  
+match. Multiple DN_SITES commands may be used in a solution 
+ 
+EXAMPLE 
+------- 
+  DN_SITE  CLEAR        ! Clear previous values.  Good practice since 
+.                       ! no checks are made for duplicate entries
+  DN_SITE  Onsala60 Haystack  87 10 15 22 00 87 10 16 00 00 
+  DN_SITE  Onsala60 all       87 10 16 12 00 87 10 16 14 00 ! delete all
+.                       ! Onsala data for a two hour period 
+  DN_SITE  ALL      ALL       87 10 16 16 00 87 10 16 20 00 ! delete all
+.                       ! data for this four hour interval
+ 
+ 
+DN_SOURCE -- allows sources to be eliminated from the solution.  The form 
+is
+ DN_SOURCE <source 1> <source 2> ... as many names as will fit in 80  
+characters.  Multiple DN_SOURCE commands can be given in the solution.
+CLEAR will clear all previous DN_SOURCE entries.  A minus sign (negative  
+of not using) in front of a source name will cause it to be used again if 
+it was previously deleted.
+ 
+EXAMPLES
+--------
+ DN_SOURCE  CLEAR                  ! Remove any previous deletes. 
+ DN_SOURCE  1642+690  -1420+399    ! Do not use 1642+690, and make  
+.                                    sure we use 1420+399 
+ 
+ 
+BASE_CON -- allows the user to specify the baseline dependent 
+contributions.  The options are:
+1)  ETD   solid earth tide contribution (should always be given)
+2)  PTD   Solid earth pole tide contribution
+3)  OCEAN ocean loading contribution. 
+4)  AXISOFFS axis offset contribution 
+5)  GENREL General relativity correction.  SOLVK is modified to change  
+          the sign on the potential term for CALC Ver 6.0 computed  
+          relativity correction.
+6)  GRP_ION group delay ion correction (may also be applied to phase  
+          delays) 
+7)  PHS_ION phase delay ion correction (may also be applied to group
+          delays) 
+ 
+The theoretical delays in SOLVK have ALL contributions removed from 
+them, thus ETD, and  AXISOFFS should always be applied (unless the user 
+is experimenting with these contributions). 
+The CLEAR and RESET features may be used as with the other contribution 
+commands. A plus or minus sign may be used immediately before the name to 
+force the contribution to be turn on or off 
+ 
+EXAMPLE 
+------- 
+  BASE_CON  CLEAR ETD PTD OCEAN AXISOFFS GENREL GRP_ION  ! Standard 
+.                                                        ! solution 
+  BASE_CON  RESET -PTD          ! Default model, but no pole tide.
+ 
+ 
+WVR_CODE -- allows the user to specify the maximum WVR code to be allowed 
+for data used in this solution.  Only used if WVR data is applied and is  
+available.  Any WVR data with a code less than or equal to the limit will 
+be used.  (Except WVR_CODE -1 which mean no WVR data available).  
+The codes for the WVR are:
+ CODE   MEANING 
+    0   WVR data with in 2 degs of source, and taken during observation 
+    1   WVR data taken during observation but > 2 degs from source
+    2   WVR data mapped from zenith point immediately before observation
+    3   WVR data interpolated from two points each with in 30 minutes of  
+        observation.
+    4   Same as 3 except 2 points are > than 30 minutes from observation
+    5   WVR extrapolated (data only before or after observation)
+    6   WVR data taken from zenith measured during observation period.
+ 
+NOTE: Since code 6 is clearly better than codes 3,4, and 5; All WVR CODE
+6 values are converted to code 2 before the check is made during  
+processing. 
+ 
+RESET  -- Not yet implemented.
+ 
+ 
+OUTPUT FORMAT 
+------------- 
+ 
+    The output from SOLVK is fairly self explanatory.  There are however  
+some differences from the standard SOLVE output.  Some features which are 
+not obvious are:  
+   1) The baseline dependent statistics of the postfit residuals will 
+only be generated for the data types used in the solution and if a back 
+solution is run (by giving the BCK_FILE command).   
+   2) If the back solution is not run then an estimate of the chi^2/f for 
+the residuals is given based on the updated prefit residuals obtained 
+during the solution.  At each step in the filter, a prediction is made of 
+the estimates of the parameters based on all of the previously used data.   
+From these parameters and their covariance matrix, the "prefit" residuals 
+and their covariance matrix at the next data step are computed.  Near the 
+end of the data set, these "prefit" residuals are also exactly equal to 
+the postfit residuals and their variances are dominated by data noise 
+rather than parameter noise.  From these prefit residuals you can obtain  
+an estimate of data quality.  If there are severe data problems, the  
+prefit Chi^2/f will disclose the problem.   
+    3) The local coordinates of the sites are automatically computed and  
+display.  The NS component is displayed as the GEODETIC latitude in 
+radians multiplied by the semimajor axis of the ellipsoid (6378145 m).  
+The East component is the distance (measured east) from the Greenwich 
+meridian along the small circle at the latitude of the site. The Up 
+component is the ellipsoidal height of the site.  
+    4) When all site positions are estimated, SOLVK will use an algorithm 
+to determine the translation of the coordinate system which will minimize 
+the horizontal displacements of the sites from the apriori positions.   
+This algorithm removes the singularity due to the translation of the  
+coordinate system.  If the pole position and UT1 are estimated along with 
+all site positions, then the pole position/UT1 values will be set to the  
+estimated values and forced to have zero sigma.  Again this removes the 
+singularity in the system and the site positions will be shown with their 
+intrinsic uncertainty. None of these algorithms affect either the value 
+of, or the sigma of the baseline lengths.  They simply define the 
+coordinate in which the output results are given. 
+ 
+NOTES on SOLVK
+--------------
+ 
+    SOLVK is actually composed of 6 programs: 
+SOLVK -- Reads the markov file and controls the running of other programs 
+         in the suite.  SOLVK outputs the COM_FILE which is used to 
+         communicate information between the various programs in the  
+         SOLVK suite. 
+KALGN -- Reads the KalObs file and produces a file containing observed  
+         minus computed values and partial derivatives for the parameters 
+         to be estimated in this solution.  KALGN writes out the KAL_FILE.  
+FORSL -- Actually does the forward Kalman filter solution.  It reads  
+         KAL_FILE and output the covariance matrix and solution vector in 
+         a file whose name is given by the SOL_FILE. When a back solution 
+         is run the covariance matrix is output for each epoch of data. 
+         (Generally between 100-300 covariance matrices are written in  
+         these cases.)
+SAVSL -- Saves the final covariance matrix in a GLOBK global solution 
+         file format. (NOTE: None of the orientation and stabilization  
+         routines used in the output are applied to this matrix.) 
+BAKSL -- Does the back solution.  It uses the SOL_FILE produced by FORSL
+         and the KAL_FILE to do the solution.  It outputs the BCK_FILE. 
+OUTSL -- Outputs the solutions and applies the stabilization algorithms if  
+         an underdetermined solution was run (e.g. all site positions 
+         estimated.) OUTSL can be run by itself to re-output the  
+         solution. This must be done before the next solution is run. 
+         To run OUTSL use:
+         CI> outsl,<output LU>,<output option>,<com_file name>
+         where Output LU is the LU for output (defaults to user's 
+                         terminal)
+               output option is the bit mapped words which indicates the
+                         quantities to be output (See PRT_OPTS) 
+               com_file name is the name of the SOLVK common file if  
+                         different from the default name. (see COM_FILE 
+                         command).
+ 
+All of these programs are compiled and linked with DEBUG turned on. After 
+a SOLVK run, any of the programs can be run with DEBUG from the KALMAN  
+directory.
+ 
+Other programs which can be used in conjunction with SOLVK are: 
+PLTSL -- Plots the values in the BCK_FILE (see PLTSL::HELP) 
+KALAN -- Allows analysis of the SOLVK solution if a back solution has 
+         been run (See KALAN::HELP) 
+ 
+For further information about all of the Programs in the Kalman Filter  
+Analysis Package see KALMAN::HELP 
+ 
+ 
+ 

@@ -1,0 +1,137 @@
+#!/bin/csh -f
+#
+#doc Merge RINEX navigation files from individual statons into a single combined nav file
+#doc
+#
+# sh_merge_nav -t YYYY DDD  [-c eph_ID] [-p path] [-d]
+
+#	Merge RINEX navigation files from individual statons into a single file without duplicates
+#  Calls gamit/utils program emerge
+
+#	-c ephemerid ID, default = brdc
+#	-t day_of_year 2ditit_year, e.g. 011 97
+#	-p path(s) where individual compressed or uncmpressed nav files stored 
+#	-d run dos to unix on the input rinex nav files [default no].
+
+# By pfang@ucsd.edu, April 97  
+# Modified by S. McClusky 99 08 23 
+# Modified and renamed by R. King Feb 2000
+# Modified by M. Floyd (2011/06/10, MIT) to use tr instead of potentially unavailable dos2unix
+        
+if ($#argv == 0 ) then
+echo "   "
+echo " Merge individual RINEX navigation files into a single file "
+echo " "
+echo " USAGE: sh_merge_nav -t YYYY DDD [-c eph_ID] [-p path] [-d] "
+echo " "
+echo " where "
+echo " "
+echo "  -t 4-digit year, day-of-year, e.g. 2000 035  (required)  "
+echo "  -c ephemerid ID  [default = brdc]           (optional)  "
+echo "  -p path(s) where individual compressed or uncmpressed nav files stored, default pwd"
+echo "  -d run dos to unix on the input rinex nav files  [default no] "
+echo " "
+exit
+endif
+
+# set defaults
+  set d2u = 'no'
+# navp is the path(s) where rinex nav files hold and
+# it is a local environment dependent variable.
+# user should modify it accordingly. It is OK to set it
+# to a blank and use run argument -p to set the path(s)
+set navp = ''
+
+# expt is the filename code for the merged nav file
+set expt = 'brdc'
+
+# variable enough is the max number of rinex nav files
+# to be used for obtaining a combined navigation file.
+set enough = 500
+
+# variable nmust is the min number of rinex nav files
+# required for obtaining a combined efile.
+set nmust = 5     
+    
+#  I don't understand what this is doing:
+#if ($#argv < 1) then
+#	sed -e "1 d" -e "/pfang/q" -e "s/#//" -e "s'NAVP'$navp'" $0
+#	exit
+#endif
+#  so do this:
+set navp = .
+
+
+# -------------------------------------------
+echo "sh_merge_nav: Sort user options"
+# -------------------------------------------
+foreach a ($argv)
+switch($a)
+	case -c:
+		set expt = ($argv[2])
+		breaksw
+	case -p:
+		set navp = (`echo $argv | cut -d- -f2`); shift navp
+		breaksw  
+	case -t:
+       set year = $argv[2]
+       set yr = `sh_year -year $year`
+		set doy = $argv[3]
+		breaksw
+	case -d:
+		set d2u = 'yes'
+		breaksw
+endsw
+shift
+end
+    
+set pwd = `pwd`
+
+# --------------------------------------------------------------
+echo "sh_merge_nav: Checking for existing merged RINEX nav file"
+# --------------------------------------------------------------
+if (-z $expt${doy}0.$yr[2]n) \rm $expt${doy}0.$yr[2]n
+if (-e $expt${doy}0.$yr[2]n) then
+	echo "Found $expt${doy}0.$yr[2]n"
+endif
+
+pushd ${navp}
+# -----------------------------------------------------------
+echo "sh_merge_nav: Uncompressing available RINEX nav files"
+# -----------------------------------------------------------
+gunzip -f  ????${doy}?.$yr[2]n.Z
+
+# -------------------------------------------------
+echo "sh_merge_nav: Creating merged RINEX nav file"
+# -------------------------------------------------
+set n_in = `ls ????${doy}?.$yr[2]n | wc -l`
+if ($n_in >= $nmust) then
+	foreach f (????${doy}?.$yr[2]n)
+          # Modified by MAF (2011/06/10, MIT)
+          # to use tr instead of potentially unavailable dos2unix
+          #if ( $d2u == 'yes' ) dos2unix $f $f
+          if ( $d2u == 'yes' ) then
+            tr -d '\r' < $f > $f.tmp && mv -f $f.tmp $f
+          endif
+		if (`sh_chknav $f`) \mv $f ${f}.bad
+	end
+	ls ????${doy}?.$yr[2]n | head -n $enough | emerge >! /dev/null
+else
+	echo "Too few RINEX nav files available: $n_in. Must be at least $nmust available."
+	exit 1
+endif
+
+if (-e eph.merged && ! -z eph.merged) then
+   \mv eph.merged ${pwd}/$expt${doy}0.$yr[2]n
+endif
+
+# ---------------------------------------------------------------
+echo "sh_merge_nav:  merged navigation file generated as $expt${doy}0.$yr[2]n "
+# ---------------------------------------------------------------
+                             
+# ---------------------------------------------------------
+echo "sh_merge_nav: Compressing available RINEX nav files"
+# ---------------------------------------------------------
+gzip -f  ????${doy}?.$yr[2]n
+
+popd

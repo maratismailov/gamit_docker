@@ -1,0 +1,601 @@
+#!/bin/csh -f
+# 
+#doc Creates GMT plots of station timeseries from GLOBK/GLORG output in 1 column 3 row format.
+#doc
+#
+# Shell script for creating GMT plots of station time series from the 
+# values extracted from a GLRED prt file or GLOBK bak file by multibase. 
+#
+# This shell script was written originally at MIT in 1993 by Kurt Feigl and 
+# M Burc Oral using output from Tom Herring's programs ensum and bcsum. 
+# Last modified by S. McClusky 971124
+# sh_base1c3n created from sh_baseline Herring 031001
+
+# MOD TAH 980413: Allowed an extra directory to be specified to overlay
+#    time series plots.  The second directory is assumed to have files
+#    in the same format as the main directory.
+# MOD SMC and TAH: datR type files are considered to be RMS files and
+#    no mean or slope is removed.
+# MOD KLF: 20021105 define ranges, make compatible with SI-compiled GMT
+#
+if ( $#argv == 0  || `echo $1 | cut -c2-` == "help"   ) then
+echo " "    
+echo " Shell script for creating GMT plots of station time series "
+echo " from the values extracted from a GLRED prt file or GLOBK bak file by "
+echo " multibase. "
+echo " "
+echo " Basic usage : "     
+echo " "
+echo "    sh_base1c3n -f mb*  "
+echo " "    
+echo "        -f     :  Files from multibase to be plotted; all begin with mb_ "  
+echo " "
+echo "    or  -F <filename>  where <filename> is a file containing a list of specific mb_ "
+echo "                       files (baselines/stations)"
+echo "  "     
+echo " Type 'sh_base1c3n -help' to get a full list of options "  
+echo " "
+echo " "      
+if ( $argv == "-help" )  then 
+echo "--------------------------------------------------------------------------------"
+echo " "
+echo " Extended sh_base1c3n features for producing publishable plots"
+echo " " 
+echo "  -u                   :  Scale factor for uncertainties; default = 1."
+echo " "
+echo " -com          file    : Creates length file from  bcsum output com-file (component) and gets baseline lengths." 
+echo "                         If not issued, the value from values-file is passed to the plot." 
+echo "  " 
+echo " -sol          file    : Creates length file. from prt/glorg file. Try to avoid -sol (takes long time) and use -com. "
+echo "                         If not issued, the value from values-file is passed to the plot." 
+echo "  " 
+echo " -estimate     file    : Forward Solution prt/glorg file to obtain the estimated velocities." 
+echo "  		       This provides a comparison between stochastic and deterministic solution." 
+echo "   		       Activated when  -com is issued. "
+echo "   		       If -unc_scale issued, uncertainties of estimates will be scaled by this factor" 
+echo "   		     " 
+echo " -u[nc_scale]    #     : scale all uncertainties with this number. Default is 1." 
+echo "  " 
+echo " -o[order]       #     : polynomial to be fit to the estimates. 0 for mean  1 for velocity. -1  no trend" 
+echo "  " 
+echo " -vert                 : No velocity estimation for vertical component. Sets -o to 0." 
+echo "  " 
+echo " -y[scale]   min max   : vertical   scale.  If not issued it will be calculated."
+echo "  " 
+echo " -x[scale]   min max   : horizontal scale.  If not issued it will be calculated."
+echo "  " 
+echo " -year                 : turn on year( year.decimalday)"
+echo "                         Default is day. " 
+echo "  " 
+echo " -n[row]               : turns on 3 rows/column option. Default is 4 rows/column. " 
+echo "                         It is designed to plot only 3 components of a baseline." 
+echo "                   2   : turns on 2 rows/column option." 
+echo "  " 
+echo " -cols        val      : Choose 1 or 2 colums of plots per page [default = 2] "
+echo "  "
+echo " -frame      value     : gmt border frame  ticks. Default is  2. " 
+echo "  " 
+echo " -anot       value     : gmt border label intervals. Default is  1. " 
+echo "  " 
+echo " -header               : Turn OFF page anw owner line. Good for thesis." 
+echo "  " 
+echo " -ps       extension   : Extend on  psbase. gmt file name (.  is not necessary)" 
+echo "  " 
+echo " -c[omment]   text     : Comment entry. Anything other than - as first character of a word. "
+echo "                         Use _  instead. ( \> for > )" 
+echo "  " 
+echo " -p[rinter]  printer   : If system PRINTER  is defined something else." 
+echo "  " 
+echo " -res                  : plot residuals to fit..." 
+echo "  " 
+echo " -erase                : remove old psbase files [default is to overwrite" 
+echo "  " 
+echo " New feature"
+echo " -dir directory        : Name of directory with times series to overlay"
+echo "                         on primary plots"
+echo " -ldir directory       : Directory for line data: Files are <site>.NEU"
+echo " "
+echo " New feature (990304)"
+echo " -edit <n_sigma>       : Remove data points more than <n_sigma> times the RMS"
+echo "                         for the  statistics and plot with light-blue and"
+echo "                         orange colors (for primary and secondary data)"
+echo "                         This feature needs the 990304 version of poly01r"
+echo "  " 
+echo " -hbars                : remove horizontal caps on error bars" 
+echo "  " 
+echo " -line <time>          : New feature. Draw a vertical line at the given time.  "
+echo "                         Can be issued multiple times for more than one line"
+echo "  "
+echo " -maxsigma  val        : Maximum sigma (mm) to plot. " 
+echo " "
+echo " -lab1 <label1>        : Label to be added to main (blue) data"
+echo " -lab2 <label2>        : Label to be added to secondary (red) data"
+echo " "
+echo " -align <O/S>          : Used with -dir option to align -dir series by removing"
+echo "                         an offset between the series (O option) or an offset"
+echo "                         and slope (S option)"
+echo " "
+
+
+
+endif
+exit 0
+endif
+
+##################### SET UP DEFAULTS ############################################################
+set printer   = ""
+set unc_scale = none 
+set header   = yes
+set xtype    = day
+set inst     = ""
+set ltime    = ""
+set com      = none
+set sol      = none
+set yscale   = none
+set files    = ""
+set FILE     = ""
+set comment  = " " 
+set psfile   = "psbase"
+set xmin     =  0
+set xmax     =  0
+set ymin     =  0
+set ymax     =  0
+set order    =  0
+set vert     =  unknown
+set fakeflag =  yes 
+set nrow     =  4
+set frame    =  "" 
+set anot     =  "" 
+set ADD      = ""
+set estimate = ""
+set cols = 2
+set res  = "no"
+set vels = none
+set erase  = no
+set dir2   = ""
+set ldir   = ""
+set edit   = 0       
+set h_caps = yes 
+set text_color = "-G5/5/5"
+set maxsigma = 1000.0
+set lab1 = "std"
+set lab2 = "alt"
+set align = 'N'
+
+# MOD KLF 20021106
+set r = `echo "0 0 0 0" | awk '{print $1,$2,$3,$4}'`
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+echo " "
+echo " Running sh_base1c3n to create GMT plots of time series"
+echo " "
+
+# decipher command line
+while ($#argv > 0 )
+set input = ( $argv )
+switch($input[1])
+	case -xt:
+	case -xtype:
+		set xtype = "year"
+                breaksw
+	case -year:
+		set xtype = "year"
+                breaksw
+	case -x:
+	case -xscale:
+		set xmin = $input[2] 
+		set xmax = $input[3] 
+		shift input
+                breaksw
+	case -y:
+	case -yscale:
+		set ymin =  $input[2]
+		set ymax =  $input[3]
+		shift input
+                breaksw
+        case -com:
+                if ( -e $input[2] ) set com       =  $input[2]
+                breaksw
+        case -sol:
+                if ( -e $input[2] ) set sol       =  $input[2]
+                breaksw
+        case -u:
+        case -unc:
+        case -unc_scale:
+                set unc_scale     =  $input[2]
+	echo ">>>>>> scaling uncertainties by : "  $unc_scale 
+                breaksw
+        case -ps:
+                set psfile       =  psbase_$input[2]
+                breaksw
+        case -a:
+        case -add:
+                set ADD       =  "_"$input[2]
+                breaksw
+        case -r:
+        case -res:
+                set res       =  "yes"
+                breaksw
+        case -e:
+        case -erase:
+                set erase     =  "yes"
+                breaksw
+        case -edit:
+                set edit      = $input[2]
+                breaksw
+        case -line:
+                set ltime    = `echo $ltime $input[2] | awk '{print $0}'`
+                breaksw
+        case -p:
+        case -printer:
+                set printer   =  $input[2]
+                breaksw
+        case -header:
+                set header    =  no
+                breaksw
+        case -o:
+        case -order:
+                set order     =  $input[2]
+		if ( $order < 0 ) set fakeflag = no 
+                breaksw
+        case -vert:
+                set vert     =  no
+                breaksw
+        case -estimate:
+                set estimate     =  $input[2]
+                breaksw
+        case -n:
+        case -nrow:
+                set nrow     =  3
+                if  (`echo  $input[2]  | cut -c1 ` != "-" )   set nrow     =  $input[2]
+                breaksw
+        case -cols:
+                set cols     =   $input[2]  
+                breaksw
+        case -c:
+        case -comment:
+		set comment   =   ( $comment $input[2] ) 
+		shift input; shift input 
+		while ( $#input > 0 &&   `echo  $input[1]  | cut -c1 ` != "-" ) 
+			set inarg =  $input[1]
+			if ( `echo  $inarg | cut -c1 ` != "-" ) then
+				set comment    =   ( $comment $inarg ) 
+				shift input
+			endif
+		end
+#               set comment     =  ( $input[2] ) 
+		breaksw
+        case -anot:
+                set anot     =   $input[2]  
+		breaksw
+        case -dir:
+                set dir2     =   $input[2]  
+		breaksw
+        case -ldir:
+                set ldir     =   $input[2]  
+		breaksw
+        case -frame:
+                set frame     =   $input[2]  
+		breaksw
+        case -hbars:
+                set h_caps     =   no  
+		breaksw
+	case -f:
+        case -file:
+                set files        =  (  $input[2-] )
+#		\rm -rf tmp.files[1-7]
+#		echo $files >! tmp.files1
+# Paul Tregoning & Simon McClusky turned off argv being set to null to allow -f
+# command to appear anywhere in command line, 25th April 1995.
+#		set argv = null
+		breaksw
+	case -F:
+        case -FILE:
+                set FILE       =    $input[2] 
+#	        cat  $FILE | awk '{printf"%-50s ", $1 }' >! tmp.files
+		\rm -rf tmp.files[1-7]
+	        cat  $FILE | awk 'NR >    0 && NR <=  600  {printf"%-50s ", $1 }' >! tmp.files1
+	        cat  $FILE | awk 'NR >  600 && NR <= 1200  {printf"%-50s ", $1 }' >! tmp.files2
+	        cat  $FILE | awk 'NR > 1200 && NR <= 1800  {printf"%-50s ", $1 }' >! tmp.files3
+	        cat  $FILE | awk 'NR > 1800 && NR <= 2400  {printf"%-50s ", $1 }' >! tmp.files4
+	        cat  $FILE | awk 'NR > 2400 && NR <= 3000  {printf"%-50s ", $1 }' >! tmp.files5
+	        cat  $FILE | awk 'NR > 3000 && NR <= 3600  {printf"%-50s ", $1 }' >! tmp.files6
+	        cat  $FILE | awk 'NR > 3600 && NR <= 4200  {printf"%-50s ", $1 }' >! tmp.files7
+		breaksw
+        case -maxsigma:
+                set maxsigma    = $input[2]
+                breaksw
+
+        case -lab1:
+                set lab1 =  $input[2]
+                breaksw
+
+        case -lab2:
+                set lab2 =  $input[2]
+                breaksw
+
+        case -al*:
+                set align = $input[2]
+                breaksw
+
+endsw
+shift argv
+end
+#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+echo COMMENT : $comment
+
+#=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+set psfile = $psfile$ADD
+gmtdefaults -D >! .gmtdefaults
+gmtset MEASURE_UNIT       inch \
+       BASEMAP_FRAME_RGB  5/5/5 \
+       ANOT_OFFSET        0.050 \
+       TICK_LENGTH        -0.075 \
+       LABEL_FONT_SIZE  12 \
+       ANOT_FONT_SIZE   12
+
+# Set basic parameters
+set color  = '-Sc0.040 -Ey0.04/3/0/0/255 -W3/0/0/255 -G0/0/255'
+set cedit  = '-Ss0.040 -Ey0.05/2/127/200/255 -W3/127/200/255 -G127/200/255'
+set cline  = '-W3/0/0/0 -G0/0/0'
+set color2 = '-St0.080 -Ey0.05/3/255/0/0 -W2/255/0/0 -G255/0/0'
+set color3 = '-Sc0.040 -W1/60/60/60 -G0/255/0'
+set cedit2 = '-Si0.050 -Ey0.02/2/255/200/0 -W2/255/200/0 -G255/200/0'
+
+set comps = `echo "North East Height"`
+
+#save the order and res put in
+set save_order = $order
+set save_res   = $res
+
+# Set for 1 column and three plots per paage    
+set NPERPAGE = 3
+set N = 0
+set PAGE = 1
+set FRAME = 0
+set yskip = 7.5
+
+# set scales for rates
+if( $xtype == 'year' ) then
+   set vmul = 1
+else
+   set vmul = 365
+endif
+
+### OK now loop over the files to be plotted
+foreach file (   `echo $files`  )
+   set pnum = `echo $file:e | awk '{print substr($0,4,1)}'`
+   set sname = `echo $file:t | awk '{gsub("_GPS","    ")} {print substr($0,4,8)}'`
+   set sfile = $file:t
+   set site = `echo $sfile | awk '{print substr($0,4,8)}'`
+
+#
+#  Set up data to be plotted
+#**** poly01 <weigh=yes/no>  <order=0/1>   <fake=yes/no>  <res=yes/no> <n_sigma>
+#  Convert values to mm
+   set umul = 1
+   if( $pnum == 3 ) set umul = 3
+   tail -n +4 $file | awk -v ms=$maxsigma  -v um=$umul '{if( $3 < um*ms/1000) {print $1,$2*1000,$3*1000}}' >! tmp.x
+
+#  See if overlay
+   if ( $dir2 != '' && -e $dir2/$sfile ) then
+      tail -n +4 $dir2/$sfile | awk -v ms=$maxsigma -v um=$umul '{if( $3 < um*ms/1000) {print $1,$2*1000,$3*1000}}' >! tmp.2
+      poly01r yes $order no no $edit < tmp.2 | head -n 1 >! tmp.pol2
+      set wmea2 = `awk '{print $2}' tmp.pol2`
+      set offse2 = `awk '{print $5}' tmp.pol2`
+      if ( $order == 0 ) set offse2 = $wmea2
+      set offtim2 = `head -n 1 tmp.x | awk '{print $1}'`
+      set slop2 = `awk '{print $8}' tmp.pol2`
+      set slopesi2 = `awk '{print $9}' tmp.pol2`
+      set wrm2 = `awk '{print $15}' tmp.pol2`
+      set nrm2 = `awk '{print $13}' tmp.pol2`
+      set nob2 = `awk '{print $11}' tmp.pol2`
+   else
+      \rm tmp.2 >&! /dev/null 
+   endif
+
+#  See if line overlay
+   if( $ldir != '' && -e $ldir/${site}.NEU ) then
+      awk -v n=$pnum '{print $1,$(n+1)*1000}'  $ldir/${site}.NEU >! tmp.3
+   else
+      \rm tmp.3 >&! /dev/null
+   endif 
+
+#  Get the mean and optional slope of results
+   poly01r yes $order no no $edit < tmp.x | head -n 1 >! tmp.poly
+   set wmean = `awk '{print $2}' tmp.poly`
+   set offset = `awk '{print $5}' tmp.poly`
+   if ( $order == 0 ) set offset = $wmean
+   set offtime = `head -n 1 tmp.x | awk '{print $1}'`
+   set slope = `awk '{print $8}' tmp.poly`
+   set slopesig = `awk '{print $9}' tmp.poly`
+   set wrms = `awk '{print $15}' tmp.poly`
+   set nrms = `awk '{print $13}' tmp.poly`
+   set nobs = `awk '{print $11}' tmp.poly`
+
+#  Get the start and stop times of the data
+   set stime = `sort -n tmp.x | head -n 1 | awk -v xm=$xmin '{if( xm != 0 && xm < $1) {print xm} else {print $1}}'`
+   set etime = `sort -n tmp.x | tail -n -1 | awk -v xm=$xmax '{if( xm != 0 && xm > $1) {print xm} else {print $1}}'`
+
+#  Now generate the data to be plotted and the model of the data
+   if( $res == 'yes' ) then
+      awk -v ofs=$offset -v oft=$offtime -v sl=$slope '{print $1, $2-ofs-sl*($1-oft), $3}' tmp.x >! tmp.r1
+#     Compute residuals of overlay
+      if( -e tmp.2 ) then
+          awk -v ofs=$offset -v oft=$offtime -v sl=$slope '{print $1, $2-ofs-sl*($1-oft), $3}' tmp.2 >! tmp.r2
+#         See if align option
+          if ( $align == 'O' || $align == 'S' ) then
+             \mv tmp.r2 tmp.o2
+             poly01r yes 1 no no $edit < tmp.o2 | head -n 1 >! tmp.poly
+             set wm2 = `awk '{print $2}' tmp.poly`
+             set of2 = `awk '{print $5}' tmp.poly`
+             set sl2 = `awk '{print $8}' tmp.poly`
+             if ( $align == 'O' ) then
+                 set of2 = $wm2
+                 set sl2 = 0
+             endif
+             set ot2 = `head -n 1 tmp.o2 | awk '{print $1}'`
+             awk -v ofs=$of2 -v oft=$ot2 -v sl=$sl2 '{print $1,$2-ofs-sl*($1-oft),$3}' tmp.o2 >! tmp.r2
+          endif
+          
+      endif
+#     Compute residuals for line
+      if( -e tmp.3 ) then
+          awk -v ofs=$offset -v oft=$offtime -v sl=$slope '{print $1, $2-ofs-sl*($1-oft)}' tmp.3 >! tmp.r3
+      endif
+
+#     Set the line to be printed as a straight line
+      echo $stime $etime | awk '{printf(" %f 0.000\n %f 0.000\n",$1,$2)}' >! tmp.line
+   else
+      awk -v ofs=$wmean '{print $1, $2-ofs, $3}' tmp.x >! tmp.r1
+#     Compute residuals of overlay
+      if( -e tmp.2 ) then
+          awk -v ofs=$wmean '{print $1, $2-ofs, $3}' tmp.2 >! tmp.r2
+
+#         Modify the residual file if we are going to align the series
+          if ( $align == 'O' || $align == 'S' ) then
+             \mv tmp.r2 tmp.o2
+             poly01r yes 0 no no $edit < tmp.o2 | head -n 1 >! tmp.poly
+             set wm2 = `awk '{print $2}' tmp.poly`
+             set of2 = `awk '{print $5}' tmp.poly`
+             set sl2 = `awk '{print $8}' tmp.poly`
+             if ( $align == 'O' ) then
+                 set of2 = $wm2
+                 set sl2 = 0
+             endif
+             set ot2 = `head -n 1 tmp.o2 | awk '{print $1}'`
+             awk -v ofs=$wm2 -v oft=$ot2 -v sl=$sl2 '{print $1,$2-ofs-sl*($1-oft),$3}' tmp.o2 >! tmp.r2
+          endif
+      endif
+#     Compute residuals for line
+      if( -e tmp.3 ) then
+          awk -v ofs=$wmean '{print $1, $2-ofs, $3}' tmp.3 >! tmp.r3
+      endif
+
+#     Set the line to be printed as a straight line
+      echo $stime $etime | awk -v ofs=$offset -v wm=$wmean -v oft=$offtime -v sl=$slope \
+        '{printf(" %f 0.000\n %f 0.000\n>\n%f %f\n%f %f\n",$1,$2,$1,ofs+sl*($1-oft)-wm,$2,ofs+sl*($2-oft)-wm)}' >! tmp.line
+   endif
+#
+#  Now get the scales of the plots
+   if ( $xmin != 0 ) then
+      set xscale = `echo $xmin $xmax`
+   else
+      set xscale = `echo $stime $etime | awk '{printf("%10.5f %10.5f", $1-($2-$1)/20, $2+($2-$1)/20)}'`
+   endif
+   if ( $ymin != 0 ) then
+      set yscale = `echo $ymin $ymax`
+   else
+      if( $xtype == "year" ) then
+         set int = "-I0.01/5"
+      else
+         set int = "-I2/5"
+      endif 
+      set yscale = `minmax $int tmp.r1 | awk '{gsub("/"," ")} {print $3,$4}'`
+   endif
+   if( $xscale[1] == $xscale[2] ) then
+      set xscale = `echo $xscale | awk '{print $1-1.e-3, $2+1e-3}'`
+   endif
+   if( $yscale[1] == $yscale[2] ) then
+      set yscale = `echo $yscale | awk '{print $1-1.e-3, $2+1e-3}'`
+   endif
+
+   set SCALE = `echo $xscale $yscale | awk '{printf("-R%f/%f/%f/%f",$1,$2,$3,$4)}'`
+#   if( $xtype == "year" ) then
+#      set anot = `echo $xscale $yscale | awk '{if ( $4-$3 < 40 ) {printf("-Ba%ff%f/a5f1",int(($2-$1)*5+1)*0.05,int(($2-$1)*5+1)*0.025)} else {printf("-Ba%ff%f/a10f5",int(($2-$1)*5+1)*0.05,int(($2-$1)*5+1)*0.025)}}'`
+#   else
+#      set anot = `echo $xscale $yscale | awk '{if ( $4-$3 < 40 ) {printf("-Ba%ff%f/a5f1",int(($2-$1)/40+1)*5,int(($2-$1)/40+1)*2.5)} else {printf("-Ba%ff%f/a10f5",int(($2-$1)/40+1)*5,int(($2-$1)/40+1)*2.5)}}'`
+#   endif
+    set base = `echo $xscale $yscale | awk '{print 10^(int(log(($2-$1)*1.e6)/log(10)))/1e6, 10^(int(log(($4-$3)*1.e6)/log(10)))/1e6}'`
+    set urng = `echo $xscale $yscale $base | awk '{print int(($2-$1)/$5), int(($4-$3)/$6)}'`
+#   Now based on the unit range (ie. values between 1 and 9)
+    set xi = 0 ; set yi = 0
+    if( $urng[1] <= 10 ) set xi = 2   ; if( $urng[2] <= 10 ) set yi = 2
+    if( $urng[1] <  8 ) set xi = 1   ; if( $urng[2] <  8 ) set yi = 1
+    if( $urng[1] <  5 ) set xi = 0.5 ; if( $urng[2] <  5 ) set yi = 0.5
+    if( $urng[1] <  2 ) set xi = 0.2 ; if( $urng[2] <  2 ) set yi = 0.2
+    if( $xi == 0 ) then
+       set xi = 0.5 ; echo "xi not set $urng"
+    endif
+    if( $yi == 0 ) then
+       set yi = 0.5 ; echo "yi not set $urng"
+    endif
+    set anot = `echo $xi $yi $base | awk '{printf("-Ba%ff%f/a%ff%f",$1*$3,($1*$3)/2,$2*$4,($2*$4)/2)}'`
+#
+#  Now call psxy to start plots
+   set ko = "-K -O"
+   set ke = "-K -O"
+   if ( $pnum == 1 ) then
+      set psf = ${psfile}.$sname
+      echo "Processing $psf" 
+      set ko = "-K"
+      \rm $psf >&! /dev/null
+      touch $psf
+      set anot = $anot":North\ (mm):WeSn"
+      set yoff = "-Y7.6"
+   else if ( $pnum == 2 ) then
+      set anot = $anot":East\ (mm):WeSn"
+      set yoff = "-Y-3.30"
+   else if ( $pnum == 3 ) then
+      set anot = $anot":Height\ (mm):WeSn"
+      set ke = "-O"
+      set yoff = "-Y-3.30"
+   endif
+
+#  Now plot values
+   \rm tmp.tx2 >&! /dev/null
+   if( -e tmp.r3 ) then
+       psxy  tmp.r3  $SCALE "$anot"  -JX6.5/2.7 $color3 -P $ko $yoff  >> $psf
+       set yoff = "-Y0.0"; set ko = "-K -O";  set SCALE = "-R" ; set anot = "-P"
+       psxy  tmp.r3  $SCALE "$anot"  -JX6.5/2.7 -W2/0/255/0 -P $ko $yoff  >> $psf
+   endif
+   if( -e tmp.r2 ) then
+       psxy  tmp.r2  $SCALE "$anot"  -JX6.5/2.7 $color2 -P $ko $yoff  >> $psf
+       set yoff = "-Y0.0"; set ko = "-K -O";  set SCALE = "-R" ; set anot = "-P"
+   endif
+
+
+   psxy  tmp.r1  $SCALE "$anot"  -JX6.5/2.7 $color -P $yoff $ko  >> $psf
+   psxy  tmp.line -R -JX $cline -M  -P -O -K >> $psf
+
+#  See if we are gping to put lines on plot at certain times
+   set ll = `echo $ltime | wc -w`
+   if( $ll > 0 ) then
+#      OK Add lines
+       \rm tmp.vl >&! /dev/null ; touch tmp.vl
+       foreach t (` echo $ltime`)
+          echo $t $yscale | awk '{printf(" %f %f\n %f %f \n::\n",$1,$2,$1,$3)}' >> tmp.vl
+       end
+       psxy tmp.vl -R -JX -W5/0/255/0 -K -O -M:: >> $psf
+   endif
+
+   if ( $order == 1 ) then
+     echo $lab1 | awk -v sn=$sname -v cmp=$comps[$pnum] -v vmul=$vmul -v slope=$slope -v ssig=$slopesig \
+           -v nrms=$nrms -v wrms=$wrms -v nobs=$nobs \
+           '{printf("0.0 1.12 12 0 0 9 %s %s NRMS %4.2f WRMS %4.1f mm # %d Slope %6.1f @\!+_ %5.2f mm/yr %s",sn,cmp,nrms,wrms,nobs,slope*vmul,ssig*vmul,$0)}' >! tmp.txt
+     if( -e tmp.2 ) then
+         echo $lab2 | awk -v sn=$sname -v cmp=$comps[$pnum] -v vmul=$vmul -v slope=$slop2 -v ssig=$slopesi2 \
+             -v nrms=$nrm2 -v wrms=$wrm2 -v nobs=$nob2 \
+             '{printf("0.0 1.06 12 0 0 9 %s %s NRMS %4.2f WRMS %4.1f mm # %d Slope %6.1f @\!+_ %5.2f mm/yr %s",sn,cmp,nrms,wrms,nobs,slope*vmul,ssig*vmul,$0)}' >! tmp.tx2
+     endif
+   else
+     echo $lab1 | awk -v sn=$sname -v cmp=$comps[$pnum]  \
+           -v nrms=$nrms -v wrms=$wrms -v nobs=$nobs \
+           '{printf("0.0 1.12 12 0 0 9 %s %s NRMS %4.2f WRMS %4.1f mm # %d %s",sn,cmp,nrms,wrms,nobs,$0)}' >! tmp.txt
+     if( -e tmp.2 ) then
+        echo $lab2 | awk -v sn=$sname -v cmp=$comps[$pnum]  \
+              -v nrms=$nrm2 -v wrms=$wrm2 -v nobs=$nob2 \
+              '{printf("0.0 1.06 12 0 0 9 %s %s NRMS %4.2f WRMS %4.1f mm # %d %s",sn,cmp,nrms,wrms,nobs,$0)}' >! tmp.tx2
+     endif
+   endif
+   if( -e tmp.tx2 ) pstext tmp.tx2 -R0/1/0/1 -G255/0/0 -JX -K -O  -P -N >> $psf
+   set U = " "
+   if ( $pnum == 3 ) set U = "-U"
+   pstext tmp.txt -R0/1/0/1 -G0/0/255 -JX $ke -P -N $U >> $psf
+   \rm tmp.line tmp.pol2 tmp.poly tmp.r1 tmp.r2 tmp.r3 tmp.2 tmp.3 tmp.txt tmp.tx2 tmp.x tmp.o2 >&! /dev/null
+   \rm tmp.dat2  tmp.rate2  tmp.redt  tmp.redt2  tmp.sig2  tmp.xm2  tmp.xr2  tmp.xrs2  tmp.xxm2  tmp.xy2 >&! /dev/null
+
+end
+
+

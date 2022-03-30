@@ -1,0 +1,98 @@
+#!/bin/csh -f
+# sort scandd files
+# from Peng Fang, pfang@bull.ucsd.edu
+# 04/03/91 
+
+# If user interrupts, do cleanup before exiting script.
+# MOD TAH 070514: Updated sort calls replacing +m structure with -n -k (m+1)
+
+onintr CLEANUP
+
+if ($#argv < 1) then 
+
+   echo ''
+   echo -n "Choose a lower bound to sort scan.rms (e.g. 0.15) : "
+   set CT=($<)
+
+else
+
+   set CT=$1
+
+endif    
+
+echo ''
+echo -n "Channel(s) to exclude (e.g. 3 5 or CR to skip) :"
+set SAT=($<)
+
+echo ''
+echo -n "Site(s) to exclude (e.g. 9 1 or CR to skip) :"
+set SIT=($<) 
+
+echo ''
+#echo -n "Please wait while I am sorting"
+
+cp scan.rms rmstmp
+
+foreach s ($SAT)
+(echo $s; cat rmstmp) | awk 'NR == 1 {s = $1} \
+NR > 1 && $5 != s && $6 != s {print}' >! rms.tot
+mv rms.tot rmstmp
+end
+
+echo -n ".7"
+
+foreach t ($SIT)
+(echo $t; cat rmstmp) | awk 'NR == 1 {t = $1} \
+NR > 1 && $7 != t && $8 != t {print}' >! rms.tot
+mv rms.tot rmstmp
+end
+   
+(echo $CT; cat rmstmp) | awk 'NR == 1 {ct = $1} \
+NF != 1 && $1 > ct {print}' | sort -r -n | \
+awk '{printf "%4s",NR;print}' >! rms.qui
+
+echo -n ".5"
+
+(echo $CT; cat rmstmp) | awk 'NR == 1 {ct = $1} \
+NF != 1 && $2 > ct {print}' | sort -r -n -k 2 | \
+awk '{printf "%4s",NR;print}' >! rms.ful
+
+echo -n ".4"
+
+(echo $CT; cat rmstmp) | awk 'NR == 1 {ct = $1} \
+NF != 1 && $3 > ct {print}' | sort -r -n -k 3  | \
+awk '{printf "%4s",NR;print}' >! rms.tot
+ 
+echo -n ".3"
+
+cp scan.dd rmstmp
+
+foreach s ($SAT)
+(echo $s; cat rmstmp) | awk 'NR == 1 {s = $1} \
+NR > 1 && $3 != s && $4 != s {print}' >! dd.srt
+mv dd.srt rmstmp
+end
+
+echo -n ".2"
+
+foreach t ($SIT)
+(echo $t; cat rmstmp) | awk 'NR == 1 {t = $1} \
+NR > 1 && $5 != t && $6 != t {print}' >! dd.srt
+mv dd.srt rmstmp
+end
+
+echo -n ".1"
+
+sort rmstmp | awk '{printf "%4s",NR;print}' >! dd.srt
+
+echo ".0"
+
+\rm rmstmp
+
+echo 'The sorted files are: '
+echo 'rms.qui - LC-RMS for quick solution (any gap/flag starts a new rms) '
+echo 'rms.ful - LC-RMS for full  solution (any flag starts a new rms) '
+echo 'rms.tot - LC-RMS of the entire series (as in CVIEW). '
+echo 'dd.srt  - sorted version of "scan.dd". '
+echo ' '
+

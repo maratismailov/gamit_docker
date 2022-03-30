@@ -1,0 +1,23 @@
+DIFG_IGS:  Program to difference IGS clock files
+
+DIFF_IGS:  Program to difference IGS clock files
+
+Usage:
+% diff_igs <Input 1> <Input 2> <ref code> [out file]
+
+where
+<Input 1> is the first input clock file
+<Input 2> is the second clock file.  (Result is 
+          File 1 clk - File 2 clk
+<Ref code> is the 4-character site code to be used as the
+          reference (this clock is forced to be the same
+          between the two file)
+[Out file] is an optional output file name.  If this is not
+          given the name is generated from the file names
+          of the input file.  The standard naming convention
+          for the input files is CCCWWWWD.clk where CCC is the
+          3-character center code (e.g., SIO), and WWWWD is the
+          GPS week and day.
+Output is converted to nanoseconds and given as function of 
+deciminal day of year.
+

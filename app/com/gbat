@@ -1,0 +1,34 @@
+#!/bin/csh
+# Note.  $cwd gives the name of the link under tcsh, but under
+# regular /bin/csh it gives the disk name.
+# we would like the disk name
+# run a GPS batch job
+if ($#argv == 0) then
+   echo ' '
+   echo 'Use this shell script to run a batch job'
+   echo ' '
+   echo 'usage:   gbat myjob.bat'
+   echo 'usage:   gbat myjob.bat chandler'
+   echo ' '
+   echo ' '
+else  
+   if ($#argv == 1) then
+#     run on this machine        
+ #rwk 960221     csh -e -x $1 >&! $1.log & 
+      csh -x $1 >&! $1.log &
+      checkjob $1 &
+   else
+#     run on another machine.
+#     find directory
+      set CWD = `pwd`
+      echo '#\!/bin/csh' >! ~/$1.gbat
+      echo 'nice +10'  >> ~/$1.gbat
+      echo 'cd ' $CWD  >> ~/$1.gbat
+      echo 'checkjob' $1 '&'  >> ~/$1.gbat
+#rwk 960221      echo 'csh -e -x' $1 '>&\!' $1.log >> ~/$1.gbat
+      echo 'csh -x' $1 '>&\!' $1.log >> ~/$1.gbat
+      chmod +x ~/$1.gbat
+      rsh -n $2 $1.gbat &
+   endif
+endif
+

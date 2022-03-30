@@ -1,0 +1,59 @@
+#!/bin/csh -f
+#
+# Shell script to extract statistics from autcln.post.sum files
+# after gamit runs.
+if( $#argv == 0 ) then
+   echo 'sh_exstats: Extracts statistics from gamit runs'
+   echo 'Usage: sh_exstats -d <dir root> -o <out name>'
+   echo '  <dir root> is directory root'
+   echo '  <out name> output file name (if not given then RMS.<dir root> used'
+   exit
+endif
+#
+#
+set outname = "NONE"
+
+foreach a ($argv)
+switch($a)
+    case -d:
+      set dirroot = $argv[2]
+      breaksw
+
+    case -o:
+      set outname = $argv[2]
+      breaksw
+
+    endsw
+    shift
+end
+#
+if( $outname == "NONE" ) set outname = `echo $dirroot | awk '{gsub("/","")} {gsub("\\.\\.","")} {print"RMS."$0}'`
+
+# See how many directories
+set ts = "`date +"%y_%m_%d_%H:%M:%S"`"
+set dirs = `ls -d ${dirroot}*` 
+set nd = `echo $dirs | wc -w`
+#
+# If we have more than 1 directory loop over then
+echo "Output $dirroot summary to $outname"
+if( $nd > 0 ) then 
+   \rm -f rms.$ts num.$ts atv.$ts
+   touch rms.$ts num.$ts atv.$ts
+   foreach dir (`echo $dirs`)
+       set net = `echo $dir | awk -v root=$dirroot '{sub(root,"")} {print $0}'`
+       grep '^RMS  .. ' ${dir}/autcln.post.sum | egrep -v ' ALL |Site' | awk '{print $3, $4}' >> rms.$ts
+# MOD Murray/RWK 110912 
+#       grep '^NUM  .. ' ${dir}/autcln.post.sum | egrep -v ' ALL |Site' | awk '{print $3, $4}' >> num.$ts
+       grep '^NUM  .. ' ${dir}/autcln.post.sum | egrep -v ' ALL |Site' | awk '{print $3, substr($0,14,5)}' >> num.$ts
+       grep '^ATELV' ${dir}/autcln.post.sum | egrep -v ' ALL |Site' | awk -v net=$net '{print $2, $3, $4, net}' >> atv.$ts
+   end
+   echo "* RMS Statistics from root $dirroot (Elev Model A^2+(B/sin(elev))^2" >! $outname
+   echo "* Directories $dirs" >> $outname
+   echo "* Site   Num        RMS        A        B  Net" >> $outname
+   echo "*                 (mm)       (mm)     (mm)" >> $outname
+   paste -d ' ' rms.$ts num.$ts atv.$ts | awk '{printf("  %4s  %5d  %8.1f  %8.1f %8.1f %s\n",$1,$4,$2,$6,$7,$8)}' | sort -k 1,1 -k 6,6 >> $outname
+   \rm rms.$ts num.$ts atv.$ts 
+else
+   echo "* No directories mathching $dirroot"
+endif
+

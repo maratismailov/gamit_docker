@@ -1,0 +1,84 @@
+#!/bin/csh -f
+#
+# Script to extract Bulletin B values from file "usno.finals.data" from USNO 
+# (anon ftp to maia.usno.navy.mil - cd to ser7).
+#
+# P. Tregoning 
+# 22nd June 1995 
+# Last changed for USNO format update R. King 4 January 2002
+ 
+if($#argv == 0 ) then
+ echo ' '
+ echo ' sh_bull_b :  A script to make gamit/globk Bulletin B files. '
+ echo ' '  
+ echo "     If the file 'usno.finals.data' exists in your directory, then"
+ echo '     if will be used to create GAMIT and GLOBK eop files.  If '
+ echo "     it doesn't exist, then the script will ftp to usno to get"
+ echo "     it and then convert it. "
+ echo ' '    
+ echo '    FORMAT :  sh_bull_b userid '
+ echo ' '
+ echo '        where userid is your complete e-mail address, used as'
+ echo '        password for anonymous ftp from USNO'   
+ echo ' '
+ exit
+else
+ echo " " 
+ echo " ************************************************************"
+ echo " *** NOTE:  It is up to YOU to decide when to remove the  ***"
+ echo " ***        usno.finals.data file and update Bulletin B   ***"        
+ echo " ************************************************************"
+ echo " " 
+
+ # read file usno.finals.data and write out pmu.bull_b
+ set got_file = y
+ set get_file = n
+
+ if( ! -e usno.finals.data )then 
+     set got_file = n
+     echo 'File usno.finals.data not found - get it from maia.usno.navy.mil'
+     echo '(anon ftp to maia.usno.navy.mil - cd to ser7)'
+     echo " "
+     echo ' Do you want to go and get it ? (y/n) :'
+     set get_file = $<  
+ endif
+   if ( $got_file == n && $get_file != y )then
+     exit
+   endif
+   if ( $got_file == n && $get_file == y )then
+     echo ' ftping to maia.usno.navy.mil ....... '
+     ftp -i -v -n maia.usno.navy.mil <<    ! 
+     user anonymous $1
+     cd ser7
+     pwd
+     get finals.data usno.finals.data
+!
+   else
+     echo 'Extracting Bulletin B values from finals.data -> pmu.bull_b'
+   endif
+  
+ set curr_date = `date | awk '{print $3, $2, $6, $4}'`
+ set file_date = `ls -l usno.finals.data | awk '{print $5,$6,$7}'`
+ 
+ echo '*Bulletin B values from usno.finals.data ('$file_date')' >! pmu.bull_b
+# replaced by below for change in format of Bulletin B UT1-UTC values --rwk cat usno.finals.data | awk '{print " ",substr($0,1,2),substr($0,3,2),substr($0,5,2)," 0 "," 0 ",substr($0,137,7)," 0 ",substr($0,148,7)," 0 ",substr($0,157,8)," 0 " } ' | awk ' {if ($6 != 0 && $8 != 0 && $10 != 0) {print $0} } ' >> pmu.bull_b
+  cat usno.finals.data | awk '{print " ",substr($0,1,2),substr($0,3,2),substr($0,5,2)," 0 "," 0 ",substr($0,136,8)," 0 ",substr($0,147,8)," 0 ",substr($0,156,9)," 0 " } ' \
+                       | awk ' {if ($6 != 0 && $8 != 0 && $10 != 0) {print $0} } ' >> pmu.bull_b  
+
+
+ echo ' Converting to GAMIT format - files will be ut1.bull_b pole.bull_b '
+
+ echo pmu.bull_b    >! erptab.inp
+ echo ut1.bull_b    >> erptab.inp
+ echo pole.bull_b   >> erptab.inp
+ echo 'Bulletin B values from USNO finals.data ('$file_date') ' >> erptab.inp
+ echo n             >> erptab.inp
+
+ erptab < erptab.inp
+
+ echo ' files ut1.bull_b and pole.bull_b created '
+ \rm erptab.inp
+
+endif 
+#
+

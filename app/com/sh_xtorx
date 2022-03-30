@@ -1,0 +1,42 @@
+#!/bin/csh -f
+#
+#doc Run XTORX to convert X-files to RINEX files         
+#doc
+#
+if ($#argv == 0) then
+   echo ' '                                       
+   echo ' Convert X-files to RINEX files'    
+   echo ' '
+   echo '   Requirements:  links to GAMIT tables leap.sec rcvant.dat station.info antmod.dat'
+   echo ' '
+   echo ' Examples'                               
+   echo ' '                                       
+   echo '   sh_xtorx xalgo8.075'
+   echo '   sh_xtorx x*.???'   
+   echo ' '                                       
+   echo ' '                                       
+exit
+else 
+endif 
+
+set files = ""  
+foreach i ( `echo $argv` ) 
+	set files = ( $files $i ) 
+end
+
+
+# loop over all files
+foreach file ( `echo $files ` )
+   echo ' ' 
+   echo ' '  
+   echo '***************************'
+   echo ' ' 
+   echo 'Working on ' $file
+      
+# output to screen
+xtorx $file
+end # foreach
+
+
+
+

@@ -1,0 +1,212 @@
+#!/bin/csh -f
+#
+#doc Sync two source file directories by moving the latest version to the target directory
+#doc
+#
+# Script to sync two source file directories by moving
+# the latest version between directories
+if ($#argv < 2 ) then
+  echo ' '
+  echo ' Synchronize to source file directories by merging newest code'
+  echo ' '
+  echo ' Useage: '
+  echo ' '
+  echo ' sh_sync [source_dir] [target_dir] -m [module] -auto -full'
+  echo ' '
+  echo ' where [source_dir] is the primary source directory'
+  echo '       [target_dir] is the target directory'
+  echo ' '
+  echo ' Optional arguments:'
+  echo '       [module] is a specific module to be updated (e.g. globk)'
+  echo '       -auto will automatically update the directories.  The default'
+  echo '             is to create the list of copies for the user to review'
+  echo '       -full will diff the files to be copied to see if the update'
+  echo '             is really necessary'
+  echo ' '
+  echo ' Script must be run from a directory where you have write permission'
+  echo ' '
+  exit
+endif
+
+# Setup the defaults
+set auto = 'N'
+set full = 'N'
+set module = ' '
+set mv_file = 'sync.cmd'
+
+# Get the arguments
+set source_dir = $1
+set target_dir = $2
+shift argv
+shift argv
+while ($#argv > 0 )
+    set input = ( $argv )
+    switch($input[1])
+       case -m:
+          set module = $input[2]
+          breaksw
+       case -auto:
+          set auto = 'Y'
+          breaksw
+       case -full:
+          set full = 'Y'
+          breaksw
+    endsw
+    shift argv
+end
+#
+# Tell user:
+echo 'Synchronizing '$source_dir' and '$target_dir' Module '$module
+if( $auto == 'Y' ) then
+    echo 'Directories will be automatically updated'
+else
+    echo 'List of copies will be saved in '$mv_file
+endif
+
+# Makesure all files exits
+set sd = $source_dir/$module
+set td = $target_dir/$module
+if( ! -e $sd ) then
+   echo 'Source directory '$sd' does not exist'
+   exit
+endif
+if( ! -e $td ) then
+   echo 'Source directory '$td' does not exist'
+   exit
+endif
+
+# Now find all the .f, .h, .c and Makefile.generic files in the
+# source directory
+find $sd -name '*.[fhc]'        -print >! sd.files
+find $sd -name '*.hlp'          -print >> sd.files
+find $sd -name Makefile.generic -print >> sd.files
+
+# Now do the same in the target directory
+find $td -name '*.[fhc]'        -print >! td.files
+find $td -name '*.hlp'          -print >> td.files
+find $td -name Makefile.generic -print >> td.files
+
+# Now check the source in the target and move any new files
+echo '#\!/bin/csh -f' >! sync.cmd
+echo ' ' >> sync.cmd
+echo '# Unalias cp command so that it will not be interactive' >> sync.cmd
+echo 'unalias cp' >> sync.cmd
+echo ' ' >> sync.cmd
+echo "# Sync results for directories $td and $sd " >> sync.cmd
+if ( $full == 'Y' ) then
+    echo "# Only files which differ will be copied" >> sync.cmd
+else
+    echo "# All files with latest date will be copied" >> sync.cmd
+endif
+
+echo " " >> sync.cmd
+echo "# Files from $sd" >> sync.cmd
+echo "# ---------------------------------------" >> sync.cmd
+echo " " >> sync.cmd
+
+foreach sf (` cat sd.files`) 
+
+#  Get the file name in the target area 
+#  set tf = `echo $sf | awk -v td=$td -v sd=$sd '{print gensub(sd,td,"g",$1)}'` 
+   set tf = `echo $sf | awk -v td=$td -v sd=$sd '{sub(sd,td,$1)} {print $1}'` 
+
+#  If the target file exists, then see if newer than source file
+   if( -e $tf ) then
+#     set upd = `find $sf -newer $tf -printf "Y"`
+      set num = `find $sf -newer $tf -print | wc`
+      set upd = 'N'
+      if( $num[1] != 0 ) set upd = 'Y'
+      
+#     If full analysis then diff the files to see if truly different and not just
+#     dates (this is for case cp without -p option has been used) 
+      if( $full == 'Y' ) then
+         set num = `diff $sf $tf | wc`
+
+#        If there is no difference then set nocp to Y so file will not be copied
+         if( $num[1] == 0 ) then
+             set nocp = 'Y'
+         else
+             set nocp = 'N'
+         endif
+      else
+         set nocp = 'N'
+      endif
+   else
+#     Target file does not exist, so copy file over
+      set upd = 'Y'
+      set nocp = 'N'
+   endif
+ 
+   if( $upd == 'Y' ) then
+      set tfd = " "
+      set sfd = " "
+      if( -e $sf ) set sfd = `\ls -lt $sf | awk '{printf "%s %s %s %s %s -- ", $9,$5,$6,$7,$8}'` 
+      if( -e $tf ) set tfd = `\ls -lt $tf | awk '{printf " %s %s %s %s ", $5,$6,$7,$8}'`  
+      echo "# $sfd $tfd" >> sync.cmd
+      if( $nocp == 'N' ) echo "cp -p "$sf $tf >> sync.cmd
+   endif
+end
+
+# Code below operates as above except the source and target directories are reversed.
+echo " " >> sync.cmd
+echo "# Files from $td" >> sync.cmd
+echo "# ---------------------------------------" >> sync.cmd
+echo " " >> sync.cmd
+
+foreach tf (` cat td.files`)
+#  set sf = `echo $tf | awk -v sd=$sd -v td=$td '{print gensub(td,sd,"g",$1)}'` 
+   set sf = `echo $tf | awk -v sd=$sd -v td=$td '{sub(td,sd,$1)} {print $1}'`
+   if( -e $sf ) then
+#     set upd = `find $tf -newer $sf -printf "Y"` 
+      set num = `find $tf -newer $sf -print | wc`
+      set upd = 'N'
+      if( $num[1] != 0 ) set upd = 'Y'
+      if( $full == 'Y' ) then
+         set num = `diff $tf $sf | wc`
+         if( $num[1] == 0 ) then
+             set nocp = 'Y'
+         else
+             set nocp = 'N'
+         endif
+      else
+         set nocp = 'N'
+      endif
+
+   else
+      set upd = 'Y'
+      set nocp = 'N'
+   endif
+
+   if( $upd == 'Y' ) then
+      set tfd = " "
+      set sfd = " "
+      if( -e $tf ) set tfd = `\ls -lt $tf | awk '{printf "%s %s %s %s %s -- ", $9,$5,$6,$7,$8}'`
+      if( -e $sf ) set sfd = `\ls -lt $sf | awk '{printf "%s %s %s %s ", $5,$6,$7,$8}'` 
+      echo "# $tfd $sfd" >> sync.cmd
+      if( $nocp == 'N' ) echo "cp -p "$tf $sf >> sync.cmd
+   endif
+end
+
+# Now get statistics
+set fromsf = `grep "cp -p $sd" sync.cmd | wc` 
+set fromtf = `grep "cp -p $td" sync.cmd | wc`
+echo ' '
+echo ' From sync.cmd: '
+echo $fromsf[1] files to be copied from $sd
+echo $fromtf[1] files to be copied from $td
+echo ' ' 
+\rm sd.files td.files
+ 
+
+
+   
+
+
+      
+
+
+
+
+
+
+

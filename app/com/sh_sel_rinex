@@ -1,0 +1,344 @@
+#!/bin/csh -f
+#
+#doc Selects rinex data to be ftp'd from SOPAC or CDDISA
+#doc
+#
+# sh_sel_rinex
+#
+# Purpose      Generate sites.defaults file for global network processing
+#
+# Required     Year and doy plus site control file
+#
+# Output       sites.default file with the list of sites to use in each
+#              network
+#
+# sh_sel_rinex -d <yr> <doy> -f <control file>
+#
+# All options are:
+#  -d <yr> <doy>   Date to get data
+#  -f <control>    Name of contol file with preferred sites
+#  -get            Get the site coordinates from sopac archive (needs wget)
+#  -apr            Names of apriori coordinate file (default sopac.crd)
+#  -archive <name> Name of archive to use (sopac or cddis)
+# 
+#
+# by Tom Herring 01/24/2003
+#
+
+# MOD TAH 070515: Updated to account for new or old lfile.  New version creates
+# file new.lt file derived from sopac.cord if sites are missing from our lfile.
+# (new.lt can be concatinated onto lfile in later scripts).
+if ($#argv < 1) then
+        sed -e "1d" -e "/by Tom/q" -e "s/#//" $0
+        exit
+endif
+# Set Defaults
+set conf = "igs.sites"
+set aprf = "sopac.crd"
+set getcoord = 0
+set archive = "sopac"
+
+#
+foreach a ($argv)
+  switch($a)
+    case -d:
+      set yr  = $argv[2]
+      set doy = $argv[3]
+    breaksw
+    case -f:
+       set conf = $argv[2]
+    breaksw
+
+    case -get*
+       set getcoord = 1
+    breaksw
+    case -apr*
+       set aprf = $argv[2]
+    breaksw
+    case -arch*
+       set archive = $argv[2]
+    breaksw
+
+  endsw
+shift
+end
+#
+# Make sure all the time arguments are OK
+set yr = `doy $yr $doy| head -n 1 | awk '{print(substr($2,1,4))}'`
+set yr2 = `doy $yr $doy| head -n 1 | awk '{print(substr($2,3,2))}'`
+set doy = `doy $yr $doy| head -n 1 | awk '{printf("%3.3d",$6)}'`
+#
+echo sh_sel_rinex: Options $yr $doy $conf $archive
+#
+# Get the list of available data from SOPAC
+set ln = "list.${yr}.$doy"
+set an = "avail.${yr}.$doy"
+
+if( ! -e $ln ) then
+   set pw = $user@`hostname`
+   if( $archive == "sopac" ) then
+      set pw = $user@`hostname`
+      ftp -inv garner.ucsd.edu <<! >&! $ln
+user anonymous $pw
+cd /pub/rinex/${yr}/${doy}
+ls
+quit
+!
+
+   #else if( $archive == "cddis" ) then
+   else if( `echo $archive | cut -c 1-5` == 'cddis' ) then
+   echo "Using cddis: /gnss/data/daily/$yr/${doy}/${yr2}d"
+   #ftp -inv cddis.gsfc.nasa.gov <<! >&! $ln
+#user anonymous $pw
+#cd /gps/gpsdata/${yr2}${doy}/${yr2}d
+#cd /gps/data/daily/$yr/${doy}/${yr2}d
+#ls 
+#quit
+#!
+   if ( -e `which curl` ) then  # curl exists (preferred due to better directory listing and wget is not native on macOS)
+     set prog = 'curl -s -f -L'
+     if ( -e ~/.netrc ) then  # Use authenticated secure HTTP
+       $prog -b .urs_cookies -c .urs_cookies -n -o "$ln" "https://cddis.nasa.gov/archive/gnss/data/daily/$yr/${doy}/${yr2}d/*?list" ||\
+        $prog -b .urs_cookies -c .urs_cookies -n --ciphers 'DEFAULT@SECLEVEL=1' -o "$ln" "https://cddis.nasa.gov/archive/gnss/data/daily/$yr/${doy}/${yr2}d/*?list"
+     else if ( `curl --version | awk '{if (NR == 1) print substr($2,1,4)}' | sed 's/\.//g'` >= 711 ) then  # Use anonymous secure FTP (requires curl version >= 7.11.0)
+       $prog -u anonymous:$ftplogin[2] $ssl_opt --ciphers 'DEFAULT@SECLEVEL=1' -o "$ln" ftp://gdc.cddis.eosdis.nasa.gov/archive/gnss/data/daily/$yr/${doy}/${yr2}d/
+     endif
+   else if ( -e `which wget` ) then  # wget exists
+     set prog = 'wget -nv'
+     if ( -e ~/.netrc ) then  # Use authenticated secure HTTP
+       $prog --load-cookies .urs_cookies --save-cookies .urs_cookies --keep-session-cookies --auth-no-challenge -O "$ln" "https://cddis.nasa.gov/archive/gnss/data/daily/$yr/${doy}/${yr2}d/*?list"
+     #else if ( `wget --version | awk '{if (NR == 1) print substr($3,1,4)}' | sed 's/\.//g'` >= 118 ) then  # Use anonymous secure FTP (requires wget version >= 1.18)
+     endif
+   else  # Neither curl nor wget available
+     echo 'Neither curl nor wget available to download broadcast navigation files from CDDIS.'
+   endif
+
+    else
+    ftp -inv data-out.unavco.org <<! >&! $ln
+#    ftp -inv data-out.unavco.org <<! >>& $ln
+user anonymous $pw
+cd /pub/rinex/${yr}/${doy}
+ls
+quit
+!
+
+
+    endif
+
+#   Check the size of the list file and exit if too small
+    set num = `wc -l $ln`
+    if( $num[1] < 50 ) then
+       echo "$ln file too small, Only $num lines: Exiting sh_sel_rinex"
+       cat $ln
+       \rm $ln
+       exit -1 
+    endif
+
+endif
+
+# See if we need to refres coordinates
+if( $getcoord ) then
+   wget http://sopac.ucsd.edu/input/processing/coordinates/coords.txt
+   echo "* Approximate coordinates of sites archived at SOPAC: Generated "`date` >! sopac.crd
+   tail -n +3 coords.txt | awk '{printf(" %s_GPS %13.3f %13.3f %13.3f  0.000 0.000 0.000 2000.30\n",$1,$2,$3,$4)}' coords.txt >> sopac.crd
+endif 
+
+# Now generate the list of available sites and the file size
+grep '^-r' $ln | grep 'd.Z' | awk '{printf(" %s_GPS  %s %6.1d\n",toupper(substr($9,1,4)),$9,$5/1024)}' | \
+    awk '{if ( $3 > 100 ) {print $0}}' | sort -n -r -k 3  | sort -u >! $an
+
+# Remove the sites we want to exclude
+set exc = `grep '^ ' $conf | grep EXCL | tail -1 | awk '{print $2}'`
+egrep -vi $exc $an >! an.u
+
+# OK Now start generating lists of sites
+# Get the tie sites
+\rm t.f; touch t.f 
+set tie = `grep "^ " $conf | grep TIEN | awk '{print $2}'`; egrep -i $tie an.u | head -n 1 | awk '{print substr($1,1,4)}' >> t.f
+set tie = `grep "^ " $conf | grep TIES | awk '{print $2}'`; egrep -i $tie an.u | head -n 1 | awk '{print substr($1,1,4)}' >> t.f
+set tie = `grep "^ " $conf | grep TIEE | awk '{print $2}'`; egrep -i $tie an.u | head -n 1 | awk '{print substr($1,1,4)}' >> t.f
+set tie = `grep "^ " $conf | grep TIEW | awk '{print $2}'`; egrep -i $tie an.u | head -n 1 | awk '{print substr($1,1,4)}' >> t.f
+#
+# Now get the clock sites that we want to include
+\cp t.f t.net1
+# Get the list of reference sites so that we can exclude them from
+# getting the list of used sites.
+set refs = `awk '{if ( NR == 1 ) {printf("%s",substr($1,1,4))} else {printf("|%s",substr($1,1,4))}}' t.f`
+# Put all the primary clocks into net1.  Make sure that the reference sites are not added a second time,
+set tie = `grep "^ " $conf | grep CLK1 | awk '{print $2}'`; egrep -i $tie an.u | awk '{print substr($1,1,4)}' | egrep -v $refs >> t.net1
+#set net1 = `sort -u t.net1 | awk '{printf("%s:",$1)}'`
+set net1 = `awk '{printf("%s:",$1)}' t.net1`
+global_sel $net1 42 $aprf an.u | grep _GPS >! net1.crd
+apr_to_vel net1.crd net1.pos ; cvframe net1.pos net1.vel nafd nuv-nnr
+#
+# Select the next network
+set exc = `tail -n +5 net1.crd | awk '{if ( NR == 1 ) {printf("%s",substr($1,1,4))} else {printf("|%s",substr($1,1,4))}}'`
+egrep -v $exc an.u >! an.n
+#
+# Get the H2 Maser sites for the next network
+\cp t.f t.net2
+set tie = `grep "^ " $conf | grep CLK2 | awk '{print $2}'`; egrep -i $tie an.n | awk '{print substr($1,1,4)}' | egrep -v $refs >> t.net2
+#set net2 = `sort -u t.net2 | awk '{printf("%s:",$1)}'`
+set net2 = `awk '{printf("%s:",$1)}' t.net2`
+global_sel $net2 42 $aprf an.n | grep _GPS >! net2.crd
+apr_to_vel net2.crd net2.pos ; cvframe net2.pos net2.vel nafd nuv-nnr 
+
+# Get the Cs and Rb  sites for the next network
+\cp t.f t.net3
+set exc = `tail -n +5 net2.crd | awk '{if ( NR == 1 ) {printf("%s",substr($1,1,4))} else {printf("|%s",substr($1,1,4))}}'`
+egrep -v $exc an.n >! an.u
+set tie = `grep "^ " $conf | grep CLK3 | awk '{print $2}'`; egrep -i $tie an.u | awk '{print substr($1,1,4)}' | egrep -v $refs >> t.net3
+#set net3 = `sort -u t.net3 | awk '{printf("%s:",$1)}'`
+set net3 = `awk '{printf("%s:",$1)}' t.net3`
+global_sel $net3 42 $aprf an.u | grep _GPS >! net3.crd
+apr_to_vel net3.crd net3.pos ; cvframe net3.pos net3.vel nafd nuv-nnr 
+
+
+# Get the Rb  sites for the next network
+\cp t.f t.net4
+set exc = `tail -n +5 net3.crd | awk '{if ( NR == 1 ) {printf("%s",substr($1,1,4))} else {printf("|%s",substr($1,1,4))}}'`
+egrep -v $exc an.u >! an.n
+set tie = `grep "^ " $conf | grep CLK4 | awk '{print $2}'`; egrep -i $tie an.n | awk '{print substr($1,1,4)}' | egrep -v $refs >> t.net4
+#set net4 = `sort -u t.net4 | awk '{printf("%s:",$1)}'`
+set net4 = `awk '{printf("%s:",$1)}' t.net4`
+global_sel $net4 42 $aprf an.n | grep _GPS >! net4.crd
+apr_to_vel net4.crd net4.pos ; cvframe net4.pos net4.vel nafd nuv-nnr
+
+# Finally get the coordinates of the sites that we not used
+set exc = `tail -n +5 net4.crd | awk '{if ( NR == 1 ) {printf("%s",substr($1,1,4))} else {printf("|%s",substr($1,1,4))}}'`
+egrep -v $exc an.n >!  an.u
+echo "* Sites not used $yr $doy" >! netna.crd
+foreach s (`awk '{print $1}' an.u`)
+   grep $s $aprf >>  netna.crd
+end
+apr_to_vel netna.crd netna.pos ; cvframe netna.pos netna.vel nafd nuv-nnr 
+
+#### Now make the sites.defaults file
+# (For vening we might consider putting these in separate files)
+#
+#set si = "~/gg/tables/station.info"
+set si = "../tables/station.info"
+set lf = "../tables/lfile."
+# Find out type of lfile. (comes back as old or new).
+set l_type = `check_lfile $lf`
+
+set sdf = sites.defaults.${yr}.${doy}
+echo "# Sites.defaults generated by sh_sel_rinex" >! ${sdf}
+echo "# Reference Sites: $refs" >> ${sdf}
+echo "# Generated for $yr $doy" >> ${sdf}
+echo "# NET1: All time service clocks" >> ${sdf}
+echo "# New coordinates needed Added: "`date` >! new.apr
+
+foreach s (`cat net1.crd | awk '{print tolower(substr($1,1,4))}'`)
+#   Check site is in station.info
+    set nsi = `grep -i "^ $s" $si | wc`
+    if( $nsi[2] == 0 ) then
+       echo $s | awk '{printf(" %s_gps net1 ftprnx\n",$1)}' >> ${sdf}
+    else
+       echo $s | awk '{printf(" %s_gps net1 ftprnx xstinfo\n",$1)}' >> ${sdf}
+    endif
+    if( $l_type == "old" ) then 
+       set nsi = `grep -i "^$s" $lf | wc`
+       if( $nsi[2] == 0 ) then
+           grep -i $s $aprf >> new.apr
+       endif
+    else
+       set nsi = `grep "^ " $lf | grep -i $s  | wc`
+       if( $nsi[2] == 0 ) then
+           grep -i $s $aprf >> new.apr
+       endif
+    endif
+end
+echo "# NET2: H2 Maser sites" >> ${sdf}
+foreach s (`cat net2.crd | awk '{print tolower(substr($1,1,4))}'`)
+#   Check site is in station.info
+    set nsi = `grep -i "^ $s" $si | wc`
+    if( $nsi[2] == 0 ) then
+       echo $s | awk '{printf(" %s_gps net2 ftprnx\n",$1)}' >> ${sdf}
+    else
+       echo $s | awk '{printf(" %s_gps net2 ftprnx xstinfo\n",$1)}' >> ${sdf}
+    endif
+    if( $l_type == "old" ) then 
+       set nsi = `grep -i "^$s" $lf | wc`
+       if( $nsi[2] == 0 ) then
+           grep -i $s $aprf >> new.apr
+       endif
+    else
+       set nsi = `grep "^ " $lf | grep -i $s  | wc`
+       if( $nsi[2] == 0 ) then
+           grep -i $s $aprf >> new.apr
+       endif
+    endif
+end
+
+echo "# NET3: CS clocks" >> ${sdf}
+foreach s (`cat net3.crd | awk '{print tolower(substr($1,1,4))}'`)
+#   Check site is in station.info
+    set nsi = `grep -i "^ $s" $si | wc`
+    if( $nsi[2] == 0 ) then
+       echo $s | awk '{printf(" %s_gps net3 ftprnx\n",$1)}' >> ${sdf}
+    else
+       echo $s | awk '{printf(" %s_gps net3 ftprnx xstinfo\n",$1)}' >> ${sdf}
+    endif
+    if( $l_type == "old" ) then 
+       set nsi = `grep -i "^$s" $lf | wc`
+       if( $nsi[2] == 0 ) then
+           grep -i $s $aprf >> new.apr
+       endif
+    else
+       set nsi = `grep "^ " $lf | grep -i $s  | wc`
+       if( $nsi[2] == 0 ) then
+           grep -i $s $aprf >> new.apr
+       endif
+    endif
+end
+
+echo "# NET4:Rb clock sites" >> ${sdf}
+foreach s (`cat net4.crd | awk '{print tolower(substr($1,1,4))}'`)
+#   Check site is in station.info
+    set nsi = `grep -i "^ $s" $si | wc`
+    if( $nsi[2] == 0 ) then
+       echo $s | awk '{printf(" %s_gps net4 ftprnx\n",$1)}' >> ${sdf}
+    else
+       echo $s | awk '{printf(" %s_gps net4 ftprnx xstinfo\n",$1)}' >> ${sdf}
+    endif
+    if( $l_type == "old" ) then 
+       set nsi = `grep -i "^$s" $lf | wc`
+       if( $nsi[2] == 0 ) then
+           grep -i $s $aprf >> new.apr
+       endif
+    else
+       set nsi = `grep "^ " $lf | grep -i $s  | wc`
+       if( $nsi[2] == 0 ) then
+           grep -i $s $aprf >> new.apr
+       endif
+    endif
+end
+#
+# Now remove all the temporary files
+#\rm an.n an.u t.net? t.f
+# See if any entries in new.apr
+set lnew = `wc -l new.apr`
+if( $lnew[1] > 1 ) then
+   if( $l_type == "old" ) then
+      gapr_to_l new.apr new.lt '' ${yr} ${doy}
+   else
+      \cp new.apr new.lt
+   endif
+else
+   \rm new.lt >&! /dev/null
+endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+

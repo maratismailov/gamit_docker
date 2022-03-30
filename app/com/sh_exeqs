@@ -1,0 +1,113 @@
+#!/bin/csh -f
+#
+#doc Extract equates from an .org or .prt when the RNRP option is used
+#doc
+#
+# sh_exeqs
+#
+# Purpose      Extract equates from an .org or .prt
+#
+# Required     .org or .prt file from globk/glorg; rnrp option in output and
+#              <org root>.eqs file (automatically generated with rnrp option)
+#
+# Output       equate lines for use in glorg
+#
+# sh_exeqs -f <file> -chi <num> -vonly -noeq -nolog
+#
+#  -f   <file>     Name of input .org/.prt file
+#  -chi <number>   Maximum sqrt(chi^2) allowed for equate (default 3.0)
+#  -vonly          Extract only velocity equates for earthquakes
+#  -noeq           Do not extract entries associated with earthqukaes
+#  -nolog          Do not extract log estimate entries (default is to extract)
+#
+# Ouput can be re-directed to file
+# 
+# This script can generate redundant equates which will be listed as 
+# not completed in glorg.  These additional entries can be ignored.
+#
+# by Tom Herring 01/05/2003
+#
+
+if ($#argv < 1) then
+        sed -e "1d" -e "/by Tom/q" -e "s/#//" $0
+        exit
+endif
+#
+# Set the defaults
+set chi = 3.0
+set vonly = n
+set noeq = n
+set nolog = n
+#
+foreach a ($argv)
+  switch($a)
+    case -f:
+      set orgi = $argv[2]
+    breaksw
+    case -c*:
+       set chi = $argv[2]
+    breaksw
+    case -v*:
+        set vonly = y
+    breaksw
+    case -noe*:
+        set noeq = y
+    breaksw
+    case -nol*:
+        set nolog = y
+    breaksw
+  endsw
+shift
+end
+
+#
+# Get the root of the eqs file and replace the exent
+set orgfr = $orgi:r
+set orgf = $orgfr".eqs"
+if( ! -e $orgf ) then
+#   Try the original name
+    set orgf = $orgi
+   if( ! -e $orgf ) then
+       echo 'Specified org/prt file '$orgf' not found'
+       exit
+   endif
+endif
+
+# Now extract what we need
+grep '^EQ' $orgf >! t.ea
+echo -n "* Equates from $orgf"
+if( $vonly == y ) then
+   grep 'dot' t.ea >! t.eb
+   echo -n " Velocities Only"
+else
+   \mv t.ea t.eb
+endif
+
+# Extract log terms (only needed if only velocities extracted above
+# otherwise terms are in the t.eb file.
+if( $nolog == n && $vonly == y ) then
+   grep '^EQLo' t.ea >> t.eb
+else
+   echo -n " No Log terms "
+endif
+#
+# Remove earthquake entries
+if( $noeq == y ) then
+   egrep '^EQNo|^EQLo' t.eb >! t.ec
+   echo -n " No earthquakes"
+else
+   \mv t.eb t.ec
+endif
+echo " Chi limit $chi"
+
+# Now t.ec contains only those lines that need to be tested
+
+awk -v chi=$chi '{if ( $2 < chi ) {print substr($0,11)}}' t.ec
+
+#\rm t.eq t.eb t.ec >&! /dev/null
+
+
+       		
+       
+       
+

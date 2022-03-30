@@ -1,0 +1,223 @@
+#!/bin/csh -f
+#
+#doc Get raw files by day number from RAW ftp archives
+#doc
+#
+# Last modified 99/04/16 by Simon McClusky   
+# Modified 02/04/16 by P. Tregoning to permit ncftp or ftp as the program to get the files
+
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "===================================================================================="
+  echo " Get RAW observation files from ftp archives  " 
+  echo "  "
+  echo " Usage: sh_get_raw -archive <ftp address> -rdir <remote dir> -login <login and password> "
+  echo "                   -yr <yr> -doy <doy> -ndays <num> -sites <sites> -ftp_prog <ftp/ncftp>"
+  echo "  "
+  echo "        <ftp address>  FTP machine to fetch the raw data from. [Required] "
+  echo "        <remote dir> remote directory from which to fetch the raw data. [Required] "
+  echo "        <login and password> login name and password for remote machine. [Required] "
+  echo "        <yr> 4 year of raw data requested [Required] " 
+  echo "        <doy> 3 char day of year of raw data requested. [Required] " 
+  echo "        <num> Number of consecutive days of data to retreive [Default 1] "
+  echo "        <sites> List of sites to be retreived from the ftp archive [Required] "
+  echo "        <ftp/ncftp> select program to run for the ftp [default ftp]"
+  echo "  "      
+  echo " Example: sh_get_raw -archive cudi.mam.gov.tr -rdir pub/continuous/TUBI/1999/228 -login anonymous simon@mit.edu -yr 1999 -doy 228 -ndays 1 -sites tubi -ftp_prog ncftp"
+  echo "  "
+  echo "===================================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS #############################   
+#
+set year = ''
+set yr = ''
+set doy = ''
+set numd = 1
+set archive = ''
+set rdir = ''
+set ftplogin = ''
+set rawlst = ''
+set anon_email = `whoami`'@'`hostname | \awk -F. '{print $1}'`'.'`grep domain /etc/resolv.conf | awk '{print $2}'`
+set ftp_prog = 'ftp -inv'
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -a*:
+      set archive  = $input[2]  
+    breaksw 
+    case -r*:
+      set rdir  = $input[2]  
+    breaksw 
+    case -l*:
+      set ftplogin  = ($input[2] $input[3]) 
+    breaksw 
+    case -n*:
+      set numd = $input[2] 
+    breaksw 
+    case -y*:
+      set year = $input[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+      set yr = `sh_year -year $year`
+    breaksw 
+    case -d*:
+      set doy = $input[2]  
+    breaksw 
+    case -s*:
+       set rawlst = (`echo $argv | cut -d- -f2`); shift rawlst
+    breaksw
+    case -ftp_prog:
+      set ftp_prog = $input[2]  
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ############################
+# Set timestamp hostname variable
+set ts = "`hostname`:`date +"%H%M%S"`"
+
+# Check all required info given.
+if ( ${year} == '' ||  ${doy} == '' || ${rawlst[1]} == '' || ${archive} == '' || ${rdir} == '' || ${ftplogin[1]} == '') then
+  echo "Not all required fields given -- yr: $year doy: $doy rawlst: $rawlst[1] rdir: $rdir archive: $archive login: $ftplogin[1] --Stop"
+  exit
+endif
+
+# Set up loop on days
+#@ sday = ${doy} - 1
+@ sday = `echo "ibase=10; ${doy} - 1" | bc`
+#@ count = $numd
+@ count = `echo "ibase=10; ${numd}" | bc`
+ 
+ 
+while ( $count )
+  set doy = `echo $sday |  awk '{printf "%03d \n", $1+1}'`
+  @ count = $count - 1
+  
+# See if the files already exist
+  set hlist = ''
+  foreach site ( `echo $rawlst` )
+    echo List >! tmp.0.$ts
+    set usite =  `echo $site | awk '{print toupper($1)}'`
+    (\ls  b${site}$?{yr[2]}.${doy}*  >> tmp.0.$ts) >& /dev/null
+    (\ls  B${usite}?${yr[2]}.${doy}* >> tmp.0.$ts) >& /dev/null
+    (\ls  r${site}?${yr[2]}.${doy}*  >> tmp.0.$ts) >& /dev/null
+    (\ls  R${usite}?${yr[2]}.${doy}* >> tmp.0.$ts) >& /dev/null
+    (\ls  ${site}${doy}?.dat*  >> tmp.0.$ts) >& /dev/null     
+    (\ls  ${usite}${doy}?.DAT* >> tmp.0.$ts) >& /dev/null
+    set nlines = ` cat tmp.0.$ts | wc -l `     
+    if ( $nlines > 1 ) then
+      set hlist = ( $hlist $site )
+    endif
+  end
+  set site1 = ''  
+  foreach site ( `echo $rawlst` )
+    set have = "no"
+    foreach hsite ( `echo $hlist` )
+      if ( $site == $hsite ) set have = "yes"
+    end 
+    if ( $have != yes ) set site1 = ($site1 $site)
+  end
+  if ( $site1[1] != '' ) then
+    set rawlst = ($site1)
+    echo "Getting raw files for sites: $rawlst"
+  else
+    echo "Raw files for all sites: $rawlst already exits --Stop"
+    goto next
+  endif
+
+# Need to get files; set up the ftp
+  if(`echo $ftp_prog | awk '{print $1}'` == 'ftp')then 
+    echo "user $ftplogin" >! tmp.get.$ts  
+    echo "binary" >> tmp.get.$ts
+  else
+    echo "binary" >! tmp.get.$ts
+  endif        
+
+  echo "cd ${rdir}" >> tmp.get.$ts
+
+# Get sites included in the list (rawlst) to be retrieved
+  foreach site ( `echo $rawlst` )
+    set usite =  `echo $site | awk '{print toupper($1)}'`
+    echo "mget b${site}?${yr[2]}.${doy}*"  >> tmp.get.$ts
+    echo "mget s${site}?${yr[2]}.${doy}*"  >> tmp.get.$ts
+    echo "mget e${site}?${yr[2]}.${doy}*"  >> tmp.get.$ts
+    echo "mget B${usite}?${yr[2]}.${doy}*" >> tmp.get.$ts
+    echo "mget S${usite}?${yr[2]}.${doy}*" >> tmp.get.$ts
+    echo "mget E${usite}?${yr[2]}.${doy}*" >> tmp.get.$ts
+    echo "mget r${site}?${yr[2]}.${doy}*"  >> tmp.get.$ts
+    echo "mget R${usite}?${yr[2]}.${doy}*" >> tmp.get.$ts
+    echo "mget ${site}${doy}?.dat*"  >> tmp.get.$ts
+    echo "mget ${site}${doy}?.mes*"  >> tmp.get.$ts
+    echo "mget ${site}${doy}?.eph*"  >> tmp.get.$ts
+    echo "mget ${usite}${doy}?.DAT*" >> tmp.get.$ts
+    echo "mget ${usite}${doy}?.MES*" >> tmp.get.$ts
+    echo "mget ${usite}${doy}?.EPH*" >> tmp.get.$ts
+    echo "mget ${site}_${site}_*.r00"  >> tmp.get.$ts
+  end
+     
+  if ( $#rawlst >= 1 ) then
+
+#   Finish seting up the ftp
+    echo 'quit' >> tmp.get.$ts
+    set log = `date "+get_raw_${archive}_%y%m%d:%H%M.log"` 
+    cat tmp.get.$ts >! $log
+    echo ' ' >> $log    
+    echo '--------------------' >> $log
+    
+# MOD TAH 980520: Repeat the get.
+    set cnt = 5
+    set try = 0
+    while ( $cnt ) 
+      @ cnt = $cnt - 1
+      @ try = $try + 1
+      echo "Try ${try}: Getting raw data for day ${doy} from ${archive}"
+      echo "Sites being downloaded: ${rawlst}" 
+      $ftp_prog ${archive} < tmp.get.$ts | grep -v '^220' >! tmp.log.$ts
+      cat tmp.log.$ts >> $log
+       
+#      See if seems OK
+      grep 'Not connected' tmp.log.$ts >! tmp.test.$ts
+      set chk = `wc tmp.test.$ts`
+      if( $chk[1] == 0 ) then
+        set cnt = 0
+      else
+        sleep 600
+      endif
+    end
+
+#   Now uncompress the raw files.
+    next:
+    foreach site ( `echo $rawlst` )
+       set usite =  `echo $site | awk '{print toupper($1)}'`
+       gunzip -f b${site}?${yr[2]}.${doy}.Z s${site}?${yr[2]}.${doy}.Z e${site}?${yr[2]}.${doy}.Z    >& /dev/null
+       gunzip b${site}?${yr[2]}.${doy}.gz s${site}?${yr[2]}.${doy}.gz e${site}?${yr[2]}.${doy}.gz        >& /dev/null
+       gunzip -f B${usite}?${yr[2]}.${doy}.Z S${usite}?${yr[2]}.${doy}.Z E${usite}?${yr[2]}.${doy}.Z >& /dev/null
+       gunzip B${usite}?${yr[2]}.${doy}.gz S${usite}?${yr[2]}.${doy}.gz E${usite}?${yr[2]}.${doy}.gz     >& /dev/null
+       gunzip -f r${site}?${yr[2]}.${doy}.Z                                                          >& /dev/null
+       gunzip r${site}?${yr[2]}.${doy}.gz                                                                >& /dev/null
+       gunzip -f R${usite}?${yr[2]}.${doy}.Z                                                         >& /dev/null
+       gunzip R${usite}?${yr[2]}.${doy}.gz                                                               >& /dev/null
+       gunzip -f ${site}${doy}?.dat.Z ${site}${doy}?.mes.Z  ${site}${doy}?.eph.Z                     >& /dev/null
+       gunzip ${site}${doy}?.dat.gz ${site}${doy}?.mes.gz  ${site}${doy}?.eph.gz                         >& /dev/null
+       gunzip -f ${usite}${doy}?.DAT.Z ${usite}${doy}?.MES.Z  ${usite}${doy}?.eph.Z                  >& /dev/null
+       gunzip ${usite}${doy}?.DAT.gz ${usite}${doy}?.MES.gz  ${usite}${doy}?.EPH.gz                      >& /dev/null
+    end
+
+#   Now casefold down the names of the files.
+    sh_casefold -dir d -files B*.${doy} E*.${doy} S*.${doy} R*.${doy} ????${doy}?.DAT ????${doy}?.MES ????${doy}?.EPH
+
+# Clean up
+    \rm tmp.0.$ts tmp.get.$ts tmp.test.$ts tmp.log.$ts  >! /dev/null 
+
+  endif
+
+# End loop over days
+end
+
+# Thats all.
+exit

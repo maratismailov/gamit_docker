@@ -1,0 +1,154 @@
+#!/bin/csh -f              
+#
+#doc Fix ASHTECH L12, M12 and LM12 RINEX files that contain 45 micro sec timming errors.
+#doc
+#
+# Written by Simon McClusky  May 2000
+######################## INSTRUCTIONS #############################
+if ( $#argv == 0 ) then
+  echo "======================================================================================="
+  echo "Fix RINEX files that contain micro sec jumps in phase and range observations" 
+  echo "   The error in the original is -45 microseconds, leading to an error in E in "
+  echo "   northern mid-latitudes of (+) 20-60 mm."
+  echo "  "
+  echo "USAGE:  sh_fixash -year <year>"
+  echo "  "
+  echo "        <year> year of data to be checked"
+  echo "  "
+  echo "EXAMPLE: sh_fixash -year 1994"    
+  echo " " 
+  echo "Codeless receivers identified by ASHL12 in ../tables/station.info" 
+  echo "Script should be run in the rinex data directory"
+  echo "  "
+  echo "OUTPUT: OLD rinex file copied to directory ASHL12, FIXED rinex file has original name"
+  echo "======================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+set year = " "
+# Current best guess (I mean estimate) of the offset is -45 micro sec's (correct by +45 usec)
+set offset = 0.000045
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+       case -y*:
+                set year  =  $input[2]  
+#               Year variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+                set yr  =  `sh_year -year $year`
+		breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+######################## GET THE JOB DONE #########################
+if ( $year == '' ) then
+  echo "No year input --Stop"
+  exit
+endif
+
+if( ! -e ../tables/station.info ) then
+  echo "ERROR: ../tables/station.info does not exist.  The receiver type is checked in this"
+  echo "file.  Please create beforehand being careful with the receiver designation ASHL12"
+#  exit
+endif
+
+# Now run awk to fix the ASHL12 offset
+set usedrv = 'BLANK'
+
+set start = 366
+while ( $start > 1 )
+   @ start = $start - 1
+   set cnt = `echo $start | awk '{printf("%03d",$1)}'`
+   ls -1 ????${cnt}?.${yr[2]}o* > & ! tmp.files
+   set num = `grep -v "No match" tmp.files | wc `
+   if( $num[2] > 0 ) then
+       foreach rxf  (`ls ????${cnt}?.${yr[2]}o*`)
+           set ext = $rxf:e
+           set rxu = $rxf
+           if( $ext == 'Z' ) then
+               uncompress $rxf
+               set rxu = $rxf:r
+           endif
+
+#          First check station.info to see if ASHL12 is the name the receiver
+           set site = `echo $rxf | awk '{print substr($1,1,4)}'` 
+           set rxdy = `echo $rxf | awk '{print substr($0,5,3)}'`
+#
+#          Get list of occurrences in station.info
+           set siyr = `grep -i "^ $site" ../tables/station.info | awk '{print substr($0,28)}' | awk '{print $8}'`
+           set sidy = `grep -i "^ $site" ../tables/station.info | awk '{print substr($0,28)}' | awk '{print $9}'`
+           set sirv = `grep -i "^ $site" ../tables/station.info | awk '{print substr($0,28)}' | awk '{print $4}'`
+           set ent = 0
+           set rcv = 'NOTFOUND'
+           foreach tyr (`echo $siyr`)
+              @ ent = $ent + 1
+              if( $yr[1] == $siyr[$ent] && $rxdy >= $sidy[$ent] ) then
+                  set rcv = $sirv[$ent]
+              else if ( $yr[1] > $siyr[$ent] ) then
+                  set rcv = $sirv[$ent]
+              endif
+           end
+
+#          see if ASHL12
+           set ash = 0
+           if( $rcv == 'ASHL12' ) then
+               set ash = 1
+           endif
+
+#          If receiver not found in station.info use the rinex header information
+           if( $rcv == 'NOTFOUND' ) then
+
+#              See if ASH
+               echo Rinex file $rxf for $yr[1] $rxdy not found in station.info: Using RX header
+               set rcv = `grep 'REC # / TYPE / VERS' $rxu | awk '{gsub(" ","_" ) } {print $0}' | awk '{print substr($0,21,20)}'`
+               set ash = 0
+               foreach type ( L-XII M-XII LM-XII )
+                  set ash = `echo $rcv | grep $type | wc | awk -v ash=$ash '$1 > 0 {print ash+1}'`
+               end
+           endif 
+    
+           if( $ash >= 1 ) then
+
+#              This is an ashtech file, Check to see if already fixed
+               set fixd = `grep "ASHTECH L-XII clock offset" $rxu | wc`
+               if( $fixd[2] == 0 ) then
+
+#                  Offset has not been fixed.
+
+                   awk -v yr=$yr[2] -v off=$offset ' \
+                   {if ($1 == yr) {{gsub("G"," ")} {split($0,prns); n = NF} \
+                      {printf " %2d %2d %2d %2d %2d %10.7f %2d %2d",$1,$2,$3,$4,$5,$6+off,$7,$8; \
+                      for (i=9;i<=n;i++) printf " %2d",prns[i]; printf"\n"}} else {print $0}}' $rxu >! t.${yr[2]}o
+
+                   awk -v off=$offset '{if( substr($0,61,11) == "MARKER NAME") \
+                   {printf "%-36s %-4d %-17s %-7s\n%s\n","ASHTECH L-XII clock offset fixed by ",off*1.0e+06,"usec","COMMENT",$0} \
+                   else {print $0}}' t.${yr[2]}o >! u.${yr[2]}o
+
+# OLD TAH awk lines....
+#                   awk '{if( $1 == ${yr[2]} ) {printf(" %2d %2d %2d %2d %2d %10.7f %2d %2d %2d %2d %2d %2d %2d %2d %2d %2d %2d\n",$1,$2,$3,$4,$5,$6+0.000045,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)} else {print $0}}' $rxu >! t.${yr[2]}o
+#                   awk '{if( substr($0,61,11) == "MARKER NAME") {printf "ASHTECH L-XII clock offset fixed by +45 usec                COMMENT\n%s\n",$0} else {print $0}}' t.${yr[2]}o >! u.${yr[2]}o
+
+#                  Copy the original file to the ASHL12 directory
+                   if ( ! -e ASHL12 ) mkdir ASHL12
+                   compress $rxu ; mv $rxu.Z ASHL12
+                   mv u.${yr[2]}o $rxu
+
+#                  Tell users
+                   echo $rxu $rcv | awk '{printf("%s %s Updated/Original moved to ASHL12\n",$1,$2)}'
+               else
+                   echo $rxu $rcv | awk '{printf("%s %s Already has been updated\n",$1,$2)}'
+               endif
+           else
+                   echo $rxu $rcv | awk '{printf("%s %s Not an ASHL12 receiver\n",$1,$2)}'
+           endif
+           compress $rxu
+       end
+   endif
+end
+
+#Clean up
+\rm t.${yr[2]}o tmp.files
+
+# The end    
+exit

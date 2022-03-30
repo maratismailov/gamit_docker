@@ -1,0 +1,126 @@
+#!/bin/csh -f
+
+if ($#argv < 2 ) then
+   echo ' '
+   echo ' Rename RINEX files to correct the station code'
+   echo ' '
+   echo "Usage:  sh_rename_rx -l [renamelist]  -f [filelist] "
+   echo ' '   
+   echo "   [renamelist] is the filename containing the files to be renamed"   
+   echo " "
+   echo "   [filelist] is the filename of all files in this directory to be checked"
+   echo "              If omitted, check all RINEX files in this directory (????????.??o*)"
+   echo " "
+   echo "        To create the input file, use 'ls -1 [wildcards].??o* > filename"
+   echo " "   
+   echo "Examples:" 
+   echo " "
+   echo "   sh_renaem_rx -l ~/ftp/scec/sceclist.nosrc "
+   echo " "
+   echo "   sh_rename_rx  -l ~/gg/tables/sceclist  -f  rxlist"    
+   echo " "          
+   echo " As currently coded, this is a specialized script designed to rename RINEX"
+   echo " files in the SCEC archive.  The input rename list must contain the names"
+   echo " of all files to be renamed, so using the script is not a shortcut to avoid"
+   echo " manual labor.   The script could be modified, however, to perform the renames"
+   echo " based on a short list of paired names."
+   echo " "  
+   echo "  Notes:  1. Must be run from the directory containing the RINEX files"
+   echo " " 
+   echo "          2  Both uncompressed and compressed RINEX files are implicitly "
+   echo "             included; i.e., the script checks all files matching either "
+   echo "             the string entered, or the string appended by .Z.  Note, however,"
+   echo "             that the wildcard must include the possibility of .Z files."
+   echo "  "
+   echo "          2. The list file includes one or more entries, in a single column"
+   echo "             of the form [RINEX file name] [station ID], where station ID"
+   echo "             may be upper or lower case; e.g. "        
+   echo "  "
+   echo "                 rich1900.92o RICU "
+   echo "                 caba1901.92o CABA "
+   echo "                  ... "
+   echo "             The list may be all files in the survey or only those requiring renames."
+   exit
+#         T. Herring, R. King, S. McClusky, 26 July 2000; last modified by R. King 24 August 2000  
+
+else
+
+# sort out user options
+set lsfile = "" 
+set all = "no"
+foreach a ($argv)
+switch($a)
+	case -l:
+		set list = $argv[2]   
+       if (! -e $list) then
+         echo "Missing rename file $list, QUIT" 
+         exit 1
+       endif
+       breaksw  
+   case -f
+       set lsfile = $argv[2]
+       breaksw   
+endsw
+shift
+end    
+if ( $lsfile == "" ) then
+       set lsfile = rxfiles.inp
+       ls -1 *.??o* >! $lsfile   
+       set all = "yes"
+endif 
+       
+
+# Record this run   
+set username = `whoami`   
+set timedate = `date`
+touch rename.log  
+echo "Renames of RINEX files using $list by $username at $timedate "  >> rename.log
+                            
+#
+# Loop over all the rinex file names passed   
+foreach rxf (`cat $lsfile`)
+#foreach rxf (`echo $files`)  
+
+       
+#   save and optional .Z extent separately
+    set rxroot = $rxf:t 
+    set rxext  = $rxf:e   
+
+#   get the name as it would appear in the list (root only, without .Z)
+    if( $rxext == 'Z' ) then
+        set rxname = $rxroot:r 
+    else
+        set rxname = $rxroot
+    endif
+#
+#   Now grep the line from sceclist file
+    set origrx = `grep $rxname $list | awk '{print $1}'` 
+    if( $origrx == '' ) then
+       echo 'Rinex File '$rxname' not found in' $list  >> rename.log
+    else
+       set origcd = `echo $origrx | awk '{print substr($1,1,4)}'`
+       set truecd = `grep $rxname $list | awk '{print tolower($2)}'`
+#       echo "DEBUG rxname origcd truecd " $rxname $origcd $truecd
+       if( $origcd != $truecd ) then
+#          OK, Names differ so rename the rinex file to the correct
+#          name.
+           set newrxname = `echo $truecd $rxname | awk '{print $1substr($2,5)}'`
+           echo Moving $rxname to $newrxname >> rename.log  
+#           echo "DEBUG rxext " $rxext
+           if( $rxext == 'Z' ) then   
+               set newrx = $newrxname'.Z'
+            else
+               set newrx = $newrxname
+           endif    
+#           echo 'DEBUG newrx ' $newrx
+           mv $rxf $newrx
+       endif                                     
+    endif
+end                   
+
+# If file list generated temporarily for all, erase now
+if ( $all == 'yes' ) then
+  \rm rxfiles.inp
+endif
+
+endif

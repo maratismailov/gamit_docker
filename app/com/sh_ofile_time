@@ -1,0 +1,17 @@
+#!/usr/bin/csh -f
+# fix for subdaily time reads.
+
+set ofile = `ls -1 olinj*`
+
+# Extract and translate the mid-point epoch for the analysis session
+
+set offset = `grep "Epoch numbers" $ofile | awk '{print ($5-($3-1))/2*($7/60)}'`
+set start = `grep "Start time:" $ofile | awk '{print $3,$4,$5,$6,$7}' ` 
+set date = `doy $start[1-5] | grep Date | awk '{print $6,$3}'`
+set hours = `echo $date[2] | awk '{FS=":"} {hours=$1+($2/60); print hours}'` 
+set dec = `echo $hours $offset[1] | awk '{dec=($1+($2/60))/24; print dec}'`
+set epoch = `echo $date[1] $dec | awk '{printf"%8.4f\n",$1+$2}'`
+echo $epoch
+
+
+

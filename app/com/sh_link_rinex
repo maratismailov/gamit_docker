@@ -1,0 +1,430 @@
+#!/bin/csh -f
+#
+#doc Link RINEX files from a specified directory to the current day directory
+#doc
+#  
+#  S. McClusky;  last changed by R. King 080306
+#  M. Floyd: Added LC_NUMERIC environment variable explicitly to avoid problems
+#            when locale uses comma for the decimal separator. 2020/12/14
+######################## INSTRUCTIONS #############################
+if ( $#argv == 0 ) then
+  echo "======================================================================================="
+  echo "  link RINEX files from a specified directory to the current day directory"
+  echo "  "
+  echo "  USAGE : sh_link_rinex  -year <yr> -days <doy> -ndays <-n +n> -sesfo <shr smin dhr dmin> -met -dir <dir> -minspan <hrs> -copy -expt <expt> -sd <file>"
+  echo "  "
+  echo "          <yr> is the 4 char year of observations. [Required]"         
+  echo "  "
+  echo "          <doy> is the 3 char day of the year to be linked. [Required]" 
+  echo "                Note: multiple days may be entered to be linked"        
+  echo "  "
+  echo "          <ndays> are the number of days before and after the first doy entered to be linked"
+  echo "                  Note: -n +n values are relative to the first doy value entered " 
+  echo "  "
+  echo "          <sesfo> shr and smin: start of obs to link, dhr and dmin: duration of obs to link"
+  echo "                  Note: sesfo values are relative to the first doy value entered "   
+  echo " " 
+  echo "          -met  link RINEX met files instead of obs files ( does not work with <sesfo> )"
+  echo "  "
+  echo "          <dir> the absolute or relative path to the RINEX files [Default for obs ../rinex; for met ../met] "         
+  echo "                Note: multiple directories may be entered and searched"        
+  echo "  "
+  echo "          <hrs> the minimum interval of data that will be accepted in any session. [Default 1 hr]  "
+  echo "  "
+  echo "          -copy  copy the rinex files to the given directory <dir> instead of linking "
+  echo "  "
+  echo "          <expt> name of experiment in sites.default to link [ONLY link file names listed there] "
+  echo "                 WARNING: -ndays should be 0 0 for this option or else the wrong sites mighted"
+  echo "                          be linked on different days with date dependent sites.default files"
+  echo "  "
+  echo "          <file> name of sites.default file to used for linking [Default: procdir/table/sites.defaults]"  
+  echo " "
+  echo "  "
+  echo "  Examples :  sh_link_rinex -year 1996 -days 016 017 -dir ../rinex/tracking "   
+  echo "              sh_link_rinex -year 1996 -days 016 -ndays 3 3 -dir ../rinex/tracking "
+  echo "              sh_link_rinex -year 1996 -days 016 -ndays 3 3 -sesfo 17 00 24 00 -dir ../rinex/tracking " 
+  echo " "
+  echo "              sh_link_rinex -year 1996 -days 016 -met "
+  echo "              sh_link_rinex -year 1996 -days 016 -met -dir ../rinex/met "
+  echo "  "
+  echo " NOTES: 1)  -year and -days must be the first 2 command line arguments. "
+  echo "        2)  Existing links will not be removed and replaced unless they are empty."
+  echo "        3)  Script can't be run in parallel in the same directory"
+  echo " "                                                                      
+  echo "======================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+setenv LC_NUMERIC 'C'
+set year = ""
+set yr = ""
+set yrs = ""
+set days = ""
+set idays = ""
+set imjds = ""
+set jdays = ""
+set jmjds = ""
+set kdays = ""
+set kmjds = ""
+set ndays = "" 
+set sess = ( 0 1 2 3 4 5 6 7 8 9 )
+set sesfo = "NO"  
+set met = "NO"
+set rxlist = ""
+set ehr = 24
+set bmin = 00
+set emin = 00
+set dur = 24 
+# 1 hour as a decimal day. 
+#set minspan = 0.041666667 
+#set minspan = 1.0 
+# rwk 030317: make this smaller to avoid losing day-crossing data (still have minxf filter)
+set minspan = 0.1
+# set this after determining whether called for observations or met 
+ set dir = ""
+#set dir = "../rinex"
+set copy = "NO"
+set expt = ""
+set sd = ""
+set globalrx = ""
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+       case -y*:
+         set year = $input[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+         set yr = `sh_year -year $year`
+       breaksw 
+       case -da*:
+                set idays = (`echo $argv | cut -d- -f2`); shift idays
+                foreach i ( $idays )
+                  set imjds = ($imjds `doy $yr[1] $i | tail -n -3 | head -n 1 | awk '{printf "%6d \n", $10}'`)
+                end 
+       breaksw
+       case -nd*:
+                if ( ${idays[1]} == '' ) then
+                   echo "You must set -year and -days variable first: --Stop"
+                   exit
+                endif
+                set ndays = (`echo $argv | cut -d- -f2`); shift ndays
+#                 @ count = $ndays[2] + $ndays[1]
+                @ count = `echo "ibase=10; ${ndays[2]} + ${ndays[1]}" | bc`
+#                 @ bmjd = $imjds[1] - $ndays[1]
+                @ bmjd = `echo "ibase=10; ${imjds[1]} - ${ndays[1]}" | bc`
+                set jmjds = $bmjd
+                while ( $count )
+                  @ bmjd++
+                  set jmjds = ( $jmjds $bmjd ) 
+                  @ count = $count - 1 
+                end 
+       breaksw
+       case -ses*:
+               if ( ${idays[1]} == '' ) then
+                  echo "You must set -year and -days variable first: --Stop"
+                  exit
+               endif
+               set sesfo = YES
+# MOD TAH 1907226: Reduce dur by 30-secs since we process to 23:59:30 (stops next day being linked when
+#              ndays is [0 0].
+#              set dur = `echo 24.0 1440.0 | awk -v dh=$input[4] -v dm=$input[5] '{print (dh/$1+dm/$2) }'` 
+               set dur = `echo 24.0 1440.0 | awk -v dh=$input[4] -v dm=$input[5] '{print (dh/$1+dm/$2 - 30/86400) }'` 
+               set ymd = `doy $imjds[1] | tail -n -3 | head -n 1 | awk '{print $2}' | awk -F"/" '{print $1, $2, $3}'`
+               set smjd = `doy $ymd $input[2] $input[3] | tail -n -3 | head -n 1 | awk '{printf "%10.4f \n", $10}'`
+               set emjd = `echo $smjd $dur | awk '{printf "%10.4f \n", $1+$2}'` 
+               set smjdi = `doy $ymd $input[2] $input[3] | tail -n -3 | head -n 1 | awk '{printf "%6d \n", $10}'`
+               set emjdi = `echo $smjd $dur | awk '{printf "%6d \n", $1+$2}'` 
+               set sdate =  `doy $smjd | tail -n -3 | head -n 1 | awk '{print $2, $3}'`
+               set edate =  `doy $emjd | tail -n -3 | head -n 1 | awk '{print $2, $3}'`  
+#                 @ count = $emjdi - $smjdi 
+               @ count = `echo "ibase=10; ${emjdi} - ${smjdi}" | bc`
+
+               set kmjds = $smjdi
+               while ( $count )
+                 @ smjdi++
+                 set kmjds = ( $kmjds $smjdi ) 
+                 @ count = $count - 1 
+               end 
+       breaksw
+       case -min*:
+#         set minspan = `echo $argv[2] | awk '{print $1/24.0}'`
+         set minspan = `echo $argv[2]`
+       breaksw 
+       case -dir: 
+#        set dir = (`echo $argv | cut -d- -f2`); shift dir
+#Mod to handle -'s on path name scm 050719. 
+         set dir = (`echo $argv | awk -F" -" '{print $1}'`); shift dir
+       breaksw
+       case -met: 
+         set met = "YES"
+       breaksw      
+       case -copy: 
+         set copy = "YES"
+       breaksw     
+       case -ex*:
+         set expt = $input[2]
+       breaksw 
+       case -sd:
+#        set sd = $input[2]
+        set sd = `echo $input[2] | awk '{print "-sd ",$1}'`
+       breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end   
+
+# Mod to allow different defaults for obs and met directories
+if( $dir == "" ) then
+   if( $met == "YES" ) then
+      set dir = "../met"
+   else
+      set dir = "../rinex"
+   endif
+endif
+
+
+##################### GET THE JOB DONE ###################### 
+# Setup days to search 
+echo $imjds $jmjds $kmjds | awk '{for (i=1;i<=NF;i++) printf "%03d \n",$i}' >! tmp.days   
+set mjds = `sort -u tmp.days | awk '{printf" %6d ", $1}' | awk '{for (i=$1;i<=$NF;i++) printf "%6d \n", i}'`  
+\rm tmp.days >& /dev/null
+foreach i ( $mjds )
+  set days = ( $days `doy $i | tail -n -3 | head -n 1 | awk '{printf "%03d \n",$6}'`)
+  set yrs =  ( $yrs `doy $i | tail -n -3 | head -n 1 | awk '{printf "%04d \n",substr($2,1,4)}'`)
+end
+
+######### DEBUG #######
+#echo "imjds"  $imjds 
+#echo "jmjds"  $jmjds 
+#echo "kmjds"  $kmjds
+#echo "days"   $days
+#echo "yrs"    $yrs
+######### DEBUG #######
+
+# Check all required info given.
+if ( ${year} == '' ||  ${days[1]} == '' ) then
+  echo "Not all required fields given -- yr: $year days: $days --Stop"
+  exit
+endif
+
+# Check rinex links in current directory are currently existing files.
+\rm tmp.e_rinex >& /dev/null
+foreach i ( `echo $yrs | awk '{printf "%02d \n", substr($1,3,2)}'` ) 
+  if ($met == 'NO' ) then
+    find ./ -name "????????.${i}o" -print >! tmp.e_rinex
+    find ./ -name "????????.${i}O" -print >> tmp.e_rinex    
+  else
+    find ./ -name "????????.${i}m" -print >> tmp.e_rinex 
+  endif
+  if ( -e tmp.e_rinex && ! -z tmp.e_rinex ) then
+    foreach j ( `cat tmp.e_rinex` )
+      if ( ! -e ${j} ) then
+        echo "Removing broken rinex link: $j "
+        \rm $j
+      endif
+    end
+  endif 
+end 
+\rm tmp.e_rinex >& /dev/null
+
+# Link rinex files if session info given  (obs files only; will not work for met files)
+foreach k ($dir)   
+  if ( $sesfo == "YES" ) then    
+    echo "Checking RINEX files on days $days in directory $k Hold on "
+    if( $met == "YES" ) then
+      echo "Linking of RINEX met files will not work with <sesfo> specified"
+      stop
+    endif 
+    echo "Looking for rinex files which have data between: $sdate and $edate and have a minimum span of $minspan hrs"
+    set minspan = `echo $minspan | awk '{print $1/24.0}'`
+    set i = 0
+    foreach rxday ($days) 
+      @ i++
+      set yro = `sh_year -year $yrs[$i]`  
+
+# See if only sites listed in sites.defaults are to be linked ($expt != "")
+      if ( $expt != "" ) then
+         if ( ` setenv | grep procdir ` == "" ) then
+            pushd .. >&! /dev/null
+            setenv procdir `pwd`
+            popd >&! /dev/null
+         endif
+# Set the sites.default file to be the default or specified with year and day.
+         if ( "$sd[1]" != '' ) then
+            set infile = $sd[2]
+         else
+            set infile = ${procdir}/tables/sites.defaults
+            if ( -e ${infile}.${yro[1]}.${rxday} ) set infile = ${infile}.${yro[1]}.${rxday}
+         endif
+#         if ( -e ${infile}.${yro[1]}.${rxday} ) set infile = ${infile}.${yro[1]}.${rxday}
+# Extract site specific information arrays from sites.defaults file. 
+         if ( ! -e $infile ) then
+           echo "No sites.defaults or sites.defaults.${yro[1]}.${rxday} file found at: $infile"
+         else 
+#           set globalrx = `sh_get_defaults -token ftprnx -expt $expt -yr $yro[1] -doy $rxday`
+           set globalrx = `sh_get_defaults -expt $expt -yr $yro[1] -doy $rxday $sd`
+           echo "sh_link_rinex - globalrx: " $globalrx
+# Echo lists extracted from sites.defaults    
+           echo "  "  
+           if ( $#globalrx > 0 ) then
+             echo "Experiment given - linking ONLY sites listed as $expt in $infile from $dir"
+             echo "Sites extracted from $infile to be linked: $globalrx "
+           endif
+         endif
+      endif
+
+# Get the listing of all rinex files matching the correct description
+#
+      (\ls $k/????${rxday}?.${yro[2]}o >! tmp.newlist) >& /dev/null  
+# If sites.defaults/expt given only link these sites. 
+      if ( $#globalrx > 1 ) then
+        touch tmp.sd_list
+        foreach s ($globalrx)         
+           grep $s tmp.newlist | awk -F"/" -v site=$s '{if (substr($NF,1,4) == site) {print $0}}' >> tmp.sd_list
+        end 
+        \mv tmp.sd_list tmp.newlist
+      endif
+      set rxlist = ($rxlist `awk '{printf "%s ",$1}' tmp.newlist`)  
+    end 
+
+    foreach rxf ($rxlist)
+      #set yro = ` echo $rxf | awk -F"." '{printf "%02d \n", substr($NF,1,2)}'`
+      set yro = ( `echo $rxf | awk -v FS='.' '{yr=substr($NF,1,2); if (yr+0 >= 80) year=1900+yr; else year=2000+yr; printf "%4d %02d",year,yr}'` )
+      set start = `grep -i 'TIME OF FIRST OBS' $rxf | awk '{print $1,$2,$3,$4,$5}'`
+# Time of last obs is not too reliable so I am stopping this test for now
+#      set end = `grep -i 'TIME OF LAST OBS'    $rxf | awk '{print $1,$2,$3,$4,$5}'`
+      set end = ''
+      set lstart = `echo $start | wc -w`
+      set lend = `echo $end | wc -w`
+#  If we don't have the end time, then get it from the data         
+      if( $lend[1] == 0 ) then 
+## Not y2k compliant  set end = `tail -n -60 $rxf | grep "^ $yro" | tail -n -1 | awk '{print substr($0,2,14)}'`
+#       set end = `tail -n -60 $rxf | awk -v yr=$yro '$1*1.0 == yr*1.0 {print $0 }' | tail -n -1 | awk '{print substr($0,2,14)}'`  
+## Still not quite right for year 2000 with blank lines included (from e.g, 7 observables expected but only 5 present)
+##   P. Tregoning  020916
+#       set end = `tail -n -60 $rxf | awk -v yr=$yro '$1*1.0 == yr*1.0 {print $0 }' | grep " "$yro" " | tail -n -1 | awk '{print substr($0,2,14)}'`
+## Try this since grepping on $yro will fail as $yro is a 2char variable and rinex 1 and 2 do not require 2char year variables.
+#       set end = `tail -n -60 $rxf | awk -v yr=$yro '{if($1*1.0 == yr*1.0 && NF > 6) {print $0 }}' | tail -n -1 | awk '{print substr($0,2,14)}'`
+# MOD TAH 040720: Do the awk first and then tail -n.  This is to handle the case when there are many COMMENTS at the end of the rinex file  
+#       set end = `awk -v yr=$yro '{if($1*1.0 == yr*1.0 && NF > 6) {print $0 }}' $rxf | tail -n -1 | awk '{print substr($0,2,14)}'`  
+## Modified to read RINEX 2 and RINEX 3 time tags by MAF (2016-01-14, MIT)
+        set end = `awk -v year=$yro[1] -v yr=$yro[2] '{if ($1+0 == yr+0 && NF > 6) print substr($0,2,14); else if (substr($0,1,1) == ">" && $2 == year && NF > 7) print substr($0,3,16)}' $rxf | tail -n 1`
+      endif
+
+#  Only process if the 'TIME OF FIRST OBS was found in the rinex file. This should be in all rinex files.
+      if( $lstart[1] > 0 ) then
+#  Compute the MJD of the end of the experiment and compare to the processing
+#  day MJD.  If the experiments end before or at 0:00 hours, remove the rinex
+#  file.         
+        set rxendmjd = `doy $end | head -n 1 | awk '{print $10}'`
+        set rxstartmjd = `doy $start | head -n 1 | awk '{print $10}'`
+#  Check the time ranges: Note use of <= and >= since if values are equals implies only
+#  one overlapping data epoch. 
+        set action = `echo $rxendmjd $smjd $rxstartmjd $emjd | awk -v ms=$minspan '{if( $1-ms <= $2 || $3+ms >= $4 ) {print "remove"} else {print "keep"}}'`
+        if( $action == 'keep' ) then
+          if ( $copy == 'NO' ) then
+	    echo "Linking $rxf to current directory"
+            ln -s $rxf . 
+	  else 
+	    echo "Copying $rxf to current directory"
+	    cp -af $rxf .
+	  endif   
+        else
+          if ( $copy == 'NO' ) then
+	    echo "Not linking $rxf to day directory (data are outside given session)"
+	  else
+	    echo "Not copying $rxf to day directory (data are outside given session)"
+          endif
+        endif
+      endif
+    end
+  else    
+#   link or copy files if sesfo not specified  (only this code used if met files)
+    set l = 0
+    echo "sh_link_rinex: Days to be linked/copied "$days
+    foreach i (`echo $days` ) 
+      set rxday = $i
+      @ l++
+      set yro = `sh_year -year $yrs[$l]`   
+      if( $met == 'NO' ) then 
+#        See if only sites listed in sites.defaults are to be linked ($expt != "")
+         if ( $expt != "" ) then
+            if ( ` setenv | grep procdir ` == "" ) then
+               pushd .. >&! /dev/null
+               setenv procdir `pwd`
+               popd >&! /dev/null
+            endif
+# Set the sites.default file to be the default or specified with year and day.
+            if ( "$sd[1]" != '' ) then
+               set infile = $sd[2]
+            else
+               set infile = ${procdir}/tables/sites.defaults
+               if ( -e ${infile}.${yro[1]}.${rxday} ) set infile = ${infile}.${yro[1]}.${rxday}
+            endif
+#         if ( -e ${infile}.${yro[1]}.${rxday} ) set infile = ${infile}.${yro[1]}.${rxday}
+# Extract site specific information arrays from sites.defaults file. 
+            if ( ! -e $infile ) then
+              echo "No sites.defaults or sites.defaults.${yro[1]}.${rxday} file found at: $infile"
+            else 
+#           set globalrx = `sh_get_defaults -token ftprnx -expt $expt -yr $yro[1] -doy $rxday`
+              set globalrx = `sh_get_defaults -expt $expt -yr $yro[1] -doy $rxday $sd`
+              echo "sh_link_rinex: $expt List " $globalrx
+# Echo lists extracted from sites.defaults    
+              echo "  "  
+              if ( $#globalrx > 0 ) then
+                echo "Experiment given - linking ONLY sites listed as $expt in $infile from $dir"
+                echo "Sites extracted from $infile to be linked: $globalrx "
+              endif
+            endif
+         endif
+
+# Get the listing of all rinex files matching the correct description
+#
+         (\ls $k/????${rxday}?.${yro[2]}o >! tmp.newlist) >& /dev/null  
+# If sites.defaults/expt given only link these sites. 
+         if ( $#globalrx > 1 ) then
+           touch tmp.sd_list
+           foreach s ($globalrx)         
+              grep $s tmp.newlist | awk -F"/" -v site=$s '{if (substr($NF,1,4) == site) {print $0}}' >> tmp.sd_list
+           end 
+           \mv tmp.sd_list tmp.newlist
+         endif
+         set rxlist = ($rxlist `awk '{printf "%s ",$1}' tmp.newlist`)  
+
+         if ( $copy == 'NO' ) then 
+           echo 'Linking RINEX files for day ' $i ' all sessions from directory ' $k 
+           awk  -F/ '{printf("ln -s %s %s\n", $0,tolower($NF))}' tmp.newlist >! link.cmd
+#           (ls  $k/????$i$j.${yro[2]}o $k/????$i$j.${yro[2]}O | awk -F/ '{print "ln -s ",$0,tolower($NF)}' >> link.cmd) >& /dev/null
+#           (ls  $k/????$i$j.${yro[2]}n $k/????$i$j.${yro[2]}N | awk -F/ '{print "ln -s ",$0,tolower($NF)}' >> link.cmd) >& /dev/null
+           (csh link.cmd) >& /dev/null 
+         else   
+           echo 'Copying RINEX files for day ' $i ' all sessions from directory ' $k 
+           awk '{printf("\\cp -af %s .\n", $1)}' tmp.newlist >! cp.cmd
+#          (ls  $k/????$i$j.${yro[2]}o* $k/????$i$j.${yro[2]}O* | awk -F/ '{print "cp -af ",$0,tolower($NF)}' >> cp.cmd) >& /dev/null
+#          (ls  $k/????$i$j.${yro[2]}o* $k/????$i$j.${yro[2]}O* | awk -F/ '{print "cp -af ",$0,$NF}' >> cp.cmd) >& /dev/null
+#          (ls  $k/????$i$j.${yro[2]}n $k/????$i$j.${yro[2]}N | awk -F/ '{print "cp -af ",$0,tolower($NF)}' >> cp.cmd) >& /dev/null
+#          (ls  $k/????$i$j.${yro[2]}n $k/????$i$j.${yro[2]}N | awk -F/ '{print "cp -af ",$0,$NF}' >> cp.cmd) >& /dev/null
+           (csh cp.cmd) >& /dev/null
+           (sh_casefold -d d -f ????$i?.${yro[2]}O* )  >& /dev/null 
+         endif
+
+      else  
+
+####    Link/copy MET file branch.
+
+         if( $copy == 'NO' ) then
+           echo " " >! link.cmd
+           echo 'Linking RINEX met files for day ' $i ' from directory ' $k ' Hold on'
+           set j = 0
+           (ls  $k/????$i$j.${yro[2]}m $k/????$i$j.${yro[2]}M | awk -F/ '{print "ln -s ",$0,tolower($NF)}' >> link.cmd) >& /dev/null
+           (csh link.cmd) >& /dev/null
+         else    
+           echo " " >! cp.cmd
+           echo 'Copying RINEX met files for day ' $i ' session ' $j ' from directory ' $k ' Hold on'
+           (ls  $k/????$i$j.${yro[2]}m* $k/????$i$j.${yro[2]}M* | awk -F/ '{print "cp -af ",$0,tolower($NF)}' >> cp.cmd) >& /dev/null
+         endif
+      endif
+    end      # Looping over days
+  endif  
+end         # Looping over directories
+\rm link.cmd cp.cmd tmp.newlist >& /dev/null
+

@@ -1,0 +1,24 @@
+      SUBROUTINE SHFTOR(SHFT,SPHERE)
+C
+C       SHIFT THE ORIGIN OF A SPHERICAL COORDINATE SYSTEM
+C       RIA 27-MAY-82
+C
+      implicit none
+
+      integer*4 i
+
+      REAL*8 SHFT(3),SPHERE(3),X(3), rho
+C
+      X(1)=SPHERE(3)*DCOS(SPHERE(2))*DCOS(SPHERE(1))
+      X(2)=SPHERE(3)*DSIN(SPHERE(2))*DCOS(SPHERE(1))
+      X(3)=SPHERE(3)*DSIN(SPHERE(1))
+      DO 100 I=1,3
+      X(I)=X(I)+SHFT(I)
+  100 CONTINUE
+      SPHERE(3)=DSQRT(X(1)*X(1)+X(2)*X(2)+X(3)*X(3))
+      SPHERE(2)=DATAN2(X(2),X(1))
+      RHO=DSQRT(X(1)*X(1)+X(2)*X(2))
+      SPHERE(1)=DATAN2(X(3),RHO)
+C
+      RETURN
+      END

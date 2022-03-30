@@ -1,0 +1,137 @@
+#!/bin/csh -f
+
+# Script to pre-read rinex data based on data used in previous days 
+# analysis.  Script interfaces with output files from sh_network_sel_v1
+# and is meant to pre-read data needed by it.
+
+# See if arguments passed
+if( $#argv == 0 ) then
+   grep '^## ' $0 | awk '{print substr($0,3)}'
+# Here are the options
+## Usage: sh_preread_rinex <options> 
+## where the following options are avaiable
+##  -d yr day  where yr and day are to be read e.g. 2011 107
+##             Sites that were used on day 106 will be read
+##  -r day     where day is number of days before current date
+##             (Again sites from the day before will be read)
+##  -a archive to be used (sites from this archive will be read)
+##             Standard archives are cddis sopac unavco (default cddis) 
+##  -t time    Total time the script will run (hrs).  Script will
+##             keep repeating until this many hours has elapsed (default 2.0)
+##
+##  Script should be started in control directory and rinex data are in ../${yr}/rinex.
+##  sites.defaults.$yr.$doy in ../$yr/tables is used for list.
+##
+   exit
+endif
+#
+# Set some defaults
+set archive = cddis   # kasi is good choice for asia.
+set runtime = 2.0
+set archivelist = `echo sopac unavco cddis`    # add kasi for Asian region
+
+# Get arguments
+
+foreach a ($argv)
+switch($a)
+    case -d:
+        set yr = $argv[2]
+        set doy = $argv[3]
+
+#       Get the gpsweek
+        set jd   = `doy $yr $doy | tail -3 | head -1 | awk '{print $8}'`
+        set gpsw = `doy $jd | tail -2 | head -1 | awk '{print $3}'`
+        set gpsd = `doy $jd | tail -2 | head -1 | awk '{print substr($7,1,1)}'`
+        set yr   = `doy $jd | tail -3 | head -1 | awk '{print substr($2,1,4)}'`
+        set yr2  = `doy $jd | tail -3 | head -1 | awk '{print substr($2,3,2)}'`
+        set yr1  = `doy $jd | tail -3 | head -1 | awk '{print substr($2,4,1)}'`
+        set doy  = `doy $jd | tail -3 | head -1 | awk '{print $6}'`
+        set mjd  = `doy $yr $doy | tail -3 | head -1 |awk '{print int($10)}'`
+        set jdn  = `doy | tail -3 | head -1 | awk '{print int($10)}'`
+        @ dd = $jdn - $mjd
+        breaksw
+    case -r:
+        set dd = $argv[2]
+
+#       Now get the day number to process
+        set jd = `doy | tail -3 | head -1 | awk '{print int($10)}'`
+        @ jd = $jd - $dd
+        set gpsw = `doy $jd | tail -2 | head -1 | awk '{print $3}'`
+        set gpsd = `doy $jd | tail -2 | head -1 | awk '{print substr($7,1,1)}'`
+        set yr   = `doy $jd | tail -3 | head -1 | awk '{print substr($2,1,4)}'`
+        set yr2  = `doy $jd | tail -3 | head -1 | awk '{print substr($2,3,2)}'`
+        set yr1  = `doy $jd | tail -3 | head -1 | awk '{print substr($2,4,1)}'`
+        set doy  = `doy $jd | tail -3 | head -1 | awk '{print $6}'`
+        set mjd  = `doy $yr $doy | tail -3 | head -1 |awk '{print int($10)}'`
+       
+        breaksw
+    case -a*:
+        set archive = $argv[2]
+        breaksw
+    case -t:
+        set runtime = $argv[2]
+    default:
+#       echo Unknown option $a
+#       grep '^## ' $0 | awk '{print substr($0,3)}'
+#       exit
+
+endsw
+shift
+end
+
+#### Generate time for previous day
+set pmjd = `echo $mjd 1 | awk '{printf("%10d",$1-$2)}'`
+set pyd = `doy $pmjd | head -1 | awk '{printf("%4d %3.3d", substr($2,1,4),$6)}'`
+set pJD = ${pyd[1]}_$pyd[2]
+
+#### OK Start the process 
+# See when we need to stop
+set st = `date +"%Y %m %d %H %M"`
+set mjde = `doy $st | head -1 | awk -v runtime=$runtime '{printf("%12.4f",$10+runtime/24)}'`
+set OK = 1 
+while ( $OK == 1 )
+
+#   See if this is last time
+    set st = `date +"%Y %m %d %H %M"`
+    set OK = `doy $st | head -1 | awk -v mjde=$mjde '{if( $10 < mjde ) {printf("%1d",1)} else {printf("%d",0)}}'`
+    if( $OK == 1 ) then
+#      Start with setting up the sh_get_rinex call.
+#      Make sure we have sites.defaults
+       set sdf = ../$pyd[1]/tables/sites.defaults.${pyd[1]}.${pyd[2]}
+       if( ! -e $sdf ) then
+          echo "ERROR: Cant file $sdf file"
+          exit(-2)
+       endif
+##     Now get the list of sites that we need to download from this archive.
+       set rxall = `grep ftprnx ../${pyd[1]}/tables/sites.defaults.${pyd[1]}.${pyd[2]} | awk '{print substr($1,1,4)}' | sort -u`
+#      Get list sites to download
+       set archivenum = `echo $archivelist |  awk '{do {i++ ; print i,$i} while (i < NF)}' | grep $archive`
+#      Now build up list; making sure that the site will not be obatained from an eariler archive
+       set rxf = ''
+       foreach rx ( $rxall )
+#         See if in eariler archives
+          set j = 1 ; set done = N
+          while ( $j < $archivenum[1] )
+             set inc = `grep $rx  ${archivelist[$j]}.list_${pJD}.log | wc -l`
+             if( $inc > 0 ) set done = Y
+             @ j++
+          end
+          if( $done == N ) set rxf = ($rxf $rx)
+       end
+#      Now get data:
+       pushd ../$yr/rinex
+          sh_get_rinex -archive $archive -yr $yr -doy $doy -ndays 1 -sites $rxf
+       popd
+    endif
+end
+#
+# DONE
+
+
+
+
+
+
+      
+
+

@@ -1,0 +1,50 @@
+From pws@ngdc1.Colorado.EDU Thu Apr 11 11:59:40 1991
+Return-Path: <pws@ngdc1.Colorado.EDU>
+Received: from ngdc1.Colorado.EDU by laysan.soest.hawaii.edu (4.1/laysan-MX-1.9)        id AA00525; Thu, 11 Apr 91 11:59:20 HST
+Received: by ngdc1.Colorado.EDU (5.57/Ultrix2.4-C)
+        id AA29923; Thu, 11 Apr 91 15:58:28 MDT
+Date: Thu, 11 Apr 91 15:58:28 MDT
+From: pws@ngdc1.colorado.edu (Peter W. Sloss)
+Message-Id: <9104112158.AA29923@ngdc1.Colorado.EDU>
+To: terrid@laysan.soest.hawaii.edu
+Subject: Plate boundaries
+Status: R
+
+Following is a file in UNIX "compress" format of the University of Texas plate
+boundary digitizations.  They say this about the file
+        EXPLANATION FOR POMP BOUNDARY FILE bound.90
+
+Source: Paleo-Oceanographic Mapping Project (University
+        of Texas at Austin)
+Data Manager: Lisa Gahagan, (512) 471-0488
+
+Each boundary has a 2 line header, followed by a string of lats, longs,
+and pen movements (2 = pen down, or connect to previous point, 3 = pen up,
+or start a new line segment).  A lat, long of 99.000, 99.000 signifies
+the end of the string for that boundary.  
+
+HEADER LINE 1:
+        Reference number for location and source (see file ref.lis)
+        Plate boundary number
+        Name of boundary
+
+HEADER LINE 2:
+        Reference number for plate
+        Time of appearance (mya)
+        Time of disappearance (mya)* 
+        Boundary Type Code:
+                FZ = fracture zone
+                RI = ridge
+                SS = strike-slip
+                TF = transform fault
+                TR = trench
+                etc. (see file ref.lis)
+        Magnetic anomaly code*
+        Plate code*
+        Color code for plotting*
+        
+* signifies these codes are inappropriate for this data set (POMP
+maintains other files of past isochrons in this format)
+        
+Following is the compressed file "bound.90.Z" with the data.
+Get rid of everything down to here before uncompressing!

@@ -1,0 +1,41 @@
+<html>
+<head> </head>
+<body>
+<pre>
+MSTINF: Merge old format station.info files
+
+MSTINF: Program to merge station.info files using a reference station.info
+        file and a list of other files to be merged.  Options exist (-u/-l)
+        to limit the sites used from the reference station.info file.
+
+Runstring:
+% mstinf &LT;options&GT;
+
+where &LT;options&GT; are:
+-f &LT;file&GT;  -- Reference station.info file with definitive information
+-w &LT;file&GT;  -- Name of output merged station.info
+(The above two options must be given.  If only these are given, then the output
+ station.info will be sorted by site names and date)
+
+-s &LT;list of files&GT; -- Names of station.info files to be merged with reference one
+
+* Site Selection option: NOTE when the options below are used, all sites that
+* are needed and appear in the reference station.info must be included in the
+* lists.  If not, they will not appear in the merged station.info.  If neither
+* option is used, all sites will appear in merged station.info.
+-u &LT;list of names&GT; -- Names of sites to be used from the reference station.info.
+              These sites will be ignored in the merged files if they are found
+              in the reference station.info
+-l &LT; file&GT;         -- File constaining the names of sites to be used (same as
+              -u option except input is in a file.  There is one name per line
+              in the file and comment lines have a non-blank character in the
+              first column
+
+-o         -- if given will allow the file given with the -w option to overwrite an
+              existing file.  (Default is for the -w file to be a new file). 
+-c         -- if given will have the comment lines from the station.info files
+              copied to the merged file.
+ 
+</pre>
+</body>
+</html>

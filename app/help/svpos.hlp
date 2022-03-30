@@ -1,0 +1,35 @@
+SVPOS: Point positioning using GPS code range data
+
+program svpos
+ 
+Program to compute the rise and set times of the GPS
+satelites based on the ephemeris in the rinex navigiation
+files
+ 
+The runstring of the program is
+
+% svpos [navfile] [data file] <Site process noise> <clk process noise> \
+        <data noise> <X apriori> <Y apriori> <Z apriori> <output spacing> <out type> \
+        <debug_start>, <debug_end>
+
+where nav_file is nave file name (required)
+    data_file is the name of the Rinex data file (required)
+    Site process noise in m**2 per epoch pf data (optional, use '' to skip)
+    clock process noise in m**2 per epoch pf data (optional, use '' to skip)
+    data noise (m) (optional, use '' to skip).
+    <X apriori> <Y apriori> <Z apriori> new apriori site 
+        coordinates instead of those in RINEX file. (optional)
+    <out spacing> is output sacing in seconds (optional)
+    <out type> is XYZ for cartesian, NEU for Local
+MOD TAH 130320: Adding DUMP to the out type (e.g., NEU+DUMP) will output
+    phase and range to file with extent .dmp replacing .YYo
+    <debug_start>, <debug_end> Start and stop epochs for outputing debug.
+MOD TAH 150514:  If the debug_start is negative, the absolute
+     value will be the first epoch processed.  Thedebug_end, if negative,
+     then becomes the last epoch processed.  If  debug start is negative
+     and debug_end is positibe, debug_end is then the number of epochs 
+     to processed.(Allows positon estimate from data starting in the 
+     middle of the file and only a part of the file to be used).
+
+MOD TAH 070504: Fixed problem with reading old version rinex files.
+ 

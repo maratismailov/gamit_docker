@@ -1,0 +1,60 @@
+KALAN: VLBI program to analyze Kalman filter solution
+  
+KALAN:  Kalman filter solution analysis program 
+  
+RUNSTRING:
+  
+% kalan <Commands> .... <Commands>
+  
+where 
+<Commands> are the KALAN commands (see below).  All commands may be 
+      entered through the runstring of the program or from a file 
+      or LU.  The commands are executed as they are encountered in
+      the runstring except for the TR and COM_FILE commands which 
+      are executed after the runstring is read. 
+  
+The commands for KALAN are: 
+  
+BAKFILE [name of bak file] -- specifies the name of the BakFile to be 
+      processed.  This command reads the BakFile and opens its
+      corresponding KalObs file (which must be available) 
+  
+COMMAND [Command file name] -- specifies the name of the command file 
+      for reading further commands from.  The current command file is 
+      closed.  If command file name is an LU then use <control>D to 
+      end input from the device.
+  
+TR [command file name] -- Transfers control to another command file.
+      The current command file is left open and will be used when an
+      EOF is reached in the TR command file.  <Control D> is used to
+      end input from an LU. 
+  
+OUTPUT [output file] -- directs the output (but not error messages) 
+      to the specified file or LU 
+  
+EDIT [n_sigma_limit] -- edits the data by applying an N sigma outlier 
+      limit.  The data is edited by setting the SOLVK automatic edit
+      bit in the data flag for each observation (See OBS_DATA.FTNI for
+      more details).  A data mask with bit 8 set should be used in SOLVK
+      to delete the editted data from a SOLVK solution. 
+  
+ATM_STATS [initial stats] [tolerance] [maximum iterations] -- Computes
+      the markov statistics for the atmosphere from the delay rate
+      residuals.  The delay rate data must have been used in the SOLVK
+      solution (bit 4 of data type set).  The arguments of the command
+      are:
+      [initial stats] - first guess at the markov statistics. The same
+          value is used for all sites.  Typical value 0.75. 
+      [tolerance] - the tolerance on matching the delay rate statistics 
+          to chi squared of 1. (Value 0-1, typical value 0.05)
+      [maximum iterations] - maximum number of iterations to do in trying 
+          to reach the tolerance.  Typical value 10.
+
+DUMP_MAR  Dump all of the markov parameters into a tab separate format
+
+LIST_RES [site 1] [site 2] -- Lists all residuals between sites 1 and
+       site 2.  Either value may be 'all' to get all sites.  Output is
+       tab separated.
+
+  
+ 

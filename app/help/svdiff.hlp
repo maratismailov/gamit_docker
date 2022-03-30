@@ -1,0 +1,40 @@
+SVDIFF: Differential positioning during GPS code ranges
+
+program svdiff
+ 
+Computes differential positions of sites based on two rinex files
+and a navfile. 
+
+The runstring of the program is
+
+% svdiff [navfile] [data file] [ref file]<Site process noise> \ 
+         <clk process noise> <data noise> \
+         <Ref  X apriori> <Ref  Y apriori> <Ref  Z apriori> <output spacing> <out type> \
+         <Data X apriori> <Data Y apriori> <Data Z apriori> \
+         <debug_start> <debug_end>
+
+
+where nav_file is nave file name (required)
+    data_file is the name of the Rinex data file (required)
+    ref_file is the reference site rinex data file required)
+    Site process noise in m**2 per epoch pf data (optional, use '' to skip)
+    clock process noise in m**2 per epoch pf data (optional, use '' to skip)
+    data noise (m) (optional).
+    <Ref X apriori> <Ref Y apriori> <Ref Z apriori> Reference site apriori 
+        coordinates instead of those in RINEX file (optional)
+    <out spacing> is output sacing in seconds (optional, use '' to skip)
+    <out type> is XYZ for cartesian, NEU for Local
+    <Data X apriori> <Data Y apriori> <DatanZ apriori> New site apriori 
+        coordinates instead of those in RINEX file. (optional,
+        use '' '' '' to skip )
+
+MOD TAH 150514: Added debug start and end.  If the debug_start is 
+     negative, the absolute value will be the first epoch processed.  The
+     debug_end, if negative, then becomes the last epoch processed.  If 
+     debug start is negative and debug_end is positibe, debug_end is then
+     the number of epochs to processed.
+     (Allows positon estimate from data starting in the middle of the file
+      and only a part of the file to be used).
+
+The program outputs adjustments to the apriori site positions.
+ 

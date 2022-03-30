@@ -1,0 +1,435 @@
+#!/bin/csh -f
+#
+#doc Make RINEX from raw; ashtech (R) ashtech (B,E,S) data or trimble (.dat .mes) data.
+#doc
+#
+# Modified TAH 00/01/19 to add turborogue binary files (end in at and trb)
+# Modified TAH 00/01/21 Further bug fixes to correctly handle cmp and trb extent files
+# Modified SCM 00/03/20 Added ability to handle Ashtech R-files.
+# Modified RWK 0504/25  Added ability to handle Trimble NetRS files; changed default directories
+#
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "===================================================================================="
+  echo " Convert raw receiver files into RINEX observation files (Uses TEQC translator)" 
+  echo "  "
+  echo " Usage: sh_make_rinex -yr <yr> -doy <doy> -ndays <ndays> -rawd <dir> -rdir <dir> -mdir <dir>"
+  echo "  "
+  echo "        <yr> 4 char year of nav data requested  [Required] "
+  echo "        <doy> 3 char day of year of nav data requested [Required] "
+  echo "        <rawd> absolute directory to raw data files [Default ./] "
+  echo "        <rdir> absolute directory where rinex files written [Default ./]" 
+  echo "        <mdir> absolute directory where translation done [Default ./]" 
+  echo "        <ndays> are the number of days before and after th doy entered to be converted"
+  echo "                Note: -n +n values are relative to the doy value entered [Default 1 1] "
+  echo "  "      
+  echo " Examples: sh_make_rinex -yr 2005 -doy 032 "
+  echo "           sh_make_rinex -yr 98 -doy 235 -rawd ../raw -rdir ../rinex -mdir ../mkrinex "
+  echo "  "
+  echo "===================================================================================="
+  exit
+endif 
+##################### SET UP DEFAULTS #############################   
+# Setup necessary paths and filenames
+set year  = ""
+set yr    = ""
+set doy   = ""
+set days  = ""
+set yrs   = ""
+# Set default to be 1 day before and one day after day requested.
+set ndays = (1 1)
+set imjd  = ""
+set jmjds = ""
+set bmjd  = ""
+set rawd  = "./"
+set rdir  = "./"
+set mdir  = "./"
+set mailto = `whoami`
+set machine = `hostname`
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -y*:
+      set year = $input[2]
+# Variable yr[1] = 4 char yr, yr[2] = 2 char yr, yr[3] = 1 char yr
+      set yr = `sh_year -year $year`
+    breaksw 
+    case -d*:
+      set doy = $input[2]  
+      set imjd = `doy $yr[1] $doy | tail -n -3 | head -n 1 | awk '{printf "%6d \n", $10}'`
+    breaksw
+    case -nd*:
+      if ( ${doy} == '' ) then
+         echo "You must set -year and -days variable first: --Stop"
+         exit
+      endif
+      set ndays = (`echo $argv | cut -d- -f2`); shift ndays
+    breaksw
+    case -ra*
+      set rawd = $input[2]  
+    breaksw
+    case -rd*
+      set rdir = $input[2]  
+    breaksw
+    case -m*
+      set mdir = $input[2]  
+    breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+##################### GET THE JOB DONE ############################
+# Set timestamp hostname variable
+set ts = "`hostname`:`date +"%H%M%S"`"
+set date = `date +"%D-%H:%M:%S"`
+ 
+# Check all required info given.
+if ( ${year} == '' ||  ${doy[1]} == '' ) then
+  echo "Not all required fields given -- yr: $year doy: $doy --Stop"
+  exit
+endif
+
+# Compute jd's of days to be converted to rinex data
+#  @ count = $ndays[2] + $ndays[1]  
+@ count = `echo "ibase=10; ${ndays[2]} + ${ndays[1]}" | bc`
+#  @ bmjd = $imjd - $ndays[1]   
+@ bmjd = `echo "ibase=10; ${imjd} - ${ndays[1]}" | bc`
+
+set jmjds = $bmjd
+while ( $count )
+   @ bmjd++
+   set jmjds = ( $jmjds $bmjd ) 
+   @ count = $count - 1 
+end 
+
+pushd ${rawd} >& /dev/null
+if ( -e tmp.err.$ts ) \rm tmp.err.$ts; touch tmp.err.$ts  
+
+# Source the process.ant file to get antenna type to be used for different
+# receivers.  Set defaults and then see if user has given override values.
+# For Trimble assume SST antenna
+set trmant = 'TRIMBLE_4000SST'
+# For TurboRogue assume DM_T anntenna
+set trbant = 'AOAD/M_T'
+# For Ashtech assume DM new antenna
+set ashant = 'ASH701933_M'
+if ( -e ../tables/process.ant ) then
+    source ../tables/process.ant
+endif 
+if( trmant == ' ' ) then
+  trmant == 'UNKNOWN'
+endif
+if( ashant == ' ' ) then
+  ashant == 'UNKNOWN'
+endif
+if( trmant == ' ' ) then
+  trbant == 'UNKNOWN'
+endif
+
+
+# Setup list of days to convert
+foreach i ( $jmjds )
+  set days = ( $days `doy $i | tail -n -3 | head -n 1 | awk '{printf "%03d \n",$6}'`)
+  set yrs =  ( $yrs `doy $i | tail -n -3 | head -n 1 | awk '{printf "%04d \n",substr($2,1,4)}'`)
+end
+
+# Loop over days requested, converting raw data to RINEX as we go.
+set i = 0
+foreach j ( $days )
+  if ( -e tmp.err.$ts ) \rm tmp.err.$ts; touch tmp.err.$ts  
+  @ i++ 
+  set yr = `sh_year -year ${yrs[$i]}`
+  set doy = $j
+# Make 4 char GPSW number
+  set gpsw = `doy ${yr[1]} ${doy} | tail -n -2 | head -n 1 | awk '{printf "%04d \n", $3}'`
+  set gpsd = `doy ${yr[1]} ${doy} | tail -n -2 | head -n 1 | awk '{printf "%1d  \n", substr($7,1,1)}'` 
+  set mmdd = `doy ${yr[1]} ${doy} | head -n 1 | awk '{print $2}' |awk -F"/" '{print $2$3}'`
+
+# Convert any Ashtech R-files to B, S, E files that can be converted to rinex by teqc
+# $$$$NOTE$$$$ You will need to get the ashtech convert program for this to work.
+# uncompress the rfiles
+  sh_uncompress -f [Rr]?????${yr[2]}.${doy}.Z >>& tmp.err.$ts
+# casefold the rfiles
+  (\ls R?????${yr[2]}.${doy}* | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >! mv.cmd.$ts ) >>& tmp.err.$ts
+  if ( ! -z mv.cmd.$ts ) then
+    csh mv.cmd.$ts
+    if ( -e mv.cmd.$ts ) \rm -r mv.cmd.$ts
+  endif
+# Get the names of the ashtech raw files (rfiles)
+  touch tmp.0.$ts       
+  (\ls r?????${yr[2]}.${doy}  | awk -F/ '{print $NF}' >> tmp.0.$ts ) >>& tmp.err.$ts
+# Check if b-files already exist
+  \cp tmp.0.$ts tmp.0a.$ts
+  foreach rfile ( `cat tmp.0.$ts | awk '{print substr($1,2,4)}'` )
+    if ( -e ${rawd}/b${rfile}a${yr[2]}.${doy} || -e ${rawd}/b${rfile}a${yr[2]}.${doy}.Z || -e ${rawd}/b${rfile}a${yr[2]}.${doy}.gz ) then
+      grep -v ${rfile} tmp.0a.$ts >! tmp.0b.$ts
+      \mv tmp.0b.$ts tmp.0a.$ts
+    endif
+  end
+  \mv tmp.0a.$ts tmp.0.$ts
+# Convert any rfiles found   
+  if ( ! -z tmp.0.$ts ) then
+    if ( -e ${mdir}/convert.inp.$ts ) \rm ${mdir}/convert.inp.$ts; touch ${mdir}/convert.inp.$ts
+    foreach rfile ( `cat tmp.0.$ts` )   
+# This is hard wired since program name convert is very generic!!!
+      echo "/data26/gps/ashtech/convert/convert ${rawd}/$rfile ${rawd}" >> ${mdir}/convert.inp.$ts  
+    end
+    pushd ${mdir}  >&! tmp.err.$ts
+      csh convert.inp.$ts >&! convert.${doy}.out 
+    popd  >&! tmp.err.$ts
+  endif 
+  if ( -e tmp.0.$ts ) \rm -r tmp.0.$ts
+
+  if ( -e mv.cmd.$ts ) \rm -r mv.cmd.$ts; touch mv.cmd.$ts
+# Move captialized raw file names to lower case 
+#ASHTECH
+  (\ls -1 [bB]?????${yr[2]}.${doy}* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts ) 
+  (\ls -1 [eE]?????${yr[2]}.${doy}* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts ) 
+  (\ls -1 [sS]?????${yr[2]}.${doy}* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts ) 
+#TRIMBLE
+  (\ls -1 ????${doy}?.[dD][aA][tT]* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts ) 
+  (\ls -1 ????${doy}?.[mM][eE][sS]* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts ) 
+  (\ls -1 ????${doy}?.[iI][oO][nN]* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts ) 
+  (\ls -1 ????${doy}?.[eE][pP][hH]* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts ) 
+# TRIMBLE NetRS
+  (\ls -1 ????{$yr[1]}${doy}????a.[dD][aA][tT]* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts ) 
+  (\ls -1 ????{$yr[1]}${doy}????a.[mM][eE][sS]* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts ) 
+  (\ls -1 ????{$yr[1]}${doy}????a.[iI][oO][nN]* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts ) 
+  (\ls -1 ????{$yr[1]}${doy}????a.[eE][pP][hH]* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts ) 
+# TRIMBLE NetRS
+  (\ls -1 ????{$yr[1]}${mmdd}????a.[dD][aA][tT]* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts ) 
+  (\ls -1 ????{$yr[1]}${mmdd}????a.[mM][eE][sS]* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts ) 
+  (\ls -1 ????{$yr[1]}${mmdd}????a.[iI][oO][nN]* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts ) 
+  (\ls -1 ????{$yr[1]}${mmdd}????a.[eE][pP][hH]* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts ) 
+# TURBOROGUE
+  (\ls -1 ????${gpsw}.${gpsd}?[cC]* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts ) 
+  (\ls -1 ????${gpsw}.${gpsd}?[tT]* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts ) 
+  (\ls -1 ????${gpsw}${gpsd}??.[cC][mM][pP]* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts )  
+  (\ls -1 ????${gpsw}${gpsd}??.[tT][rR][bB]* |& grep -v "No match" | awk '{print "sh_casefold -dir d -files ", $1, ">>&/dev/null"}' >> mv.cmd.$ts )  
+
+  if ( ! -z mv.cmd.$ts ) then
+    csh mv.cmd.$ts
+    cat mv.cmd.$ts
+  endif
+
+# Uncompress and unzip any compressed files
+# Ashtech
+#  sh_uncompress -f b?????${yr[2]}.${doy}.Z >>& tmp.err.$ts
+#  sh_uncompress -f e?????${yr[2]}.${doy}.Z >>& tmp.err.$ts
+#  sh_uncompress -f s?????${yr[2]}.${doy}.Z >>& tmp.err.$ts
+  gunzip -f  b?????${yr[2]}.${doy}.[zZ] >>& tmp.err.$ts
+  gunzip -f  e?????${yr[2]}.${doy}.[zZ] >>& tmp.err.$ts
+  gunzip -f  s?????${yr[2]}.${doy}.[zZ} >>& tmp.err.$ts
+  gunzip -f  b?????${yr[2]}.${doy}.gz >>& tmp.err.$ts
+  gunzip -f  e?????${yr[2]}.${doy}.gz >>& tmp.err.$ts
+  gunzip -f  s?????${yr[2]}.${doy}.gz >>& tmp.err.$ts
+# Trimble
+#  sh_uncompress -f ????${doy}?.dat.Z >>& tmp.err.$ts
+#  sh_uncompress -f ????${doy}?.mes.Z >>& tmp.err.$ts
+#  sh_uncompress -f ????${doy}?.ion.Z >>& tmp.err.$ts
+#  sh_uncompress -f ????${doy}?.eph.Z >>& tmp.err.$ts
+  gunzip -f ????${doy}?.dat.[zZ] >>& tmp.err.$ts
+  gunzip -f ????${doy}?.mes.[zZ]>>& tmp.err.$ts
+  gunzip -f ????${doy}?.ion.[zZ] >>& tmp.err.$ts
+  gunzip -f ????${doy}?.eph.[zZ] >>& tmp.err.$ts
+  gunzip -f ????${doy}?.dat.gz >>& tmp.err.$ts
+  gunzip -f ????${doy}?.mes.gz >>& tmp.err.$ts
+  gunzip -f ????${doy}?.ion.gz >>& tmp.err.$ts
+  gunzip -f ????${doy}?.eph.gz >>& tmp.err.$ts    
+# Trimble NetRS
+#  sh_uncompress -f ????{$yr[1]}${doy}*.dat.Z >>& tmp.err.$ts
+#  sh_uncompress -f ????{$yr[1]}${doy}*.mes.Z >>& tmp.err.$ts
+#  sh_uncompress -f ????{$yr[1]}${doy}*.ion.Z >>& tmp.err.$ts
+#  sh_uncompress -f ????{$yr[1]}${doy}*.eph.Z >>& tmp.err.$ts
+  gunzip -f ????{$yr[1]}${doy}*.dat.[zZ] >>& tmp.err.$ts
+  gunzip -f ????{$yr[1]}${doy}*.mes.[zZ] >>& tmp.err.$ts
+  gunzip -f ????{$yr[1]}${doy}*.ion.[zZ] >>& tmp.err.$ts
+  gunzip -f ????{$yr[1]}${doy}*.eph.[zZ] >>& tmp.err.$ts
+  gunzip -f ????{$yr[1]}${doy}*.dat.gz >>& tmp.err.$ts
+  gunzip -f ????{$yr[1]}${doy}*.mes.gz >>& tmp.err.$ts
+  gunzip -f ????{$yr[1]}${doy}*.ion.gz >>& tmp.err.$ts
+  gunzip -f ????{$yr[1]}${doy}*.eph.gz >>& tmp.err.$ts   
+# Trimble NetRS
+#  sh_uncompress -f ????{$yr[1]}${doy}*.dat.Z >>& tmp.err.$ts
+#  sh_uncompress -f ????{$yr[1]}${doy}*.mes.Z >>& tmp.err.$ts
+#  sh_uncompress -f ????{$yr[1]}${doy}*.ion.Z >>& tmp.err.$ts
+#  sh_uncompress -f ????{$yr[1]}${doy}*.eph.Z >>& tmp.err.$ts
+  gunzip -f ????{$yr[1]}${mmdd}*.dat.[zZ] >>& tmp.err.$ts
+  gunzip -f ????{$yr[1]}${mmdd}*.mes.[zZ] >>& tmp.err.$ts
+  gunzip -f ????{$yr[1]}${mmdd}*.ion.[zZ] >>& tmp.err.$ts
+  gunzip -f ????{$yr[1]}${mmdd}*.eph.[zZ] >>& tmp.err.$ts
+  gunzip -f ????{$yr[1]}${mmdd}*.dat.gz >>& tmp.err.$ts
+  gunzip -f ????{$yr[1]}${mmdd}*.mes.gz >>& tmp.err.$ts
+  gunzip -f ????{$yr[1]}${mmdd}*.ion.gz >>& tmp.err.$ts
+  gunzip -f ????{$yr[1]}${mmdd}*.eph.gz >>& tmp.err.$ts   
+# Turborogue
+#  sh_uncompress -f ????${gpsw}.${gpsd}?c.Z    >>& tmp.err.$ts 
+#  sh_uncompress -f ????${gpsw}${gpsd}??.cmp.Z >>& tmp.err.$ts
+#  sh_uncompress -f ????${gpsw}.${gpsd}?t.Z    >>& tmp.err.$ts 
+#  sh_uncompress -f ????${gpsw}${gpsd}??.trb.Z >>& tmp.err.$ts
+  gunzip -f ????${gpsw}.${gpsd}?c.[zZ]    >>& tmp.err.$ts 
+  gunzip -f ????${gpsw}${gpsd}??.cmp.[zZ] >>& tmp.err.$ts
+  gunzip -f ????${gpsw}.${gpsd}?t.[zZ]    >>& tmp.err.$ts 
+  gunzip -f ????${gpsw}${gpsd}??.trb.[zZ] >>& tmp.err.$ts
+  gunzip -f ????${gpsw}.${gpsd}?c.gz    >>& tmp.err.$ts 
+  gunzip -f ????${gpsw}${gpsd}??.cmp.gz >>& tmp.err.$ts
+  gunzip -f ????${gpsw}.${gpsd}?t.gz    >>& tmp.err.$ts 
+  gunzip -f ????${gpsw}${gpsd}??.trb.gz >>& tmp.err.$ts
+
+  \rm tmp.1.$ts tmp.2.$ts tmp.3.$ts tmp.4.$ts >>& tmp.err.$ts
+  touch tmp.1.$ts tmp.2.$ts tmp.3.$ts tmp.4.$ts tmp.5.$ts
+       
+# Get the names of the raw files of each type and see if the RINEX exists
+
+# Ashtech
+  (\ls b?????${yr[2]}.${doy} | awk -F/ '{print substr($NF,2,4)}' >> tmp.1.$ts                      ) >>& tmp.err.$ts 
+  (\ls b?????${yr[2]}.${doy} | awk -F/ '{print substr($NF,6,1)}' | tr '[a-j]' '[0-9]' >> tmp.2.$ts ) >>& tmp.err.$ts
+  (\ls b?????${yr[2]}.${doy} | awk -F/ '{print substr($NF,6,1)}' >> tmp.3.$ts                      ) >>& tmp.err.$ts
+  (\ls b?????${yr[2]}.${doy} | awk -F/ '{print substr($NF,10,3)}' >> tmp.4.$ts                     ) >>& tmp.err.$ts 
+  (\ls b?????${yr[2]}.${doy} | awk -F/ '{print "Ashtech"}' >> tmp.5.$ts                            ) >>& tmp.err.$ts  
+  
+#  Trimble NetRS    [site][year][doy][??????].dat  
+  (\ls ????{$yr[1]}${doy}????a.dat | awk -F/ '{print substr($NF,1,4)}' >> tmp.1.$ts                        ) >>& tmp.err.$ts 
+  (\ls ????{$yr[1]}${doy}????a.dat | awk -F/ '{print substr($NF,17,1)}' | tr '[a-j]' '[0-9]' >> tmp.2.$ts  ) >>& tmp.err.$ts
+  (\ls ????{$yr[1]}${doy}????a.dat | awk -F/ '{print substr($NF,12,6)}' >> tmp.3.$ts                       ) >>& tmp.err.$ts
+  (\ls ????{$yr[1]}${doy}????a.dat | awk -F/ '{print substr($NF,19,3)}' >> tmp.4.$ts                       ) >>& tmp.err.$ts 
+# Save 9th character to see if it's a dot (non-NetRS Trimble)   
+  (\ls ????{$yr[1]}${doy}????a.dat | awk -F/ '{print substr($NF,9,1)}' >> tmp.5.$ts                        ) >>& tmp.err.$ts  
+
+#  Trimble NetRS    [site][year][doy][??????].dat  
+  (\ls ????{$yr[1]}${mmdd}????a.dat | awk -F/ '{print substr($NF,1,4)}' >> tmp.1.$ts                        ) >>& tmp.err.$ts 
+  (\ls ????{$yr[1]}${mmdd}????a.dat | awk -F/ '{print substr($NF,17,1)}' | tr '[a-j]' '[0-9]' >> tmp.2.$ts  ) >>& tmp.err.$ts
+  (\ls ????{$yr[1]}${mmdd}????a.dat | awk -F/ '{print substr($NF,13,5)}' >> tmp.3.$ts                       ) >>& tmp.err.$ts
+  (\ls ????{$yr[1]}${mmdd}????a.dat | awk -F/ '{print substr($NF,19,3)}' >> tmp.4.$ts                       ) >>& tmp.err.$ts 
+# Save 9th character to see if it's a dot (non-NetRS Trimble)   
+  (\ls ????{$yr[1]}${mmdd}????a.dat | awk -F/ '{print substr($NF,9,1)}' >> tmp.5.$ts                        ) >>& tmp.err.$ts  
+
+# Trimble  [site][doy]?.dat      
+  (\ls ????${doy}?.dat | awk -F/ '{print substr($NF,1,4)}' >> tmp.1.$ts                                ) >>& tmp.err.$ts 
+  (\ls ????${doy}?.dat | awk -F/ '{print substr($NF,8,1)}' | tr '[a-j]' '[0-9]' >> tmp.2.$ts           ) >>& tmp.err.$ts
+  (\ls ????${doy}?.dat | awk -F/ '{print substr($NF,8,1)}' >> tmp.3.$ts                                ) >>& tmp.err.$ts 
+  (\ls ????${doy}?.dat | awk -F/ '{print substr($NF,10,3)}' >> tmp.4.$ts                               ) >>& tmp.err.$ts    
+# Save 9th character to see if it's a dot (non-NetRS Trimble)   
+  (\ls ????${doy}?.dat | awk -F/ '{print substr($NF,9,1)}' >> tmp.5.$ts                                ) >>& tmp.err.$ts 
+  
+# TurboRogue
+  (\ls ????${gpsw}.${gpsd}?c | awk -F/ '{print substr($NF,1,4)}' >> tmp.1.$ts                          ) >>& tmp.err.$ts 
+  (\ls ????${gpsw}.${gpsd}?c | awk -F/ '{print substr($NF,11,1)}' | tr '[a-j]' '[0-9]' >> tmp.2.$ts    ) >>& tmp.err.$ts
+  (\ls ????${gpsw}.${gpsd}?c | awk -F/ '{print substr($NF,11,1)}' >> tmp.3.$ts                         ) >>& tmp.err.$ts
+  (\ls ????${gpsw}.${gpsd}?c | awk -F/ '{print substr($NF,12,1)}' >> tmp.4.$ts                         ) >>& tmp.err.$ts
+  (\ls ????${gpsw}.${gpsd}?c | awk -F/ '{print "Turborogue"}' >> tmp.5.$ts                             ) >>& tmp.err.$ts 
+  
+  (\ls ????${gpsw}.${gpsd}?t | awk -F/ '{print substr($NF,1,4)}' >> tmp.1.$ts                          ) >>& tmp.err.$ts 
+  (\ls ????${gpsw}.${gpsd}?t | awk -F/ '{print substr($NF,11,1)}' | tr '[a-j]' '[0-9]' >> tmp.2.$ts    ) >>& tmp.err.$ts
+  (\ls ????${gpsw}.${gpsd}?t | awk -F/ '{print substr($NF,11,1)}' >> tmp.3.$ts                         ) >>& tmp.err.$ts
+  (\ls ????${gpsw}.${gpsd}?t | awk -F/ '{print substr($NF,12,1)}' >> tmp.4.$ts                         ) >>& tmp.err.$ts
+  (\ls ????${gpsw}.${gpsd}?t | awk -F/ '{print "Turborogue"}' >> tmp.5.$ts                             ) >>& tmp.err.$ts 
+  
+  (\ls ????${gpsw}${gpsd}??.cmp | awk -F/ '{print substr($NF,1,4)}' >> tmp.1.$ts                       ) >>& tmp.err.$ts 
+  (\ls ????${gpsw}${gpsd}??.cmp | awk -F/ '{print substr($NF,11,1)}' | tr '[a-j]' '[0-9]' >> tmp.2.$ts ) >>& tmp.err.$ts
+  (\ls ????${gpsw}${gpsd}??.cmp | awk -F/ '{print substr($NF,10,2)}' >> tmp.3.$ts                      ) >>& tmp.err.$ts
+  (\ls ????${gpsw}${gpsd}??.cmp | awk -F/ '{print substr($NF,13,3)}' >> tmp.4.$ts                      ) >>& tmp.err.$ts
+  (\ls ????${gpsw}${gpsd}??.cmp | awk -F/ '{print "Turborogue"}' >> tmp.5.$ts                          ) >>& tmp.err.$ts 
+   
+  (\ls ????${gpsw}${gpsd}??.trb | awk -F/ '{print substr($NF,1,4)}' >> tmp.1.$ts                       ) >>& tmp.err.$ts 
+  (\ls ????${gpsw}${gpsd}??.trb | awk -F/ '{print substr($NF,11,1)}' | tr '[a-j]' '[0-9]' >> tmp.2.$ts ) >>& tmp.err.$ts
+  (\ls ????${gpsw}${gpsd}??.trb | awk -F/ '{print substr($NF,10,2)}' >> tmp.3.$ts                      ) >>& tmp.err.$ts
+  (\ls ????${gpsw}${gpsd}??.trb | awk -F/ '{print substr($NF,13,3)}' >> tmp.4.$ts                      ) >>& tmp.err.$ts
+  (\ls ????${gpsw}${gpsd}??.trb | awk -F/ '{print "Turborogue"}' >> tmp.5.$ts                          ) >>& tmp.err.$ts 
+    
+# Check which RINEX files already exist
+  if ( ! -e ${mdir} ) \mkdir ${mdir}
+  echo '# TEQC Run Input ' >! ${mdir}/teqc.inp.${doy}.$ts 
+  set sess = `cat tmp.2.$ts`
+  set sess1 = `cat tmp.3.$ts`
+  set sess2 = `cat tmp.4.$ts`
+  set sess3 = `cat tmp.5.$ts`
+#  if( $sess3=='') then
+#    set sess3 = 0
+#  endif
+  set nrx = 0
+  foreach site (`cat tmp.1.$ts`)
+    @ nrx = $nrx + 1
+    set s = $sess[$nrx]
+    set s1 = $sess1[$nrx]
+    set s2 = $sess2[$nrx]        
+    set s3 = $sess3[$nrx]
+    if ( -e ${rdir}/${site}${doy}${s}.${yr[2]}o.Z ) then
+      sh_uncompress -f ${rdir}/${site}${doy}${s}.${yr[2]}o.Z
+    endif
+    if ( ! -e ${rdir}/${site}${doy}${s}.${yr[2]}o ) then
+      echo "Make RINEX file for site: $site"
+# Add the Ashtech teqc line to make the rinex file 
+      if ( $s2 == ${doy} ) then
+        echo "teqc -O.int 30 -O.obs L1L2C1P1P2S1S2 -O.r $mailto -O.at $ashant -O.mn $site +smooth -ash d +obs ${rdir}/${site}${doy}${s}.${yr[2]}o  ${rawd}/b${site}${s1}${yr[2]}.${doy}" >> ${mdir}/teqc.inp.${doy}.$ts
+# Add the Trimble teqc line to make the rinex file
+      else if ( $s2 == dat ) then
+#          see if an old-style dat file (with . in column 9) or NetRS (first digit of day number in column 9)
+        if( $s3 == '.') then     
+#          MOD TAH 020828: Explicitly get the antenna type from the raw file.
+          set trmant = `teqc +meta ${rawd}/${site}${doy}${s1}.dat | & grep 'antenna type' | awk '{print substr($0,28,20)}' | awk '{gsub(" ","_")} {print $0}'`   
+          echo "teqc -O.int 30 -O.obs L1L2C1P1P2S1S2 -O.r $mailto -O.at $trmant -O.mn $site -tr 17 +obs ${rdir}/${site}${doy}${s}.${yr[2]}o  ${rawd}/${site}${doy}${s1}.dat" >>  ${mdir}/teqc.inp.${doy}.$ts
+        else  
+#         Explicitly get the antenna type from the raw file.
+          set trmant = `teqc +meta ${rawd}/${site}${yr[1]}${doy}${s1}.dat | & grep 'antenna type' | awk '{print substr($0,28,20)}' | awk '{gsub(" ","_")} {print $0}'`  
+          if ( $trmant == '')  then
+            set trmant = `teqc +meta ${rawd}/${site}${yr[1]}${mmdd}${s1}.dat | & grep 'antenna type' | awk '{print substr($0,28,20)}' | awk '{gsub(" ","_")} {print $0}'`  
+            echo "teqc -O.int 30 -O.obs L1L2C1P1P2S1S2  -O.r $mailto -O.at $trmant -O.mn $site -tr 17 +obs ${rdir}/${site}${doy}${s}.${yr[2]}o  ${rawd}/${site}${yr[1]}${mmdd}${s1}.dat" >>  ${mdir}/teqc.inp.${doy}.$ts       
+          else
+            echo "teqc -O.int 30 -O.obs L1L2C1P1P2S1S2  -O.r $mailto -O.at $trmant -O.mn $site -tr 17 +obs ${rdir}/${site}${doy}${s}.${yr[2]}o  ${rawd}/${site}${yr[1]}${doy}${s1}.dat" >>  ${mdir}/teqc.inp.${doy}.$ts  
+          endif
+        endif
+      else if ( $s2 == c ) then
+        echo "teqc -O.int 30 -O.obs L1L2C1P1P2S1S2 -O.r $mailto -O.at $trbant -O.mn $site -aoa cb +obs ${rdir}/${site}${doy}${s}.${yr[2]}o  ${rawd}/${site}${gpsw}.${gpsd}${s1}c" >>  ${mdir}/teqc.inp.${doy}.$ts
+      else if ( $s2 == t ) then
+        echo "teqc -O.int 30 -O.obs L1L2C1P1P2S1S2 -O.r $mailto -O.at $trbant -O.mn $site -aoa tb +obs ${rdir}/${site}${doy}${s}.${yr[2]}o  ${rawd}/${site}${gpsw}.${gpsd}${s1}t" >>  ${mdir}/teqc.inp.${doy}.$ts
+      else if ( $s2 == cmp ) then
+        echo "teqc -O.int 30 -O.obs L1L2C1P1P2S1S2 -O.r $mailto -O.at $trbant -O.mn $site -aoa cb +obs ${rdir}/${site}${doy}${s}.${yr[2]}o  ${rawd}/${site}${gpsw}${gpsd}${s1}.cmp" >>  ${mdir}/teqc.inp.${doy}.$ts
+      else if ( $s2 == trb ) then
+        echo "teqc -O.int 30 -O.obs L1L2C1P1P2S1S2 -O.r $mailto -O.at $trbant -O.mn $site -aoa tb +obs ${rdir}/${site}${doy}${s}.${yr[2]}o  ${rawd}/${site}${gpsw}${gpsd}${s1}.trb" >>  ${mdir}/teqc.inp.${doy}.$ts
+      
+      else
+        echo "Unknown raw data type in sh_make_rinex -- Stop"
+        exit
+      endif
+    endif
+  end
+
+# Now see how many lines we have
+  set num_ash = `grep "ash " ${mdir}/teqc.inp.${doy}.$ts | wc`
+  set num_trm = `grep "tr " ${mdir}/teqc.inp.${doy}.$ts | wc`  
+  set num_trb = `grep "aoa " ${mdir}/teqc.inp.${doy}.$ts | wc`
+
+#    @ num_tot = $num_ash[1] + $num_trm[1] + $num_trb[1]  
+  @ num_tot = `echo "ibase=10; ${num_ash[1]} + ${num_trm[1]} + ${num_trb[1]}" | bc`
+
+# Clean up   
+  \rm tmp.1.$ts tmp.2.$ts tmp.3.$ts tmp.4.$ts tmp.5.$ts tmp.err.$ts mv.cmd.$ts tmp.apr.$ts >& /dev/null
+
+# Make the rinex files using teqc
+  if( $num_tot > 0 ) then
+      if ( $num_ash[1] > 0 ) then
+        echo "${yr[1]} ${doy}: Making $num_ash[1] Ashtech rinex files" 
+      endif
+      if ( $num_trm[1] > 0 ) then
+        echo "${yr[1]} ${doy}: Making $num_trm[1] Trimble rinex files" 
+      endif
+      if ( $num_trb[1] > 0 ) then
+        echo "${yr[1]} ${doy}: Making $num_trm[1] Turborogue rinex files" 
+      endif  
+      echo 'pwd ' `pwd`
+      pushd ${mdir} >& /dev/null
+      csh teqc.inp.${doy}.$ts >&! teqc.${doy}.out 
+      popd  >& /dev/null
+  else
+      echo "${yr[1]} ${doy}: No RINEX files need to be made"
+  endif
+end
+
+popd >& /dev/null
+ 
+# Thats all for now!!!
+exit
+

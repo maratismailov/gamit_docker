@@ -1,0 +1,73 @@
+          do i=1,nprn
+            dofl1(i) = -obs(i,iobtypx(1))  
+            issi(i,1) = jssi(i,iobtypx(1))
+            illi(i,1) = jlli(i,iobtypx(1)) 
+            if(dabs(dofl1(i)) .lt. 0.001d0 ) issi(i,1) = 1
+            dofl2(i) = -obs(i,iobtypx(2)) 
+            issi(i,2) = jssi(i,iobtypx(2))
+            illi(i,2) = jlli(i,iobtypx(2)) 
+            if(dabs(dofl2(i)) .lt. 0.001d0 ) issi(i,2) = 1
+            prgl1(i) =  obs(i,iobtypx(3))    
+            issi(i,3) = jssi(i,iobtypx(3))
+            illi(i,3) = jlli(i,iobtypx(3)) 
+c           if P1 is missing, see if C1 is available
+            if( prgl1(i).eq.0.d0 ) then
+              if(iobtypx(5).ne.0) then
+                prgl1(i) =  obs(i,iobtypx(5))    
+                issi(i,3) = jssi(i,iobtypx(5))
+                illi(i,3) = jlli(i,iobtypx(5)) 
+              endif   
+            endif  
+            prgl2(i) = obs(i,iobtypx(4))   
+            if( first ) print *, 'i iobtypx(4) prgl2 '
+     .          ,i,iobtypx(4),prgl2(i)
+            issi(i,4) = jssi(i,iobtypx(4))
+            illi(i,4) = jlli(i,iobtypx(4)) 
+c           if P2 is missing, see if C2 is available
+            if( prgl2(i).eq.0.d0 ) then    
+              if(first ) print *,'reassign i  prgl2 ',i,prgl2(i) 
+              if(iobtypx(6).ne.0) then
+                prgl2(i) =  obs(i,iobtypx(6))    
+                issi(i,4) = jssi(i,iobtypx(6))
+                illi(i,4) = jlli(i,iobtypx(6)) 
+              endif   
+            endif                         
+            if(first) print *,'end loop i prgl2 ',i,prgl2(i)
+            if(first) print *,'end loop 1 prgl2 ',prgl2(1)
+          enddo
+        endif                                           
+ i iobtypx(4) prgl2            1           4   21037871.180000000     
+ end loop i prgl2            1   21037871.180000000     
+ end loop 1 prngl2    21037871.180000000     
+ i iobtypx(4) prgl2            2           4   21115424.976000000     
+ end loop i prgl2            2   21115424.976000000     
+ end loop 1 prngl2    0.0000000000000000     
+ i iobtypx(4) prgl2            3           4   21280757.530999999     
+ end loop i prgl2            3   21280757.530999999     
+ end loop 1 prngl2    0.0000000000000000     
+ i iobtypx(4) prgl2            4           4   21527612.577000000     
+ end loop i prgl2            4   21527612.577000000     
+ end loop 1 prngl2    0.0000000000000000     
+ i iobtypx(4) prgl2            5           4   21829501.991000000     
+ end loop i prgl2            5   21829501.991000000     
+ end loop 1 prngl2    0.0000000000000000     
+ i iobtypx(4) prgl2            6           4   22825744.317000002     
+ end loop i prgl2            6   22825744.317000002     
+ end loop 1 prngl2    0.0000000000000000     
+ i iobtypx(4) prgl2            7           4   23864200.471000001     
+ end loop i prgl2            7   23864200.471000001     
+ end loop 1 prngl2    0.0000000000000000     
+ i iobtypx(4) prgl2            8           4   23934253.559000000     
+ end loop i prgl2            8   23934253.559000000     
+ end loop 1 prngl2    0.0000000000000000     
+ i iobtypx(4) prgl2            9           4   24191177.535000000     
+ end loop i prgl2            9   24191177.535000000     
+ end loop 1 prngl2    0.0000000000000000     
+ i iobtypx(4) prgl2           10           4   24693933.346999999     
+ end loop i prgl2           10   24693933.346999999     
+ end loop 1 prngl2    0.0000000000000000     
+ i iobtypx(4) prgl2           11           4   24792284.208000001     
+ end loop i prgl2           11   24792284.208000001     
+ end loop 1 prngl2    0.0000000000000000     
+ RRINEX prgl1 prgl2    21037873.730999999        0.0000000000000000     
+ rxobtyp C1 L1 D1 P2 L2 D2 P1 S1 S2                                          

@@ -1,0 +1,58 @@
+#!/bin/csh
+# check to see if a job is running.
+# when it dies or ends, send mail
+if ($#argv != 1) then
+   echo ' '
+   echo 'Use this shell script to check on a job'
+   echo ' '
+   echo 'usage:   checkjob jobname &'
+   echo ' '
+   echo ' '
+else  
+
+# give the job a chance to start
+
+sleep 3
+
+while (1)
+
+       
+# the following a problem with Solaris:
+#ps aux | grep $1 >! tmp.checkjob1
+# replace by the following (Matt King / rwk 980323) Does it work for HP and OS4?
+#ps -ef | grep $1 >! tmp.checkjob1
+# replace by the following (Simon/rwk 980501; '-e' not recognized by Solaris 2)
+ps a  | grep $1 >! tmp.checkjob1
+grep -v checkjob < tmp.checkjob1 | grep -v 'grep' >! tmp.checkjob2
+
+# if the job has ended, this file will have zero length
+if (-z tmp.checkjob2 ) then
+   tail -n $1.log >! tmp.log
+   mail -s job $USER > /dev/null <<[
+   Your job $1 finished `date`. 
+#  replace the following to work on Linux
+#    It ran in the directory: `/usr/bin/pwd`
+   It ran in the directory: `pwd`   
+
+   The last thing it did was:
+
+
+`cat tmp.log`
+
+[
+
+/bin/rm tmp.checkjob1
+/bin/rm tmp.checkjob2
+/bin/rm tmp.log
+goto byebye
+
+endif
+
+sleep 60
+
+end # of while
+
+byebye:
+endif
+
+

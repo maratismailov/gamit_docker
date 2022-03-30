@@ -1,0 +1,671 @@
+svnav.dat  Version  2.0      Last changed by MAF 20211125 based on https://files.igs.org/pub/station/general/igs_satellite_metadata_2185.snx and https://files.igs.org/pub/station/general/igs14_2185.atx
+SYS SVN  PRN CHAN ANT/BODY               MASS(G) YAW BIAS  YAW RATE  START           STOP             COMMENTS
+ G     1   4   0  BLOCK I                 455000.     U      0.1999  1978  53  0  0  1985 199  0  0   Launched 1978-02-22; NAVSTAR 1; mass 453800. in previous svnav.dat.allgnss
+ G     2   7   0  BLOCK I                 455000.     U      0.1990  1978 133  0  0  1988  44  0  0   Launched 1978-05-13; NAVSTAR 2
+ G     3   6   0  BLOCK I                 455000.     U      0.1990  1978 279  0  0  1992 140  0  0   Launched 1978-10-07; NAVSTAR 3; mass 453800. and end date 1992-171 in previous svnav.dat.allgnss
+ G     4   8   0  BLOCK I                 455000.     U      0.1990  1978 344  0  0  1989 288  0  0   Launched 1978-12-11; NAVSTAR 4; mass 440900. in previous svnav.dat.allgnss
+ G     5   5   0  BLOCK I                 455000.     U      0.1990  1980  40  0  0  1984 133  0  0   Launched 1980-02-09; NAVSTAR 5; mass 462600. and end date 1993-125 in previous svnav.dat.allgnss
+ G     6   9   0  BLOCK I                 455000.     U      0.1990  1980 117  0  0  1991  66  0  0   Launched 1980-04-26; NAVSTAR 6; mass 462600. in previous svnav.dat.allgnss
+ G     8  11   0  BLOCK I                 455000.     U      0.1990  1983 195  0  0  1993 125  0  0   Launched 1983-07-14; NAVSTAR 8; mass 522200. and start date 1983-222 in previous svnav.dat.allgnss
+ G     9  13   0  BLOCK I                 455000.     U      0.1990  1984 165  0  0  1994 157  0  0   Launched 1984-06-13; NAVSTAR 9; mass 520400. and start date 1984-201 in previous svnav.dat.allgnss
+ G     9  13   0  BLOCK I                 455000.     Y      0.1990  1994 157  0  0  1994 172  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    10  12   0  BLOCK I                 455000.     U      0.1990  1984 252  0  0  1996  88  0  0   Launched 1984-09-08; NAVSTAR 10; mass 519800. and start date 1984-277 in previous svnav.dat.allgnss
+ G    11   3   0  BLOCK I                 455000.     U      0.1230  1985 282  0  0  1994 108  0  0   Launched 1985-10-09; NAVSTAR 11; mass 521800. and start date 1985-303 in previous svnav.dat.allgnss
+ G    13   2   0  BLOCK II                843000.     U      0.1339  1989 161  0  0  1993   1  0  0   Launched 1989-06-10; NAVSTAR 14; mass 878200. in previous svnav.dat.allgnss
+ G    13   2   0  BLOCK II                843000.     Y      0.1339  1993   1  0  0  1995 185  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    13   2   0  BLOCK II                843000.     P      0.1339  1995 185  0  0  1995 186  1 10   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    13   2   0  BLOCK II                843000.     N      0.1339  1995 186  1 10  1995 321  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    13   2   0  BLOCK II                843000.     P      0.1339  1995 321  0  0  2004 134  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    14  14   0  BLOCK II                843000.     U      0.0815  1989  45  0  0  1995  31 23  0   Launched 1989-02-14; NAVSTAR 13; mass 887400. in previous svnav.dat.allgnss
+ G    14  14   0  BLOCK II                843000.     Y      0.0815  1995  31 23  0  1995  39  2  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    14  14   0  BLOCK II                843000.     P      0.0815  1995  39  2  0  1995  98  2  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    14  14   0  BLOCK II                843000.     Y      0.0815  1995  98  2  0  1995 218 23 22   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    14  14   0  BLOCK II                843000.     P      0.0815  1995 218 23 22  2000 109  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    15  15   0  BLOCK II                843000.     U      0.1303  1990 274  0  0  1994 157  0  0   Launched 1990-10-01; NAVSTAR 21; mass 885900. in previous svnav.dat.allgnss
+ G    15  15   0  BLOCK II                843000.     Y      0.1303  1994 157  0  0  1994 165  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    15  15   0  BLOCK II                843000.     N      0.1303  1994 165  0  0  1995 166 19 16   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    15  15   0  BLOCK II                843000.     P      0.1303  1995 166 19 16  1999 179  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    15  15   0  BLOCK II                843000.     U      0.1303  1999 179  0  0  2001   5 20 47   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    15  15   0  BLOCK II                843000.     P      0.1303  2001   5 20 47  2007  74  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    16  16   0  BLOCK II                843000.     U      0.0838  1989 230  0  0  1994 157  0  0   Launched 1989-08-18; NAVSTAR 15; mass 883200. in previous svnav.dat.allgnss
+ G    16  16   0  BLOCK II                843000.     Y      0.0838  1994 157  0  0  1995   9 21  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    16  16   0  BLOCK II                843000.     U      0.0838  1995   9 21  0  1995  31 20 35   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    16  16   0  BLOCK II                843000.     Y      0.0838  1995  31 20 35  1995  39 14  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    16  16   0  BLOCK II                843000.     A      0.0838  1995  39 14  0  1995  98  2  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    16  16   0  BLOCK II                843000.     Y      0.0838  1995  98  2  0  1995 218  8  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    16  16   0  BLOCK II                843000.     N      0.0838  1995 218  8  0  1995 219  8 15   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    16  16   0  BLOCK II                843000.     P      0.0838  1995 219  8 15  2000 288  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    17  17   0  BLOCK II                843000.     U      0.1401  1989 345  0  0  1994 157  0  0   Launched 1989-12-11; NAVSTAR 17; mass 883200. in previous svnav.dat.allgnss
+ G    17  17   0  BLOCK II                843000.     Y      0.1401  1994 157  0  0  1995 166 19 16   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    17  17   0  BLOCK II                843000.     N      0.1401  1995 166 19 16  1995 168 13 44   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    17  17   0  BLOCK II                843000.     P      0.1401  1995 168 13 44  2005  55  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    18  18   0  BLOCK II                843000.     U      0.1069  1990  24  0  0  1995  31 23  0   Launched 1990-01-24; NAVSTAR 18; mass 883200. in previous svnav.dat.allgnss
+ G    18  18   0  BLOCK II                843000.     Y      0.1069  1995  31 23  0  1995  82  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    18  18   0  BLOCK II                843000.     P      0.1069  1995  82  0  0  1995  83 15 42   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    18  18   0  BLOCK II                843000.     N      0.1069  1995  83 15 42  1995 265 17 45   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    18  18   0  BLOCK II                843000.     P      0.1069  1995 265 17 45  2000 232  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    19  19   0  BLOCK II                843000.     U      0.0980  1989 294  0  0  1994 157  0  0   Launched 1989-10-21; NAVSTAR 16; mass 883200. in previous svnav.dat.allgnss
+ G    19  19   0  BLOCK II                843000.     Y      0.0980  1994 157  0  0  1995 133  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    19  19   0  BLOCK II                843000.     P      0.0980  1995 133  0  0  1995 134  2  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    19  19   0  BLOCK II                843000.     N      0.0980  1995 134  2  0  1995 135  2  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    19  19   0  BLOCK II                843000.     Y      0.0980  1995 135  2  0  1995 295  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    19  19   0  BLOCK II                843000.     P      0.0980  1995 295  0  0  2001 257  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    20  20   0  BLOCK II                843000.     U      0.1030  1990  85  0  0  1995  31  0  0   Launched 1990-03-26; NAVSTAR 19; mass 887400. in previous svnav.dat.allgnss
+ G    20  20   0  BLOCK II                843000.     Y      0.1030  1995  31  0  0  1995 185  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    20  20   0  BLOCK II                843000.     P      0.1030  1995 185  0  0  1995 186 12 36   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    20  20   0  BLOCK II                843000.     N      0.1030  1995 186 12 36  1995 321  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    20  20   0  BLOCK II                843000.     P      0.1030  1995 321  0  0  1996 349  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    21  21   0  BLOCK II                843000.     U      0.1366  1990 214  0  0  1994 157  0  0   Launched 1990-08-02; NAVSTAR 20; mass 883900. in previous svnav.dat.allgnss
+ G    21  21   0  BLOCK II                843000.     Y      0.1366  1994 157  0  0  1995  37  8  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    21  21   0  BLOCK II                843000.     A      0.1366  1995  37  8  0  1995  37 18  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    21  21   0  BLOCK II                843000.     Y      0.1366  1995  37 18  0  1995 216  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    21  21   0  BLOCK II                843000.     N      0.1366  1995 216  0  0  1995 217  8  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    21  21   0  BLOCK II                843000.     P      0.1366  1995 217  8  0  2003  28  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    22  22   0  BLOCK IIA               930000.     U      0.1025  1993  34  0  0  1994 157  0  0   Launched 1993-02-03; NAVSTAR 30; mass 972900. in previous svnav.dat.allgnss
+ G    22  22   0  BLOCK IIA               930000.     Y      0.1025  1994 157  0  0  1995 185  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    22  22   0  BLOCK IIA               930000.     P      0.1025  1995 185  0  0  1995 187 21 15   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    22  22   0  BLOCK IIA               930000.     N      0.1025  1995 187 21 15  1995 321  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    22  22   0  BLOCK IIA               930000.     P      0.1025  1995 321  0  0  2003 219  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    23  23   0  BLOCK IIA               930000.     U      0.1140  1990 330  0  0  1993   1  0  0   Launched 1990-11-26; NAVSTAR 22; mass 972900. in previous svnav.dat.allgnss
+ G    23  23   0  BLOCK IIA               930000.     Y      0.1140  1993   1  0  0  1995  39  6  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    23  23   0  BLOCK IIA               930000.     A      0.1140  1995  39  6  0  1995  39 18  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    23  23   0  BLOCK IIA               930000.     Y      0.1140  1995  39 18  0  1995 218 10  5   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    23  23   0  BLOCK IIA               930000.     P      0.1140  1995 218 10  5  2002  51  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    23  23   0  BLOCK IIA               930000.     A      0.1140  2002  51  0  0  2004  54  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    23  32   0  BLOCK IIA               930000.     P      0.1140  2006 335  0  0  2016  26  0  0
+ G    24  24   0  BLOCK IIA               930000.     U      0.1089  1991 185  0  0  1993   1  0  0   Launched 1991-07-04; NAVSTAR 23; mass 972900. in previous svnav.dat.allgnss
+ G    24  24   0  BLOCK IIA               930000.     Y      0.1089  1993   1  0  0  1995 163  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    24  24   0  BLOCK IIA               930000.     N      0.1089  1995 163  0  0  1995 164  4 59   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    24  24   0  BLOCK IIA               930000.     P      0.1089  1995 164  4 59  2011 274  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    25  25   0  BLOCK IIA               930000.     U      0.1001  1992  54  0  0  1994 157  0  0   Launched 1992-02-23; NAVSTAR 24; mass 972900. in previous svnav.dat.allgnss
+ G    25  25   0  BLOCK IIA               930000.     Y      0.1001  1994 157  0  0  1995 133  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    25  25   0  BLOCK IIA               930000.     P      0.1001  1995 133  0  0  1995 134 21  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    25  25   0  BLOCK IIA               930000.     N      0.1001  1995 134 21  0  1995 135 21  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    25  25   0  BLOCK IIA               930000.     Y      0.1001  1995 135 21  0  1995 295  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    25  25   0  BLOCK IIA               930000.     P      0.1001  1995 295  0  0  2010  40  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    26  26   0  BLOCK IIA               930000.     U      0.1227  1992 189  0  0  1994 157  0  0   Launched 1992-07-07; NAVSTAR 26; mass 972900. in previous svnav.dat.allgnss
+ G    26  26   0  BLOCK IIA               930000.     Y      0.1227  1994 157  0  0  1995  84  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    26  26   0  BLOCK IIA               930000.     P      0.1227  1995  84  0  0  1995  85 13 40   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    26  26   0  BLOCK IIA               930000.     N      0.1227  1995  85 13 40  1995 267 21  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    26  26   0  BLOCK IIA               930000.     P      0.1227  1995 267 21  0  2015   6  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    27  27   0  BLOCK IIA               930000.     U      0.1194  1992 253  0  0  1994 157  0  0   Launched 1992-09-09; NAVSTAR 27; mass 972900. and start date 1992-272 in previous svnav.dat.allgnss
+ G    27  27   0  BLOCK IIA               930000.     Y      0.1194  1994 157  0  0  1995 133  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    27  27   0  BLOCK IIA               930000.     P      0.1194  1995 133  0  0  1995 134  2 58   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    27  27   0  BLOCK IIA               930000.     N      0.1194  1995 134  2 58  1995 135  2 58   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    27  27   0  BLOCK IIA               930000.     Y      0.1194  1995 135  2 58  1995 295  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    27  27   0  BLOCK IIA               930000.     P      0.1194  1995 295  0  0  2012 292  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    27  30   0  BLOCK IIA               930000.     P      0.1194  2013 337  0  0  2013 352  0  0
+ G    27  26   0  BLOCK IIA               930000.     P      0.1194  2015  58  0  0  2015  76  0  0   Start date 2015-057 in previous svnav.dat.allgnss
+ G    28  28   0  BLOCK IIA               930000.     U      0.1260  1992 101  0  0  1994 157  0  0   Launched 1992-04-10; NAVSTAR 25; mass 972900. in previous svnav.dat.allgnss
+ G    28  28   0  BLOCK IIA               930000.     Y      0.1260  1994 157  0  0  1995  89  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    28  28   0  BLOCK IIA               930000.     N      0.1260  1995  89  0  0  1995  90 19 19   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    28  28   0  BLOCK IIA               930000.     P      0.1260  1995  90 19 19  1997 228  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    29  29   0  BLOCK IIA               930000.     U      0.1228  1992 353  0  0  1994 157  0  0   Launched 1992-12-18; NAVSTAR 29; mass 972900. in previous svnav.dat.allgnss
+ G    29  29   0  BLOCK IIA               930000.     Y      0.1228  1994 157  0  0  1995   9 21  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    29  29   0  BLOCK IIA               930000.     P      0.1228  1995   9 21  0  2007 297  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    30  30   0  BLOCK IIA               930000.     P      0.1165  1996 256  0  0  2011 217  0  0   Launched 1996-09-12; NAVSTAR 39; mass 972900. in previous svnav.dat.allgnss
+ G    31  31   0  BLOCK IIA               930000.     U      0.0969  1993  89  0  0  1994 157  0  0   Launched 1993-03-30; NAVSTAR 31; mass 972900. in previous svnav.dat.allgnss
+ G    31  31   0  BLOCK IIA               930000.     Y      0.0969  1994 157  0  0  1995  89  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    31  31   0  BLOCK IIA               930000.     N      0.0969  1995  89  0  0  1995  90  3  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    31  31   0  BLOCK IIA               930000.     P      0.0969  1995  90  3  0  2005 298  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    32   1   0  BLOCK IIA               930000.     U      0.1211  1992 327  0  0  1994 157  0  0   Launched 1992-11-22; NAVSTAR 28; mass 972900. in previous svnav.dat.allgnss
+ G    32   1   0  BLOCK IIA               930000.     Y      0.1211  1994 157  0  0  1995  85  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    32   1   0  BLOCK IIA               930000.     P      0.1211  1995  85  0  0  1995  86 17 29   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    32   1   0  BLOCK IIA               930000.     N      0.1211  1995  86 17 29  1995 267  5 24   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    32   1   0  BLOCK IIA               930000.     P      0.1211  1995 267  5 24  2008 291  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    32  24   0  BLOCK IIA               930000.     P      0.1211  2012  75  0  0  2012 117  0  0
+ G    32  30   0  BLOCK IIA               930000.     P      0.1211  2013 234  0  0  2013 260  0  0
+ G    32  26   0  BLOCK IIA               930000.     P      0.1211  2015  36  0  0  2015  56  0  0   Start date 2015-035 in previous svnav.dat.allgnss
+ G    32   4   0  BLOCK IIA               930000.     P      0.1211  2016 259  0  0  2016 341  0  0   Start date 2016-258 in previous svnav.dat.allgnss
+ G    33   3   0  BLOCK IIA               930000.     P      0.1230  1996  88  0  0  2014 231  0  0   Launched 1996-03-28; NAVSTAR 37; mass 972900. in previous svnav.dat.allgnss
+ G    34   4   0  BLOCK IIA               930000.     U      0.1233  1993 299  0  0  1994 157  0  0   Launched 1993-10-26; NAVSTAR 35; mass 972900. in previous svnav.dat.allgnss
+ G    34   4   0  BLOCK IIA               930000.     Y      0.1233  1994 157  0  0  1995 163  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    34   4   0  BLOCK IIA               930000.     N      0.1233  1995 163  0  0  1995 164 22  7   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    34   4   0  BLOCK IIA               930000.     P      0.1233  1995 164 22  7  2015 314  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    34   4   0  BLOCK IIA               930000.     P      0.1233  2016 344  0  0  2017   4  0  0   Start date 2016-343 and end time 12:00 in previous svnav.dat.allgnss
+ G    34  18   0  BLOCK IIA               930000.     P      0.1233  2018  66 22  0  2020  70  0  0   Start date 2018-024 in previous svnav.dat.allgnss
+ G    35   5   0  BLOCK IIA               930000.     U      0.1180  1993 242  0  0  1994 157  0  0   Launched 1993-08-30; NAVSTAR 34; mass 972900. in previous svnav.dat.allgnss
+ G    35   5   0  BLOCK IIA               930000.     Y      0.1180  1994 157  0  0  1995 185  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    35   5   0  BLOCK IIA               930000.     P      0.1180  1995 185  0  0  1995 186 11  3   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    35   5   0  BLOCK IIA               930000.     N      0.1180  1995 186 11  3  1995 321  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    35   5   0  BLOCK IIA               930000.     P      0.1180  1995 321  0  0  2009 160  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    35  25   0  BLOCK IIA               930000.     P      0.1180  2010  40  0  0  2010 148  0  0   Start date 2010-041 in previous svnav.dat.allgnss
+ G    35   1   0  BLOCK IIA               930000.     P      0.1180  2011 153  0  0  2011 194  0  0   End date 2011-195 in previous svnav.dat.allgnss
+ G    35  30   0  BLOCK IIA               930000.     P      0.1180  2011 217  0  0  2013 127  0  0
+ G    35   3   0  BLOCK IIA               930000.     P      0.1180  2014 248  0  0  2014 294  0  0   Start date 2014-247 in previous svnav.dat.allgnss
+ G    36   6   0  BLOCK IIA               930000.     U      0.1266  1994  69  0  0  1994 157  0  0   Launched 1994-03-10; NAVSTAR 36; mass 972900. in previous svnav.dat.allgnss
+ G    36   6   0  BLOCK IIA               930000.     Y      0.1266  1994 157  0  0  1994  92  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    36   6   0  BLOCK IIA               930000.     N      0.1266  1994  92  0  0  1995  93 19 44   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    36   6   0  BLOCK IIA               930000.     P      0.1266  1995  93 19 44  2014  63  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    36  10   0  BLOCK IIA               930000.     P      0.1266  2015 259  0  0  2015 300  0  0
+ G    36   4   0  BLOCK IIA               930000.     P      0.1266  2017 201  0  0  2017 333  0  0
+ G    36   4   0  BLOCK IIA               930000.     P      0.1266  2018 283  0  0  2019   5  0  0
+ G    36   4   0  BLOCK IIA               930000.     P      0.1266  2019 194  0  0  2019 282  0  0
+ G    37   7   0  BLOCK IIA               930000.     U      0.1269  1993 133  0  0  1994 157  0  0   Launched 1993-05-13; NAVSTAR 32; mass 972900. in previous svnav.dat.allgnss
+ G    37   7   0  BLOCK IIA               930000.     Y      0.1269  1994 157  0  0  1995  89  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    37   7   0  BLOCK IIA               930000.     N      0.1269  1995  89  0  0  1995  90  3  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    37   7   0  BLOCK IIA               930000.     P      0.1269  1995  90  3  0  2008  15  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    37   1   0  BLOCK IIA               930000.     P      0.1269  2008 297  0  0  2009   7  0  0
+ G    37  24   0  BLOCK IIA               930000.     P      0.1269  2012 117  0  0  2012 152  0  0
+ G    37  30   0  BLOCK IIA               930000.     P      0.1269  2013 262  0  0  2013 281  0  0
+ G    38   8   0  BLOCK IIA               930000.     P      0.1033  1997 310  0  0  2015 104  0  0   Launched 1997-11-06; NAVSTAR 44; mass 972900. in previous svnav.dat.allgnss
+ G    38   4   0  BLOCK IIA               930000.     P      0.1033  2017 139  0  0  2017 196  0  0   Start date 2017-138 in previous svnav.dat.allgnss
+ G    39   9   0  BLOCK IIA               930000.     U      0.1278  1993 177  0  0  1994 157  0  0   Launched 1993-06-26; NAVSTAR 33; mass 972900. and start date 1993-201 in previous svnav.dat.allgnss
+ G    39   9   0  BLOCK IIA               930000.     Y      0.1278  1994 157  0  0  1995 133  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    39   9   0  BLOCK IIA               930000.     P      0.1278  1995 133  0  0  1995 134  6 14   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    39   9   0  BLOCK IIA               930000.     N      0.1278  1995 134  6 14  1995 135  6 14   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    39   9   0  BLOCK IIA               930000.     Y      0.1278  1995 135  6 14  1995 295  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    39   9   0  BLOCK IIA               930000.     P      0.1278  1995 295  0  0  2014 203  0  0   Date for change of yaw bias flag from previous svnav.dat.allgnss
+ G    40  10   0  BLOCK IIA               930000.     P      0.0978  1996 198  0  0  2015 216  0  0   Launched 1996-07-16; NAVSTAR 38; mass 972900. in previous svnav.dat.allgnss
+ G    41  14   0  BLOCK IIR-A            1080000.     U      0.2000  2000 315  0  0  2020 210  0  0   Launched 2000-11-10; NAVSTAR 49; mass 1100000. in previous svnav.dat.allgnss
+ G    43  13   0  BLOCK IIR-A            1080000.     U      0.2000  1997 204  0  0  2100   1  0  0   Launched 1997-07-23; NAVSTAR 43; mass 1100000. in previous svnav.dat.allgnss
+ G    44  28   0  BLOCK IIR-A            1080000.     U      0.2000  2000 198  0  0  2100   1  0  0   Launched 2000-07-16; NAVSTAR 48; mass 1100000. in previous svnav.dat.allgnss
+ G    45  21   0  BLOCK IIR-A            1080000.     U      0.2000  2003  90  0  0  2100   1  0  0   Launched 2003-03-31; NAVSTAR 52; mass 1100000. and start date 2003-091 in previous svnav.dat.allgnss
+ G    46  11   0  BLOCK IIR-A            1080000.     U      0.2000  1999 280  0  0  2021 100  0  0   Launched 1999-10-07; NAVSTAR 46; mass 1100000. in previous svnav.dat.allgnss
+ G    47  22   0  BLOCK IIR-B            1080000.     U      0.2000  2003 355  0  0  2100   1  0  0   Launched 2003-12-21; NAVSTAR 53; mass 1100000. in previous svnav.dat.allgnss
+ G    48   7   0  BLOCK IIR-M            1080000.     U      0.2000  2008  75  0  0  2100   1  0  0   Launched 2008-03-15; NAVSTAR 62; mass 1100000. and start date 2008-076 in previous svnav.dat.allgnss
+ G    49   1   0  BLOCK IIR-M            1080000.     U      0.2000  2009  83  0  0  2011 127  0  0   Launched 2009-03-24; NAVSTAR 63; mass 1100000. and end date 2011-128 in previous svnav.dat.allgnss
+ G    49  24   0  BLOCK IIR-M            1080000.     U      0.2000  2012  33  0  0  2012  75  0  0   Start date 2012-032 in previous svnav.dat.allgnss
+ G    49  24   0  BLOCK IIR-M            1080000.     U      0.2000  2012 222  0  0  2012 236  0  0   Start date 2012-221 in previous svnav.dat.allgnss
+ G    49  27   0  BLOCK IIR-M            1080000.     U      0.2000  2012 292  0  0  2013 130  0  0
+ G    49  30   0  BLOCK IIR-M            1080000.     U      0.2000  2013 130  0  0  2013 234  0  0   Start date 2013-129 in previous svnav.dat.allgnss
+ G    49  30   0  BLOCK IIR-M            1080000.     U      0.2000  2013 353  0  0  2014  42  0  0   Start date 2013-352(18:00) in previous svnav.dat.allgnss
+ G    49   6   0  BLOCK IIR-M            1080000.     U      0.2000  2014  93  0  0  2014 126  0  0   Start date 2014-092 in previous svnav.dat.allgnss
+ G    49   8   0  BLOCK IIR-M            1080000.     U      0.2000  2015 120  0  0  2015 183  0  0   Start date 2015-119 and end date 2015-184 in previous svnav.dat.allgnss
+ G    49   4   0  BLOCK IIR-M            1080000.     U      0.2000  2016  33  0  0  2016 258  0  0   Start date 2016-032 in previous svnav.dat.allgnss
+ G    49   4   0  BLOCK IIR-M            1080000.     U      0.2000  2017   6  0  0  2017 133  0  0
+ G    49   4   0  BLOCK IIR-M            1080000.     U      0.2000  2017 335  0  0  2018 272  0  0
+ G    50   5   0  BLOCK IIR-M            1080000.     U      0.2000  2009 229  0  0  2100   1  0  0   Launched 2009-08-17; NAVSTAR 64; mass 1100000. in previous svnav.dat.allgnss
+ G    51  20   0  BLOCK IIR-A            1080000.     U      0.2000  2000 132  0  0  2100   1  0  0   Launched 2000-05-11; NAVSTAR 47; mass 1100000. and start date 2000-131(09:46) in previous svnav.dat.allgnss
+ G    52  31   0  BLOCK IIR-M            1080000.     U      0.2000  2006 268  0  0  2100   1  0  0   Launched 2006-09-25; NAVSTAR 58; mass 1100000. and start date 2006-275 in previous svnav.dat.allgnss
+ G    53  17   0  BLOCK IIR-M            1080000.     U      0.2000  2005 269  0  0  2100   1  0  0   Launched 2005-09-26; NAVSTAR 57; mass 1100000. and start date 2005-273 in previous svnav.dat.allgnss
+ G    54  18   0  BLOCK IIR-A            1080000.     U      0.2000  2001  30  0  0  2018  64 22  0   Launched 2001-01-30; NAVSTAR 50; mass 1100000., start date 2001-029 and end date 2018-024 in previous svnav.dat.allgnss
+ G    55  15   0  BLOCK IIR-M            1080000.     U      0.2000  2007 290  0  0  2100   1  0  0   Launched 2007-10-17; NAVSTAR 60; mass 1100000. in previous svnav.dat.allgnss
+ G    56  16   0  BLOCK IIR-A            1080000.     U      0.2000  2003  29  0  0  2100   1  0  0   Launched 2003-01-29; NAVSTAR 51; mass 1100000. and start date 2003-038(16:00) in previous svnav.dat.allgnss
+ G    57  29   0  BLOCK IIR-M            1080000.     U      0.2000  2007 354  0  0  2100   1  0  0   Launched 2007-12-20; NAVSTAR 61; mass 1100000. and start date 2007-355 in previous svnav.dat.allgnss
+ G    58  12   0  BLOCK IIR-M            1080000.     U      0.2000  2006 321  0  0  2100   1  0  0   Launched 2006-11-17; NAVSTAR 59; mass 1100000. in previous svnav.dat.allgnss
+ G    59  19   0  BLOCK IIR-B            1080000.     U      0.2000  2004  80  0  0  2100   1  0  0   Launched 2004-03-20; NAVSTAR 54; mass 1100000. and start date 2004-081 in previous svnav.dat.allgnss
+ G    60  23   0  BLOCK IIR-B            1080000.     U      0.2000  2004 175  0  0  2020 162  0  0   Launched 2004-06-23; NAVSTAR 55; mass 1100000. and start date 2004-160 in previous svnav.dat.allgnss
+ G    61   2   0  BLOCK IIR-B            1080000.     U      0.2000  2004 311  0  0  2100   1  0  0   Launched 2004-11-06; NAVSTAR 56; mass 1100000. and start date 2004-317 in previous svnav.dat.allgnss
+ G    62  25   0  BLOCK IIF              1633000.     N      0.1100  2010 148  0  0  2100   1  0  0   Launched 2010-05-28; NAVSTAR 65; mass 1555256. in previous svnav.dat.allgnss
+ G    63   1   0  BLOCK IIF              1633000.     N      0.1100  2011 197  0  0  2100   1  0  0   Launched 2011-07-16; NAVSTAR 66; mass 1555256. in previous svnav.dat.allgnss
+ G    64  30   0  BLOCK IIF              1633000.     N      0.1100  2014  52  0  0  2100   1  0  0   Launched 2014-02-21; NAVSTAR 69; mass 1555256. in previous svnav.dat.allgnss
+ G    65  24   0  BLOCK IIF              1633000.     N      0.1100  2012 278  0  0  2100   1  0  0   Launched 2012-10-04; NAVSTAR 67; mass 1555256. in previous svnav.dat.allgnss
+ G    66  27   0  BLOCK IIF              1633000.     N      0.1100  2013 135  0  0  2100   1  0  0   Launched 2013-05-15; NAVSTAR 68; mass 1555256. and start date 2013-136 in previous svnav.dat.allgnss
+ G    67   6   0  BLOCK IIF              1633000.     N      0.1100  2014 137  0  0  2100   1  0  0   Launched 2014-05-17; NAVSTAR 70; mass 1555256. in previous svnav.dat.allgnss
+ G    68   9   0  BLOCK IIF              1633000.     N      0.1100  2014 214  0  0  2100   1  0  0   Launched 2014-08-02; NAVSTAR 71; mass 1555256. in previous svnav.dat.allgnss
+ G    69   3   0  BLOCK IIF              1633000.     N      0.1100  2014 302  0  0  2100   1  0  0   Launched 2014-10-29; NAVSTAR 72; mass 1555256. in previous svnav.dat.allgnss
+ G    70  32   0  BLOCK IIF              1633000.     N      0.1100  2016  36  0  0  2100   1  0  0   Launched 2016-02-05; NAVSTAR 76; mass 1555256. and start date 2016-035 in previous svnav.dat.allgnss
+ G    71  26   0  BLOCK IIF              1633000.     N      0.1100  2015  84  0  0  2100   1  0  0   Launched 2015-03-25; NAVSTAR 73; mass 1555256. in previous svnav.dat.allgnss
+ G    72   8   0  BLOCK IIF              1633000.     N      0.1100  2015 196  0  0  2100   1  0  0   Launched 2015-07-15; NAVSTAR 74; mass 1555256. and start date 2015-195 in previous svnav.dat.allgnss
+ G    73  10   0  BLOCK IIF              1633000.     N      0.1100  2015 304  0  0  2100   1  0  0   Launched 2015-10-31; NAVSTAR 75; mass 1555256. in previous svnav.dat.allgnss
+ G    74   4   0  BLOCK IIIA             2161000.     N      0.1100  2019   9  0  0  2019 194  0  0   Launched 2018-12-23; NAVSTAR 77
+ G    74   4   0  BLOCK IIIA             2161000.     N      0.1100  2019 294  0  0  2100   1  0  0
+ G    75  18   0  BLOCK IIIA             2161000.     N      0.1100  2020  73  0  0  2100   1  0  0   Launched 2019-08-22; NAVSTAR 78
+ G    76  23   0  BLOCK IIIA             2161000.     N      0.1100  2020 196  0  0  2100   1  0  0   Launched 2020-06-30; NAVSTAR 79
+ G    77  14   0  BLOCK IIIA             2161000.     N      0.1100  2020 310  0  0  2100   1  0  0   Launched 2020-11-05; NAVSTAR 80
+ G    78  11   0  BLOCK IIIA             2161000.     N      0.1100  2021 168  0  0  2100   1  0  0   Launched 2021-06-17; NAVSTAR 81
+ R   701   6   1  GLONASS-M              1415000.     U      0.2500  2003 344  0  0  2009 259  0  0   Launched 2003-12-10; COSMOS 2404
+ R   701   6  -4  GLONASS-M              1415000.     U      0.2500  2009 259  0  0  2010  58  0  0
+ R   701   6  99  GLONASS-M              1415000.     U      0.2500  2010  58  0  0  2010 118  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   711   5   2  GLONASS                1415000.     U      0.2500  2001 335  0  0  2006  85  0  0   Launched 2001-12-01; COSMOS 2382
+ R   711   5   7  GLONASS                1415000.     U      0.2500  2006  85  0  0  2008  11  0  0
+ R   711   5  99  GLONASS                1415000.     U      0.2500  2008  11  0  0  2009 348  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   712   7   4  GLONASS-M              1415000.     U      0.2500  2004 361  0  0  2007  38  0  0   Launched 2004-12-26; COSMOS 2411
+ R   712   7   5  GLONASS-M              1415000.     U      0.2500  2007  38  0  0  2011 349  0  0
+ R   712   8   6  GLONASS-M              1415000.     U      0.2500  2012 292  0  0  2012 357  0  0
+?R   712   0   6  GLONASS-M              1415000.     U      0.2500  2012 357  0  0  2012 359  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   713  24  99  GLONASS-M              1415000.     U      0.2500  2005 359  0  0  2006  96  0  0   Launched 2005-12-25; COSMOS 2418; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   713  24   2  GLONASS-M              1415000.     U      0.2500  2006  96  0  0  2010  58  0  0
+ R   713  24   2  GLONASS-M              1415000.     U      0.2500  2010  58  0  0  2010  60  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx; from igs14_2185.atx
+ R   714  23  99  GLONASS-M              1415000.     U      0.2500  2006  59  0  0  2006  96  0  0   Launched 2005-12-25; COSMOS 2419; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   714  23   3  GLONASS-M              1415000.     U      0.2500  2006  96  0  0  2010  78  0  0
+ R   714   6   4  GLONASS-M              1415000.     U      0.2500  2010 118  0  0  2010 274  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx; from 2017-300 RINEX 3 data file header
+ R   714  17  99  GLONASS-M              1415000.     U      0.2500  2010 350  0  0  2010 359  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   714  17  -5  GLONASS-M              1415000.     U      0.2500  2010 359  0  0  2011  18  0  0
+ R   714  17   4  GLONASS-M              1415000.     U      0.2500  2011  18  0  0  2011 354  0  0
+ R   714  18  -6  GLONASS-M              1415000.     U      0.2500  2014  49  0  0  2014 101  0  0
+ R   714  17  -6  GLONASS-M              1415000.     U      0.2500  2015 103  0  0  2016  27  0  0
+?R   714   0  -6  GLONASS-M              1415000.     U      0.2500  2016  27  0  0  2016  39  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   714  17  99  GLONASS-M              1415000.     U      0.2500  2016  46 13 45  2016  47  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   714  17   4  GLONASS-M              1415000.     U      0.2500  2016  47  0  0  2016  56  0  0
+ R   715  14  99  GLONASS-M              1415000.     U      0.2500  2006 359  0  0  2007  11  0  0   Launched 2006-12-25; COSMOS 2424; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   715  14   4  GLONASS-M              1415000.     U      0.2500  2007  11  0  0  2009  70  0  0
+ R   715  14  -7  GLONASS-M              1415000.     U      0.2500  2009  70  0  0  2010 350  0  0
+ R   715  14  99  GLONASS-M              1415000.     U      0.2500  2010 350  0  0  2010 359  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   715   3  99  GLONASS-M              1415000.     U      0.2500  2011  70  0  0  2011  82  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   715   3  -6  GLONASS-M              1415000.     U      0.2500  2011  82  0  0  2011 286  0  0
+ R   715  14  -7  GLONASS-M              1415000.     U      0.2500  2011 286  0  0  2017 185  0  0
+ R   715  14  99  GLONASS-M              1415000.     U      0.2500  2017 185  0  0  2017 190  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   716  15  99  GLONASS-M              1415000.     U      0.2500  2006 359  0  0  2007  11  0  0   Launched 2006-12-25; COSMOS 2425; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   716  15   4  GLONASS-M              1415000.     U      0.2500  2007  11  0  0  2007  17  0  0
+ R   716  15   0  GLONASS-M              1415000.     U      0.2500  2007  17  0  0  2018 328  0  0
+?R   716   0   0  GLONASS-M              1415000.     U      0.2500  2018 328  0  0  2018 330  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   716  27  99  GLONASS-M              1415000.     U      0.2500  2019 215  0  0  2100   1  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   717  10  99  GLONASS-M              1415000.     U      0.2500  2006 359  0  0  2007  11  0  0   Launched 2006-12-25; COSMOS 2426; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   717  10   0  GLONASS-M              1415000.     U      0.2500  2007  11  0  0  2007  17  0  0
+ R   717  10   4  GLONASS-M              1415000.     U      0.2500  2007  17  0  0  2009  70  0  0
+ R   717  10  -7  GLONASS-M              1415000.     U      0.2500  2009  70  0  0  2019 273  0  0
+ R   718  17  -1  GLONASS-M              1415000.     U      0.2500  2007 299  0  0  2009  70  0  0   Launched 2007-10-26; COSMOS 2431
+ R   718  17   4  GLONASS-M              1415000.     U      0.2500  2009  70  0  0  2010 350  0  0
+?R   718   0   4  GLONASS-M              1415000.     U      0.2500  2010 350  0  0  2010 359  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   719  20  99  GLONASS-M              1415000.     U      0.2500  2007 299  0  0  2007 320  0  0   Launched 2007-10-26; COSMOS 2432; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   719  20   2  GLONASS-M              1415000.     U      0.2500  2007 320  0  0  2100   1  0  0
+ R   720  19  99  GLONASS-M              1415000.     U      0.2500  2007 299  0  0  2007 313  0  0   Launched 2007-10-26; COSMOS 2433; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   720  19   3  GLONASS-M              1415000.     U      0.2500  2007 313  0  0  2100   1  0  0
+ R   721  13  99  GLONASS-M              1415000.     U      0.2500  2007 359  0  0  2008  35  0  0   Launched 2007-12-25; COSMOS 2434; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   721  13  -2  GLONASS-M              1415000.     U      0.2500  2008  35  0  0  2100   1  0  0
+ R   722   9  99  GLONASS-M              1415000.     U      0.2500  2007 359  0  0  2008  21  0  0   Launched 2007-12-25; COSMOS 2435; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   722   9  -2  GLONASS-M              1415000.     U      0.2500  2008  21  0  0  2010 274  0  0
+ R   722   3  -2  GLONASS-M              1415000.     U      0.2500  2010 274  0  0  2010 277  0  0
+ R   722   3  -5  GLONASS-M              1415000.     U      0.2500  2010 277  0  0  2010 348  0  0
+ R   722   3  99  GLONASS-M              1415000.     U      0.2500  2010 348  0  0  2010 350  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   722  14  99  GLONASS-M              1415000.     U      0.2500  2010 350  0  0  2010 359  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   722  14  -7  GLONASS-M              1415000.     U      0.2500  2010 359  0  0  2011 286  0  0
+ R   723  11  99  GLONASS-M              1415000.     U      0.2500  2007 359  0  0  2008  16  0  0   Launched 2007-12-25; COSMOS 2436; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   723  11   0  GLONASS-M              1415000.     U      0.2500  2008  16  0  0  2016 176  0  0
+ R   723  12  -1  GLONASS-M              1415000.     U      0.2500  2016 350  0  0  2019 170  0  0
+ R   723  12  99  GLONASS-M              1415000.     U      0.2500  2019 170  0  0  2019 170 10 30   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   723  10   7  GLONASS-M              1415000.     U      0.2500  2019 273  0  0  2019 290  0  0
+ R   723  10  -5  GLONASS-M              1415000.     U      0.2500  2019 290  0  0  2020 038  0  0
+ R   723  10  -7  GLONASS-M              1415000.     U      0.2500  2020 038  0  0  2100   1  0  0
+ R   724  18  99  GLONASS-M              1415000.     U      0.2500  2008 269  0  0  2008 297  0  0   Launched 2008-09-25; COSMOS 2442; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   724  18  -3  GLONASS-M              1415000.     U      0.2500  2008 297  0  0  2014  43  0  0
+?R   724   0  -3  GLONASS-M              1415000.     U      0.2500  2014  43  0  0  2014  51  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   725  21  99  GLONASS-M              1415000.     U      0.2500  2008 269  0  0  2008 310  0  0   Launched 2008-09-25; COSMOS 2443; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   725  21  -1  GLONASS-M              1415000.     U      0.2500  2008 310  0  0  2009  70  0  0
+ R   725  21   4  GLONASS-M              1415000.     U      0.2500  2009  70  0  0  2014 214  0  0
+ R   726  22  99  GLONASS-M              1415000.     U      0.2500  2008 269  0  0  2008 318  0  0   Launched 2008-09-25; COSMOS 2444; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   726  22  -3  GLONASS-M              1415000.     U      0.2500  2008 318  0  0  2010  60  0  0
+?R   726   0  -3  GLONASS-M              1415000.     U      0.2500  2010  60  0  0  2010  81  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   727   3  99  GLONASS-M              1415000.     U      0.2500  2008 360  0  0  2008 361  0  0   Launched 2008-12-25; COSMOS 2447; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   727   3   5  GLONASS-M              1415000.     U      0.2500  2008 361  0  0  2010 274  0  0
+ R   727   4  -5  GLONASS-M              1415000.     U      0.2500  2010 274  0  0  2010 277  0  0
+ R   727   4   6  GLONASS-M              1415000.     U      0.2500  2010 277  0  0  2010 348  0  0
+ R   727   4   5  GLONASS-M              1415000.     U      0.2500  2010 348  0  0  2010 350  0  0
+ R   727   3   5  GLONASS-M              1415000.     U      0.2500  2010 350  0  0  2011  70  0  0
+ R   728   2  99  GLONASS-M              1415000.     U      0.2500  2008 360  0  0  2008 361  0  0   Launched 2008-12-25; COSMOS 2448; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   728   2   1  GLONASS-M              1415000.     U      0.2500  2008 361  0  0  2009 257  0  0
+ R   728   2  -4  GLONASS-M              1415000.     U      0.2500  2009 257  0  0  2013 182  0  0
+?R   728   0  -4  GLONASS-M              1415000.     U      0.2500  2013 182  0  0  2013 184  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   729   8  99  GLONASS-M              1415000.     U      0.2500  2008 360  0  0  2008 361  0  0   Launched 2008-12-25; COSMOS 2449; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   729   8   6  GLONASS-M              1415000.     U      0.2500  2008 361  0  0  2012 257  0  0
+?R   729   0   6  GLONASS-M              1415000.     U      0.2500  2012 257  0  0  2012 264  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   730   1  99  GLONASS-M              1415000.     U      0.2500  2009 348  0  0  2009 349  0  0   Launched 2009-12-14; COSMOS 2456; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   730   1   1  GLONASS-M              1415000.     U      0.2500  2009 349  0  0  2100   1  0  0
+ R   731  22  99  GLONASS-M              1415000.     U      0.2500  2010  60  0  0  2010  81  0  0   Launched 2010-03-01; COSMOS 2459; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   731  22  -3  GLONASS-M              1415000.     U      0.2500  2010  81  0  0  2020 177  0  0
+?R   731   0  -3  GLONASS-M              1415000.     U      0.2500  2020 177  0  0  2020 240  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   732  23   3  GLONASS-M              1415000.     U      0.2500  2010  78  0  0  2100   1  0  0   Launched 2010-03-01; COSMOS 2460
+ R   733   4  99  GLONASS-M              1415000.     U      0.2500  2009 348  0  0  2009 349  0  0   Launched 2009-12-14; COSMOS 2457
+ R   733   4   6  GLONASS-M              1415000.     U      0.2500  2009 349  0  0  2010 274  0  0
+ R   733   6   6  GLONASS-M              1415000.     U      0.2500  2010 274  0  0  2010 277  0  0
+ R   733   6  -4  GLONASS-M              1415000.     U      0.2500  2010 277  0  0  2100   1  0  0
+ R   734   5  99  GLONASS-M              1415000.     U      0.2500  2009 348  0  0  2009 349  0  0   Launched 2009-12-14; COSMOS 2458; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   734   5   1  GLONASS-M              1415000.     U      0.2500  2009 349  0  0  2018 224  0  0
+?R   734   0   1  GLONASS-M              1415000.     U      0.2500  2018 224  0  0  2018 235  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   735  24  99  GLONASS-M              1415000.     U      0.2500  2010  60  0  0  2010  68  0  0   Launched 2010-03-01; COSMOS 2461; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   735  24   2  GLONASS-M              1415000.     U      0.2500  2010  68  0  0  2020 101  0  0
+ R   735  24  99  GLONASS-M              1415000.     U      0.2500  2020 101  0  0  2020 101  6  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx; end date from igs_satellite_metadata_2185.snx, defined as 2020-101T05:00 in igs14_2185.atx
+ R   735  22  99  GLONASS-M              1415000.     U      0.2500  2020 226  0  0  2020 230  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   735  22  -3  GLONASS-M              1415000.     U      0.2500  2020 230  0  0  2100   1  0  0
+ R   736  16  99  GLONASS-M              1415000.     U      0.2500  2010 245  0  0  2010 274  0  0   Launched 2010-09-02; COSMOS 2464; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   736   9  99  GLONASS-M              1415000.     U      0.2500  2010 274  0  0  2010 277  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   736   9  -2  GLONASS-M              1415000.     U      0.2500  2010 277  0  0  2016  46 14 15
+ R   736   9  -2  GLONASS-M              1415000.     U      0.2500  2016  46 14 15  2016  47  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx; from igs14_2185.atx
+?R   736   0  -1  GLONASS-M              1415000.     U      0.2500  2016  47  0  0  2016  69  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   736  16  -1  GLONASS-M              1415000.     U      0.2500  2016  69  0  0  2100   1  0  0
+ R   737  12  99  GLONASS-M              1415000.     U      0.2500  2010 245  0  0  2010 277  0  0   Launched 2010-09-02; COSMOS 2465
+ R   737  12  -1  GLONASS-M              1415000.     U      0.2500  2010 277  0  0  2016 327  0  0
+?R   737   0  -1  GLONASS-M              1415000.     U      0.2500  2016 327  0  0  2016 350  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   738  16  99  GLONASS-M              1415000.     U      0.2500  2010 274  0  0  2010 277  0  0   Launched 2010-09-02; COSMOS 2466; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   738  16  -1  GLONASS-M              1415000.     U      0.2500  2010 277  0  0  2016  46  0  0
+?R   738   0  -1  GLONASS-M              1415000.     U      0.2500  2016  46  0  0  2016  47  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   742   4   6  GLONASS-M              1415000.     U      0.2500  2011 286  0  0  2019 238  0  0   Launched 2011-10-02; COSMOS 2474
+?R   742   0   6  GLONASS-M              1415000.     U      0.2500  2019 238  0  0  2019 361  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   743   8  99  GLONASS-M              1415000.     U      0.2500  2012 261  0  0  2012 264  0  0   Launched 2011-11-04; COSMOS 2475; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   743   8  -6  GLONASS-M              1415000.     U      0.2500  2012 264  0  0  2012 292  0  0
+?R   743   0  -6  GLONASS-M              1415000.     U      0.2500  2012 292  0  0  2012 357  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   743   8  -6  GLONASS-M              1415000.     U      0.2500  2012 357  0  0  2013   6  0  0
+?R   743   0  -6  GLONASS-M              1415000.     U      0.2500  2013   6  0  0  2013  54  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   743   8  -6  GLONASS-M              1415000.     U      0.2500  2013  54  0  0  2013  60  0  0
+ R   743   8   6  GLONASS-M              1415000.     U      0.2500  2013  60  0  0  2100   1  0  0
+ R   744   3   5  GLONASS-M              1415000.     U      0.2500  2011 335  0  0  2100   1  0  0   Launched 2011-11-04; COSMOS 2476
+ R   745   7   5  GLONASS-M              1415000.     U      0.2500  2011 349  0  0  2100   1  0  0   Launched 2011-11-04; COSMOS 2477
+ R   746  17   4  GLONASS-M              1415000.     U      0.2500  2011 354  0  0  2015 103  0  0   Launched 2011-11-28; COSMOS 2478
+?R   746   0   4  GLONASS-M              1415000.     U      0.2500  2015 103  0  0  2015 105  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   747   2  99  GLONASS-M              1415000.     U      0.2500  2013 182  0  0  2013 184  0  0   Launched 2013-04-26; COSMOS 2485; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   747   2  -4  GLONASS-M              1415000.     U      0.2500  2013 184  0  0  2100   1  0  0
+ R   758  18  10  GLONASS                1415000.     U      0.2500  1994 101  0  0  2000 287  0  0   Launched 1994-04-11; COSMOS 2275
+ R   760  17  24  GLONASS                1415000.     U      0.2500  1994 101  0  0  2000 287  0  0   Launched 1994-04-11; COSMOS 2276
+ R   761  23   3  GLONASS                1415000.     U      0.2500  1994 101  0  0  1997 241  0  0   Launched 1994-04-11; COSMOS 2277
+ R   761  23  99  GLONASS                1415000.     U      0.2500  1997 241  0  0  2002 359  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   762   4  12  GLONASS                1415000.     U      0.2500  1994 324  0  0  1999 323  0  0   Launched 1994-11-20; COSMOS 2294
+ R   762   4  99  GLONASS                1415000.     U      0.2500  1999 323  0  0  2003 344  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   763   3  21  GLONASS                1415000.     U      0.2500  1994 324  0  0  1999 278  0  0   Launched 1994-11-20; COSMOS 2295
+ R   763   3  99  GLONASS                1415000.     U      0.2500  1999 278  0  0  2001 335  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   764   6  13  GLONASS                1415000.     U      0.2500  1994 324  0  0  1999 335  0  0   Launched 1994-11-20; COSMOS 2296
+ R   764   6  99  GLONASS                1415000.     U      0.2500  1999 335  0  0  2001 335  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   765  20   1  GLONASS                1415000.     U      0.2500  1995  66  0  0  1999 324  0  0   Launched 1995-03-07; COSMOS 2307
+ R   765  20  99  GLONASS                1415000.     U      0.2500  1999 324  0  0  2006  59  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   766  22  10  GLONASS                1415000.     U      0.2500  1995  66  0  0  2002 359  0  0   Launched 1995-03-07; COSMOS 2308
+ R   767  12  21  GLONASS                1415000.     U      0.2500  1994 223  0  0  1994 270  0  0   Launched 1994-08-11; COSMOS 2287
+ R   767  12  22  GLONASS                1415000.     U      0.2500  1994 270  0  0  1999  34  0  0
+ R   767  12  99  GLONASS                1415000.     U      0.2500  1999  34  0  0  2010 245  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   770  14   9  GLONASS                1415000.     U      0.2500  1994 223  0  0  2000  15  0  0   Launched 1994-08-11; COSMOS 2288
+ R   770  14  99  GLONASS                1415000.     U      0.2500  2000  15  0  0  2006 359  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   775  16  21  GLONASS                1415000.     U      0.2500  1994 223  0  0  1994 270  0  0   Launched 1994-08-11; COSMOS 2289
+ R   775  16  22  GLONASS                1415000.     U      0.2500  1994 270  0  0  2000 272  0  0
+ R   775  16  99  GLONASS                1415000.     U      0.2500  2000 272  0  0  2010 245  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   776   9   6  GLONASS                1415000.     U      0.2500  1995 348  0  0  2000 272  0  0   Launched 1995-12-14; COSMOS 2323
+ R   776   9  99  GLONASS                1415000.     U      0.2500  2000 272  0  0  2007 359  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   777  19   3  GLONASS                1415000.     U      0.2500  1995  66  0  0  1997 360  0  0   Launched 1995-03-07; COSMOS 2309
+ R   777  19  99  GLONASS                1415000.     U      0.2500  1997 360  0  0  2005 359  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   778  15  11  GLONASS                1415000.     U      0.2500  1999  97  0  0  2001 364  0  0   Launched 1995-12-14; COSMOS 2324
+ R   778  15  99  GLONASS                1415000.     U      0.2500  2001 364  0  0  2006 359  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   779   1   2  GLONASS                1415000.     U      0.2500  1998 364  0  0  2002 189  0  0   Launched 1998-12-30; COSMOS 2364
+ R   779   1  99  GLONASS                1415000.     U      0.2500  2002 189  0  0  2004 361  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   780  15   4  GLONASS                1415000.     U      0.2500  1995 205  0  0  1999  97  0  0   Launched 1995-07-24; COSMOS 2316
+ R   781  10   9  GLONASS                1415000.     U      0.2500  1995 205  0  0  2001 288  0  0   Launched 1995-07-24; COSMOS 2317
+ R   781  10  99  GLONASS                1415000.     U      0.2500  2001 288  0  0  2006 359  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   782  13   6  GLONASS                1415000.     U      0.2500  1995 348  0  0  2001 288  0  0   Launched 1995-12-14; COSMOS 2325
+ R   782  13  99  GLONASS                1415000.     U      0.2500  2001 288  0  0  2007 359  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   783  18  10  GLONASS                1415000.     U      0.2500  2000 287  0  0  2007 340  0  0   Launched 2000-10-13; COSMOS 2374
+ R   783  18  99  GLONASS                1415000.     U      0.2500  2007 340  0  0  2008 269  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   784   8   8  GLONASS                1415000.     U      0.2500  1998 364  0  0  2003 353  0  0   Launched 1998-12-30; COSMOS 2363
+ R   784   8  99  GLONASS                1415000.     U      0.2500  2003 353  0  0  2004 361  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   785  11   4  GLONASS                1415000.     U      0.2500  1995 205  0  0  2001  97  0  0   Launched 1995-07-24; COSMOS 2318
+ R   785  11  99  GLONASS                1415000.     U      0.2500  2001  97  0  0  2007 359  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   786   7   7  GLONASS                1415000.     U      0.2500  1998 364  0  0  2003 293  0  0   Launched 1998-12-30; COSMOS 2362
+ R   786   7  99  GLONASS                1415000.     U      0.2500  2003 293  0  0  2004 361  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   787  17   5  GLONASS                1415000.     U      0.2500  2000 287  0  0  2007 116  0  0   Launched 2000-10-13; COSMOS 2375
+ R   787  17  99  GLONASS                1415000.     U      0.2500  2007 116  0  0  2007 299  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   788  24   3  GLONASS                1415000.     U      0.2500  2000 287  0  0  2005 359  0  0   Launched 2000-10-13; COSMOS 2376
+?R   788   0   3  GLONASS                1415000.     U      0.2500  2005 359  0  0  2006  96  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   789   3  12  GLONASS                1415000.     U      0.2500  2001 335  0  0  2008  11  0  0   Launched 2001-12-01; COSMOS 2381
+ R   789   3  99  GLONASS                1415000.     U      0.2500  2008  11  0  0  2008 360  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   790   6   9  GLONASS                1415000.     U      0.2500  2001 335  0  0  2003 344  0  0   Launched 2001-12-01; COSMOS 2380
+?R   790   0   9  GLONASS                1415000.     U      0.2500  2003 344  0  0  2003 353  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   791  22  10  GLONASS                1415000.     U      0.2500  2002 359  0  0  2007 299  0  0   Launched 2002-12-25; COSMOS 2394
+?R   791   0  10  GLONASS                1415000.     U      0.2500  2007 299  0  0  2007 340  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   792  21   5  GLONASS                1415000.     U      0.2500  2002 359  0  0  2007  38  0  0   Launched 2002-12-25; COSMOS 2395
+ R   792  21   8  GLONASS                1415000.     U      0.2500  2007  38  0  0  2008  14  0  0
+ R   792  21  99  GLONASS                1415000.     U      0.2500  2008  14  0  0  2008 269  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   793  23  11  GLONASS                1415000.     U      0.2500  2002 359  0  0  2006  59  0  0   Launched 2002-12-25; COSMOS 2396
+ R   793  20  11  GLONASS                1415000.     U      0.2500  2006  59  0  0  2007 116  0  0
+ R   793  20  99  GLONASS                1415000.     U      0.2500  2007 116  0  0  2007 299  0  0
+ R   794   2   4  GLONASS                1415000.     U      0.2500  2003 344  0  0  2005  48  0  0   Launched 2003-12-10; COSMOS 2402
+ R   794   2   1  GLONASS                1415000.     U      0.2500  2005  48  0  0  2008  11  0  0
+ R   794   2  99  GLONASS                1415000.     U      0.2500  2008  11  0  0  2008 360  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   795   4   6  GLONASS                1415000.     U      0.2500  2003 344  0  0  2009 231  0  0   Launched 2003-12-10; COSMOS 2403
+ R   795   4  99  GLONASS                1415000.     U      0.2500  2009 231  0  0  2009 348  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   796   1   2  GLONASS                1415000.     U      0.2500  2004 361  0  0  2006  85  0  0   Launched 2004-12-26; COSMOS 2413
+ R   796   1   7  GLONASS                1415000.     U      0.2500  2006  85  0  0  2008 297  0  0
+ R   796   1  99  GLONASS                1415000.     U      0.2500  2008 297  0  0  2009 348  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   797   8   6  GLONASS                1415000.     U      0.2500  2004 361  0  0  2008 297  0  0   Launched 2004-12-26; COSMOS 2412
+ R   797   8  99  GLONASS                1415000.     U      0.2500  2008 297  0  0  2008 360  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   798  19  99  GLONASS                1415000.     U      0.2500  2005 359  0  0  2006  23  0  0   Launched 2005-12-25; COSMOS 2417; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   798  19   3  GLONASS                1415000.     U      0.2500  2006  23  0  0  2007 299  0  0
+ R   798  22   3  GLONASS                1415000.     U      0.2500  2007 299  0  0  2007 313  0  0
+ R   798  22  99  GLONASS                1415000.     U      0.2500  2007 313  0  0  2007 344  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   798  22  10  GLONASS                1415000.     U      0.2500  2007 344  0  0  2008 269  0  0
+ R   801   4  99  GLONASS-K1A             995000.     U      0.2500  2011  57  0  0  2011 132  0  0   Launched 2011-02-26; COSMOS 2471; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   801   4  -5  GLONASS-K1A             995000.     U      0.2500  2011 132  0  0  2011 284  0  0
+?R   801   0  -5  GLONASS-K1A             995000.     U      0.2500  2011 284  0  0  2011 286  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   801   3  -5  GLONASS-K1A             995000.     U      0.2500  2011 286  0  0  2011 335  0  0
+?R   801   0  -5  GLONASS-K1A             995000.     U      0.2500  2011 335  0  0  2012  75  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   801  26  -5  GLONASS-K1A             995000.     U      0.2500  2012  75  0  0  2013   6  0  0
+ R   801   8  -5  GLONASS-K1A             995000.     U      0.2500  2013   6  0  0  2013  53  0  0
+ R   801   8  99  GLONASS-K1A             995000.     U      0.2500  2013  53  0  0  2013  54  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   801  26  -5  GLONASS-K1A             995000.     U      0.2500  2013  54  0  0  2017 264  0  0
+ R   801  14  99  GLONASS-K1A             995000.     U      0.2500  2017 264  0  0  2017 279  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   801  26  -5  GLONASS-K1A             995000.     U      0.2500  2017 279  0  0  2019 217 10  0
+ R   801  26  99  GLONASS-K1A             995000.     U      0.2500  2019 217 10  0  2019 217 12  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   801  26  -6  GLONASS-K1A             995000.     U      0.2500  2019 217 12  0  2100   1  0  0
+ R   802  27  99  GLONASS-K1B             995000.     U      0.2500  2014 334  0  0  2015 167 15 30   Launched 2014-11-30; COSMOS 2501; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   802  27   7  GLONASS-K1B             995000.     U      0.2500  2015 167 15 30  2016  27  0  0
+ R   802  17   7  GLONASS-K1B             995000.     U      0.2500  2016  27  0  0  2016  27  8 30
+ R   802  17  99  GLONASS-K1B             995000.     U      0.2500  2016  27  8 30  2016  46 13 30   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   802  17  99  GLONASS-K1B             995000.     U      0.2500  2016  46 13 30  2016  46 14 30   PRN not defined for this period in igs_satellite_metadata_2185.snx; from igs14_2185.atx
+?R   802  17  99  GLONASS-K1B             995000.     U      0.2500  2016  46 14 30  2016  47  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx; PRN from igs14_2185.atx (clashes with record below)
+ R   802   9  99  GLONASS-K1B             995000.     U      0.2500  2016  46 14 30  2016  47  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx; PRN from igs_satellite_metadata_2185.snx (clashes with record above)
+ R   802   9  -6  GLONASS-K1B             995000.     U      0.2500  2016  47  0  0  2016 328  0  0
+ R   802   9  -2  GLONASS-K1B             995000.     U      0.2500  2016 328  0  0  2100   1  0  0
+?R   805   0   0  GLONASS-K1B             995000.     U      0.2500  2020 299  0  0  2020 317  0  0   Launched 2020-10-25; COSMOS 2547; PRN and frequency channel not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   805  25  -5  GLONASS-K1B             995000.     U      0.2500  2020 317  0  0  2020 336 13 31   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx; defined following IGS Mail # 7993
+ R   805  11  -5  GLONASS-K1B             995000.     U      0.2500  2020 336 13 31  2020 337  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx; defined following IGS Mail # 7993
+ R   805  11  -5  GLONASS-K1B             995000.     U      0.2500  2020 337  0  0  2020 358 16  0
+ R   805  11   0  GLONASS-K1B             995000.     U      0.2500  2020 358 16  0  2100   1  0  0
+?R   851   0   4  GLONASS-M              1415000.     U      0.2500  2016  39  0  0  2016  55  0  0   Launched 2016-02-07; COSMOS 2514; PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   851  17   4  GLONASS-M              1415000.     U      0.2500  2016  55  0  0  2100   1  0  0
+?R   852  14  -7  GLONASS-M              1415000.     U      0.2500  2017 265  0  0  2017 283  0  0   Launched 2017-09-22; COSMOS 2522; PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   852  14  -7  GLONASS-M              1415000.     U      0.2500  2017 283  0  0  2100   1  0  0
+ R   853  11   0  GLONASS-M              1415000.     U      0.2500  2016 176  0  0  2020 325  0  0   Launched 2016-05-29; COSMOS 2516
+?R   853   0   0  GLONASS-M              1415000.     U      0.2500  2020 325  0  0  2020 337  0  0   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   854  18  -3  GLONASS-M              1415000.     U      0.2500  2014 101  0  0  2100   1  0  0   Launched 2014-03-23; COSMOS 2492
+ R   855  21  99  GLONASS-M+             1415000.     U      0.2500  2014 214  0  0  2014 215  0  0   Launched 2014-06-14; COSMOS 2500; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   855  21   4  GLONASS-M+             1415000.     U      0.2500  2014 215  0  0  2100   1  0  0
+ R   856   5  99  GLONASS-M+             1415000.     U      0.2500  2018 234  0  0  2018 235  0  0   Launched 2018-06-16; COSMOS 2527; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   856   5   1  GLONASS-M+             1415000.     U      0.2500  2018 235  0  0  2100   1  0  0
+ R   857  15  99  GLONASS-M              1415000.     U      0.2500  2018 328  0  0  2018 330  0  0   Launched 2018-11-03; COSMOS 2529; frequency channel not defined for this period in igs_satellite_metadata_2185.snx
+ R   857  15   0  GLONASS-M              1415000.     U      0.2500  2018 330  0  0  2100   1  0  0
+?R   858   0  99  GLONASS-M+             1415000.     U      0.2500  2019 147  0  0  2019 170  0  0   Launched 2019-05-27; COSMOS 2534; PRN and frequency channel not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+?R   858   0  99  GLONASS-M+             1415000.     U      0.2500  2019 170  0  0  2019 170 10 30   PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   858  12  -1  GLONASS-M+             1415000.     U      0.2500  2019 170 10 30  2100   1  0  0
+?R   859   0  99  GLONASS-M+             1415000.     U      0.2500  2019 345  0  0  2019 361  0  0   Launched 2019-12-11; COSMOS 2544; PRN and frequency channel not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   859   4   6  GLONASS-M+             1415000.     U      0.2500  2019 361  0  0  2100   1  0  0
+?R   860   0  99  GLONASS-M+             1415000.     U      0.2500  2020  76  0  0  2020 101  5  0   Launched 2020-03-16; COSMOS 2545; PRN and frequency channel not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ R   860  24  99  GLONASS-M+             1415000.     U      0.2500  2020 101  6  0  2020 104  0  0   Frequency channel not defined for this period in igs_satellite_metadata_2185.snx; start date from igs_satellite_metadata_2185.snx, defined as 2020-101T05:00 in igs14_2185.atx
+ R   860  24   2  GLONASS-M+             1415000.     U      0.2500  2020 104  0  0  2100   1  0  0
+ E     1  51   0  GALILEO-0A              582800.     U      0.4000  2005 362  0  0  2012 183  0  0   Launched 2005-12-28; GIOVE-A; max. yaw rate unknown
+ E     2  52   0  GALILEO-0B              497600.     U      0.4000  2008 117  0  0  2012 206  0  0   Launched 2008-04-27; GIOVE-B; max. yaw rate unknown
+ E   101  11   0  GALILEO-1               696815.     U      0.4000  2011 294  0  0  2019  91  0  0   Launched 2011-10-21; GALILEO-PFM; max. yaw rate unknown
+ E   101  11   0  GALILEO-1               696806.     U      0.4000  2019  91  0  0  2100   1  0  0   Max. yaw rate unknown
+ E   102  12   0  GALILEO-1               695328.     U      0.4000  2011 294  0  0  2016 288  0  0   Launched 2011-10-21; GALILEO-FM2; max. yaw rate unknown
+ E   102  12   0  GALILEO-1               695318.     U      0.4000  2016 288  0  0  2100   1  0  0   Max. yaw rate unknown
+ E   103  19   0  GALILEO-1               697632.     U      0.4000  2012 286  0  0  2100   1  0  0   Launched 2012-10-12; GALILEO-FM3; max. yaw rate unknown
+ E   104  20   0  GALILEO-1               695652.     U      0.4000  2012 286  0  0  2100   1  0  0   Launched 2012-10-12; GALILEO-FM4; max. yaw rate unknown
+ E   201  18   0  GALILEO-2               660977.     U      0.4000  2014 234  0  0  2100   1  0  0   Launched 2014-08-22; GALILEO 5 (261); max. yaw rate unknown
+ E   202  14   0  GALILEO-2               662646.     U      0.4000  2014 234  0  0  2015 212  0  0   Launched 2014-08-22; GALILEO 6 (262); max. yaw rate unknown
+ E   202  14   0  GALILEO-2               662141.     U      0.4000  2015 212  0  0  2100   1  0  0   Max. yaw rate unknown
+ E   203  26   0  GALILEO-2               706162.     U      0.4000  2015  86  0  0  2015 253  0  0   Launched 2015-03-27; GALILEO 7 (263); max. yaw rate unknown
+ E   203  26   0  GALILEO-2               705688.     U      0.4000  2015 253  0  0  2100   1  0  0   Max. yaw rate unknown
+ E   204  22   0  GALILEO-2               706619.     U      0.4000  2015  86  0  0  2015 215  0  0   Launched 2015-03-27; GALILEO 8 (264); max. yaw rate unknown
+ E   204  22   0  GALILEO-2               705914.     U      0.4000  2015 215  0  0  2100   1  0  0   Max. yaw rate unknown
+ E   205  24   0  GALILEO-2               708789.     U      0.4000  2015 254  0  0  2100   1  0  0   Launched 2015-09-11; GALILEO 9 (205); max. yaw rate unknown
+ E   206  30   0  GALILEO-2               707740.     U      0.4000  2015 254  0  0  2100   1  0  0   Launched 2015-09-11; GALILEO 10 (206); max. yaw rate unknown
+ E   207   7   0  GALILEO-2               706648.     U      0.4000  2016 322  0  0  2100   1  0  0   Launched 2016-11-17; GALILEO 15 (267); max. yaw rate unknown
+ E   208   8   0  GALILEO-2               709138.     U      0.4000  2015 351  0  0  2100   1  0  0   Launched 2015-12-17; GALILEO 11 (268); max. yaw rate unknown
+ E   209   9   0  GALILEO-2               707882.     U      0.4000  2015 351  0  0  2100   1  0  0   Launched 2015-12-17; GALILEO 12 (269); max. yaw rate unknown
+ E   210   1   0  GALILEO-2               706679.     U      0.4000  2016 145  0  0  2100   1  0  0   Launched 2016-05-24; GALILEO 13 (26A); max. yaw rate unknown
+ E   211   2   0  GALILEO-2               707638.     U      0.4000  2016 145  0  0  2100   1  0  0   Launched 2016-05-24; GALILEO 14 (26B); max. yaw rate unknown
+ E   212   3   0  GALILEO-2               709911.     U      0.4000  2016 322  0  0  2100   1  0  0   Launched 2016-11-17; GALILEO 16 (26C); max. yaw rate unknown
+ E   213   4   0  GALILEO-2               708765.     U      0.4000  2016 322  0  0  2100   1  0  0   Launched 2016-11-17; GALILEO 17 (26D); max. yaw rate unknown
+ E   214   5   0  GALILEO-2               709761.     U      0.4000  2016 322  0  0  2100   1  0  0   Launched 2016-11-17; GALILEO 18 (26E); max. yaw rate unknown
+ E   215  21   0  GALILEO-2               708500.     U      0.4000  2017 346  0  0  2100   1  0  0   Launched 2017-12-12; GALILEO 19 (2C5); max. yaw rate unknown
+ E   216  25   0  GALILEO-2               710475.     U      0.4000  2017 346  0  0  2100   1  0  0   Launched 2017-12-12; GALILEO 20 (2C6); max. yaw rate unknown
+ E   217  27   0  GALILEO-2               710244.     U      0.4000  2017 346  0  0  2100   1  0  0   Launched 2017-12-12; GALILEO 21 (2C7); max. yaw rate unknown
+ E   218  31   0  GALILEO-2               711514.     U      0.4000  2017 346  0  0  2100   1  0  0   Launched 2017-12-12; GALILEO 22 (2C8); max. yaw rate unknown
+ E   219  36   0  GALILEO-2               709703.     U      0.4000  2018 206  0  0  2100   1  0  0   Launched 2018-07-25; GALILEO 23 (2C9); max. yaw rate unknown
+ E   220  13   0  GALILEO-2               710795.     U      0.4000  2018 206  0  0  2100   1  0  0   Launched 2018-07-25; GALILEO 26 (2C2); max. yaw rate unknown
+ E   221  15   0  GALILEO-2               710703.     U      0.4000  2018 206  0  0  2100   1  0  0   Launched 2018-07-25; GALILEO 25 (2C1); max. yaw rate unknown
+ E   222  33   0  GALILEO-2               709866.     U      0.4000  2018 206  0  0  2100   1  0  0   Launched 2018-07-25; GALILEO 24 (2C0); max. yaw rate unknown
+ C     1  30   0  BEIDOU-2M               800000.     U      0.3000  2007 103  0  0  2012 182  0  0   Launched 2007-04-13; BEIDOU 2; max. yaw rate unknown
+?C     2   0   0  BEIDOU-2G              1400000.     U      0.3000  2009 104  0  0  2100   1  0  0   Launched 2009-04-14; COMPASS G2; max. yaw rate unknown; PRN not defined in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ C     3   1   0  BEIDOU-2G              1382000.     U      0.3000  2010  16  0  0  2100   1  0  0   Launched 2010-01-16; BEIDOU 3; max. yaw rate unknown
+ C     4   3   0  BEIDOU-2G              1400000.     U      0.3000  2010 153  0  0  2018 272  0  0   Launched 2010-06-02; BEIDOU 4; max. yaw rate unknown
+ C     5   6   0  BEIDOU-2I              1284000.     U      0.3000  2010 212  0  0  2100   1  0  0   Launched 2010-07-31; BEIDOU 5; max. yaw rate unknown
+ C     6   4   0  BEIDOU-2G              1536000.     U      0.3000  2010 304  0  0  2100   1  0  0   Launched 2010-10-31; BEIDOU 6; max. yaw rate unknown
+ C     7   7   0  BEIDOU-2I              1284000.     U      0.3000  2010 351  0  0  2100   1  0  0   Launched 2010-12-17; BEIDOU 7; max. yaw rate unknown
+ C     8   8   0  BEIDOU-2I              1284000.     U      0.3000  2011  99  0  0  2100   1  0  0   Launched 2011-04-09; BEIDOU 8; max. yaw rate unknown
+ C     9   9   0  BEIDOU-2I              1284000.     U      0.3000  2011 207  0  0  2100   1  0  0   Launched 2011-07-26; BEIDOU 9; max. yaw rate unknown
+ C    10  10   0  BEIDOU-2I              1278000.     U      0.3000  2011 335  0  0  2100   1  0  0   Launched 2011-12-01; BEIDOU 10; max. yaw rate unknown
+ C    11   5   0  BEIDOU-2G              1502000.     U      0.3000  2012  55  0  0  2100   1  0  0   Launched 2012-02-24; BEIDOU 11; max. yaw rate unknown
+ C    12  11   0  BEIDOU-2M              1193000.     U      0.3000  2012 120  0  0  2100   1  0  0   Launched 2012-04-29; BEIDOU 12; max. yaw rate unknown
+ C    13  12   0  BEIDOU-2M              1176000.     U      0.3000  2012 120  0  0  2100   1  0  0   Launched 2012-04-29; BEIDOU 13; max. yaw rate unknown
+ C    14  13   0  BEIDOU-2M              1180000.     U      0.3000  2012 262  0  0  2014 295  0  0   Launched 2012-09-18; BEIDOU 14; max. yaw rate unknown
+ C    15  14   0  BEIDOU-2M              1184000.     U      0.3000  2012 262  0  0  2100   1  0  0   Launched 2012-09-18; BEIDOU 15; max. yaw rate unknown
+ C    16   2   0  BEIDOU-2G              1551000.     U      0.3000  2012 299  0  0  2100   1  0  0   Launched 2012-10-25; BEIDOU 16; max. yaw rate unknown
+ C    17  15   0  BEIDOU-2I              1283000.     U      0.3000  2016  89  0  0  2016 285  5  0   Launched 2016-03-29; BEIDOU IGSO-6; max. yaw rate unknown
+ C    17  13   0  BEIDOU-2I              1283000.     U      0.3000  2016 285  7 30  2100   1  0  0   Max. yaw rate unknown
+ C    18  17   0  BEIDOU-2G              1486000.     U      0.3000  2016 164  0  0  2018 272  2  2   Launched 2016-06-12; BD-2-G7; max. yaw rate unknown
+ C    18   3   0  BEIDOU-2G              1486000.     U      0.3000  2018 272  2  2  2100   1  0  0   Max. yaw rate unknown
+ C    19  16   0  BEIDOU-2I              1272000.     U      0.3000  2018 197  0  0  2100   1  0  0   Launched 2018-07-09; BEIDOU IGSO-7; max. yaw rate unknown
+ C    20  18   0  BEIDOU-2G              1500000.     U      0.3000  2019 143  0  0  2100   1  0  0   Launched 2019-05-17; BEIDOU 2 G8; max. yaw rate unknown
+ C   101  31   0  BEIDOU-3SI-SECM         848000.     U      0.3000  2015  89  0  0  2018 114 10  0   Launched 2015-03-30; BD-17; max. yaw rate unknown
+ C   101  16   0  BEIDOU-3SI-SECM         848000.     U      0.3000  2018 114 10  1  2018 191  8  0   Max. yaw rate unknown
+ C   101  31   0  BEIDOU-3SI-SECM         848000.     U      0.3000  2018 191  8  1  2100   1  0  0   Max. yaw rate unknown
+ C   102  33   0  BEIDOU-3SM-CAST        1014000.     U      0.3000  2015 211  0  0  2018 165  8 47   Launched 2015-07-25; BD-19; max. yaw rate unknown
+ C   102  19   0  BEIDOU-3SM-CAST        1014000.     U      0.3000  2018 165  8 47  2018 315  0  0   Max. yaw rate unknown
+ C   102  57   0  BEIDOU-3SM-CAST        1014000.     U      0.3000  2018 316  0  0  2100   1  0  0   Max. yaw rate unknown
+ C   103  34   0  BEIDOU-3SM-CAST        1014000.     U      0.3000  2015 211  0  0  2018 162  9 33   Launched 2015-07-25; BD-18; max. yaw rate unknown
+ C   103  28   0  BEIDOU-3SM-CAST        1014000.     U      0.3000  2018 162 12  0  2018 354 14  0   Max. yaw rate unknown
+ C   103  58   0  BEIDOU-3SM-CAST        1014000.     U      0.3000  2018 354 15  0  2100   1  0  0   Max. yaw rate unknown
+ C   104  32   0  BEIDOU-3SI-CAST        2800000.     U      0.3000  2015 272  0  0  2018 158 10  4   Launched 2015-09-29; BD-20; max. yaw rate unknown
+ C   104  18   0  BEIDOU-3SI-CAST        2800000.     U      0.3000  2018 158 10  4  2019 114  2  0   Max. yaw rate unknown
+ C   104  56   0  BEIDOU-3SI-CAST        2800000.     U      0.3000  2019 115  0  0  2100   1  0  0   Max. yaw rate unknown
+ C   105  35   0  BEIDOU-3SM-SECM        1014000.     U      0.3000  2016  32  0  0  2018 288  0  0   Launched 2016-02-01; BD-21; max. yaw rate unknown
+ C   201  19   0  BEIDOU-3M-CAST          943000.     U      0.3000  2017 309  0  0  2018 164  0  0   Launched 2017-11-05; BEIDOU-3 M1; max. yaw rate unknown
+ C   201  47   0  BEIDOU-3M-CAST          943000.     U      0.3000  2018 200  0  0  2018 319  0  0   Max. yaw rate unknown
+ C   201  19   0  BEIDOU-3M-CAST          943000.     U      0.3000  2018 319  0  0  2100   1  0  0   Max. yaw rate unknown
+ C   202  20   0  BEIDOU-3M-CAST          942000.     U      0.3000  2017 309  0  0  2100   1  0  0   Launched 2017-11-05; BEIDOU-3 M2; max. yaw rate unknown
+ C   203  27   0  BEIDOU-3M-SECM-A       1018000.     U      0.3000  2018  11  0  0  2100   1  0  0   Launched 2018-01-11; BEIDOU 3M3; max. yaw rate unknown
+ C   204  28   0  BEIDOU-3M-SECM-A       1014400.     U      0.3000  2018  11  0  0  2018 162 12  0   Launched 2018-01-11; BEIDOU 3M4; max. yaw rate unknown
+ C   204  48   0  BEIDOU-3M-SECM-A       1014400.     U      0.3000  2018 200  0  0  2018 354 14  0   Max. yaw rate unknown
+ C   204  28   0  BEIDOU-3M-SECM-A       1014400.     U      0.3000  2018 354 15  0  2100   1  0  0   Max. yaw rate unknown
+ C   205  22   0  BEIDOU-3M-CAST          941000.     U      0.3000  2018  43  0  0  2100   1  0  0   Launched 2018-02-12; BEIDOU 3M5; max. yaw rate unknown
+ C   206  21   0  BEIDOU-3M-CAST          942000.     U      0.3000  2018  43  0  0  2100   1  0  0   Launched 2018-02-12; BEIDOU 3M6; max. yaw rate unknown
+ C   207  29   0  BEIDOU-3M-SECM-A       1010400.     U      0.3000  2018  88  0  0  2100   1  0  0   Launched 2018-03-29; BEIDOU 3M7; max. yaw rate unknown
+ C   208  30   0  BEIDOU-3M-SECM-A       1008600.     U      0.3000  2018  88  0  0  2100   1  0  0   Launched 2018-03-29; BEIDOU 3M8; max. yaw rate unknown
+ C   209  23   0  BEIDOU-3M-CAST          945000.     U      0.3000  2018 210  0  0  2100   1  0  0   Launched 2018-07-29; BEIDOU 3M9; max. yaw rate unknown
+ C   210  24   0  BEIDOU-3M-CAST          946000.     U      0.3000  2018 210  0  0  2100   1  0  0   Launched 2018-07-29; BEIDOU 3M10; max. yaw rate unknown
+ C   211  26   0  BEIDOU-3M-SECM-A       1041800.     U      0.3000  2018 236  0  0  2100   1  0  0   Launched 2018-08-24; BEIDOU 3M11; max. yaw rate unknown
+ C   212  25   0  BEIDOU-3M-SECM-A       1043300.     U      0.3000  2018 236  0  0  2100   1  0  0   Launched 2018-08-24; BEIDOU 3M12; max. yaw rate unknown
+ C   213  32   0  BEIDOU-3M-CAST         1007000.     U      0.3000  2018 262  0  0  2100   1  0  0   Launched 2018-09-19; BEIDOU 3M13; max. yaw rate unknown
+ C   214  33   0  BEIDOU-3M-CAST         1007000.     U      0.3000  2018 262  0  0  2100   1  0  0   Launched 2018-09-19; BEIDOU 3M14; max. yaw rate unknown
+ C   215  35   0  BEIDOU-3M-SECM-A       1045000.     U      0.3000  2018 288  0  0  2100   1  0  0   Launched 2018-10-15; BEIDOU 3M15; max. yaw rate unknown
+ C   216  34   0  BEIDOU-3M-SECM-A       1046600.     U      0.3000  2018 288  0  0  2100   1  0  0   Launched 2018-10-15; BEIDOU 3M16; max. yaw rate unknown
+ C   217  59   0  BEIDOU-3G              2968000.     U      0.3000  2018 305  0  0  2100   1  0  0   Launched 2018-11-01; BEIDOU 3G1; max. yaw rate unknown
+ C   218  36   0  BEIDOU-3M-CAST         1061000.     U      0.3000  2018 322  0  0  2100   1  0  0   Launched 2018-11-18; BEIDOU 3M17; max. yaw rate unknown
+ C   219  37   0  BEIDOU-3M-CAST         1061000.     U      0.3000  2018 322  0  0  2100   1  0  0   Launched 2018-11-18; BEIDOU 3M18; max. yaw rate unknown
+ C   220  38   0  BEIDOU-3I              2952000.     U      0.3000  2019 110  0  0  2100   1  0  0   Launched 2019-04-20; BEIDOU 3 IGSO-1; max. yaw rate unknown
+ C   221  39   0  BEIDOU-3I              2949000.     U      0.3000  2019 175  0  0  2100   1  0  0   Launched 2019-06-24; BEIDOU 3 IGSO-2; max. yaw rate unknown
+ C   222  46   0  BEIDOU-3M-CAST         1059000.     U      0.3000  2019 265  0  0  2100   1  0  0   Launched 2019-09-22; BEIDOU 3M23; max. yaw rate unknown
+ C   223  45   0  BEIDOU-3M-CAST         1058000.     U      0.3000  2019 265  0  0  2100   1  0  0   Launched 2019-09-22; BEIDOU 3M24; max. yaw rate unknown
+ C   224  40   0  BEIDOU-3I              2870000.     U      0.3000  2019 308  0  0  2100   1  0  0   Launched 2019-11-04; BEIDOU 3 IGSO-3; max. yaw rate unknown
+ C   225  44   0  BEIDOU-3M-SECM-B       1078800.     U      0.3000  2019 327  0  0  2100   1  0  0   Launched 2019-11-23; BEIDOU 3M21; max. yaw rate unknown
+ C   226  43   0  BEIDOU-3M-SECM-B       1075400.     U      0.3000  2019 327  0  0  2100   1  0  0   Launched 2019-11-23; BEIDOU 3M22; max. yaw rate unknown
+ C   227  41   0  BEIDOU-3M-CAST         1059000.     U      0.3000  2019 345  0  0  2100   1  0  0   Launched 2019-12-16; BEIDOU 3M19; max. yaw rate unknown
+ C   228  42   0  BEIDOU-3M-CAST         1059000.     U      0.3000  2019 345  0  0  2100   1  0  0   Launched 2019-12-16; BEIDOU 3M20; max. yaw rate unknown
+ C   229  60   0  BEIDOU-3G-CAST         2968000.     U      0.3000  2020  69  0  0  2100   1  0  0   Launched 2020-03-09; BEIDOU 3 G2; max. yaw rate unknown
+ C   230  61   0  BEIDOU-3G-CAST         2968000.     U      0.3000  2020 175  0  0  2100   1  0  0   Launched 2020-06-23; BEIDOU 3 G3; max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2295000.     U      0.0000  2010 254  0  0  2011  47  0  0   Launched 2010-09-11; MICHIBIKI-1; max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2290000.     U      0.0000  2011  47  0  0  2011 131  0  0   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2286000.     U      0.0000  2011 131  0  0  2011 313 23 36   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2281000.     U      0.0000  2011 313 23 36  2012 123 12  3   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2277000.     U      0.0000  2012 123 12  3  2012 312 23 18   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2274000.     U      0.0000  2012 312 23 18  2013 121 11 44   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2271000.     U      0.0000  2013 121 11 44  2013 303 23 26   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2269000.     U      0.0000  2013 303 23 26  2014 120 11 22   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2267000.     U      0.0000  2014 120 11 22  2014 302 23 13   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2265000.     U      0.0000  2014 302 23 13  2015 112 11 32   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2263000.     U      0.0000  2015 112 11 32  2015 294 23 21   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2261000.     U      0.0000  2015 294 23 21  2016 111 11 16   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2258000.     U      0.0000  2016 111 11 16  2016 279 23 55   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2255000.     U      0.0000  2016 279 23 55  2017  99 18 24   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2251000.     U      0.0000  2017  99 18 24  2017 265  0 58   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2250000.     U      0.0000  2017 265  0 58  2017 268 13 18   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2248000.     U      0.0000  2017 268 13 18  2018  75  0  9   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2244000.     U      0.0000  2018  75  0  9  2018 254  7 48   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2241000.     U      0.0000  2018 254  7 48  2019  70  0 31   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2237000.     U      0.0000  2019  70  0 31  2019 250 12 11   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2233000.     U      0.0000  2019 250 12 11  2020  68 23 47   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2228000.     U      0.0000  2020  68 23 47  2020 247 11 41   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2224000.     U      0.0000  2020 247 11 41  2021  59 23 49   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2219000.     U      0.0000  2021  59 23 49  2021 238  8 57   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2202000.     U      0.0000  2021 238  8 57  2021 244  5 43   Max. yaw rate unknown
+ J     1   1   0  QZSS-1                 2197000.     U      0.0000  2021 244  5 43  2100   1  0  0   Max. yaw rate unknown
+ J     2   2   0  QZSS-2I                2324200.     U      0.0000  2017 258  0  0  2017 319 18 36   Launched 2017-06-01; MICHIBIKI-2; max. yaw rate unknown
+ J     2   2   0  QZSS-2I                2320000.     U      0.0000  2017 319 18 36  2018   6 14 54   Max. yaw rate unknown
+ J     2   2   0  QZSS-2I                2318000.     U      0.0000  2018   6 14 54  2018 141  5 36   Max. yaw rate unknown
+ J     2   2   0  QZSS-2I                2313000.     U      0.0000  2018 141  5 36  2018 321 22 58   Max. yaw rate unknown
+ J     2   2   0  QZSS-2I                2302000.     U      0.0000  2018 321 22 58  2019 138 10 47   Max. yaw rate unknown
+ J     2   2   0  QZSS-2I                2294000.     U      0.0000  2019 138 10 47  2019 318 22 37   Max. yaw rate unknown
+ J     2   2   0  QZSS-2I                2288000.     U      0.0000  2019 318 22 37  2020 131 10 49   Max. yaw rate unknown
+ J     2   2   0  QZSS-2I                2282000.     U      0.0000  2020 131 10 49  2020 315 22 32   Max. yaw rate unknown
+ J     2   2   0  QZSS-2I                2275000.     U      0.0000  2020 315 22 32  2021 131 10 37   Max. yaw rate unknown
+ J     2   2   0  QZSS-2I                2268000.     U      0.0000  2021 131 10 37  2100   1  0  9   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2762000.     U      0.0000  2017 283  0  0  2017 314 18 41   Launched 2017-08-19; MICHIBIKI-3; max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2758000.     U      0.0000  2017 314 18 41  2017 339 11  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2757000.     U      0.0000  2017 339 11  0  2017 360  3 43   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2751000.     U      0.0000  2017 360  3 43  2017 361  6 43   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2750000.     U      0.0000  2017 361  6 43  2018  39  0 48   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2745000.     U      0.0000  2018  39  0 48  2018  62 19  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2744000.     U      0.0000  2018  62 19  0  2018  81 21 56   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2740000.     U      0.0000  2018  81 21 56  2018 126 19  7   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2734000.     U      0.0000  2018 126 19  7  2018 157 17  5   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2729000.     U      0.0000  2018 157 17  5  2018 203 13 59   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2723000.     U      0.0000  2018 203 13 59  2018 231 12 46   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2722000.     U      0.0000  2018 231 12 46  2018 249 11  5   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2718000.     U      0.0000  2018 249 11  5  2018 252  7  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2717000.     U      0.0000  2018 252  7  0  2018 295  8  4   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2712000.     U      0.0000  2018 295  8  4  2018 340  5 41   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2706000.     U      0.0000  2018 340  5 41  2018 362 19  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2705000.     U      0.0000  2018 362 19  0  2019  19  2 47   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2699000.     U      0.0000  2019  19  2 47  2019  43  7  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2698000.     U      0.0000  2019  43  7  0  2019  64 11 16   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2694000.     U      0.0000  2019  64 11 16  2019  65 11  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2693000.     U      0.0000  2019  65 11  0  2019 105  8 36   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2689000.     U      0.0000  2019 105  8 36  2019 129  5  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2688000.     U      0.0000  2019 129  5  0  2019 152 18  3   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2683000.     U      0.0000  2019 152 18  3  2019 153 15  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2682000.     U      0.0000  2019 153 15  0  2019 198  3  3   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2676000.     U      0.0000  2019 198  3  3  2019 241 23 37   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2671000.     U      0.0000  2019 241 23 37  2019 265  7  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2670000.     U      0.0000  2019 265  7  0  2019 287 20 37   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2666000.     U      0.0000  2019 287 20 37  2019 344 18  6   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2659000.     U      0.0000  2019 344 18  6  2019 357 14  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2658000.     U      0.0000  2019 357 14  0  2020  14 15  8   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2652000.     U      0.0000  2020  14 15  8  2020  39  9  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2651000.     U      0.0000  2020  39  9  0  2020  63 23 21   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2646000.     U      0.0000  2020  63 23 21  2020  88  7  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2645000.     U      0.0000  2020  88  7  0  2020 111 20 13   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2640000.     U      0.0000  2020 111 20 13  2020 160 17 33   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2633000.     U      0.0000  2020 160 17 33  2020 161 18 00   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2632000.     U      0.0000  2020 161 18 00  2020 207 14 26   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2626000.     U      0.0000  2020 207 14 26  2020 208  6  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2625000.     U      0.0000  2020 208  6  0  2020 253 10 52   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2620000.     U      0.0000  2020 253 10 52  2020 297  8  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2615000.     U      0.0000  2020 297  8  0  2020 319  6  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2614000.     U      0.0000  2020 319  6  0  2020 341  5 40   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2608000.     U      0.0000  2020 341  5 40  2020 364  5  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2607000.     U      0.0000  2020 364  5  0  2021  20  2 41   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2601000.     U      0.0000  2021  20  2 41  2021  63 11 17   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2596000.     U      0.0000  2021  63 11 17  2021  64  6  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2595000.     U      0.0000  2021  64  6  0  2021 110  8 13   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2590000.     U      0.0000  2021 110  8 13  2021 134  6  0   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2589000.     U      0.0000  2021 134  6  0  2021 157  5 40   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2583000.     U      0.0000  2021 157  5 40  2021 202  2 41   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2576000.     U      0.0000  2021 202  2 41  2021 245 23 15   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2570000.     U      0.0000  2021 245 23 15  2021 288 20 26   Max. yaw rate unknown
+ J     3   7   0  QZSS-2G                2565000.     U      0.0000  2021 288 20 26  2100   1  0  0   Max. yaw rate unknown
+ J     4   3   0  QZSS-2I                2360000.     U      0.0000  2017 282  0  0  2018  12  0  0   Launched 2017-10-09; MICHIBIKI-4; max. yaw rate unknown
+ J     4   3   0  QZSS-2I                2355000.     U      0.0000  2018  12  0  0  2018  50 16 17   Max. yaw rate unknown
+ J     4   3   0  QZSS-2I                2353000.     U      0.0000  2018  50 16 17  2018 202  5 11   Max. yaw rate unknown
+ J     4   3   0  QZSS-2I                2347000.     U      0.0000  2018 202  5 11  2019  16 23  7   Max. yaw rate unknown
+ J     4   3   0  QZSS-2I                2335000.     U      0.0000  2019  16 23  7  2019 195 10 59   Max. yaw rate unknown
+ J     4   3   0  QZSS-2I                2325000.     U      0.0000  2019 195 10 59  2020  10 23  9   Max. yaw rate unknown
+ J     4   3   0  QZSS-2I                2316000.     U      0.0000  2020  10 23  9  2020 194 11  2   Max. yaw rate unknown
+ J     4   3   0  QZSS-2I                2306000.     U      0.0000  2020 194 11  2  2021   9 22 49   Max. yaw rate unknown
+ J     4   3   0  QZSS-2I                2297000.     U      0.0000  2021   9 22 49  2021 191 10 47   Max. yaw rate unknown
+ J     4   3   0  QZSS-2I                2287000.     U      0.0000  2021 191 10 47  2100   1  0  0   Max. yaw rate unknown
+?J     5   0   0  QZSS-2A                2248900.     U      0.0000  2021 299  0  0  2021 321  0  0   Launched 2021-10-26; QZS-1R; max. yaw rate unknown; PRN not defined for this period in igs_satellite_metadata_2185.snx or igs14_2185.atx
+ J     5   4   0  QZSS-2A                2248900.     U      0.0000  2021 321  0  0  2100   1  0  0   Launched 2021-10-26; QZS-1R; max. yaw rate unknown
+ I     1   1   0  IRNSS-1I                700000.     U      0.0000  2013 182  0  0  2100   1  0  0   Launched 2013-07-01; IRNSS-1A; max. yaw rate unknown
+ I     2   2   0  IRNSS-1I                700000.     U      0.0000  2014  94  0  0  2100   1  0  0   Launched 2014-04-04; IRNSS-1B; max. yaw rate unknown
+ I     3   3   0  IRNSS-1G                700000.     U      0.0000  2014 288  0  0  2100   1  0  0   Launched 2014-10-15; IRNSS-1C; max. yaw rate unknown
+ I     4   4   0  IRNSS-1I                700000.     U      0.0000  2015  87  0  0  2100   1  0  0   Launched 2015-03-08; IRNSS-1D; max. yaw rate unknown
+ I     5   5   0  IRNSS-1I                700000.     U      0.0000  2016  20  0  0  2100   1  0  0   Launched 2016-01-20; IRNSS-1E; max. yaw rate unknown
+ I     6   6   0  IRNSS-1G                700000.     U      0.0000  2016  70  0  0  2100   1  0  0   Launched 2016-03-10; IRNSS-1F; max. yaw rate unknown
+ I     7   7   0  IRNSS-1G                700000.     U      0.0000  2016 119  0  0  2100   1  0  0   Launched 2016-04-28; IRNSS-1G; max. yaw rate unknown
+ I     9   9   0  IRNSS-1I                700000.     U      0.0000  2018 101  0  0  2100   1  0  0   Launched 2018-04-11; IRNSS-1I; max. yaw rate unknown

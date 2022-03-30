@@ -1,0 +1,49 @@
+#!/bin/csh -f
+#
+# sh_load <load>  sleeps until the load on a machine is less than value passed 
+#  (default is 5).  If no arguments 5 is assumed.
+#
+# if
+# setenv AWAY N/Y
+# Added to ~/.cshrc file , script will set NoDay = N if AWAY is Y (Yes)
+#
+set max_ld = 8
+set NoDay = 'Y'
+set max_iter = 0   #  No limit
+if( $#argv >= 1 ) then
+   set max_ld = $1
+endif
+if( $#argv >= 2 ) then
+   set max_iter = $2
+   set NoDay = 'N'
+endif
+
+set AWAY = `grep "setenv AWAY" ~/.cshrc | awk '{print $NF}'`
+if( $AWAY == 'Y' ) then
+   set NoDay = 'N'
+endif
+
+set ld = `echo "WAIT" $max_ld`
+set iter = 0
+
+while ( $ld[1] == "WAIT" )
+#   MOD TAH 160310: If NoDay set, sleep from 8:30 to 17:00
+    if( $NoDay == 'Y' ) then
+#        %u is day of week: Sun == 0 ; Mon == 1 ; Sat == 6
+         set dtm = `date +"%H %M %u" | awk '{if( ($1+$2/60 > 8.5 && $1+$2/60 < 17.0) && ( $3 > 0 && $3 < 6) ) {printf("%d",(17-($1+$2/60.))*60)} else {print "0"}}'`
+         if ( $dtm > 0 ) then
+             echo "Day time hours: Sleep $dtm minutes"
+             sleep ${dtm}m
+         endif
+    endif
+    if( $max_iter > 0 ) then
+       @ iter++ 
+    endif
+    set ld = `uptime | awk -v max_ld=$max_ld '{gsub(","," ")} {if ( $(NF-2) > max_ld) {print "WAIT",$(NF-2)} else {print "OK",$(NF-2)}}'` ; 
+    if( $ld[1] == "WAIT" && $iter <= $max_iter ) then
+        sleep 1m
+    else 
+        echo "Load OK $ld[2] $iter Max Load $max_ld"
+        set ld = `echo "OK" $max_ld`
+    endif 
+end

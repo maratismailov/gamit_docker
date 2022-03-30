@@ -1,0 +1,22 @@
+WDLN: Computes statistics of GPS wide-lanes
+ 
+program wdln
+ 
+Program to compute the rms scatter and mean of the widelanes 
+as a function of the zenith and azimuth angles
+
+The runstring of the program is
+
+% wdln [navfile] [data file] <zenith angle bin size> 
+	<azimuth angle bin size> <list of satellite prn #'s>
+
+
+	where nav_file is nave file name (required)
+    	data_file is the name of the Rinex data file (required)
+	zenith bin size in degrees (optional)
+	azimuth bin size in degrees (optional)
+  	satellite prn numbers integers of desired satellite data (optional)
+
+	NOTE: Default values are: zenith bin size = 5 degrees
+				  azimuth bin size = 10 degrees
+			  	  satellite prn #s = all

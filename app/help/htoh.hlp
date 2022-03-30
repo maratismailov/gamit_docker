@@ -1,0 +1,32 @@
+HTOH: Changes station names in hfiles
+
+HTOH: Change station names in hfiles
+ 
+This program will read an h-file and change the names of
+the sites listed in the key file to the new name given
+there.  The history entries will be appended below the
+GAMIT Datum line in the file.
+
+The runstring for the program is
+% htoh <key file> <list of hfiles ....>
+
+where <key file> is the list of stations names to change
+                with optional comment lines in the file.
+                (The comment lines denoted by a non-blank
+                character in column 1 are ignored.)
+                The format of the key file is:
+                 OLDN  NEWN
+                with OLDN the old name of the site and
+                NEWN the new name.  The Names must 4
+                characters long and spacing is not
+                critical except column 1 must be blank.
+and  <list of hfiles ....> is a list of hfiles to change.
+                The new h-files are written out with the
+                same name as the old ones.  The original 
+                hfiles are removed as each new version is
+                successfully written.  While the new hfiles 
+                are being generated the original hfile is
+                named <name>.org.  Any pre-existing .org
+                file will be overwritten.  UNIX wild cards may
+                used in the list of hfiles.
+

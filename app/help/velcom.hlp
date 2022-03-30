@@ -1,0 +1,24 @@
+VELCOM: Velocity field averaging and comparison
+
+ PROGRAM VELCOM
+ --------------
+
+ Program to compare and difference from a reference velocity
+ field a number of velocity fields extracted from GLOBK output
+ of from a getrel run.  For a station to be output, it must appear
+ in the reference velocity field file.
+
+ The runstring of the program is:
+
+ % velcom <ext> <average> <ref> [Input fields .... ]
+
+ where <ext> is the next extent to the added to the file names
+             to get the name of the file for the differences.
+       <average> is the name of average field and the rms of the 
+             input fields
+       <ref> if the name of the reference field to be removed from
+             all fields
+       [Input fields .... ] is the list of input fields.
+
+
+

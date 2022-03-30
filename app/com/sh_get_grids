@@ -1,0 +1,109 @@
+#!/bin/csh -f
+#
+#doc Get grid files from MIT everest GRIDS archive
+#doc 
+#
+# Script to get grid files from MIT everest GRIDS archive
+#
+# Written by: S McClusky 18 May 2020
+#
+# The current availavle grids available are:
+### Yearly troposphere mapping function and atm loading grids
+# vmf1grd
+# atmfilt_cm
+# atmfilt_cf
+# atmfilt_ce
+# atmdisp_cm
+# atmdisp_cf
+# atmdisp_ce
+### The following ocean loading grids don't require -year option
+#
+# otl_FES2004.grid
+# otl_CSR4.grid
+# otl_FES99.grid
+# otl_GOT00.grid
+# otl_NAO99b.grid
+#
+######################## INSTRUCTIONS #############################
+# See if arguments passed
+if( $#argv == 0 ) then
+  echo "===================================================================================="
+  echo " Get grid files from MIT everest GRIDS directory  "
+  echo "  "
+  echo " Usage: sh_get_grids -y <yrs> -grids <grids> "
+  echo " "
+  echo " yrs   :  yearly files to download [list]
+  echo " grids :  grid files to download [list]. See options below
+  echo " "
+  echo " Example: sh_get_grids -y 2017 2018 -grids vmf1grd atmfilt_cm "
+  echo "  "
+  echo "The current available grids available for download are: "
+  echo " "
+  echo "Yearly troposphere mapping function and atm loading grids "
+  echo "--------------------------------------------------------- "
+  echo "vmf1grd     : ~230 Mb / year"
+  echo "atmfilt_cm  : ~184 Mb / year"
+  echo "atmfilt_cf  : ~184 Mb / year"
+  echo "atmfilt_ce  : ~184 Mb / year"
+  echo "atmdisp_cm  : ~184 Mb / year"
+  echo "atmdisp_cf  : ~184 Mb / year"
+  echo "atmdisp_ce  : ~184 Mb / year"
+  echo "  "
+  echo "Ocean loading grids :- these don't require -year option "
+  echo "------------------------------------------------- "
+  echo "otl_FES2004.grid : ~700 Mb [This is the default otl_ file used in GAMIT"
+  echo "otl_CSR4.grid    :  ~45 Mb "
+  echo "otl_FES99.grid   : ~182 Mb "
+  echo "otl_GOT00.grid   :  ~45 Mb "
+  echo "otl_NAO99b.grid  :  ~87 Mb " 
+  echo "===================================================================================="
+  exit
+endif 
+
+##################### SET UP DEFAULTS #############################   
+set years = ''
+set grids = ''
+set user = 'anonymous'
+set password = 'email@email.edu' 
+set ftpsite = 'everest.mit.edu'
+set archive = '/pub/GRIDS/'
+set wgetoptions = ''
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+    case -g*:
+       set grids = (`echo $argv | cut -d- -f2`); shift grids
+    breaksw
+    case -y*:
+       set years = (`echo $argv | cut -d- -f2`); shift years
+    breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+   
+echo DEBUG $ftpsite    
+echo DEBUG $archive
+
+# Loop over grids requested
+foreach grid ($grids)
+
+# If otl_ grid file not the current grid to download, loop over year
+  if ( `echo ${grid} | awk '{print substr($0,1,4)}'` != 'otl_' ) then
+    foreach year ($years)
+      echo "Downloading: ${grid}.${year}" 
+      wget --user=${user} --password=${password} ftp://${ftpsite}${archive}${grid}.${year}
+    end
+
+# Else get the current otl_ grid file 
+  else
+    wget --user=${user} --password=${password} ftp://${ftpsite}${archive}${grid}
+      echo "Downloading: ${grid}" 
+  endif
+
+end
+
+# All done exit
+exit

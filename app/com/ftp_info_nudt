@@ -1,0 +1,281 @@
+# YYYY = 4 Char year, YY = 2 Char year,  DDD = doy, GPSW = GPS Week, SSSS = 4 Char Site ID    
+# Last modified by rwk 090728
+
+# KASI ftp site
+ kasi address              nfs.kasi.re.kr
+ kasi login                anonymous
+ kasi password             
+ kasi waddress             nfs.kasi.re.kr
+ kasi wlogin               anonymous
+ kasi wpassword            
+ kasi ftp command         ftp -inv
+ kasi rinex directory     /gps/data/daily/YYYY/DDD/YYd
+ kasi navfile directory   /gps/data/daily/YYYY/brdc
+ kasi navalt directory    /gps/data/daily/YYYY/DDD/YYn
+ kasi sp3 directory       /gps/products/GPSW
+ kasi metfile directory   /gps/data/daily/YYYY/DDD/YYm
+
+# MIT ftp site
+ mit address             everest.mit.edu
+ mit login               anonymous
+ mit password
+ mit waddress            everest.mit.edu
+ mit wlogin              anonymous
+ mit wpassword
+ mit ftp command         ftp -inv
+ mit gfile directory     /pub/gfiles/GPSW
+ mit sp3 directory       /pub/MIT_SP3
+ mit hfilesm directory   /pub/MIT_GLL/HYY
+ mit hfiless directory   /pub/SIO_GLL/HYY
+
+# SOPAC ftp site
+# sopac address            lox.ucsd.edu
+ sopac address             garner.ucsd.edu
+ sopac login               anonymous
+ sopac password
+ sopac waddress            garner.ucsd.edu
+ sopac wlogin              anonymous
+ sopac wpassword
+ sopac ftp command         ftp -inv
+ sopac rinex directory     /pub/rinex/YYYY/DDD 
+ sopac navfile directory   /pub/rinex/YYYY/DDD
+ sopac navalt directory    /pub/nav/YYYY/DDD
+ sopac gfile directory     /pub/combinations/GPSW
+ sopac gfiler directory    /pub/products/GPSW
+ sopac sp3 directory       /pub/products/GPSW
+ sopac hfiles directory    /pub/hfiles_old/YYYY/DDD
+ sopac hfiles2 directory   /pub/hfiles/YYYY/DDD
+ sopac metfile directory   /pub/met/YYYY/DDD     
+ sopac tropo directory     /pub/troposphere/YYYY/DDD
+ sopac gamit directory     /pub/gamit/setup
+
+# CDDIS ftp site
+ cddis address              cddis.gsfc.nasa.gov
+ cddis login                anonymous
+ cddis password             
+ cddis waddress             cddis.gsfc.nasa.gov
+ cddis wlogin               anonymous
+ cddis wpassword            
+ cddis ftp command         ftp -inv
+ cddis rinex directory     /pub/gps/data/daily/YYYY/DDD/YYd
+ cddis navfile directory   /pub/gps/data/daily/YYYY/brdc
+ cddis navalt directory    /pub/gps/data/daily/YYYY/DDD/YYn
+ cddis sp3 directory       /pub/gps/products/GPSW  
+ cddis metfile directory   /pub/gps/data/daily/YYYY/DDD/YYm
+# cddis tropo directory     /pub/gps/products/GPSW/trop      
+ cddis tropo directory     /pub/gps/products/trop_new/YYYY/DDD  
+ cddis ion directory       /pub/gps/products/ionex/YYYY/DDD
+# CDDISO ftp site:
+ cddiso address             cddis.gsfc.nasa.gov
+ cddiso login               anonymous
+ cddiso password
+ cddiso ftp command         ftp -inv
+ cddiso rinex directory     /pub/gps/data/daily/YYYY/DDD/YYo
+ cddiso navfile directory   /pub/gps/data/daily/YYYY/brdc
+ cddiso navalt directory    /pub/gps/gpsdata/YYYY/DDD/YYn
+ cddiso sp3 directory       /pub/gps/products/GPSW  
+ cddiso metfile directory   /pub/gps/gpsdata/YYYY/DDD/YYm
+ cddiso tropo directory     /pub/gps/products/GPSW/trop
+
+# UNAVCO ftp site
+ unavco address             data-out.unavco.org      
+ unavco login               anonymous
+ unavco password
+ unavco waddress             data-out.unavco.org
+ unavco wlogin               anonymous
+ unavco wpassword
+ unavco ftp command        ftp -inv
+ unavco rinex directory    /pub/rinex/obs/YYYY/DDD   
+ unavco metfile directory  /pub/rinex/met/YYYY/DDD 
+# UNAVCO PBO ftp site
+ unavpbo address            data-out.unavco.org      
+ unavpbo login              anonymous
+ unavpbo password
+ unavpbo ftp command        ftp -inv
+#   unavpbo rinex directory    /pub/PBO_rinex/YYYY/DDD    *** does not exist
+# UNAVCO1 ftp site
+ unavcol1 address          data-out.unavco.org     
+ unavcol1 login            anonymous
+ unavcol1 password
+ unavcol1 ftp command      ftp -inv
+#   unavcol1 rinex directory  /pub/l1rinex/YYYY/DDD       *** does not exist
+
+# CORS ftp site
+ cors address              www.ngs.noaa.gov
+ cors login                anonymous
+ cors password
+ cors ftp command          ftp -inv
+ cors rinex directory      /cors/rinex/YYYY/DDD/SSSS
+
+# IGS CB ftp site
+ igscb address             igscb.jpl.nasa.gov
+ igscb login               anonymous
+ igscb password
+ igscb ftp command         ftp -inv
+ igscb sp3 directory       /igscb/product/GPSW
+
+# USNO ftp site
+ usno address              maia.usno.navy.mil
+ usno login                anonymous
+ usno password
+ usno ftp command          ftp -inv
+ usno eop directory        ser7    
+
+# WCDA ftp site at NRCan
+ wcda address             wcda.pgc.nrcan.gc.ca
+ wcda login               anonymous
+ wcda password
+ wcda ftp command         ftp -inv
+ wcda rinex directory     /pub/gpsdata/rinex/YYYY/DDD 
+
+# BKG EUREF ftp site
+ bkge address               igs.bkg.bund.de
+ bkge login                 anonymous
+ bkge password
+ bkge ftp command           ftp -inv
+ bkge rinex directory       EUREF/obs/YYYY/DDD   
+ bkge metfile directory EUREF/obs/YYYY/DDD
+# BKG IGS ftp site
+ bkgi address               igs.bkg.bund.de
+ bkgi login                 anonymous
+ bkgi password
+ bkgi ftp command           ftp -inv
+ bkgi rinex directory       IGS/obs/YYYY/DDD 
+ bkgi metfile directory IGS/obs/YYYY/DDD
+
+# IGN EUREF data center  --- no longer anonymous, password required                     
+# rwk changed 100601 using infor from Nicolas Houlie
+# igne address              lareg.ensg.ign.fr      
+ igne address               rgpdata.ign.fr
+ igne login                 anonymous
+ igne password          
+ igne ftp command           ftp -inv 
+#igne rinex directory       /pub/rgp/YYYY/DDD  
+ igne rinex directory       /pub/data/YYYY/DDD/data_30  
+# IGN IGS data center                       
+ igni address               igs.ensg.ign.fr
+ igni login                 anonymous
+ igni password          
+ igni ftp command           ftp -inv 
+ igni rinex directory       /pub/igs/data/YYYY/DDD   
+ igni ion directory         /pub/igs/iono/YYYY/DDD
+
+# GEODAF ftp site (180 days)
+ geodaf address            geo.mt.asi.it
+ geodaf login              anonymous
+ geodaf password
+ geodaf ftp command        ftp -inv
+ geodaf rinex directory    GEOD/GPSD/RAW/YYYY/DDD
+
+# KREIZ
+ kreiz address             kreiz.unice.fr
+ kreiz login               anonymous
+ kreiz password          
+ kreiz ftp command         ftp -inv    
+# kreiz rinex directory     /pub/Regal   --this doesn't exist, RINEX files exist
+#        in RGP and data, but it's not clear what and for how long ---rwk
+
+# AIUB ion/dcb directory
+ aiub address              ftp.unibe.ch   
+ aiub login                anonymous
+ aiub password
+ aiub ftp command          ftp -inv 
+ aiub dcb directory        /aiub/BSWUSER50/ORB   
+
+# Geoscience Australia ftp site
+ geoaus address            ftp.ga.gov.au
+ geoaus login              anonymous
+ geoaus password
+ geoaus ftp command        ftp -inv
+ geoaus rinex directory    /geodesy-outgoing/gpsdata/YYDDD 
+# Geoscience Australia south west pacific ftp site
+ gaswpc address            ftp.ga.gov.au
+ gaswpc login              anonymous
+ gaswpc password
+ gaswpc ftp command        ftp -inv
+ gaswpc rinex directory    /geodesy-outgoing/sgac/spslcmp/gpsdata/YYDDD 
+# Geoscience Australia highrate ftp site
+ gahirt address            ftp.ga.gov.au
+ gahirt login              anonymous
+ gahirt password
+ gahirt ftp command        ftp -inv
+ gahirt rinex directory    /geodesy-outgoing/highrate/YYDDD 
+
+# TIGA data center                       
+ tiga address               ftp.sonel.org
+ tiga login                 anonymous
+ tiga password          
+ tiga ftp command           ftp -inv 
+ tiga rinex directory       /pub/gps/data/YYYY/DDD    
+
+# TU Vienna VMF1 data   
+ vienna wprotocol          http
+ vienna waddress            mars.hg.tuwien.ac.at
+ vienna wlogin              anonymous
+ vienna wpassword
+ vienna vmf1 directory      /~ecmwf1/GRID/YYYY
+# Password protected ncftp example
+ example address           example.ftp.site
+ example login             a_user
+ example password          my_password
+ example ftp command       ncftp -u login -p password                       
+ example rinex directory   /pub/Regal/rinex
+ example sp3   directory   /pub/Regal/sp3
+ example gfile directory   /pub/Regal/gfile
+ example hfile directory   /pub/Regal/hfile
+ example eop directory     /pub/Regal/eop
+ example navfile directory /pub/Regal/navfile
+
+# ICC geofons igs data center                       
+ icc address               ftp.icc.es
+ icc login                 anonymous
+ icc password          
+ icc ftp command           ftp -inv
+ icc rinex directory       /geofons/pub/data/gps_stations/rinex24h   
+# NOA web site     
+ noa wprotocol            http
+ noa waddress             www.gein.noa.gr
+ noa wlogin               anonymous
+ noa wpassword
+ noa rinex directory      /services/GPS/GPS_DATA/YYYY/DDD     
+
+# IPGP web site     
+ ipgp wprotocol          https
+ ipgp waddress           geodesie.ipgp.jussieu.fr
+ ipgp wlogin             anonymous
+ ipgp wpassword          
+# ipgp rinex directory    /gpscope/corinth/data_by_site/SSSS/YYYY 
+ ipgp rinex directory    /gpscope/chili/data_by_date/YYYY/DDD
+
+# GeoNet New Zealand
+ geonz address           ftp.geonet.org.nz
+ geonz login             anonymous
+ geonz password          
+ geonz ftp command       ftp -inv
+ geonz rinex directory   /gps/rinex/YYYY/DDD
+
+# OLG Data Center Austria (Archive)
+ olg address           olggps.oeaw.ac.at
+ olg login             anonymous
+ olg password          
+ olg ftp command       ftp -inv
+ olg rinex directory   /pub/YYYY/DDD
+
+# OLG Data Center Austria (Recent)
+ olgr address           olggps.oeaw.ac.at
+ olgr login             anonymous
+ olgr password          
+ olgr ftp command       ftp -inv
+ olgr rinex directory   /pub/outdata/SSSS
+
+# GPSCOPE 
+ gpscope address        gpscope.dt.insu.cnrs.fr  rwk@chandler.mit.edu
+ gpscope login          anonymous@gpscope.fr
+ gpscope password       rwk@chandler.mit.edu
+ gpscope waddress       gpscope.dt.insu.cnrs.fr
+ gpscope wlogin         anonymous
+ gpscope wpassword      
+ gpscope rinex          /chantiers/albanie/data_by_date/YYYY/DDD
+ 
+
+

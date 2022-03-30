@@ -1,0 +1,35 @@
+KCLK: VLBI program to remove clock jumps
+
+KCLK: Program to remove clock jumps from KalObs file.
+
+Runstring:
+
+[%] KLCK [KalObs file] <input file>
+
+where [KalObs File] is the name of the Kalobs file to be updated,
+      <input file> is the optional name of the input file containing
+                   the clock jump values.  If no name is given then
+                   standard input will be used.
+
+The Input file is of the form:
+
+ site_name yy mm dd hr min  [Value/CLEAR]
+
+where site_name is the name of the site
+      yy mm dd hr min is the time of the jump (applied to all times
+                 greater than or equal to this value
+      [Value/CLEAR] is either the value of the jump in NANOSECONDS or
+                 the string CLEAR (Only the first letter is required).
+                 If CLEAR is given then all jumps after this epoch will
+                 be set to zero.
+
+NOTES:
+  The values given are added cumulatively to any existing or 
+        newly specified values.
+  CLEAR is invoked at its position in the input list.  Therefore, 
+        all previous values (including those in the input preceeding the
+        CLEAR will be lost.)
+  Any non-blank value in column one of the input will be treated as a 
+        comment.
+
+

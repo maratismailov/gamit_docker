@@ -1,0 +1,28 @@
+# Generic Makefile for arc - see documentation at libraries/comlib/Makefile.generic 
+# Last changed by R. King/S. McClusky  8 July 2009
+# Obsolete routines removed by R. King 30 December 2015
+#
+FFLAGS = -O3 -Vaxlib -zero -u -72 -w95 -w90 -cm -assume byterecl -Xt #intel  
+#
+#LABELS: cview:cview:cview_lib:cview
+#LABELS: scandd:scandd:scan_lib:scandd
+#LABELS: showrms:showrms:NONE:showrms
+
+#SHARELIB: ../lib:gamit_lib 
+#SHARELIB: ../../libraries/comlib:com_lib
+
+#X11LIB: cview scandd
+
+#OBJ_cview_lib addadj allan bound atm_grad_part check_wl combo cversn clkdif editor ed_bias
+#OBJ_cview_lib drv_scn dr_srch dr_ptch
+#OBJ_cview_lib ed_data ed_elim ed_find ed_line ed_list ed_mlbs ed_mnu0 ed_mnu1 ed_mnu2 
+#OBJ_cview_lib ed_mnu3 ed_move ed_ptch ed_save ed_slip ed_subs1 ed_subs2 evlmem
+#OBJ_cview_lib finish getser getfil gj gmsg_dumb memcof multip nicer nextob patch
+#OBJ_cview_lib pointers polyft readc readm readx rinex set_freqs smooth vcopy writec
+#OBJ_cview_lib write_vcview get_color_ro   
+#OBJ_cview_lib_host csubs_HHHH gsubs_x_HHHH
+#OBJ_scan_lib addadj atm_grad_part bound check_wl combo clkdif finish getfil
+#OBJ_scan_lib drv_scn dr_srch dr_ptch 
+#OBJ_scan_lib getser gmsg_dumb multip patch nextob pointers readc readm readx
+#OBJ_scan_lib rinex scanner vcopy writec write_vcview cversn get_color_ro 
+#OBJ_scan_lib_host csubs_HHHH gsubs_x_HHHH

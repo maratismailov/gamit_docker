@@ -1,0 +1,15 @@
+#!/bin/csh   
+#doc Script to extract co-seismic displacements from a GLOBK/GLORG print file
+#   --now obsolete: see eq option of sh_exglk
+#doc
+echo " "
+echo "  Extract coseismic displacements from a GLOBK/GLORG print file" 
+echo "  "
+echo "  Now obsolete: see -eq option of sh_exglk "
+exit
+
+
+
+
+
+

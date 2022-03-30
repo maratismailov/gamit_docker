@@ -1,0 +1,42 @@
+#!/bin/csh -f
+#
+# Shell script to convert CATREF time series files to mb_ file
+# formats
+if ( $#argv == 0 ) then
+   echo "sh_CAT_to_mb: Converts CATREF residual files to mb_ format"
+   echo "Usage: sh_CAT_to_mb <List of CATREF .DN files>"
+   echo " "
+   exit
+endif
+#
+# Loop over the files
+foreach f (`echo $argv`)
+#   Pull off the extent so that we have the root of the file name
+    set root = $f:t
+    set base = $f:r
+#   Get the site name
+    set site = `echo $root | awk '{print substr($0,1,4)}'`
+#   Generate North series
+    set of = "mb_${site}_GPS.dat1"
+    echo "Creating "$of
+    echo "CATREF FILE $base" >! $of
+    echo "${site}_GPS to N Solution  1 +         0.000 m" >> $of
+    echo " " >> $of
+    awk '{print " ",$1,$2/1000,$3/1000}' ${base}.DN >> $of
+#   Generate East series
+    set of = "mb_${site}_GPS.dat2"
+    echo "CATREF FILE $base" >! $of
+    echo "${site}_GPS to E Solution  1 +         0.000 m" >> $of
+    echo " " >> $of
+    awk '{print " ",$1,$2/1000,$3/1000}' ${base}.DE >> $of
+#   Generate Up series
+    set of = "mb_${site}_GPS.dat3"
+    echo "CATREF FILE $base" >! $of
+    echo "${site}_GPS to U Solution  1 +         0.000 m" >> $of
+    echo " " >> $of
+    awk '{print " ",$1,$2/1000,$3/1000}' ${base}.DH >> $of
+end
+
+
+
+    

@@ -1,0 +1,156 @@
+#!/bin/csh -f
+#
+#doc Outputs statistics for radiation parameter estimates 
+#doc
+#
+# sh_rad_stat
+#
+# Purpose      Outputs statistics for radiation parameter estimates and
+#              makes suggestions for process noise to be used
+#
+# Required     List of daily .org files with orbits
+#
+# Output       rad.mean.$root, rad.wrms.$root, rad.nrms.$root and rad.mar.$root orbital statistics
+#
+# by Tom Herring 02/01/2003
+# Modified by S McClusky 07/05/2008
+#
+if ( $#argv == 0 ) then
+   echo 'Name: sh_rad_stats'
+   echo ' '
+   echo 'Purpose: Outputs statistics for radiation parameter estimates and'
+   echo '         makes suggestions for process noise to be used'
+   echo ' '
+   echo 'Required: List of daily .org files with orbits'  
+   echo ' ' 
+   echo 'Output: rad.mean.$root, rad.wrms.$root, rad.nrms.$root and rad.mar.$root orbital statistics'
+   echo ' '
+   echo 'Usage: sh_rad_stats -f <files> -r <root>'
+   echo ' '
+   echo 'Where: <files>  List of glorg output .org files with orbital estimates'
+   echo '       <root>   Root identifier for output file names'
+   echo ' '
+   exit
+endif
+
+# Set defaults
+set root = "rad"
+set list = ''
+
+# Get the arguments
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+     case -f*:
+       set list = (`echo $argv | cut -d- -f2`); shift list
+    breaksw 
+    case -r*:
+       set root = $argv[2]
+       breaksw
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:       
+
+echo "Processing files $list"
+
+set ts = `date +"%H%M%S.%N"`
+#
+# First extract the nodes of the orbits and rank PRN's by orbital plane
+set PRNS = `grep -h 'RA Node' $list | sort -u -k 2,2 | awk '{print $2,int($8/60)}' | sort -n -k 2 | awk '{print $1}'`
+set planes = `grep -h 'RA Node' $list | sort -u -k 2,2 | awk '{print $2,int($8/60)}' | sort -n -k 2 | awk '{print $2}'`
+
+# OK: loop over PRNS and extract Rad parameters
+set i = 0
+echo "Mean Radiation Parameters from $list" >! rad.mean.${root}
+echo "PRN    P  #   Direct    Y axis    B axis     Cos D     Sin D     Cos Y     Sin Y     Cos B    Sin B" >> rad.mean.${root}
+echo "Mean Radiation Parameters from $list" >! rad.wrms.${root}
+echo "PRN    P  #   Direct    Y axis    B axis     Cos D     Sin D     Cos Y     Sin Y     Cos B    Sin B" >> rad.wrms.${root}
+echo "Mean Radiation Parameters from $list" >! rad.nrms.${root}
+echo "PRN    P  #   Direct    Y axis    B axis     Cos D     Sin D     Cos Y     Sin Y     Cos B    Sin B" >> rad.nrms.${root}
+echo "* Radiation Process Noise from $list" >! rad.mar.${root}
+
+foreach pn (`echo $PRNS`)
+   @ i = $i + 1
+   echo "Processing $pn Planes $planes[$i]"
+   echo -n "$pn $planes[$i]" >> rad.mean.${root}
+   echo -n "$pn $planes[$i]" >> rad.wrms.${root}
+   echo -n "$pn $planes[$i]" >> rad.nrms.${root}
+   echo -n " mar_rad $pn "   >> rad.mar.${root}
+#
+#  Now for each radiation parameter extract the estimated values
+   grep -h $pn $list | grep '   Direct Rad    (none)' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100}' >! t.r.${root}
+   poly01r yes 0 no no 0 < t.r.${root} | awk '{print $2/100, $15/100,$13,$11}' >! t.f.${root}
+   awk '{printf(" %2d %8.5f ",$4,$1)}' t.f.${root} >> rad.mean.${root}
+   awk '{printf(" %2d %8.5f ",$4,$2)}' t.f.${root} >> rad.wrms.${root}
+   awk '{printf(" %2d %8.5f ",$4,$3)}' t.f.${root} >> rad.nrms.${root}
+   awk '{if( $3 > 1 ) {printf(" %8.4f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f.${root} >> rad.mar.${root}
+
+   grep -h $pn $list | grep 'Y Axis Bias   (none) ' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100}' >! t.r.${root}
+   poly01r yes 0 no no 0 < t.r.${root} | awk '{print $2/100, $15/100,$13,$11}'>! t.f.${root}
+   awk '{printf(" %8.5f ",$1)}' t.f.${root} >> rad.mean.${root}
+   awk '{printf(" %8.5f ",$2)}' t.f.${root} >> rad.wrms.${root}
+   awk '{printf(" %8.5f ",$3)}' t.f.${root} >> rad.nrms.${root}
+   awk '{if( $3 > 1 ) {printf(" %8.4f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f.${root} >> rad.mar.${root}
+   echo -n "    0.0 " >> rad.mar.${root}
+
+   grep -h $pn $list | grep 'B Axis Bias   (none) ' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100}' >! t.r.${root}
+   poly01r yes 0 no no 0 < t.r.${root} | awk '{print $2/100, $15/100,$13,$11}'>! t.f.${root}
+   awk '{printf(" %8.5f ",$1)}' t.f.${root} >> rad.mean.${root}
+   awk '{printf(" %8.5f ",$2)}' t.f.${root} >> rad.wrms.${root}
+   awk '{printf(" %8.5f ",$3)}' t.f.${root} >> rad.nrms.${root}
+   awk '{if( $3 > 1 ) {printf(" %8.4f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f.${root} >> rad.mar.${root}
+   echo -n "    0.0 " >> rad.mar.${root}
+
+   grep -h $pn $list | grep 'Cos Direct    (none)' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100+1.e-6}' >! t.r.${root}
+   poly01r yes 0 no no 0 < t.r.${root} | awk '{print $2/100, $15/100,$13,$11}'>! t.f.${root}
+   awk '{printf(" %8.5f ",$1)}' t.f.${root} >> rad.mean.${root}
+   awk '{printf(" %8.5f ",$2)}' t.f.${root} >> rad.wrms.${root}
+   awk '{printf(" %8.5f ",$3)}' t.f.${root} >> rad.nrms.${root}
+   awk '{if( $3 > 1 ) {printf(" %8.4f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f.${root} >> rad.mar.${root}
+
+# MOD TAH 070925: Added 1e-6 to sigma for cases when parameter is fixed
+   grep -h $pn $list | grep 'Sin Direct    (none)' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100+1.e-6}' >! t.r.${root}
+   poly01r yes 0 no no 0 < t.r.${root} | awk '{print $2/100, $15/100,$13,$11}'>! t.f.${root}
+   awk '{printf(" %8.5f ",$1)}' t.f.${root} >> rad.mean.${root}
+   awk '{printf(" %8.5f ",$2)}' t.f.${root} >> rad.wrms.${root}
+   awk '{printf(" %8.5f ",$3)}' t.f.${root} >> rad.nrms.${root}
+   awk '{if( $3 > 1 ) {printf(" %8.4f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f.${root} >> rad.mar.${root}
+
+   grep -h $pn $list | grep 'Cos Y Bias    (none)' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100+1.e-6}' >! t.r.${root}
+   poly01r yes 0 no no 0 < t.r.${root} | awk '{print $2/100, $15/100,$13,$11}'>! t.f.${root}
+   awk '{printf(" %8.5f ",$1)}' t.f.${root} >> rad.mean.${root}
+   awk '{printf(" %8.5f ",$2)}' t.f.${root} >> rad.wrms.${root}
+   awk '{printf(" %8.5f ",$3)}' t.f.${root} >> rad.nrms.${root}
+   awk '{if( $3 > 1 ) {printf(" %8.4f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f.${root} >> rad.mar.${root}
+
+   grep -h $pn $list | grep 'Sin Y Bias    (none)' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100+1.e-6}' >! t.r.${root}
+   poly01r yes 0 no no 0 < t.r.${root} | awk '{print $2/100, $15/100,$13,$11}'>! t.f.${root}
+   awk '{printf(" %8.5f ",$1)}' t.f.${root} >> rad.mean.${root}
+   awk '{printf(" %8.5f ",$2)}' t.f.${root} >> rad.wrms.${root}
+   awk '{printf(" %8.5f ",$3)}' t.f.${root} >> rad.nrms.${root}
+   awk '{if( $3 > 1 ) {printf(" %8.4f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f.${root} >> rad.mar.${root}
+
+   grep -h $pn $list | grep 'Cos B Bias    (none)' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100}' >! t.r.${root}
+   poly01r yes 0 no no 0 < t.r.${root} | awk '{print $2/100, $15/100,$13,$11}'>! t.f.${root}
+   awk '{printf(" %8.5f ",$1)}' t.f.${root} >> rad.mean.${root}
+   awk '{printf(" %8.5f ",$2)}' t.f.${root} >> rad.wrms.${root}
+   awk '{printf(" %8.5f ",$3)}' t.f.${root} >> rad.nrms.${root}
+   awk '{if( $3 > 1 ) {printf(" %8.4f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f.${root} >> rad.mar.${root}
+
+   grep -h $pn $list | grep 'Sin B Bias    (none)' | awk '{print " 1 " substr($0,47,10)*100,substr($0,75)*100}' >! t.r.${root}
+   poly01r yes 0 no no 0 < t.r.${root} | awk '{print $2/100, $15/100,$13,$11}'>! t.f.${root}
+   awk '{printf(" %8.5f ",$1)}' t.f.${root} >> rad.mean.${root}
+   awk '{printf(" %8.5f ",$2)}' t.f.${root} >> rad.wrms.${root}
+   awk '{printf(" %8.5f ",$3)}' t.f.${root} >> rad.nrms.${root}
+   awk '{if( $3 > 1 ) {printf(" %8.4f ",$2^2*365)} else {printf(" %8.1f ",0.0)}}' t.f.${root} >> rad.mar.${root}
+
+   echo " " >> rad.mean.${root}
+   echo " " >> rad.wrms.${root}
+   echo " " >> rad.nrms.${root}
+   echo " " >> rad.mar.${root}
+
+end
+ 
+
+

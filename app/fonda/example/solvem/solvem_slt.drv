@@ -1,0 +1,53 @@
+=========================================================================
+*          << key word controlled driving file format >>                *
+* symbol ":" must exist in command lines as index pointor               *
+* any non-blank character at first column means comment line            *
+* empty after ":" means comment line too, but line apears in out file   *
+=========================================================================
+---------- part 1 -- general i/o informations
+  apriori value file:                    south_net.update9
+  input data file:                       maked.out.salto
+  earthquake correction file:            quake.list.salto
+  sequential data file:
+  output file:                           solvem_slt.out
+  mapping file:                          solvem_slt.map
+  residual file:                         solvem_slt.res
+  strain_file:                           solvem_slt.str
+  strain_list:                           strain_salto.list
+  gamma file:
+  event record file:                     solvem_slt.evt         
+* global h-file:                         hsocal.dat
+  modified network file:                 statab_updat.1
+  reference frame:                       WGS84
+  parameter mode, site name format:      geocentric  char_4_8
+  reference coordinate, rtime:           geodetic 1983.0 
+  solution combination mode:             Gauss_Markov model
+  minimum observation condition:         0      1
+  criteria for angle,length,coor and velo(s,m,m,m/y):   0.1  20.00  0.1  0.03
+  loose constraints on e,n,u,Ve,Vn,Vu(m,m/y): 100.0 100.0 100.0  1.0 1.0 0.01
+  control key:       2
+  end: 
+---------- part 2 -- apriori informations
+  apr_frame:  enu
+  apr_value for coor. and velo.:  all  20.0 20.0 2.0    0.200 0.200 0.001
+  apr_value for coor. and velo.:  mecca_  20.0 20.0 20.0 0.001  0.001  0.001
+  apr_value for coor. and velo.:  dixie  0.05 0.05 0.01    0.200 0.200 0.001
+  apr_value for coor. and velo.:  alamo  0.05 0.05 0.01    0.200 0.200 0.001
+  apr_value for coor. and velo.:  frink___  0.05 0.05 0.01    0.200 0.200 0.001
+---------- part 3 -- constraint options
+.... Currently the fix-constraints are in Cartesian frame.  If you want to fix
+.... the parameters in geodetic frame, please use part 2 approach.
+  constraint commands:
+* fix_parameters:  xyz  all 
+  assign_sdirection:  uvw  salva__  135.0 0.0001
+  assign_outer:  uvw  outer_salto.list  50.0
+  link_site: xyzuvw total  carri_me carrizo
+  link_site: xyzuvw total  jacum_me jacumba
+  link_site:  uvw  total off_225_ centine
+  link_site: uvw total  off_225m off_225_
+  link_site: uvw total  off_2_me off_229_
+  link_site:  uvw total bluff bluffres bluffrm
+  link_site:  xyzuvw total dixie_me dixie__
+  link_episodic:  xyz 1987.899  dixie_me dixie__
+* link_direction: uv mecca salva
+  exit:  

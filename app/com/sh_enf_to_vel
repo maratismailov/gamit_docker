@@ -1,0 +1,235 @@
+#!/bin/csh -f
+#
+#doc Plot velocities and coefficients from an enfit summary or outfile.
+#doc
+#
+# Script to plot velocities and coefficients from an enfit
+# summary or outfile.
+#
+if( $#argv == 0 ) then
+    echo " "
+    echo " sh_enf_to_vel : Converts output from enfit to velocity file format"
+    echo " "
+    echo " Options: "
+    echo "    -sumfile <Name> specifies name of input summary file from enfit"
+    echo "    -outfile <Name> specifies name of input outfile file from enfit"
+    echo " (Either -sumfile or -outfile options must given)"
+    echo "    -velfile <Name> specifies name of existing velocity file which is used to "
+    echo "                    get latitude and longitude of sites"
+    echo "    -glistfile <Name> specifies name of existing glist output file which is"
+    echo "                    used to get latitude and longitude of sites"
+    echo "    -aprfile <Name> apriori file with GEOD lines (from tsfit) "
+    echo "Either the -velfile or -glistfile must be given"
+    echo " "
+    echo "    -ext <ext>      specifies the extension to add to the outfile name"
+    echo "                    For example -ext exp would generate a file named oulands.exp if"
+    echo "                    the input file was oulands.enf.  The new files are created in the"
+    echo "                    current directory."
+    echo "    -opt <option>   specifies the type of output:" 
+    echo "                    For sumfile input the options are:"
+    echo "                       vel  -- Velocity plot"
+    echo "                       exp  -- Exponential amplitude plot"
+    echo "                    For outfile input the option is:"
+    echo "                       [ddd] -- where ddd is the number of days after the exponential start"
+    echo "                                for the output.  This number of days must have been given in"
+    echo "                                enfit command file and should appear in the outfile"
+    echo "    -col <column number> when more than two sets of parameters are estimated in enfit"
+    echo "                    the column to be extract can specified.  For example: vel is column 7,"
+    echo "                    exp is column 9.  Additional parameter estimates would be in columns" 
+    echo "                    11,13 etc."
+    echo "                    When velocities are extracted from an ensum file use -col 9"
+    echo " "
+    echo "NOTE: Velocity file must have 2-blanks preceeding Longitude. Standard format for .vel files"
+    echo "      extracted from globk output, but care should be used if velfile generated from P$ lines"
+    echo "      from glist"
+    echo " "
+    exit
+endif
+    
+# MOD TAH 150109: Increased long/lat significant digits to be consistent with other vel files.
+
+# Decode the command line arguments passed by the user
+set col = " "
+set ext = "vel"
+set velf = "NO"
+set gllf = "NO"
+set aprf = "NO"
+
+while ($#argv > 0 ) 
+    set input = ( $argv ) 
+    switch($input[1])
+       case -s:
+       case -sum:
+       case -sumfile:
+           set sumf =  $input[2]
+           set outf = " "
+           shift argv
+           breaksw
+           
+       case  -out*:
+           set outf = $input[2]
+           set sumf = " "
+           shift argv
+           breaksw
+           
+       case  -v*:
+           set velf = $input[2]
+           shift argv
+           breaksw
+
+       case  -g*:
+           set gllf = $input[2]
+           shift argv
+           breaksw
+
+       case  -a*:
+           set aprf = $input[2]
+           shift argv
+           breaksw
+           
+       case  -e:
+       case   -ext:
+           set ext = $input[2]
+           shift argv
+           breaksw
+           
+       case  -opt:
+           set opt = $input[2]
+           shift argv
+           breaksw
+           
+       case  -col:
+           set col = $input[2]
+           set opt = "usr"
+           shift argv
+           breaksw           
+                     
+    endsw
+    shift argv
+end
+#
+# Create the output file name
+echo Checking for $sumf
+if( $sumf != "" ) then
+    if ( ! -e $sumf ) then
+        echo "Summary file "$sumf" does not exist"
+        exit
+    endif
+    set r1 = $sumf:r
+    set root = $r1:t
+    if( $opt == "vel" ) set col = 7
+    if( $opt == "exp" ) set col = 9
+    if( $col == " " ) then
+        echo "Option vel or exp must be given"
+        exit
+    endif
+else
+    set r1 = $outf:r
+    set root = $r1:t
+    if ( ! -e $outf ) then
+        echo "Outfile file "$outf" does not exist"
+        exit
+    endif
+    if( $opt == " " ) then
+        echo "Option number of days must be given"
+        exit
+    endif
+endif
+
+if( ! -e $velf & ! -e $gllf & ! -e $aprf ) then
+    echo "Velocity/glistfile or apriori "$velf $gllf $aprf" does not exist"
+    exit
+endif
+
+#
+set namef = ${root}.${ext}
+echo 'Creating '$namef
+echo "* Velocity compatible file generated from "${sumf}${outf} >! $namef
+echo "* Options: "$opt $col >> $namef
+ 
+
+# Now start processing: Get the list of station names
+# first
+set sites = `grep ' N  1 ' $sumf $outf | awk '{print substr($1,1,8)}' | sort -u`
+
+# Now process each site
+foreach name (`echo $sites`)
+#
+#    get the latiude and longitude
+     if( $velf != 'NO' ) then
+        set pos = `grep $name $velf | grep '^ [ 123]' | awk '{printf "  %9.5f %9.5f ",$1,$2}'`
+     else if( $aprf != 'NO' ) then
+        set pos = `grep "^GEOD  $name" $aprf |  awk '{printf " %9.5f %9.5f ",$4,$3}'`
+     else
+        set pos = `grep $name $gllf | grep 'P$' | grep '^  [ 123]' | awk '{printf "  %9.5f %9.5f ",$1,$2}'`
+     endif
+
+     set lpos = `echo $pos | wc -w `
+     if( $lpos == 0 ) then
+#
+#       See if we can find with a shorter version of the name. MOD TAH 030602.
+        set sname = `echo $name | awk '{print substr($0,1,4)}'`
+        if( $velf != 'NO' ) then
+           set pos = `grep $sname $velf | grep '^ [ 123]' | head -n 1 | awk '{printf "  %9.5f %9.5f ",$1,$2}'`
+        else if( $aprf != 'NO' ) then
+           set pos = `grep "^GEOD  $sname" $aprf |  awk '{printf " %9.5f %9.5f ",$4,$3}'`
+        else
+           set pos = `grep $sname $gllf | grep 'P$' | grep '^  [ 123]' | head -n 1 | awk '{printf "  %9.5f %9.5f ",$1,$2}'`
+        endif
+
+        set lpos = `echo $pos | wc -w`
+        if( $lpos == 0 ) then
+           if( $velf != 'NO' ) then
+              echo 'Check format of '$velf' for site name presence: Position not extracted'
+           else
+              echo 'Check format of '$gllf' for site name presence: Position not extracted'
+           endif
+           echo 'Line is for site: '$name
+	   set pos = " 0.00 0.00 "
+        endif
+     endif
+
+#    Now get what we need:
+# MOD TAH 140414: Only output if > 0 number of data
+     set nd = `grep ' E  1 ' $sumf  | grep $name | awk '{print $4}'`
+     if( $sumf != "" ) then
+         grep ' E  1 ' $sumf  | grep $name >! t.2
+         set evel = `awk -v col=$col '{printf " %8.2f ",$col}' t.2`
+         set esig = `awk -v col=$col '{printf " %8.2f ",$(col+1)}' t.2`
+         grep ' N  1 ' $sumf  | grep $name >! t.2
+         set nvel = `awk -v col=$col '{printf " %8.2f ",$col}' t.2`
+         set nsig = `awk -v col=$col '{printf " %8.2f ",$(col+1)}' t.2`
+         grep ' U  1 ' $sumf  | grep $name >! t.2
+         set uvel = `awk -v col=$col '{printf " %8.2f ",$col}' t.2`
+         set usig = `awk -v col=$col '{printf " %8.2f ",$(col+1)}' t.2`
+#
+     else
+
+#        We are extracting from the out file from enfit
+         grep ' E  1 ' $outf | grep $name | awk -v day=$opt '{if ($9==day) {print $0}}' >! t.2
+         set evel = `awk '{printf " %8.2f ",$10}' t.2`
+         set esig = `awk '{printf " %8.2f ",$11}' t.2`
+         grep ' N  1 ' $outf | grep $name | awk -v day=$opt '{if ($9==day) {print $0}}' >! t.2
+         set nvel = `awk '{printf " %8.2f ",$10}' t.2`
+         set nsig = `awk '{printf " %8.2f ",$11}' t.2`
+          grep ' U  1 ' $outf | grep $name | awk -v day=$opt '{if ($9==day) {print $0}}' >! t.2
+         set uvel = `awk '{printf " %8.2f ",$10}' t.2`
+         set usig = `awk '{printf " %8.2f ",$11}' t.2`
+         
+     endif
+#
+#    Now form up the complete line we need
+#    echo $pos $evel $nvel $esig $nsig $uvel $usig $name | awk '{printf("  %9.5f %9.5f %8.2f %8.2f %8.2f %8.2f %8.2f %8.2f 0.00 %8.2f %8.2f %8.2f %s\n",$1,$2,$3,$4,$3,$4,$5,$6,$7,$7,$8,$9)}'         
+# MOD TAH 140414: Only output if > 0 number of data nd > 1
+     if( $nd > 1 ) then
+        echo $pos $evel $nvel $esig $nsig $uvel $usig $name | awk '{printf("  %9.5f  %9.5f  %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f  0.000   %7.2f %7.2f %7.2f %s\n",$1,$2,$3,$4,$3,$4,$5,$6,$7,$7,$8,$9)}'  >> $namef 
+     endif
+end 
+\rm t.2
+
+# Done
+              
+       
+          
+         
+     

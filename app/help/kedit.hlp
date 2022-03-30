@@ -1,0 +1,14 @@
+KEDIT: VLBI program to edit KalObs file data
+
+ KEDIT: Program to edit VLBI data interactivly
+
+ Runstring:
+ kedit <KalObs> <input file> 
+
+ where <KalObs> is the name of the kalobs file
+       <input file> is the name of the list of inputs with format
+           Site 1 Site 2  [1/0] Epoch (yy,mm,dd,hr,min)  
+           where [1/0] is 1 to remove data, 0 to restore
+           The site names can ALL to include all sites at this time
+           The combination  ALL ALL with edit all possible baselines
+

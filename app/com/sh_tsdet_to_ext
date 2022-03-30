@@ -1,0 +1,89 @@
+#!/bin/csh -f
+#
+echo "* LOG extended model from `pwd`"
+echo "* Files: $argv"
+echo "* Date : `date`"
+foreach tsdet (`echo $argv`) 
+   set site = `grep Detrend $tsdet | tail -n 1 | awk '{print $3}'`
+#
+#  See which log terms are present 
+   set nl = `grep '^Log' $tsdet | wc -l | awk '{print $1/3}'`
+#  If nl is > 0, extract the values
+   set n = 0
+   while ( $n < $nl )
+      @ n = $n + 1
+      set tln = `grep '^Log' $tsdet | tail -n +$n | head -1 | awk '{print	$2,$3,$4,$5,$6,$8}'`
+#     Get the North component
+      set nln = `grep '^Log' $tsdet | tail -n +$n | head -1 | awk '{print $9,$11}'`
+#     Get east component
+      @ m = $n + $nl
+      set eln = `grep '^Log' $tsdet | tail -n +$m | head -1 | awk '{print $9,$11}'`
+#     Get Up component
+      @ m = $m + $nl
+      set uln = `grep '^Log' $tsdet | tail -n +$m | head -1 | awk '{print $9,$11}'`
+#     See if we should do a PA to CA switch
+      if ( $tln[1] == 2003 && $tln[2] == 12 && $tln[3] == 22 ) then
+         set sitn = `echo $site | awk '{print substr($1,1,6)"CA"}'`
+         echo $sitn $tln $nln $eln $uln | \
+             awk '{if( $8^2 > 0.1 || $10^2 > 0.1 || $12^2 > 0.1) {printf(" EXTENDED %s LOG %4d %2d %2d %2d %2d %5.1f %8.5f %8.5f %8.5f  ! m, +- %5.1f %5.1f %5.1f mm\n", $1,$2,$3,$4,$5,$6,$7,$8/1000,$10/1000,$12/1000,$9,$11,$13)}}'  
+      endif
+
+      echo $site $tln $nln $eln $uln | \
+         awk '{if( $8^2 > 0.1 || $10^2 > 0.1 || $12^2 > 0.1) {printf(" EXTENDED %s LOG %4d %2d %2d %2d %2d %5.1f %8.5f %8.5f %8.5f  ! m, +- %5.1f %5.1f %5.1f mm\n", $1,$2,$3,$4,$5,$6,$7,$8/1000,$10/1000,$12/1000,$9,$11,$13)}}'  
+   end
+end 
+#
+echo "* Annual Terms"
+foreach tsdet (`echo $argv`)
+#  See if there are periodic terms
+   set site = `grep Detrend $tsdet | tail -n 1 | awk '{print $3}'`
+   set na = `grep '^Annual Cos' $tsdet | wc -l`
+   if( $na > 0 ) then
+#      Get the North component
+       set nan = `grep '^Annual' $tsdet | tail -n +1 | head -2 | awk '{print $3,$5}'`
+#      Get the East component
+       set ean = `grep '^Annual' $tsdet | tail -n +3 | head -2 | awk '{print $3,$5}'`
+#      Get the Up  component
+       set uan = `grep '^Annual' $tsdet | tail -n +5 | head -2 | awk '{print $3,$5}'`
+       echo $site $nan $ean $uan | \
+         awk '{if ($2^2 > 1 || $4^2 > 1 || $6^2 > 1 || $8^2 > 1 || $10^2 > 4 || $12^2 > 4 ) {printf(" EXTENDED %s Periodic 2000 1 1 0 0 365.25 %8.5f %8.5f   %8.5f %8.5f   %8.5f %8.5f  ! m, +- %5.1f %5.1f  %5.1f %5.1f  %5.1f %5.1f mm\n",$1,$2/1000,$4/1000,$6/1000,$8/1000,$10/1000,$12/1000,$3,$5,$7,$9,$11,$13)}}'
+    endif
+
+end
+
+echo "* SemiAnnual Terms"
+foreach tsdet (`echo $argv`)
+#  See if there are periodic terms
+   set site = `grep Detrend $tsdet | tail -n 1 | awk '{print $3}'`
+   set na = `grep '^SemiAnnual Cos' $tsdet | wc -l`
+   if( $na > 0 ) then
+#      Get the North component
+       set nan = `grep '^SemiAnnual' $tsdet | tail -n +1 | head -2 | awk '{print $3,$5}'`
+#      Get the East component
+       set ean = `grep '^SemiAnnual' $tsdet | tail -n +3 | head -2 | awk '{print $3,$5}'`
+#      Get the Up  component
+       set uan = `grep '^SemiAnnual' $tsdet | tail -n +5 | head -2 | awk '{print $3,$5}'`
+       echo $site $nan $ean $uan | \
+         awk '{if ($2^2 > 1 || $4^2 > 1 || $6^2 > 1 || $8^2 > 1 || $10^2 > 4 || $12^2 > 4 ) {printf(" EXTENDED %s Periodic 2000 1 1 0 0 182.6  %8.5f %8.5f   %8.5f %8.5f   %8.5f %8.5f  ! m, +- %5.1f %5.1f  %5.1f %5.1f  %5.1f %5.1f mm\n",$1,$2/1000,$4/1000,$6/1000,$8/1000,$10/1000,$12/1000,$3,$5,$7,$9,$11,$13)}}'
+    endif
+
+end
+ 
+# LOG     Logarithm variations: The logarithmic function is applied after date
+#         <YY MM DD HR MN> and the <Parameter> is time normalization value in
+#         days (ie., log(dtime/Paramter) where dtime is time from the start time.
+#         The coefficients are the amplitudes for North, East and Up.  Units meters.
+#         Note: No data should be included that is within the normalization 
+#         parameter of the start time (i.e., log(0) = -infinity).  Example 
+#  EXTENDED JPLM_GPS LOG 1992 6 28 0 0  300.0   0.010 0.005 0.00
+#         Results in 300 day logarithmic with amplitude of 10 mm North, 5 mm East and
+#         zero for the height
+
+# PERIODIC periodic variations: Applied to all dates.  The <YY MM DD HR MN> is
+#         the zero phase time of the periodic signals and the <Parameter> is
+#         the period in days (i.e., cos(2*pi*dtime/Parameter) where dtime is time
+#         from <YY MM DD HR MN>.  The coefficients are paired as the cosine and
+#         sine coefficients for North, East and Up.  Units meters. Example
+#  EXTENDED JPLM_GPS Periodic 2000 1 1 0 0  365.25   0.0 0.0  0.0 0.0  0.001 0.009
+#         Results in Annual signal in height with cosine amplitude of 1 mm and
+#         Sine amplitude of 9 mm.

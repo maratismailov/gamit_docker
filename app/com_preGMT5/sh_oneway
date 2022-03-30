@@ -1,0 +1,807 @@
+#!/bin/csh -f              
+#
+#doc Generate phase residual or phase correction plots from autcln output or spcsnr output
+#doc
+#
+######################## INSTRUCTIONS #############################
+if ( $#argv == 0 ) then
+  echo "============================================================================================="
+  echo "  Generate phase residual or phase correction plots from autcln output or spcsnr output"
+  echo "  "
+  echo "  USAGE :    sh_oneway  -sites [sites] -prefix <pre> -autsum <file> -scale <val> -page <orient>" 
+  echo "                        -num <num> -epochs <epochs> -elev -grdimage -grdview "   
+  echo "  "
+  echo "  OR "
+  echo "  "
+  echo "  USAGE :    sh_oneway  -dphs [file] -type <opt> -minel <min> -scale <value> -page <orient> "
+  echo "                        -grdimage -grdview -elev -grdscale <range> "   
+  echo "  "
+  echo "          [sites]  is the 4 char names of the sites whose residuals are to be plotted. Necessary "
+  echo "                   (NOTE you can use a list of x-files, site names will be extracted from these) "
+  echo "          <pre>    is the filename prefix found before the site name (DPH) default " 
+  echo "          <file>   is the autcln postfit summary file from which to extract the postfit RMS"
+  echo "                   from (autcln.post.sum) default"
+  echo "          <val>    is the scaling of the plot (0.5) default "
+  echo "          <orient> is the orientation of the plot landscape (L), portrait (P) default "
+  echo "          <num>    is the number of divisions for the data allowed values 1, 2, 3, (6) default"
+  echo "          <epochs> is the number of epochs used in the solution, 2880 default."
+  echo "           -grdimage create plots using grdimage rather than pswiggle"
+  echo "           -grdview create 3D plots using grdview rather than pswiggle"
+  echo "           -elev   creates plots of elevation angle vs residual across all satellites. "
+  echo "  "
+  echo "          [file] is the output file from spcsnr. Necessary " 
+  echo "          <opt>  is the type of phase corrections to plot. SNR or DPHS [default DPHS] " 
+  echo "          <min>  is the min elevation angle of phase corrections to plot (10) default " 
+  echo "          <range> is the scale range for grdimage plot. Eg -25/25/2 (-25 to 25 increments of 2) "
+  echo "  "
+  echo "  Requires : Autcln was run in postfit mode with, phase residual output option turned on."      
+  echo "  "
+  echo "  Example :   sh_oneway -sites JPLM -autsum autcln.post.sum -prefix DPH -scale 0.5 -page L "
+  echo "  Example :   sh_oneway -sites JPLM -autsum autcln.post.sum -prefix DPH -scale 0.5 -page L -elev "
+  echo "  Example :   sh_oneway -dphs tubi1470.dphs -type DPHS -minel 10 -scale 0.5 -page L "
+  echo " "
+  echo "============================================================================================="
+  exit
+endif 
+##################### SET UP SCRIPT DEFAULTS #############################   
+set sites = ""
+set prefix = "DPH"
+set autsum  = "autcln.post.sum"
+set scale = 0.5
+set page = "-L"
+set dphs = "" 
+set outfile = "" 
+set outfile1 = "" 
+set type = "DPHS"
+set obs = ''
+set ext = "DPH" 
+set minel = 10
+set elev = "" 
+set num = 6 
+set epochs = 2880
+set estart = 0
+set estop =  0
+set hstart = 0
+set hstop =  0
+set oline = "1/64/64/64"
+set track   = "2/255/0/0"
+set negres  = "246/246/51"
+set posres =  "0/255/0"
+set edtres =  "0/0/255"
+set xmin = 0
+set xmax = 0
+set ymin = 0
+set ymax = 0  
+set grdimage = "N"
+set grdview  = "N"
+set grd_range = ''
+set usr_grdrange = 'N'
+set mfact = 1
+set slabel = "LC Phase Residual (mm)"
+##################### SET UP GMT DEFAULTS #############################   
+# MODIFICATION FOR SI UNITS FOR SHORT COURSE IN FRANCE, PUTAIN
+# MOD TAH: Change Frame color for Netscape display of PNG images
+#echo "BASEMAP_FRAME_RGB = 5/5/5" >! .gmtdefaults 
+#gmtdefaults -D | egrep -v 'BASEMAP_FRAME_RGB'  >> .gmtdefaults
+#echo "TICK_LENGTH             = -0.075" >> .gmtdefaults
+#echo "ANOT_OFFSET             = +0.025" >> .gmtdefaults
+#echo "ANOT_FONT_SIZE          = 09" >> .gmtdefaults
+#echo "LABEL_FONT_SIZE         = 12" >> .gmtdefaults
+#echo "COLOR_BACKGROUND        = 5/5/5" >> .gmtdefaults
+
+
+gmtdefaults -D >! .gmtdefaults
+gmtset MEASURE_UNIT       inch \
+       BASEMAP_FRAME_RGB  5/5/5 \
+       ANOT_OFFSET        0.025 \
+       TICK_LENGTH        -0.075 \
+       PAPER_MEDIA        letter+ \
+       LABEL_FONT_SIZE    12 \
+       ANOT_FONT_SIZE     9
+#       HEADER_OFFSET     0.01 \
+
+
+##################### DECIPHER COMMAND LINE #######################   
+while ($#argv > 0 )
+  set input = ( $argv )
+  switch($input[1])
+		breaksw 
+       case -s:
+       case -site:
+	case -sites:
+                set sites    =   ( $sites $input[2] )
+                shift input; shift input
+                while ( $#input > 0 &&   `echo  $input[1]  | cut -c1` != "-" )
+                        set inarg =  $input[1]
+                        if ( `echo  $inarg | cut -c1` != "-" ) then
+                                set sites   =   ( $sites $inarg )
+				                 if ( $#input == 1 ) goto alldone
+                                shift input
+                        endif
+                end
+       if ( $#input == 0 ) goto alldone
+       breaksw 
+	    case -d:
+	    case -dphs:
+	        set sites = "NONE"
+                set dphs    =   ( $dphs $input[2] )
+                shift input; shift input
+                while ( $#input > 0 &&   `echo  $input[1]  | cut -c1` != "-" )
+                        set inarg =  $input[1]
+                        if ( `echo  $inarg | cut -c1` != "-" ) then
+                                set dphs   =   ( $dphs $inarg )
+				                 if ( $#input == 1 ) goto alldone
+                                shift input
+                        endif
+                end
+       if ( $#input == 0 ) goto alldone
+		breaksw 
+       case -t:
+       case -type:
+                set tmp_type = (`echo $argv | cut -d- -f2`); shift tmp_type 
+                if ( $#type > 1 ) then 
+                  set obs = $tmp_type[2]
+                  set type = $tmp_type[1]
+                else
+                  set type = $tmp_type
+                  if ( $type == SNR ) then
+                    set obs = "L1"
+                  else if ( $type == OBSG ) then 
+                    set obs = "L1"
+                  else if ( $type == DPHS ) then 
+                    set obs = "LC"
+                  endif  
+                endif
+                if ( $type == SNR ) then
+                  set mfact = 1
+                else if ( $type == OBSG ) then 
+                  set mfact = 10
+                else if ( $type == DPHS ) then 
+                  set mfact = 190
+                endif  
+		breaksw 
+       case -m:
+       case -minel:
+                set minel   =   $input[2]  
+		breaksw 
+       case -a:
+       case -autsum:
+                set autsum   =   $input[2]  
+		breaksw 
+       case -p:
+       case -prefix:
+                set ext      =   $input[2]  
+		breaksw 
+       case -sc:
+       case -scale:
+                set scale    =   $input[2]  
+		breaksw 
+       case -pg:
+       case -page:
+                set page     =   $input[2]  
+		breaksw 
+       case -n:
+       case -num:
+                set num      =   $input[2]  
+		breaksw 
+       case -e:
+       case -epochs:
+                set epochs     =   $input[2]  
+		breaksw 
+       case -elev:
+                set elev       =   "Y"  
+		breaksw 
+       case -grdi*:
+                set grdimage   =   "Y"  
+		breaksw 
+       case -grdv*:
+                set grdview    =   "Y"  
+                set grdimage   =   "Y"  
+		breaksw 
+       case -grdr*:
+       case -grds*:
+                set grd_range   =   "-T"$input[2]
+                set usr_grdrange = "Y"  
+		breaksw 
+  endsw
+  if ( $#argv > 0 ) shift argv
+end
+alldone:
+
+
+set wdir = `pwd`
+
+##################### GET THE JOB DONE ######################
+# Loop over all sites input
+foreach site ( `echo $sites` )
+
+# Check to see if site names given as x-files list
+  set site = `echo $site | awk ' {if (substr($1,1,1) == "x") print substr($1,2,4)} {if (substr($1,1,1) != "x") print $1}'`
+  
+# Convert allsite  names to upper case 
+  set site = `echo $site | tr "[a-z]" "[A-Z]"` 
+
+# Set up calibration tick length 
+# MOD TAH 980803: Set up the calibration line fine
+  echo $scale | awk '{print " 0 45 -"$1/5}' >! tmp.cal
+  echo $scale | awk '{print " 0 47 -"$1/5}' >> tmp.cal
+
+#Initialise some variables
+  set estart = 0
+  set estop =  0
+  set hstart = 0
+  set hstop =  0 
+
+#Extract data from autcln DPH files 
+  if ( $site[1] != 'NONE' ) then
+    set base = $site[1] 
+    set data = 'Y'
+    set label = `echo ${base} ${ext} ${scale} ${wdir} | awk '{print $1,$2," LC Residual Scale "$3" Tick "($3/5)*190" mm"}' ` 
+    tail -n +3 ${ext}.${base}.PRN??  |  awk '{if ($12 == 0) {print $10,90-$11,$4*190,$1}}' > ! tmp.all
+# Extract individual satellites
+    set cnt = 32
+    \rm tmp.prn?? tmp.edt?? >& /dev/null
+
+# MOD TAH 030722: see if the phase_ext program is available
+     set pex = `which phase_ext | awk '{gsub(" ","_")} {print $0}'`
+
+     if( -e $pex ) then
+         echo 'Using phase_ext to get residuals' $ext $base
+# MOD TAH 051102: Added generation of tmp.all from phase_ext output which accounts
+#        for new format..
+         \rm tmp.prn?? >&! /dev/null
+         phase_ext ${ext} ${base}
+         cat tmp.prn?? | awk '{print $1,$2,$3*190,$4}' >! tmp.all
+     else
+         echo 'Using grep and awk to get residuals'
+
+         while ( $cnt )
+           if ( $cnt < 10 ) then
+             set prn = '0'$cnt
+           else
+             set prn = $cnt
+           endif
+           if ( -e ${ext}.${base}.PRN${prn} ) then
+             grep '^ ' ${ext}.${base}.PRN${prn}| awk '{ if( $12==0 ) print $0}' | awk -v ot=0 '{if( $1-ot > 10 ) print ">"} { if ( $4^2 < 1 ) {print $10,90-$11,$4, $1}} {ot=$1}' >! tmp.prn${prn}
+             grep '^ ' ${ext}.${base}.PRN${prn}| awk '{ if( $12==1 ) print $0}' | awk -v ot=0 '{if( $1-ot > 10 ) print ">"} {print $10,90-$11," 0.001", $1} {ot=$1}' >! tmp.edt${prn}
+           endif
+           @ cnt = $cnt - 1
+         end
+      endif
+
+# Extract data from svsnr or spcsnr output
+  else if ( $dphs[1] != '' ) then 
+    set base = ` echo $dphs | awk '{print substr($1,1,4)}'`
+    set data = 'N'
+    set label = `echo ${base} ${ext} ${scale} ${wdir} | awk '{print $1,$2," SNR LC Estimate Scale "$3" Tick "($3/5)*190" mm"}' `
+    set ext = $type 
+    set cnt = 32
+    while ( $cnt )
+      if ( $cnt < 10 ) then
+        set prn = '0'$cnt
+      else
+        set prn = $cnt
+      endif
+
+# Get data from svsnr output files
+      if ( $type == "SNR" && $cnt == 32 ) then
+        grep '^ ' $dphs >! t.all 
+        if ( $obs == "L1" || $obs == "" ) then
+          grep '^ ' $dphs |  awk -v me=${minel} '{if ( $11 > me ) {print $10,90-$11,$12,$7/30}}' >! tmp.all
+          set slabel = "L1 Signal to Noise Ratio (SNR)"
+        else if ( $obs == "L2" ) then
+          grep '^ ' $dphs |  awk -v me=${minel} '{if ( $11 > me ) {print $10,90-$11,$13,$7/30}}' >! tmp.all
+          set slabel = "L2 Signal to Noise Ratio (SNR)"
+        endif
+# Get data from spcsnr output files
+      else if ( $cnt == 32 ) then
+        grep $type $dphs | grep '^ ' >! t.all 
+        if ( $obs == "L1" ) then
+          grep $type $dphs | grep '^ ' |  awk -v me=${minel} -v mf=${mfact} '{if ( $11 > me ) {print $10,90-$11,$12*mf,$7/30}}' >! tmp.all
+          if ( $type == "OBSG" ) then
+            set slabel = "L1 GAIN"
+          else
+            set slabel = "L1 Phase Residual (mm)"
+          endif
+        else if ( $obs == "L2" ) then
+          grep $type $dphs | grep '^ ' |  awk -v me=${minel} -v mf=${mfact} '{if ( $11 > me ) {print $10,90-$11,$13*mf,$7/30}}' >! tmp.all
+          if ( $type == "OBSG" ) then
+            set slabel = "L2 GAIN"
+          else
+            set slabel = "L2 Phase Residual (mm)"
+          endif
+        else if ( $obs == "LG" ) then
+          grep $type $dphs | grep '^ ' |  awk -v me=${minel} -v mf=${mfact} '{if ( $11 > me ) {print $10,90-$11,$15*mf,$7/30}}' >! tmp.all
+          if ( $type == "OBSG" ) then
+            set slabel = "LG GAIN"
+          else
+            set slabel = "LG Phase Residual (mm)"
+          endif
+        else if ( $obs == "LC" || $obs == "" ) then
+          grep $type $dphs | grep '^ ' |  awk -v me=${minel} -v mf=${mfact} '{if ( $11 > me ) {print $10,90-$11,$14*mf,$7/30}}' >! tmp.all
+          if ( $type == "OBSG" ) then
+            set slabel = "LC GAIN"
+          else
+            set slabel = "LC Phase Residual (mm)"
+          endif
+        endif
+      endif
+ 
+# Extract individual satellites tracks from data 
+      grep "PRN $prn"  t.all >! t.prn
+      set n = `wc t.prn`
+      if ( $n[1] > 1 ) then
+        if ( $type == "SNR" ) then
+          awk -v ot=0 -v me=${minel} '{if( $7-ot > 300 ) print ">"} { if ( $11 > me ) {print $10,90-$11,$12,$13,$7/30}} {ot=$7}' t.prn >! tmp.prn${prn}
+        else 
+          awk -v ot=0 -v me=${minel} '{if( $7-ot > 300 ) print ">"} { if ( $11 > me ) {print $10,90-$11,$14,$7/30}} {ot=$7}' t.prn >! tmp.prn${prn}
+        endif 
+      endif
+      @ cnt = $cnt - 1
+    end
+  else
+    echo 'No site or dphs file given'
+  endif
+
+# See if we have any results
+  set numf = `ls tmp.prn?? | wc`
+
+# If no plot files created skip plotting section!!!
+  if ( $numf[1] > 0 ) then
+
+# We have data files so proceed
+   if ( $dphs[1] != '' ) then 
+     if ( $type == "DPHS" ) then
+       set date = `grep 'DPHS' $dphs[1] | tail -n +4 | head -n 1 | awk '{print  $1, $2, $3}'` 
+     else 
+       set date = `grep '^ ' $dphs[1] | head -n 1 | awk '{print  $1, $2, $3}'` 
+     endif
+     set doyt = `doy $date | head -n 1 | awk '{print $6}'`
+     if ( $doyt < 10 ) then
+       set doy = '00'$doyt
+     else if ( $doyt < 100 ) then
+       set doy = '0'$doyt
+     else
+       set doy = $doyt
+     endif
+   else
+     set doy = `grep "POSTFIT M-FILE" $autsum | awk -F"." '{print $2}'`    
+   endif 
+
+   set outfile = ${base}.${doy}.${ext}${num}.ps
+   echo Creating $outfile
+
+#   Get the site RMS (Compute from DPHS file if needed)
+   if ( $data == 'N' ) then
+     set rms = `grep '^: ALL ' $dphs[1] | awk '{print $5*190}'`
+     grep '^: ' $dphs[1] | grep -v ALL | tail -n +3 | awk '{printf "%4.2f %4.2f \n", $2, $5*190}' >! elev.bin
+     grep '^: ' $dphs[1] | grep -v ALL | tail -n +3 | awk '{printf "%4.2f %4.2f \n", $2, $5*(-190)}' >! elev_neg.bin
+     set errmod = `echo NA NA`  
+   else
+     set rms = `grep "^RMS  .. ${base}" $autsum | awk '{print $4}'`
+     set errmod = `grep "ATELV" $autsum | grep "${base}" | awk '{print $3, $4}'`
+     echo $errmod | awk '{ for (i=1; i <=90; i++) print i, sqrt($1^2 + $2^2/((sin(i/57.3))^2)) }'        >! err.mod
+     echo $errmod | awk '{ for (i=1; i <=90; i++) print i, sqrt($1^2 + $2^2/((sin(i/57.3))^2))*-1.0 }'   >! err_neg.mod 
+     grep "ATELV" $autsum | grep "${base}" | awk '{ for (i=1; i <= NF; i++) if ( i >= 5 ) if ( $i > 0.0 ) printf" %4.2f %4.2f \n",5*(i-5)+2.5, $i}' >! elev.bin
+     grep "ATELV" $autsum | grep "${base}" | awk '{ for (i=1; i <= NF; i++) if ( i >= 5 ) if ( $i > 0.0 ) printf" %4.2f %4.2f \n",5*(i-5)+2.5, $i*-1.0}' >! elev_neg.bin
+   endif
+
+#   Now we want to plot six sets of values
+#   Split out the first 4 hours of data
+   set int_hrs = ` echo $num | awk '{print 24.0/$1}'`
+   set int_epochs = `echo $epochs $num | awk '{print $1/$2}'`  
+
+   if ( $num == 1 ) then
+# Setup the time range
+     set estart = $estop
+     set estop = `echo $estart | awk -v add=$int_epochs '{print $1+add}'` 
+     set hstart = $hstop  
+     set hstop = `echo $hstart | awk -v add=$int_hrs '{print $1+add}'`
+     echo Creating $outfile " for $hstart - $hstop hrs UT" 
+
+# Get the data in the requested time range
+     foreach file (`ls tmp.prn??`)
+       awk -v start=$estart -v stop=$estop '{if( ($4 >  start && $4 < stop) || $1 == ">" ) print $1, $2,$3 }' $file >! $file.dt 
+     end
+     awk -v start=$estart -v stop=$estop '{if( ($4 >  start && $4 < stop) ) print $1, $2, $3 }' tmp.all >! tmp.xyz
+
+# Plot 
+     if ( $grdimage == "Y" ) then  
+       nearneighbor tmp.xyz -Gtmp.grd -R0/360/0/90 -I0.5/0.5 -S8 -N2 -Lg 
+#       nearneighbor tmp.xyz -Gtmp.grd -Rg -I0.5/0.5 -S8 -N2 -Lg -fg1x,0y
+#       nearneighbor tmp.xyz -Gtmp.grd -R0/360/0/90 -I0.5/0.5 -S8 -N2 -Lx
+       if ( $usr_grdrange == "N" ) set grd_range = `grdinfo tmp.grd | grep z_min | awk '{printf"-T%d/%d/%d \n", $3, $5, ($5-$3)/12}'` 
+       makecpt -Crainbow $grd_range   >! tmp.cpt   
+       if ( $grdview != "Y" ) then
+         grdimage tmp.grd -Ctmp.cpt -R0/360/0/90  -JP7.0i -X2.0i -Y1.0i -K -B30g30/10g10  >! $outfile 
+       else
+         grdgradient tmp.grd -A0/270 -Gtmp.grad -Ne0.6
+         grdview tmp.grd -Ctmp.cpt -R0/360/0/90  -JP7.0i -JZ4i -X2.0i -Y1.0i -K  -E0/35 -Qs -Z0 -Itmp.grad -B30g30/10g10 >! $outfile 
+       endif
+       psscale -D6.5i/0i/4i/0.25ih -Ctmp.cpt -B:"$slabel": -O -K >> $outfile
+     else
+       pswiggle tmp.prn??.dt -W$oline -Ba30 -Z${scale} -G$posres -m -T$track \
+       -R0/360/0/90  -JP7.0i -X2.0i -Y1.0i -K >! $outfile
+       pswiggle tmp.prn??.dt -W$oline       -Z${scale} -G$negres -m -T$track -N -R -JP -O \
+       -K -U"${label}" >> $outfile                                                                
+       pswiggle tmp.cal -W$oline -Z${scale} -G255/0/0 -N -R -JP -O -K >> $outfile
+     endif
+     pstext -R -JP -O -N -G5/5/5 <<! >> $outfile
+     270 95  10 0 1 10 $hstart - $hstop hrs UT
+     270 100  14 0 1 10 ${base} Day ${doy} RMS ${rms} mm
+!
+   else if ( $num == 2 ) then
+     foreach j ( 1 2 )
+       set estart = $estop
+       set estop = `echo $estart | awk -v add=$int_epochs '{print $1+add}'` 
+       set hstart = $hstop  
+       set hstop = `echo $hstart | awk -v add=$int_hrs '{print $1+add}'`
+       echo Creating $outfile " for $hstart - $hstop hrs UT" 
+
+       foreach file (`ls tmp.prn??`)
+         awk -v start=$estart -v stop=$estop '{if( ($4 >  start && $4 < stop) || $1 == ">" ) print $1, $2,$3 }' $file >! $file.dt 
+       end
+       awk -v start=$estart -v stop=$estop '{if( ($4 >  start && $4 < stop) ) print $1, $2, $3 }' tmp.all >! tmp.xyz
+       if ( $j == 1 ) then
+         if ( $grdimage == "Y" ) then
+           nearneighbor tmp.xyz -Gtmp.grd -Rg -I0.5/0.5 -S10 -N3 -Lg -fg1x,0y
+#           nearneighbor tmp.xyz -Gtmp.grd -R0/360/0/90 -I0.5/0.5 -S10 -N3 -Lx
+           if ( $grd_range == '' ) set grd_range = `grdinfo tmp.grd | grep z_min | awk '{printf"-T%d/%d/%d \n", $3, $5, ($5-$3)/15}'` 
+           makecpt -Crainbow $grd_range   > ! tmp.cpt 
+           grdimage tmp.grd -Ctmp.cpt -R0/360/0/90 -JP4.7i -X1.0i -Y2.0i -K -B30g30/10g10 >! $outfile 
+           psscale -D5i/5.5i/4i/0.25ih -Ctmp.cpt -B:"$slabel": -O -K >> $outfile 
+         else
+           pswiggle tmp.prn??.dt -W$oline -Ba30 -Z${scale} -G$posres -m -T$track \
+           -R0/360/0/90 -JP4.7i -X1.0i -Y2.0i -K >! $outfile
+           pswiggle tmp.prn??.dt -W$oline       -Z${scale} -G$negres -m -T$track -N -R -JP -O \
+           -K -U"${label}" >> $outfile
+           pswiggle tmp.cal -W$oline -Z${scale} -G255/0/0 -N -R -JP -O -K >> $outfile
+         endif
+           pstext -R -JP -O -K -N -G5/5/5 <<! >> $outfile
+           270 100  10 0 1 10 $hstart - $hstop hrs UT
+           315 150  14 0 1 10 ${base} Day ${doy} RMS ${rms} mm
+!
+
+       else if ($j == 2) then
+         if ( $grdimage == "Y" ) then
+           nearneighbor tmp.xyz -Gtmp.grd -Rg -I0.5/0.5 -S10 -N3 -Lg -fg1x,0y
+#           nearneighbor tmp.xyz -Gtmp.grd -R0/360/0/90 -I0.5/0.5 -S10 -N3 -Lx
+           grdimage tmp.grd -Ctmp.cpt -R -JP -X5.0i -K -O -B30g30/10g10 >> $outfile 
+         else
+           pswiggle tmp.prn??.dt -W$oline -Ba30 -Z${scale} -G$posres -m -T$track \
+           -R -JP -X5.0i -K -O >> $outfile
+           pswiggle tmp.prn??.dt -W$oline       -Z${scale} -G$negres -m -T$track -N -R -JP -O \
+           -K  >> $outfile
+           pswiggle tmp.cal -W$oline -Z${scale} -G255/0/0 -N -R -JP -O -K >> $outfile
+         endif
+           pstext -R -JP -O -N -G5/5/5 <<! >> $outfile
+           270 100  10 0 1 10 $hstart - $hstop hrs UT
+!
+
+       endif
+     end
+   else if ( $num == 3 ) then
+     foreach j ( 1 2 3 )
+       set estart = $estop
+       set estop = `echo $estart | awk -v add=$int_epochs '{print $1+add}'` 
+       set hstart = $hstop  
+       set hstop = `echo $hstart | awk -v add=$int_hrs '{print $1+add}'`
+       echo Creating $outfile " for $hstart - $hstop hrs UT" 
+
+       foreach file (`ls tmp.prn??`)
+         awk -v start=$estart -v stop=$estop '{if( ($4 >  start && $4 < stop) || $1 == ">" ) print $1, $2,$3 }' $file >! $file.dt 
+       end
+       awk -v start=$estart -v stop=$estop '{if( ($4 >  start && $4 < stop) ) print $1, $2, $3 }' tmp.all >! tmp.xyz
+       if ( $j == 1 ) then
+         if ( $grdimage == "Y" ) then
+           nearneighbor tmp.xyz -Gtmp.grd -Rg -I0.5/0.5 -S8 -N1 -Lg -fg1x,0y
+#           nearneighbor tmp.xyz -Gtmp.grd -R0/360/0/90 -I0.5/0.5 -S8 -N1 -Lx
+           if ( $grd_range == '' ) set grd_range = `grdinfo tmp.grd | grep z_min | awk '{printf"-T%d/%d/%d \n", $3, $5, ($5-$3)/15}'`
+           makecpt -Crainbow $grd_range  > ! tmp.cpt 
+           grdimage tmp.grd -Ctmp.cpt -R0/360/0/90 -JP4.0i -X0.5i -Y4.0i -K -B30g30/10g10 >! $outfile 
+           psscale -D8i/-3i/4i/0.25ih -Ctmp.cpt -B:"$slabel": -O -K >> $outfile 
+         else
+           pswiggle tmp.prn??.dt -W$oline -Ba30 -Z${scale} -G$posres -m -T$track \
+           -R0/360/0/90 -JP4.0i -X0.5i -Y4.0i -K >! $outfile
+           pswiggle tmp.prn??.dt -W$oline       -Z${scale} -G$negres -m -T$track -N -R -JP -O \
+           -K  >> $outfile
+           pswiggle tmp.cal -W$oline -Z${scale} -G255/0/0 -N -R -JP -O -K >> $outfile
+         endif
+           pstext -R -JP -O -K -N -G5/5/5 <<! >> $outfile
+           270 100  10 0 1 10 $hstart - $hstop hrs UT
+!
+
+       else if ($j == 2) then
+         if ( $grdimage == "Y" ) then
+           nearneighbor tmp.xyz -Gtmp.grd -Rg -I0.5/0.5 -S8 -N1 -Lg -fg1x,0y
+#           nearneighbor tmp.xyz -Gtmp.grd -R0/360/0/90 -I0.5/0.5 -S8 -N1 -Lx
+           grdimage tmp.grd -Ctmp.cpt -R -JP -X3.0i -Y-3.0i -K -O -B30g30/10g10 >> $outfile 
+         else
+           pswiggle tmp.prn??.dt -W$oline -Ba30 -Z${scale} -G$posres -m -T$track \
+           -R -JP -X3.0i -Y-3.0i -K -O >> $outfile
+           pswiggle tmp.prn??.dt -W$oline       -Z${scale} -G$negres -m -T$track -N -R -JP -O \
+           -K -U"${label}" >> $outfile
+           pswiggle tmp.cal -W$oline -Z${scale} -G255/0/0 -N -R -JP -O -K >> $outfile
+         endif
+           pstext -R -JP -O -K -N -G5/5/5 <<! >> $outfile
+           270 100  10 0 1 10 $hstart - $hstop hrs UT
+           210 170  14 0 1 10 ${base} Day ${doy} RMS ${rms} mm
+!
+
+       else if ($j == 3) then
+         if ( $grdimage == "Y" ) then
+           nearneighbor tmp.xyz -Gtmp.grd -Rg -I0.5/0.5 -S8 -N1 -Lg -fg1x,0y
+#           nearneighbor tmp.xyz -Gtmp.grd -R0/360/0/90 -I0.5/0.5 -S8 -N1 -Lx
+           grdimage tmp.grd -Ctmp.cpt -R -JP -X3.0i -Y3.0i -K -O -B30g30/10g10 >> $outfile 
+         else
+           pswiggle tmp.prn??.dt -W$oline -Ba30 -Z${scale} -G$posres -m -T$track \
+           -R -JP -X3.0i -Y3.0i -K -O >> $outfile
+           pswiggle tmp.prn??.dt -W$oline       -Z${scale} -G$negres -m -T$track -N -R -JP -O \
+           -K >> $outfile
+           pswiggle tmp.cal -W$oline -Z${scale} -G255/0/0 -N -R -JP -O -K >> $outfile
+         endif
+           pstext -R -JP -O -N -G5/5/5 <<! >> $outfile
+           270 100  10 0 1 10 $hstart - $hstop hrs UT
+!
+
+       endif
+     end
+   else if ( $num == 6 ) then 
+     foreach j ( 1 2 3 4 5 6 )
+       set estart = $estop
+       set estop = `echo $estart | awk -v add=$int_epochs '{print $1+add}'` 
+       set hstart = $hstop  
+       set hstop = `echo $hstart | awk -v add=$int_hrs '{print $1+add}'`
+       echo Creating $outfile " for $hstart - $hstop hrs UT" 
+
+       foreach file (`ls tmp.prn??`)
+         awk -v start=$estart -v stop=$estop '{if( ($4 >  start && $4 < stop) || $1 == ">" ) print $1, $2,$3 }' $file >! $file.dt 
+       end
+       awk -v start=$estart -v stop=$estop '{if( ($4 >  start && $4 < stop) ) print $1, $2, $3 }' tmp.all >! tmp.xyz
+       foreach edf (`ls tmp.edt??`)
+         awk -v start=$estart -v stop=$estop '{if( ($4 >  start && $4 < stop) || $1 == ">" ) print $1, $2,$3 }' $edf >! $edf.dt 
+       end
+       if ( $j == 1 ) then
+         if ( $grdimage == "Y" ) then
+           nearneighbor tmp.xyz -Gtmp.grd -Rg -I0.5/0.5 -S5 -N2 -Lg -fg1x,0y
+#           nearneighbor tmp.xyz -Gtmp.grd -R0/360/0/90 -I0.5/0.5 -S5 -N2 -Lx
+           if ( $grd_range == '' ) set grd_range = `grdinfo tmp.grd | grep z_min | awk '{printf"-T%d/%d/%d \n", $3, $5, ($5-$3)/15}'`
+           makecpt -Crainbow $grd_range   >! tmp.cpt 
+           grdimage tmp.grd -Ctmp.cpt -R0/360/0/90 -JP3.0i -Y4.5i -K -B30g30/10g10 >! $outfile 
+           psscale -D3i/3.5i/4i/0.25ih -Ctmp.cpt -B:"$slabel": -O -K >> $outfile 
+         else
+           pswiggle tmp.prn??.dt -W$oline -Ba30 -Z${scale} -G$posres -m -T$track \
+           -R0/360/0/90 -JP3.0i -Y4.5i -K >! $outfile
+           pswiggle tmp.prn??.dt -W$oline       -Z${scale} -G$negres -m -T$track -N -R -JP -O \
+           -K  >> $outfile
+           pswiggle tmp.edt??.dt -W$oline       -Z${scale} -G$edtres -m -T1/0/0/255 -N -R -JP -O \
+           -K  >> $outfile
+           pswiggle tmp.cal -W$oline -Z${scale} -G255/0/0 -N -R -JP -O -K >> $outfile 
+         endif
+           pstext -R -JP -O -K -N -G5/5/5 <<! >> $outfile
+           270 100  10 0 1 10 $hstart - $hstop hrs UT
+!
+
+# MOD TAH 980803: Add calibration tick mark (1/10 scale in length)
+       else if ( $j == 2 || $j == 3 || $j == 5 ) then
+         if ( $grdimage == "Y" ) then
+           nearneighbor tmp.xyz -Gtmp.grd -Rg -I0.5/0.5 -S5 -N2 -Lg -fg1x,0y
+#           nearneighbor tmp.xyz -Gtmp.grd -R0/360/0/90 -I0.5/0.5 -S5 -N2 -Lx
+           grdimage tmp.grd -Ctmp.cpt -R -JP -X3.25i -K -O -B30g30/10g10 >> $outfile 
+         else
+           pswiggle tmp.prn??.dt -W$oline -Ba30 -Z${scale} -G$posres -m -T$track \
+           -R -JP -X3.25i -K -O >> $outfile
+           pswiggle tmp.prn??.dt -W$oline       -Z${scale} -G$negres -m -T$track -N -R -JP -O \
+           -K  >> $outfile
+           pswiggle tmp.edt??.dt -W$oline       -Z${scale} -G$edtres -m -T1/0/0/255 -N -R -JP -O \
+           -K  >> $outfile
+           pswiggle tmp.cal -W$oline -Z${scale} -G255/0/0 -N -R -JP -O -K >> $outfile
+         endif
+           pstext -R -JP -O -K -N -G5/5/5 <<! >> $outfile
+           270 100  10 0 1 10 $hstart - $hstop hrs UT
+!
+
+       else if ($j == 4) then
+         if ( $grdimage == "Y" ) then
+           nearneighbor tmp.xyz -Gtmp.grd -Rg -I0.5/0.5 -S5 -N2 -Lg -fg1x,0y
+#           nearneighbor tmp.xyz -Gtmp.grd -R0/360/0/90 -I0.5/0.5 -S5 -N2 -Lx
+           grdimage tmp.grd -Ctmp.cpt -R -JP -X-6.5i -Y-3.5i -K -O -B30g30/10g10 >> $outfile 
+         else
+           pswiggle tmp.prn??.dt -W$oline -Ba30 -Z${scale} -G$posres -m -T$track \
+           -R -JP -X-6.5i -Y-3.5i -K -O >> $outfile
+           pswiggle tmp.prn??.dt -W$oline       -Z${scale} -G$negres -m -T$track -N -R -JP -O \
+           -K -U"${label}" >> $outfile
+           pswiggle tmp.edt??.dt -W$oline       -Z${scale} -G$edtres -m -T1/0/0/255 -N -R -JP -O \
+           -K  >> $outfile
+           pswiggle tmp.cal -W$oline -Z${scale} -G255/0/0 -N -R -JP -O -K >> $outfile
+         endif
+           pstext -R -JP -O -K -N -G5/5/5 <<! >> $outfile
+           270 100  10 0 1 10 $hstart - $hstop hrs UT
+           320 170  14 0 1 10 ${base} Day ${doy} RMS ${rms} mm
+!
+
+       else if ($j == 6) then
+         if ( $grdimage == "Y" ) then
+           nearneighbor tmp.xyz -Gtmp.grd -Rg -I0.5/0.5 -S5 -N2 -Lg -fg1x,0y
+#           nearneighbor tmp.xyz -Gtmp.grd -R0/360/0/90 -I0.5/0.5 -S5 -N2 -Lx
+           grdimage tmp.grd -Ctmp.cpt -R -JP -X3.25i -K -O -B30g30/10g10 >> $outfile 
+         else
+           pswiggle tmp.prn??.dt -W$oline -Ba30 -Z${scale} -G$posres -m -T$track \
+           -R -JP -X3.25i -K -O >> $outfile
+           pswiggle tmp.prn??.dt -W$oline       -Z${scale} -G$negres -m -T$track -N -R -JP -O \
+           -K >> $outfile 
+           pswiggle tmp.edt??.dt -W$oline       -Z${scale} -G$edtres -m -T1/0/0/255 -N -R -JP -O \
+           -K >> $outfile 
+
+           pswiggle tmp.cal -W$oline -Z${scale} -G255/0/0 -N -R -JP -O -K >> $outfile
+         endif
+           pstext -R -JP -O -N -G5/5/5 <<! >> $outfile
+           270 100  10 0 1 10 $hstart - $hstop hrs UT
+!
+
+       endif
+     end
+   else 
+     echo "The number of plots you requested is not allowed " $num
+   endif
+ 
+# If "Elevation angle vs residual" plots are requested then make them...
+   if ( $elev == 'Y' ) then 
+     echo 'Creating "Residual vs Elevation Angle" plot'
+     if ( -e $base.avg ) \rm  $base.avg >& /dev/null
+     touch $base.avg
+     set outfile1 = ${base}.${doy}_elev_res.ps
+     cat tmp.prn?? | awk '{ if ( NF >= 2 ) print 90-$2, $3*190.0}' >! $base.res   
+     foreach i ( `echo '0 10 20 30 40 50 60 70 80'` )
+       cat  $base.res | awk -v elev=$i '{ if ( $1 >= elev && $1 <= elev+10.0 ) print $2 }' >! $base.$i
+       cat  $base.$i | wc | awk '{print $1}' >! tmp.$i
+     end
+     set i = 0
+     set inc = 2 
+     while ( $i <= 90 )
+       cat  $base.res | awk -v elev=$i -v bin=$inc 'BEGIN{sum=0; j=0} { if ( $1 >= elev && $1 <= elev+bin-1 ) {sum+=$2; j++} } END{ if ( j > 0 ) print elev+(bin/2), sum/j}' >> $base.avg
+       @ i = $i + $inc 
+     end
+     set RANGE = `cat $base.res | awk '{ print $1, $2 }' | minmax -I1/1`
+     set r = ( `echo $RANGE | cut -c3- | awk -F/ '{print $1  - ($2-$1)*.10 ,90.0,  $3 - ($4-$3)*.10,  $4 + ($4-$3)*.10 }'` )
+     if ( $xmin != 0 ) set r[1] = $xmin 
+     if ( $xmax != 0 ) set r[2] = $xmax
+     if ( $ymin != 0 ) set r[3] = $ymin 
+     if ( $ymax != 0 ) set r[4] = $ymax
+#make sure that horizontal min-max has an aperture
+     if( $r[1] == $r[2]  ) then
+       set r[1] = 0.0
+       set r[2] = 90.0
+     endif
+#make sure that vertical min-max has an aperture
+     if( $r[3] == $r[4]  ) then
+       set r[3] =  -20.0 
+       set r[4] =   20.0 
+     endif
+     set RANGE = "-R"$r[1]"/"$r[2]"/"$r[3]"/"$r[4]
+# compute y-axis scales unless given!!!
+     set yanot  = 10.0 
+     set yframe = 5.0 
+     set yl = `echo  $r[4]  $r[3] | awk '{ printf "%6d", ( ( $1 - $2 ) / 100 ) + 1   }'`
+     set yanot   = ` echo $yanot   $yl |  awk '{ print  $1 * $2 }' `
+     set yframe  = ` echo $yframe  $yl |  awk '{ print  $1 * $2 }' ` 
+# compute x-axis scales unless given!!!
+     set xanot  = 10 
+     set xframe = 5
+     set anot   = ` echo $xanot `  
+     set frame  = ` echo $xframe ` 
+#  label Y axis with annotation  and frame
+#     set SCALES = '-Ba'$anot'f'$frame':Elevation\32Angle\32(degrees):/a'$yanot'f'$yframe':Lc\32Phase\32Residual\32(mm)::.'$base'\32\32\32RMS='${rms}'mm\32\32error\32model\32\32a^2+b^2/(sin(elev))^2\32\32a='$errmod[1]'mm\32\32b='$errmod[2]'mm:WeSn'
+# Splitting axis and header into two parts is a cludge to get around GMT bug...
+     set SCALES = '-Ba'$anot'f'$frame':Elevation Angle (deg):/a'$yanot'f'$yframe':Lc Phase Residual (mm):WeSn'                                               
+     set SCALES1 = '-Ba'$anot'f'$frame'/a'$yanot'f'$yframe':.'$base' RMS='${rms}'mm error model a^2+b^2/(sin(elev))^2 a='$errmod[1]'mm b='$errmod[2]'mm:wesn'
+#     echo "1 10 12 0 0 0 $base RMS = ${rms} mm   error model a^2+b^2/(sin(elev))^2   a = $errmod[1] mm  b = $errmod[2] mm" >! ${base}.txt
+     gmtset HEADER_FONT_SIZE 12  
+#     gmtset HEADER_OFFSET 0
+#     gmtset LABEL_OFFSET 0
+     psxy ${base}.res $RANGE -Sc0.025i -JX6.5i/3.5i "$SCALES" -K -P >! $outfile1  
+     psbasemap  $RANGE -JX6.5i/3.5i  "$SCALES1" -K -O -P  >> $outfile1
+     if ( -e err.mod ) psxy err.mod      $RANGE -JX6.5i/3.5i -O -K -P -W5/0/255/0 >> $outfile1
+     if ( -e err_neg.mod ) psxy err_neg.mod  $RANGE -JX6.5i/3.5i -O -K -P -W5/0/255/0 >> $outfile1
+     psxy elev.bin     $RANGE -JX6.5i/3.5i -Sd0.075i -O -K -P -G255/255/0 >> $outfile1
+     psxy elev_neg.bin $RANGE -JX6.5i/3.5i -Sd0.075i -O -K -P -G255/255/0 >> $outfile1
+     psxy ${base}.avg  $RANGE -JX6.5i/3.5i -O -K -P -W5/255/0/0 >> $outfile1
+     psxy <<END   $RANGE -JX6.5i/3.5i -O -K -P -W5/0/0/255 >> $outfile1
+0  0
+90 0
+END
+     psxy <<END  $RANGE -JX6.5i/3.5i -O -K -P -m -W3/255/0/0 >> $outfile1
+>
+0 $rms
+90 $rms
+>
+0 -$rms
+90 -$rms
+END
+     echo "Creating Residual Histograms"
+     foreach i ( `echo '0 10 20 30 40 50 60 70 80'`) 
+       set title = `echo $i | awk '{print $1"-"$1+10}'`
+       set numl = `cat tmp.$i` 
+       if ( $i == 0 ) then                    
+         if ( -z ${base}.$i ) then
+           psbasemap -JX2i/1.5i -R0/1/0/1 -B10:" ":/100:count::."$title ($numl)":WeSn -P -K -O -Y8.0i  >> $outfile1
+         else
+           pshistogram ${base}.$i -JX2i/1.5i -W2 -C -L2 -B30:" ":/100:count::."$title ($numl)":WeSn -P -K -O -Y8.0i >> $outfile1
+         endif
+       else if ( $i == 10 ) then
+         if ( -z ${base}.$i ) then
+           psbasemap -JX2i/1.5i -R0/1/0/1 -B25:" ":/100:" "::."$title ($numl)":WeSn -P -K -O -X2.5i >> $outfile1
+         else
+           pshistogram ${base}.$i -JX2i/1.5i -W2 -C -L2 -B25:" ":/100:" "::."$title ($numl)":WeSn -P -K -O -X2.5i >> $outfile1
+         endif
+       else if ( $i == 30  ) then
+         if ( -z ${base}.$i ) then
+           psbasemap -JX2i/1.5i -R0/1/0/1 -B15:" ":/100:count::."$title ($numl)":WeSn -P -K -O -Y-1.9i -X-5.0i >> $outfile1
+         else
+           pshistogram ${base}.$i -JX2i/1.5i -W2 -C -L2 -B15:" ":/100:count::."$title ($numl)":WeSn -P -K -O -Y-1.9i -X-5.0i >> $outfile1
+         endif
+       else if ( $i <= 50 ) then
+         if ( -z ${base}.$i ) then
+           psbasemap -JX2i/1.5i -R0/1/0/1 -B15:" ":/100:" "::."$title ($numl)":WeSn -P -K -O -X2.5i >> $outfile1
+         else
+           pshistogram ${base}.$i -JX2i/1.5i -W2 -C -L2 -B15:" ":/100:" "::."$title ($numl)":WeSn -P -K -O -X2.5i >> $outfile1
+         endif
+       else if ( $i == 60 ) then
+         if ( -z ${base}.$i ) then
+           psbasemap -JX2i/1.5i -R0/1/0/1 -B10:"rms (mm)":/100:count::."$title ($numl)":WeSn -P -K -O -Y-1.9i -X-5.0i >> $outfile1
+         else
+           pshistogram ${base}.$i -JX2i/1.5i -W2 -C -L2 -B10:"rms (mm)":/100:count::."$title ($numl)":WeSn -P -K -O -Y-1.9i -X-5.0i >> $outfile1
+         endif
+       else if ( $i <= 70 ) then
+         if ( -z ${base}.$i ) then
+           psbasemap -JX2i/1.5i -R0/1/0/1 -B10:"rms (mm)":/100:" "::."$title ($numl)":WeSn -P -K -O -X2.5i >> $outfile1
+         else
+           pshistogram ${base}.$i -JX2i/1.5i -W2 -C -L2 -B10:"rms (mm)":/100:" "::."$title ($numl)":WeSn -P -K -O -X2.5i >> $outfile1
+         endif
+       else if ( $i <= 80 ) then
+         if ( -z ${base}.$i ) then
+           psbasemap -JX2i/1.5i -R0/1/0/1 -B10:"rms (mm)":/100:" "::."$title ($numl)":WeSn -P -O -X2.5i >> $outfile1
+         else
+           pshistogram ${base}.$i -JX2i/1.5i -W2 -C -L2 -B10:"rms (mm)":/100:" "::."$title ($numl)":WeSn -P -O -X2.5i >> $outfile1
+         endif
+       endif
+     end
+
+   endif
+
+#Do some tidying up
+   \rm -r tmp.prn??.*  tmp.prn?? tmp.cal tmp.? tmp.?? tmp.edt??.dt tmp.edt?? t.all t.prn tmp.all tmp.xyz >&! /dev/null
+#   if ( $grdimage != "N" ) \rm tmp.all tmp.cpt tmp.grd tmp.grad tmp.xyz tmp.xyz2 >&! /dev/null
+   if ( -e ${base}.res ) \rm ${base}.res >& /dev/null
+   if ( -e err.mod ) \rm err.mod err_neg.mod >& /dev/null
+   if ( -e elev.bin ) \rm elev.bin elev_neg.bin >& /dev/null
+   \rm -r ${base}.? ${base}.?? >& /dev/null
+
+  else
+    echo "No data files found for site: $site"
+  endif
+
+# End loop on sites
+end
+
+# Some concluding statements 
+set output  = ` \ls -1 *$ext$num.ps `
+set output1 = ` \ls -1 *_elev_res.ps `
+echo " "
+if ( $#output > 0 ) then
+  if ( $elev != "Y" ) then
+    echo "Created: $output "
+    echo "To view  use:  gs  *$ext$num.ps  "
+    echo "To print use:  lpr *$ext$num.ps "
+  else
+    echo "Created $output  "
+    echo "Created $output1 " 
+    echo "To view use:  gs *$ext$num.ps  "
+    echo "              gs *_elev_res.ps "
+    echo "To print use:  lpr *$ext$num.ps "
+    echo "               lpr *_elev_res.ps"
+  endif
+endif
+
+# The end
+exit
